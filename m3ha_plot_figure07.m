@@ -21,22 +21,29 @@
 
 %% Hard-coded parameters
 % Flags
-plotIpscComparison = true;
-plot2CellExamples = true;
+plotIpscComparison = false; %true;
+plot2CellExamples = false; %true;
 
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 plot2CellBars = false; %true;
 
-archiveScriptsFlag = true;
+plot200CellExamples = false; %true;
+
+combine200CellPopulation = true;
+plot200CellViolins = false; %true;
+
+archiveScriptsFlag = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure07Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure07');
+figure08Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure08');
 networkDirectory = fullfile(parentDirectory, 'network_model');
 % exampleIterName = '20200131T1345_using_bestparams_20200126_singleneuronfitting101';  % 20200131
-exampleIterName = 'TODO';
-popIterName = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65';
+exampleIterName = '20200205T1353_using_bestparams_20200203_manual_singleneuronfitting0-102';
+popIterName2Cell = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65';
+popIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -70,7 +77,8 @@ figTypes = {'png', 'epsc2'};
 %% Preparation
 % Find the directory for this iteration
 exampleIterDir = fullfile(networkDirectory, exampleIterName);
-popIterDir = fullfile(networkDirectory, popIterName);
+popIterDir2Cell = fullfile(networkDirectory, popIterName2Cell);
+popIterDir200Cell = fullfile(networkDirectory, popIterName200Cell);
 
 % Construct the full path to the candidate cell spreadsheet
 candCellSheetPath = fullfile(networkDirectory, candCellSheetName);
@@ -79,19 +87,23 @@ candCellSheetPath = fullfile(networkDirectory, candCellSheetName);
 rankStr = ['rank', create_label_from_sequence(rankNumsToUse)];
 
 % Create a condition label
-conditionLabel2D = [popIterName, '_', rankStr, '_gIncr', num2str(gIncr)];
+conditionLabel2D = [popIterName2Cell, '_', rankStr, '_gIncr', num2str(gIncr)];
 
 % Create a population data spreadsheet name
-popDataSheetName = [popIterName, '_', rankStr, '_', oscParamsSuffix, '.csv'];
+popDataSheetName2Cell = [popIterName2Cell, '_', rankStr, '_', ...
+                            oscParamsSuffix, '.csv'];
+popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
+                            oscParamsSuffix, '.csv'];
 
 % Contruct the full path to the population data spreadsheet
-popDataPath = fullfile(figure07Dir, popDataSheetName);
+popDataPath2Cell = fullfile(figure07Dir, popDataSheetName2Cell);
+popDataPath200Cell = fullfile(figure08Dir, popDataSheetName2Cell);
 
 %% Find example files and directories
 if plotIpscComparison || plot2CellExamples
     % Find example network directories
     [~, exampleDirs] = ...
-        cellfun(@(x) all_subdirs('Directory', popIterDir, 'Keyword', x), ...
+        cellfun(@(x) all_subdirs('Directory', exampleIterDir, 'Keyword', x), ...
                 exampleCellNames, 'UniformOutput', false);
 end
 
@@ -110,12 +122,19 @@ if plot2CellExamples
                                         figure07Dir, figTypes, ...
                                         exampleFigWidth, exampleFigHeight), ...
                 exampleCellNames, exampleDirs), ...
-        pharm);
+        1:4);
 end
 
 %% Combines quantification over all 2-cell networks
 if combine2CellPopulation
-    combine_2cell_data(popIterDir, candCellSheetPath, rankNumsToUse, popDataPath);
+    combine_osc_params_data(popIterDir2Cell, candCellSheetPath, ...
+                            rankNumsToUse, popDataPath2Cell);
+end
+
+%% Combines quantification over all 2-cell networks
+if combine200CellPopulation
+    combine_osc_params_data(popIterDir200Cell, candCellSheetPath, ...
+                            rankNumsToUse, popDataPath200Cell);
 end
 
 %% Plots oscillation duration and period over pharm condition 
@@ -128,7 +147,7 @@ if plot2CellViolins
     if ~isfile(stats2dPath)
         % Compute statistics for all features
         disp('Computing statistics for violin plots ...');
-        statsTable = m3ha_network_compute_statistics(popDataPath, gIncr, ...
+        statsTable = m3ha_network_compute_statistics(popDataPath2Cell, gIncr, ...
                                             measuresOfInterest, measureTitles);
 
         % Generate labels
@@ -156,7 +175,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_ipsc_comparison (cellName, popIterName, gIncr, ...
+function plot_ipsc_comparison (cellName, popIterName2Cell, gIncr, ...
                                 inFolder, outFolder, ...
                                 figTypes, figWidth, figHeight)
 % Plot an IPSC comparison plot
@@ -165,7 +184,7 @@ function plot_ipsc_comparison (cellName, popIterName, gIncr, ...
 gIncrStr = ['gIncr', num2str(gIncr)];
 
 % Create figure names
-figPathBase = fullfile(outFolder, [cellName, '_', popIterName, '_', gIncrStr, ...
+figPathBase = fullfile(outFolder, [cellName, '_', popIterName2Cell, '_', gIncrStr, ...
                                     '_gabab_ipsc_comparison']);
 figPathBaseOrig = [figPathBase, '_orig'];
 
@@ -192,7 +211,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_2cell_examples (cellName, popIterName, gIncr, pharm, ...
+function plot_2cell_examples (cellName, popIterName2Cell, gIncr, pharm, ...
                                 inFolder, outFolder, ...
                                 figTypes, figWidth, figHeight)
 % Plot 2-cell network examples
@@ -202,7 +221,7 @@ gIncrStr = ['gIncr', num2str(gIncr)];
 pharmStr = ['pharm', num2str(pharm)];
 
 % Create figure names
-figPathBase = fullfile(outFolder, [cellName, '_', popIterName, '_', gIncrStr, ...
+figPathBase = fullfile(outFolder, [cellName, '_', popIterName2Cell, '_', gIncrStr, ...
                                     '_', pharmStr, '_example']);
 figPathBaseOrig = [figPathBase, '_orig'];
 
@@ -229,8 +248,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_2cell_data (popIterDir, candCellSheetPath, ...
-                            rankNumsToUse, popDataPath);
+function combine_osc_params_data (popIterDir2Cell, candCellSheetPath, ...
+                            rankNumsToUse, popDataPath2Cell);
 
 %% Hard-coded parameters
 rankNumStr = 'rankNum';
@@ -250,7 +269,7 @@ cellNamesToUse = match_positions(cellNamesAll, rankNumbersAll, rankNumsToUse);
 
 % Locate corresponding oscillation parameter paths
 [~, oscParamPaths] = ...
-    find_matching_files(cellNamesToUse, 'Directory', popIterDir, ...
+    find_matching_files(cellNamesToUse, 'Directory', popIterDir2Cell, ...
                         'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
                         'Recursive', true, 'ForceCellOutput', true);
 
@@ -270,7 +289,7 @@ oscPopTable = apply_over_cells(@vertcat, oscParamTables);
 oscPopTable = join(oscPopTable, candCellTable, 'Keys', cellNameStr);
 
 % Save the table
-writetable(oscPopTable, popDataPath);
+writetable(oscPopTable, popDataPath2Cell);
 
 end
 
@@ -293,7 +312,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function statsTable = m3ha_network_compute_statistics (popDataPath, gIncr, ...
+function statsTable = m3ha_network_compute_statistics (popDataPath2Cell, gIncr, ...
                                                     measureStr, measureTitle)
 %% Computes all statistics for the 2-cell network
 
@@ -305,7 +324,7 @@ dclamp2NetworkAmpRatio = 12;
 
 %% Do the job
 % Read the data table
-popDataTable = readtable(popDataPath);
+popDataTable = readtable(popDataPath2Cell);
 
 % Restrict to the rows with given gIncr
 rowsToUse = round(popDataTable.(gIncrStr) * dclamp2NetworkAmpRatio) == gIncr;
