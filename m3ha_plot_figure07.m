@@ -24,13 +24,13 @@
 %% Hard-coded parameters
 % Flags
 plotIpscComparison = false; %true;
-plot2CellExamples = false; %true;
+plot2CellExamples = true;
 
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 plot2CellBars = false; %true;
 
-plot200CellExamples = true;
+plot200CellExamples = false; %true;
 
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
@@ -73,11 +73,12 @@ measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
 % Plot settings
 ipscFigWidth = 8.5;
 ipscFigHeight = 4;
-xLimits2Cell = [2800, 4000];
+xLimits2Cell = [2800, 4800];
+yLimits2Cell = {[-100, 50], [], [], [], [], []};
 example2CellFigWidth = 8.5;
 example2CellFigHeight = 1.5 * 6;
 example200CellFigWidth = 8.5;
-example200CellFigHeight = 4;
+example200CellFigHeight = 3;
 pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
                     '{\it s}-GAT3', '{\it s}-Dual'};
 
@@ -143,7 +144,7 @@ if plot2CellExamples
         cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2Cell, ...
                             gIncr, z, y, figure07Dir, figTypes, ...
                             example2CellFigWidth, example2CellFigHeight, ...
-                            xLimits2Cell), ...
+                            xLimits2Cell, yLimits2Cell), ...
                 exampleCellNames, exampleDirs2Cell), ...
         pharmConditions);
 end
@@ -275,7 +276,7 @@ end
 
 function plot_2cell_examples (cellName, iterName, gIncr, pharm, ...
                             inFolder, outFolder, figTypes, ...
-                            figWidth, figHeight, xLimits2Cell)
+                            figWidth, figHeight, xLimits, yLimits)
 % Plot 2-cell network examples
 
 % Create a gIncr string
@@ -292,9 +293,10 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot example
 m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
-                            'XLimits', xLimits2Cell, 'FigTitle', 'suppress', ...
-                            'AmpScaleFactor', gIncr, 'PharmCondition', pharm);
-
+                        'XLimits', xLimits, 'YLimits', yLimits, ...
+                        'FigTitle', 'suppress', ...
+                        'AmpScaleFactor', gIncr, 'PharmCondition', pharm, ...
+                        'Color', 'k');
 
 % Save original figure
 drawnow;
@@ -331,7 +333,10 @@ simNumber = m3ha_network_find_sim_number(inFolder, pharm, gIncr);
 figPathBase = fullfile(outFolder, [cellName, '_', iterName, ...
                         '_', gIncrStr, '_', pharmStr, '_200cell_example']);
 figPathBaseOrig = [figPathBase, '_orig'];
+figPathBaseNoRasters = [figPathBase, '_noRasters'];
+figPathBaseRasterOnly = [figPathBase, '_rastersOnly'];
 
+%% Full figure
 % Create the figure
 fig = set_figure_properties('AlwaysNew', true);
 
@@ -345,21 +350,49 @@ m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
 drawnow;
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
-% Plot a scale bar
+%% Figure with no rasters
+% Create the figure with no rasters
+fig = set_figure_properties('AlwaysNew', true, 'Units', 'centimeters', ...
+                            'Width', figWidth, 'Height', figHeight);
+
+% Plot spike raster plot again with no rasters
+m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
+                        'SingleTrialNum', simNumber, ...
+                        'PlotSpikes', true, 'PlotTuning', false, ...
+                        'PlotOnly', true, 'NoRasters', true);
+
+% Plot a scale bar only for the Dual Blockade condition
 if pharm == 4
     plot_scale_bar('x', 'XBarUnits', 'sec', 'XBarLength', 2, ...
                     'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
 end
 
 % Update figure for CorelDraw
-%   Note: Do this is 2 steps for performance
-update_figure_for_corel(fig, 'RemoveXRulers', true, 'RemoveXLabels', true);
-update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                        'Width', figWidth, 'Height', figHeight);
+update_figure_for_corel(fig, 'RemoveXLabels', true, 'RemoveTitles', true, ...
+                        'BoxOn', true, 'RemoveXRulers', true);
 
-% Save the figure
+% Save figure with no rasters
 drawnow;
-save_all_figtypes(fig, figPathBase, figTypes);
+save_all_figtypes(fig, figPathBaseNoRasters, figTypes);
+
+%% Figure with rasters only
+% Create the figure with rasters only
+fig = set_figure_properties('AlwaysNew', true, 'Units', 'centimeters', ...
+                            'Width', figWidth, 'Height', figHeight);
+
+% Plot spike raster plot again with rasters only
+m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
+                        'SingleTrialNum', simNumber, ...
+                        'PlotSpikes', true, 'PlotTuning', false, ...
+                        'PlotOnly', true, 'RastersOnly', true);
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'RemoveXLabels', true, 'RemoveTitles', true, ...
+                        'BoxOn', true, 'RemoveXRulers', true);
+
+% Save the figure with rasters only
+drawnow;
+save_all_figtypes(fig, figPathBaseRasterOnly, figTypes);
 
 end
 

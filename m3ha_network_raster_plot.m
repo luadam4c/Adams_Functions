@@ -36,6 +36,12 @@ function [REspikes, TCspikes, numActiveTC, numActiveRE, ...
 %               - 'PlotOnly': whether to plot only and not create the figure
 %               must be logical 1 (true) or 0 (false)
 %               default == false
+%               - 'RastersOnly': whether to plot rasters only
+%               must be logical 1 (true) or 0 (false)
+%               default == false
+%               - 'NoRasters': whether to omit plotting rasters
+%               must be logical 1 (true) or 0 (false)
+%               default == false
 %
 % Requires:
 %       cd/argfun.m
@@ -66,7 +72,7 @@ function [REspikes, TCspikes, numActiveTC, numActiveRE, ...
 % 2018-01-24 BT - Added nSpikes and actDur
 % 2018-01-26 BT - Differentiate between TC and RE cells
 % 2018-01-31 BT - Added actVel, TC/RE for numActive and oscDur
-% 2020-02-06 Added plotOnly as an optional argument
+% 2020-02-06 Added 'PlotOnly', 'RastersOnly', 'NoRasters' as optional arguments
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,6 +102,10 @@ addParameter(iP, 'PlotTuning', true, ...        % whether to plot tuning curves
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotOnly', false, ...         % whether to just plot
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RastersOnly', false, ...         % whether to just plot
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'NoRasters', false, ...         % whether to just plot
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, inFolder, varargin{:});
@@ -107,6 +117,8 @@ singleTrialNum = iP.Results.SingleTrialNum;
 plotSpikes = iP.Results.PlotSpikes;
 plotTuning = iP.Results.PlotTuning;
 plotOnly = iP.Results.PlotOnly;
+rastersOnly = iP.Results.RastersOnly;
+noRasters = iP.Results.NoRasters;
 
 % Change default arguments if necessary
 if strcmp(outFolder, '@inFolder')
@@ -443,21 +455,24 @@ while ct < nSims                  % while not trials are completed yet
                 end
 
                 % Create subplots without expanding
-                [~, ax] = create_subplots(2, 1, 'FigNumber', figNumber, ...
+                [fig, ax] = create_subplots(2, 1, 'FigNumber', figNumber, ...
                                             'ClearFigure', clearFigure, ...
-                                            'FigExpansion', [1, 1]);
+                                            'FigExpansion', [1, 1], ...
+                                            'ExpandFromDefault', false);
 
                 % Plot RT spikes
                 plot_spikes_one_layer(ax(1), 'RT Layer', xLimits, xLabel, ...
                                 REspikecellnNonstim, REspiketimesNonstim, ...
                                 REspikecellnStim, REspiketimesStim, ...
-                                nCells, stimWindow, stimFreq);
+                                nCells, stimWindow, stimFreq, ...
+                                rastersOnly, noRasters);
 
                 % Plot TC spikes
                 plot_spikes_one_layer(ax(2), 'TC Layer', xLimits, xLabel, ...
                                 TCspikecelln, TCspiketimes, ...
                                 [], [], ...
-                                nCells, stimWindow, []);
+                                nCells, stimWindow, [], ...
+                                rastersOnly, noRasters);
 %{
                 % RE text labels
                 text(xLimitsLeft + 0.5, nCells*1.925, ['Number of cells activated: ', num2str(numActiveRE(i))], ...
@@ -504,7 +519,7 @@ while ct < nSims                  % while not trials are completed yet
                     'Color', 'g');                          % text for TC activation velocity (cells/second) 
 %}
 
-                if ~plotOnly
+                if ~plotOnly && ~rastersOnly
                     figbaseWext = replace(REfiles(jnowRE).name, 'RE_', '');
                     figbase = replace(figbaseWext, '.spi', '');
                     suptitle(replace(figbase, '_', '\_'));
@@ -561,8 +576,10 @@ end
 function plot_spikes_one_layer(axHandle, subTitle, xLimits, xLabel, ...
                                 cellNumNonStim, spikeTimesNonstim, ...
                                 cellNumStim, spikeTimesStim, ...
-                                nCells, stimWindow, stimFreq)
+                                nCells, stimWindow, stimFreq, ...
+                                rastersOnly, noRasters)
 
+% Hard-coded parameters
 % Pull up subplot
 subplot(axHandle); hold on;
 
@@ -571,27 +588,31 @@ yLimits = [-0.5, nCells - 0.5];
 yTicks = [0, round(nCells/4), round(nCells/2), round(nCells*3/4), nCells - 1];
 
 % Plot stimulation window
-if ~isempty(stimWindow)
+if ~isempty(stimWindow) && ~noRasters
     plot_window_boundaries(stimWindow, 'YLimits', yLimits, ...
                             'BoundaryType', 'verticalLines', ...
                             'LineStyle', '-', 'Color', 'PaleGreen');
 end
 
 % Plot stimulation info text
-if ~isempty(stimFreq)
+if ~isempty(stimFreq) && ~rastersOnly
     text(stimWindow(2) + 0.5, nCells * 0.975, ...
         ['Stim: ', num2str(stimFreq), ' Hz'], 'Color', 'r');
 end
 
 % Plot spikes from non-stimulated cells
-line([spikeTimesNonstim, spikeTimesNonstim]', ...
-    [cellNumNonStim - 0.5, cellNumNonStim + 0.5]', ...
-    'Color', 'k', 'LineWidth', 0.5);
+if ~isempty(spikeTimesNonstim) && ~noRasters
+    line([spikeTimesNonstim, spikeTimesNonstim]', ...
+        [cellNumNonStim - 0.5, cellNumNonStim + 0.5]', ...
+        'Color', 'k', 'LineWidth', 0.5);
+end
 
 % Plot spikes from stimulated cells
-line([spikeTimesStim, spikeTimesStim]', ...
-    [cellNumStim - 0.5, cellNumStim + 0.5]', ...
-    'Color', 'r', 'LineWidth', 0.5);
+if ~isempty(spikeTimesStim) && ~noRasters
+    line([spikeTimesStim, spikeTimesStim]', ...
+        [cellNumStim - 0.5, cellNumStim + 0.5]', ...
+        'Color', 'r', 'LineWidth', 0.5);
+end
 
 % Set x axis limits
 xlim(xLimits);
@@ -603,11 +624,15 @@ ylim(yLimits);
 yticks(yTicks);
 
 % Plot axis labels
-xlabel(xLabel);
-ylabel('Neuron ID');
+if ~rastersOnly
+    xlabel(xLabel);
+    ylabel('Neuron ID');
+end
 
 % Show a title for the subplot
-title(subTitle);
+if ~rastersOnly
+    title(subTitle);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

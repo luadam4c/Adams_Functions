@@ -17,6 +17,9 @@ function figHandle = update_figure_for_corel (varargin)
 %       varargin    - 'AlignSubplots': whether to align subplots
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'BoxOn': whether to add axes outlines
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -115,6 +118,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-12-02 Fixed bug when there are multiple labels of the same type
 % 2019-12-04 Added 'RemoveTexts' as an optional argument
 % 2019-12-29 Added 'AlignSubplots' as an optional argument
+% 2020-02-06 Added 'BoxOn' as an optional argument
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -131,6 +135,7 @@ annotationLineWidth = 1; % TODO
 %% Default values for optional arguments
 figHandleDefault = [];
 alignSubplotsDefault = false;   % don't align by default
+boxOnDefault = false;           % no box by default
 removeTicksDefault = false;     % don't remove by default
 removeXTicksDefault = false;    % don't remove by default
 removeYTicksDefault = false;    % don't remove by default
@@ -171,6 +176,8 @@ addOptional(iP, 'figHandle', figHandleDefault);
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'AlignSubplots', alignSubplotsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'BoxOn', boxOnDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -221,6 +228,7 @@ addParameter(iP, 'ScatterMarkerSize', scatterMarkerSizeDefault, ...
 parse(iP, varargin{:});
 figHandle = iP.Results.figHandle;
 alignSubplots = iP.Results.AlignSubplots;
+boxOn = iP.Results.BoxOn;
 removeTicks = iP.Results.RemoveTicks;
 removeXTicks = iP.Results.RemoveXTicks;
 removeYTicks = iP.Results.RemoveYTicks;
@@ -360,6 +368,11 @@ end
 if removeTexts
     texts = findobj(gcf, 'Type', 'Text');
     delete(texts);
+end
+
+% Add axes outline if requested
+if boxOn
+    arrayfun(@(x) box(x, 'On'), ax);
 end
 
 % Set font

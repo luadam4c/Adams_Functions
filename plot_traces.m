@@ -312,6 +312,7 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2019-11-17 Added 'FigSubTitles' as an optional argument
 % 2020-01-05 Added 'AlreadyRestricted' as an optional argument
 % 2020-01-30 Fixed the return of plotsData for parallel mode
+% 2020-02-06 Now allows yLimits to be a cell array in parallel mode
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
@@ -456,7 +457,7 @@ addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'YLimits', yLimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+    @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'LinkAxesOption', linkAxesOptionDefault, ...
     @(x) any(validatestring(x, validLinkAxesOptions)));
@@ -1207,16 +1208,19 @@ case 'parallel'
         % Compute the number of vectors in dataThis
         nVectors = size(dataThis, 2);
 
-        % Set the default y-axis limits
-        if isempty(yLimits)
-            % Compute the y limits from both data and dataToCompare
-            yLimitsThis = ...
-                compute_axis_limits({dataThis, dataToCompareThis}, ...
-                                        'y', 'AutoZoom', autoZoom);                
-        elseif iscell(yLimits)
+        % Extract the y axis limits for this subplot
+        if iscell(yLimits)
             yLimitsThis = yLimits{iPlot};
         else
             yLimitsThis = yLimits;
+        end
+
+        % Set the default y-axis limits if not provided
+        if isempty(yLimitsThis)
+            % Compute the y limits from both data and dataToCompare
+            yLimitsThis = ...
+                compute_axis_limits({dataThis, dataToCompareThis}, ...
+                                        'y', 'AutoZoom', autoZoom);
         end
 
         % Compute a default horizontal bar y value

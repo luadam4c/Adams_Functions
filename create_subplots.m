@@ -38,6 +38,11 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                       Note: This occurs AFTER position is set
 %                   must be a must be a positive scalar or 2-element vector
 %                   default == []
+%                   - 'ExpandFromDefault': whether to expand from figure 
+%                                           position default
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true except when 'Position', 'Width' or 'Height'
+%                               are set
 %                   - 'FigPosition': figure position
 %                   must be a 4-element positive integer vector
 %                   default == same as CenterPosition
@@ -85,6 +90,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % 2019-09-06 Added 'FigPosition' and 'CenterPosition' as optional arguments
 % 2019-09-06 Added gridPositions as an optional argument
 % 2019-09-11 Added more figure properties as optional arguments
+% 2020-02-06 Added 'ExpandFromDefault' as an optional argument
 % TODO: Added 'TransposeOrder' as an optional argument
 
 %% Hard-coded parameters
@@ -96,6 +102,7 @@ gridPositionsDefault = [];      % set later
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % set later
+expandFromDefaultDefault = [];  % set later
 figPositionDefault = [];        % set later
 figWidthDefault = [];           % set later
 figHeightDefault = [];          % set later
@@ -138,6 +145,8 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'FigExpansion must be a empty or a numeric vector!'));
+addParameter(iP, 'ExpandFromDefault', expandFromDefaultDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigPosition', figPositionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'FigPosition must be a empty or a numeric vector!'));
@@ -161,6 +170,7 @@ gridPositions = iP.Results.gridPositions;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
+expandFromDefault = iP.Results.ExpandFromDefault;
 figPosition = iP.Results.FigPosition;
 figWidth = iP.Results.FigWidth;
 figHeight = iP.Results.FigHeight;
@@ -204,7 +214,9 @@ end
 
 % Decide on the figure to plot on and set figure position
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                    'FigExpansion', figExpansion, 'Position', figPosition, ...
+                    'FigExpansion', figExpansion, ...
+                    'ExpandFromDefault', expandFromDefault, ...
+                    'Position', figPosition, ...
                     'Width', figWidth, 'Height', figHeight, ...
                     'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
                     'AdjustPosition', true);
