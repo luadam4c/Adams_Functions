@@ -43,6 +43,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 
 % File History:
 % 2020-01-30 Modified from m3ha_network_plot_essential.m
+% 2020-02-05 Added percentActive
 
 %% Hard-coded parameters
 spiExtension = 'spi';
@@ -54,6 +55,7 @@ prefixTC = 'TC';
 paramPrefix = 'sim_params';
 stimStartStr = 'stimStart';
 stimDurStr = 'stimDur';
+nCellsStr = 'nCells';
 
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
@@ -135,6 +137,7 @@ oscParams = transpose_table(allParamsTable);
 % Extract the stimulation start time
 stimStartMs = oscParams.(stimStartStr);
 stimDurMs = oscParams.(stimDurStr);
+nCells = oscParams.(nCellsStr);
 
 % Load simulated data
 [spikesDataRT, spikesDataTC] = ...
@@ -142,9 +145,9 @@ stimDurMs = oscParams.(stimDurStr);
 
 % Parse spikes
 [parsedParams, parsedData] = ...
-    cellfun(@(a, b, c, d) m3ha_network_parse_spikes(a, b, c, d), ...
+    cellfun(@(a, b, c, d, e) m3ha_network_parse_spikes(a, b, c, d, e), ...
                 spikesDataRT, spikesDataTC, num2cell(stimStartMs), ...
-                num2cell(stimDurMs));
+                num2cell(stimDurMs), num2cell(nCells));
 
 % Convert structure arrays to tables
 [parsedParamsTable, parsedDataTable] = ...
@@ -161,7 +164,7 @@ writetable(oscParams, sheetName);
 
 function [parsedParams, parsedData] = ...
             m3ha_network_parse_spikes (spikesDataRT, spikesDataTC, ...
-                                        stimStartMs, stimDurMs)
+                                        stimStartMs, stimDurMs, nCells)
 %% Parse spikes from .spi files
 
 % Column numbers for .spi files
@@ -182,6 +185,12 @@ TC_SPIKETIME = 2;
 hasOscillation = ~isempty(spikeTimesTC) && ...
                     any(spikeTimesTC > stimStartMs + stimDurMs);
 
+% Count the number of active neurons
+nActive = numel(unique(cellIdRT)) + numel(unique(cellIdTC));
+
+% Compute the percentage of active neurons
+percentActive = 100 * nActive / (nCells * 2);
+
 % Use RT spikes to compute an oscillation duration
 %   TODO: Modify this for multi-cell layers
 [histParams, histData] = ...
@@ -198,6 +207,8 @@ hasOscillation = ~isempty(spikeTimesTC) && ...
 parsedParams.stimStartMs = stimStartMs;
 parsedParams.stimDurMs = stimDurMs;
 parsedParams.hasOscillation = hasOscillation;
+parsedParams.nActive = nActive;
+parsedParams.percentActive = percentActive;
 parsedParams = merge_structs(parsedParams, histParams);
 parsedParams = merge_structs(parsedParams, autoCorrParams);
 

@@ -33,6 +33,7 @@ function elements1 = match_positions (array1, array2, elements2, varargin)
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/extract_channel.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_plot_figure07.m
 %       cd/plot_table_parallel.m
 

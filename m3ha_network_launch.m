@@ -12,6 +12,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs)
 %       cd/create_time_stamp.m
 %       cd/find_in_strings.m
 %       cd/find_matching_files.m
+%       cd/force_column_vector.m
 %       cd/load_params.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_network_analyze_spikes.m
@@ -20,6 +21,8 @@ function m3ha_network_launch (nCells, useHH, candidateIDs)
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_network_define_actmode.m
+%       cd/match_positions.m
+%       cd/match_row_count.m
 %       cd/run_neuron.m
 %       cd/save_params.m
 %       /media/adamX/m3ha/network_model/m3ha_run_1cell.hoc
@@ -58,6 +61,8 @@ function m3ha_network_launch (nCells, useHH, candidateIDs)
 % 2020-01-06 Changed the action potential threshold from 0 to -30 mV
 % 2020-01-07 Added simMode, etc. to fileSuffix
 % 2020-01-24 Added isCircular and made it true
+% 2020-02-06 For heterogeneous networks, now ensures representation 
+%               of all neurons
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Perform simulations to generate a linear model
 % TODO: Update specs for m3ha_network_raster_plot.m
@@ -146,7 +151,7 @@ end
 
 % Decide on candidate TC neurons to use
 %% Candidate TC neurons;
-% allCandidateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
+% allCandNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
 %                 'E091810'; 'F091810'; 'A092110'; 'C092110'; ...
 %                 'B092710'; 'C092710'; 'E092710'; 'A092810'; ...
 %                 'C092810'; 'K092810'; 'A092910'; 'C092910'; ...
@@ -713,9 +718,9 @@ candidateTable = readtable(candidateSheetPath, 'ReadRowNames', true);
 
 % Import and sort
 allIds = candidateTable{:, 'candidateId'};
-allCandidateNames = candidateTable{:, 'cellName'};
+allCandNames = candidateTable{:, 'cellName'};
 [allIds, origInd] = sort(allIds, 'ascend');
-allCandidateNames = allCandidateNames(origInd);
+allCandNames = allCandNames(origInd);
 
 % Create a file label
 %   Note: Use current date & time in the format: YYYYMMDDThhmm
@@ -723,7 +728,7 @@ timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
 if nCandidates > 1
     candidateLabel = ['hetero', num2str(nCandidates)];
 else
-    candidateLabel = allCandidateNames{candidateIDs};
+    candidateLabel = allCandNames{candidateIDs};
 end
 fileLabel = [timeStamp, '_', candidateLabel, '_', fileSuffix];
 
@@ -918,12 +923,14 @@ stimCellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
 % Seed random number generator with repetition number
 rng(seedNumber);
 
-% Generate candidate IDs to use for each TC neuron
-% TODO: distribute and randomize order
-candidateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
+% Force as a column vector
+candidateIDs = force_column_vector(candidateIDs, 'ToLinearize', true);
+
+% Randomize order and match the number of desired neurons
+candidateIDsUsed = match_row_count(candidateIDs(randperm(nCandidates)), nCells);
 
 % Select candidates for each TC neuron
-candidateNamesUsed = allCandidateNames(candidateIDsUsed);
+candidateNamesUsed = match_positions(allCandNames, allIds, candidateIDsUsed);
 
 % Create full paths to the candidate files
 [~, candidatePaths] = find_matching_files(candidateNamesUsed, ...
@@ -1285,6 +1292,10 @@ paramsTable{:, 'Value'} = paramsOut;
 candidateFileNames = strcat('bestparams_', candidateNamesUsed, '.csv');
 
 candidateNames = candidateTable{find_in_list(candidateIDs, allIds), 'cellName'};
+
+% Generate candidate IDs to use for each TC neuron
+candidateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
+candidateNamesUsed = allCandNames(candidateIDsUsed);
 
 %}
 

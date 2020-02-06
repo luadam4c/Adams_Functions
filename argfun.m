@@ -64,6 +64,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure04.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_network_change_params.m
 %       cd/m3ha_network_launch.m

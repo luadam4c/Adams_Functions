@@ -4,6 +4,7 @@
 % Requires:
 %       cd/apply_over_cells.m
 %       cd/archive_dependent_scripts.m
+%       cd/argfun.m
 %       cd/create_label_from_sequence.m
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
@@ -28,10 +29,10 @@ combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 plot2CellBars = false; %true;
 
-plot200CellExamples = false; %true;
+plot200CellExamples = true;
 
 combine200CellPopulation = false; %true;
-plot200CellViolins = true;
+plot200CellViolins = false; %true;
 
 archiveScriptsFlag = false; %true;
 
@@ -40,10 +41,11 @@ parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure07Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure07');
 figure08Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure08');
 networkDirectory = fullfile(parentDirectory, 'network_model');
-% exampleIterName = '20200131T1345_using_bestparams_20200126_singleneuronfitting101';  % 20200131
-exampleIterName = '20200205T1353_using_bestparams_20200203_manual_singleneuronfitting0-102';
-popIterName2Cell = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65';
-popIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102';
+% exampleIterName2Cell = '20200131T1345_using_bestparams_20200126_singleneuronfitting101';  % 20200131
+exampleIterName2Cell = '20200205T1353_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
+exampleIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+popIterName2Cell = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65_2cell_spikes';
+popIterName200Cell = exampleIterName200Cell;
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -56,7 +58,12 @@ rankNumsToUse = [2, 4, 5, 7, 9, 10, 12, 13, 16, 20, 21, 23, 25, 29];
 % Should be consistent with m3ha_plot_figure03.m & m3ha_plot_figure07.m
 exampleCellNames = {'D101310'; 'G101310'};
 
-gIncr = 200;            % Original dynamic clamp gIncr value
+gIncr = 200;                % Original dynamic clamp gIncr value
+pharmConditions = (1:4)';   % Pharmacological conditions
+                            %   1 - Control
+                            %   2 - GAT 1 Block
+                            %   3 - GAT 3 Block
+                            %   4 - Dual Block
 measuresOfInterest = {'oscDurationSec'; 'oscPeriod2Ms'; ...
                         'oscIndex4'; 'hasOscillation'};
 measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
@@ -65,8 +72,10 @@ measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
 % Plot settings
 ipscFigWidth = 8.5;
 ipscFigHeight = 4;
-exampleFigWidth = 8.5;
-exampleFigHeight = 1.5 * 6;
+example2CellFigWidth = 8.5;
+example2CellFigHeight = 1.5 * 6;
+example200CellFigWidth = 8.5;
+example200CellFigHeight = 8;
 pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
                     '{\it s}-GAT3', '{\it s}-Dual'};
 
@@ -76,7 +85,8 @@ figTypes = {'png', 'epsc2'};
 
 %% Preparation
 % Find the directory for this iteration
-exampleIterDir = fullfile(networkDirectory, exampleIterName);
+exampleIterDir2Cell = fullfile(networkDirectory, exampleIterName2Cell);
+exampleIterDir200Cell = fullfile(networkDirectory, exampleIterName200Cell);
 popIterDir2Cell = fullfile(networkDirectory, popIterName2Cell);
 popIterDir200Cell = fullfile(networkDirectory, popIterName200Cell);
 
@@ -87,8 +97,9 @@ candCellSheetPath = fullfile(networkDirectory, candCellSheetName);
 rankStr = ['rank', create_label_from_sequence(rankNumsToUse)];
 
 % Create a condition label
-conditionLabel2Cell = [popIterName2Cell, '_', rankStr, '_gIncr', num2str(gIncr)];
-conditionLabel200Cell = [popIterName200Cell, '_', rankStr, '_gIncr', num2str(gIncr)];
+[conditionLabel2Cell, conditionLabel200Cell] = ...
+    argfun(@(x) [x, '_', rankStr, '_gIncr', num2str(gIncr)], ...
+            popIterName2Cell, popIterName200Cell);
 
 % Create a population data spreadsheet name
 popDataSheetName2Cell = [popIterName2Cell, '_', rankStr, '_', ...
@@ -103,27 +114,45 @@ popDataPath200Cell = fullfile(figure08Dir, popDataSheetName2Cell);
 %% Find example files and directories
 if plotIpscComparison || plot2CellExamples
     % Find example network directories
-    [~, exampleDirs] = ...
-        cellfun(@(x) all_subdirs('Directory', exampleIterDir, 'Keyword', x), ...
+    [~, exampleDirs2Cell] = ...
+        cellfun(@(x) all_subdirs('Directory', exampleIterDir2Cell, ...
+                                'Keyword', x), ...
+                exampleCellNames, 'UniformOutput', false);
+end
+if plot200CellExamples
+    % Find example network directories
+    [~, exampleDirs200Cell] = ...
+        cellfun(@(x) all_subdirs('Directory', exampleIterDir200Cell, ...
+                                'Keyword', x), ...
                 exampleCellNames, 'UniformOutput', false);
 end
 
 %% Plots figures for comparing dynamic clamp ipsc
 if plotIpscComparison
-    cellfun(@(x, y) plot_ipsc_comparison(x, exampleIterName, gIncr, y, ...
+    cellfun(@(x, y) plot_ipsc_comparison(x, exampleIterName2Cell, gIncr, y, ...
                                         figure07Dir, figTypes, ...
                                         ipscFigWidth, ipscFigHeight), ...
-            exampleCellNames, exampleDirs);
+            exampleCellNames, exampleDirs2Cell);
 end
 
 %% Plots example 2-cell networks
 if plot2CellExamples
     arrayfun(@(z) ...
-        cellfun(@(x, y) plot_2cell_examples(x, exampleIterName, gIncr, z, y, ...
-                                        figure07Dir, figTypes, ...
-                                        exampleFigWidth, exampleFigHeight), ...
-                exampleCellNames, exampleDirs), ...
-        1:4);
+        cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2Cell, ...
+                            gIncr, z, y, figure07Dir, figTypes, ...
+                            example2CellFigWidth, example2CellFigHeight), ...
+                exampleCellNames, exampleDirs2Cell), ...
+        pharmConditions);
+end
+
+%% Plots example 200-cell networks
+if plot200CellExamples
+    arrayfun(@(z) ...
+        cellfun(@(x, y) plot_200cell_examples(x, exampleIterName200Cell, ...
+                            gIncr, z, y, figure08Dir, figTypes, ...
+                        example200CellFigWidth, example200CellFigHeight), ...
+                exampleCellNames, exampleDirs200Cell), ...
+        pharmConditions);
 end
 
 %% Combines quantification over all 2-cell networks
@@ -214,8 +243,8 @@ function plot_ipsc_comparison (cellName, popIterName2Cell, gIncr, ...
 gIncrStr = ['gIncr', num2str(gIncr)];
 
 % Create figure names
-figPathBase = fullfile(outFolder, [cellName, '_', popIterName2Cell, '_', gIncrStr, ...
-                                    '_gabab_ipsc_comparison']);
+figPathBase = fullfile(outFolder, [cellName, '_', popIterName2Cell, ...
+                        '_', gIncrStr, '_gabab_ipsc_comparison']);
 figPathBaseOrig = [figPathBase, '_orig'];
 
 % Create the figure
@@ -241,9 +270,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_2cell_examples (cellName, popIterName2Cell, gIncr, pharm, ...
-                                inFolder, outFolder, ...
-                                figTypes, figWidth, figHeight)
+function plot_2cell_examples (cellName, iterName, gIncr, pharm, ...
+                            inFolder, outFolder, figTypes, figWidth, figHeight)
 % Plot 2-cell network examples
 
 % Create a gIncr string
@@ -251,8 +279,8 @@ gIncrStr = ['gIncr', num2str(gIncr)];
 pharmStr = ['pharm', num2str(pharm)];
 
 % Create figure names
-figPathBase = fullfile(outFolder, [cellName, '_', popIterName2Cell, '_', gIncrStr, ...
-                                    '_', pharmStr, '_example']);
+figPathBase = fullfile(outFolder, [cellName, '_', iterName, ...
+                            '_', gIncrStr, '_', pharmStr, '_example']);
 figPathBaseOrig = [figPathBase, '_orig'];
 
 % Create the figure
@@ -278,8 +306,44 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function plot_200cell_examples (cellName, iterName, gIncr, pharm, ...
+                            inFolder, outFolder, figTypes, figWidth, figHeight)
+% Plot 200-cell network examples
+% TODO
+
+% Create a gIncr string
+gIncrStr = ['gIncr', num2str(gIncr)];
+pharmStr = ['pharm', num2str(pharm)];
+
+% Create figure names
+figPathBase = fullfile(outFolder, [cellName, '_', iterName, ...
+                            '_', gIncrStr, '_', pharmStr, '_homo_example']);
+figPathBaseOrig = [figPathBase, '_orig'];
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot example
+% m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
+%                             'FigTitle', 'suppress', ...
+%                             'AmpScaleFactor', gIncr, 'PharmCondition', pharm);
+
+% Save original figure
+save_all_figtypes(fig, figPathBaseOrig, 'png');
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Width', figWidth, 'Height', figHeight);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function combine_osc_params_data (popIterDir2Cell, candCellSheetPath, ...
-                            rankNumsToUse, popDataPath2Cell);
+                                    rankNumsToUse, popDataPath2Cell);
 
 %% Hard-coded parameters
 rankNumStr = 'rankNum';
@@ -342,8 +406,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function statsTable = m3ha_network_compute_statistics (popDataPath2Cell, gIncr, ...
-                                                    measureStr, measureTitle)
+function statsTable = m3ha_network_compute_statistics (popDataPath2Cell, ...
+                                                gIncr, measureStr, measureTitle)
 %% Computes all statistics for the 2-cell network
 
 %% Hard-coded parameters
