@@ -18,6 +18,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                   specified as a figure handle
 %       ax          - axes handle(s)
 %                   specified as an array of axes handles
+%
 % Arguments:
 %       nRows       - number of rows
 %                   must be a positive integer scalar
@@ -67,6 +68,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % Used by:
 %       cd/align_subplots.m
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_plot_figure03.m

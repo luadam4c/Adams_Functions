@@ -21,6 +21,9 @@ function handles = m3ha_network_plot_essential (varargin)
 %                   - 'PharmCondition': pharmacological condition
 %                   must be a numeric scalar
 %                   default == 1
+%                   - 'XLimits': x value limits
+%                   must be empty or a numeric vector of 2 elements
+%                   default == []
 %                   - 'OutFolder': output folder
 %                   must be a string scalar or a character vector
 %                   default == inFolder
@@ -51,6 +54,7 @@ function handles = m3ha_network_plot_essential (varargin)
 
 % File History:
 % 2020-01-30 Modified from m3ha_network_plot_gabab.m
+% 2020-02-06 Added 'XLimits' as an optional argument
 
 %% Hard-coded parameters
 spExtension = 'singsp';
@@ -87,7 +91,6 @@ TC_ICA_DEND1 = 14;
 TC_ICA_DEND2 = 15;
 
 % Plot parameters
-xLimits = [2000, 10000];
 xLabel = 'Time (ms)';
 pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
                 '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
@@ -102,6 +105,7 @@ simParamsTable = [];
 inFolderDefault = pwd;      % use current directory by default
 ampScaleFactorDefault = []; % set later
 pharmConditionDefault = []; % set later
+xLimitsDefault = [2000, 10000];
 outFolderDefault = '';      % set later
 figTitleDefault = '';           % set later
 figNameDefault = '';        % no figure name by default
@@ -126,6 +130,7 @@ addParameter(iP, 'PharmCondition', pharmConditionDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
                 ['PharmCondition must be either empty ', ...
                     'or a numeric scalar!']));
+addParameter(iP, 'XLimits', xLimitsDefault);
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
@@ -140,6 +145,7 @@ parse(iP, varargin{:});
 inFolder = iP.Results.InFolder;
 ampScaleFactor = iP.Results.AmpScaleFactor;
 pharmCondition = iP.Results.PharmCondition;
+xLimits = iP.Results.XLimits;
 outFolder = iP.Results.OutFolder;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;

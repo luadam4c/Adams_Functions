@@ -13,6 +13,7 @@
 %       cd/m3ha_plot_violin.m
 %       cd/match_positions.m
 %       cd/match_row_count.m
+%       cd/plot_scale_bar.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/update_figure_for_corel.m
@@ -72,14 +73,15 @@ measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
 % Plot settings
 ipscFigWidth = 8.5;
 ipscFigHeight = 4;
+xLimits2Cell = [2800, 4000];
 example2CellFigWidth = 8.5;
 example2CellFigHeight = 1.5 * 6;
 example200CellFigWidth = 8.5;
-example200CellFigHeight = 8;
+example200CellFigHeight = 4;
 pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
                     '{\it s}-GAT3', '{\it s}-Dual'};
 
-figTypes = {'png', 'epsc2'};
+figTypes = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -140,7 +142,8 @@ if plot2CellExamples
     arrayfun(@(z) ...
         cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2Cell, ...
                             gIncr, z, y, figure07Dir, figTypes, ...
-                            example2CellFigWidth, example2CellFigHeight), ...
+                            example2CellFigWidth, example2CellFigHeight, ...
+                            xLimits2Cell), ...
                 exampleCellNames, exampleDirs2Cell), ...
         pharmConditions);
 end
@@ -271,7 +274,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_2cell_examples (cellName, iterName, gIncr, pharm, ...
-                            inFolder, outFolder, figTypes, figWidth, figHeight)
+                            inFolder, outFolder, figTypes, ...
+                            figWidth, figHeight, xLimits2Cell)
 % Plot 2-cell network examples
 
 % Create a gIncr string
@@ -280,7 +284,7 @@ pharmStr = ['pharm', num2str(pharm)];
 
 % Create figure names
 figPathBase = fullfile(outFolder, [cellName, '_', iterName, ...
-                            '_', gIncrStr, '_', pharmStr, '_example']);
+                            '_', gIncrStr, '_', pharmStr, '_2cell_example']);
 figPathBaseOrig = [figPathBase, '_orig'];
 
 % Create the figure
@@ -288,10 +292,12 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot example
 m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
-                            'FigTitle', 'suppress', ...
+                            'XLimits', xLimits2Cell, 'FigTitle', 'suppress', ...
                             'AmpScaleFactor', gIncr, 'PharmCondition', pharm);
 
+
 % Save original figure
+drawnow;
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
 % Update figure for CorelDraw
@@ -300,43 +306,83 @@ update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'AlignSubplots', true);
 
 % Save the figure
+drawnow;
 save_all_figtypes(fig, figPathBase, figTypes);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_200cell_examples (cellName, iterName, gIncr, pharm, ...
+function plot_200cell_examples (cellName, iterName, gIncrDclamp, pharm, ...
                             inFolder, outFolder, figTypes, figWidth, figHeight)
 % Plot 200-cell network examples
-% TODO
 
-% Create a gIncr string
-gIncrStr = ['gIncr', num2str(gIncr)];
+% Get the gIncr value for the network
+gIncr = gIncrDclamp / 12;
+
+% Create strings
+gIncrStr = ['gIncr', num2str(gIncrDclamp)];
 pharmStr = ['pharm', num2str(pharm)];
+
+% Find the appropriate simulation number
+simNumber = m3ha_network_find_sim_number(inFolder, pharm, gIncr);
 
 % Create figure names
 figPathBase = fullfile(outFolder, [cellName, '_', iterName, ...
-                            '_', gIncrStr, '_', pharmStr, '_homo_example']);
+                        '_', gIncrStr, '_', pharmStr, '_200cell_example']);
 figPathBaseOrig = [figPathBase, '_orig'];
 
 % Create the figure
 fig = set_figure_properties('AlwaysNew', true);
 
-% Plot example
-% m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
-%                             'FigTitle', 'suppress', ...
-%                             'AmpScaleFactor', gIncr, 'PharmCondition', pharm);
+% Plot spike raster plot
+m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
+                        'SingleTrialNum', simNumber, ...
+                        'PlotSpikes', true, 'PlotTuning', false, ...
+                        'PlotOnly', true);
 
 % Save original figure
+drawnow;
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
+% Plot a scale bar
+if pharm == 4
+    plot_scale_bar('x', 'XBarUnits', 'sec', 'XBarLength', 2, ...
+                    'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
+end
+
 % Update figure for CorelDraw
+%   Note: Do this is 2 steps for performance
+update_figure_for_corel(fig, 'RemoveXRulers', true, 'RemoveXLabels', true);
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Width', figWidth, 'Height', figHeight);
 
 % Save the figure
+drawnow;
 save_all_figtypes(fig, figPathBase, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function simNumber = m3ha_network_find_sim_number (inFolder, pharm, gIncr)
+%% TODO: Move this to m3ha_network_raster_plot.m
+
+% Create strings
+paramsPrefix = 'sim_params';
+pharmStr = ['pCond_', num2str(pharm)];
+gIncrStr = ['gIncr_', num2str(gIncr)];
+
+% Create the keyword
+keyword = [pharmStr, '_', gIncrStr];
+
+% Find the sim params file
+[~, paramPath] = all_files('Directory', inFolder, 'Prefix', paramsPrefix, ...
+                            'Keyword', keyword, 'MaxNum', 1);
+
+% Find the corresponding simNumber
+paramTable = readtable(paramPath, 'ReadRowNames', true);
+simNumber = paramTable{'simNumber', 'Value'};
 
 end
 

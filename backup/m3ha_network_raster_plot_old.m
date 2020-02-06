@@ -33,25 +33,22 @@ function [REspikes, TCspikes, numActiveTC, numActiveRE, ...
 %               - 'PlotTuning': whether to plot tuning curves
 %               must be logical 1 (true) or 0 (false)
 %               default == true
-%               - 'PlotOnly': whether to plot only and not create the figure
-%               must be logical 1 (true) or 0 (false)
-%               default == false
 %
 % Requires:
 %       cd/argfun.m
 %       cd/combine_strings.m
-%       cd/create_subplots.m
 %       cd/find_in_strings.m
 %       cd/extract_looped_params.m
 %       cd/isfigtype.m
 %       cd/m3ha_network_define_actmode.m
 %       cd/m3ha_network_tuning_curves.m
 %       cd/m3ha_network_tuning_maps.m
-%       cd/plot_window_boundaries.m
 %       cd/save_all_figtypes.m
 %       inFolder/*.spi
 %       inFolder/*loopedparams.mat
 %       inFolder/['sim_params_', pstring, '.csv'] for all the possible parameter strings
+%       /home/Matlab/Downloaded_Functions/dirr.m
+%       /home/Matlab/Downloaded_Functions/subaxis.m
 %
 % Used by:
 %       cd/m3ha_network_launch.m
@@ -66,9 +63,22 @@ function [REspikes, TCspikes, numActiveTC, numActiveRE, ...
 % 2018-01-24 BT - Added nSpikes and actDur
 % 2018-01-26 BT - Differentiate between TC and RE cells
 % 2018-01-31 BT - Added actVel, TC/RE for numActive and oscDur
-% 2020-02-06 Added plotOnly as an optional argument
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Add directories to search path for required functions
+if exist('/home/Matlab/', 'dir') == 7
+    functionsdirectory = '/home/Matlab/';
+elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+    functionsdirectory = '/scratch/al4ng/Matlab/';
+else
+    error('Valid functionsdirectory does not exist!');
+end
+addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));
+                                    % for dirr.m & subaxis.m
+addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));
+                                    % for isfigtype.m, find_in_strings.m 
+                                    %   extract_looped_params.m
 
 %% Deal with arguments
 % Check number of required arguments
@@ -88,13 +98,11 @@ addParameter(iP, 'MaxNumWorkers', 20, ...       % maximum number of workers for 
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'RenewParpool', true, ...      % whether to renew parpool every batch to release memory
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SingleTrialNum', [], ...      % number of single trial ran
+addParameter(iP, 'SingleTrialNum', 0, ...       % number of single trial ran
     @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 addParameter(iP, 'PlotSpikes', true, ...        % whether to plot raster plots
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotTuning', true, ...        % whether to plot tuning curves
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotOnly', false, ...         % whether to just plot
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
@@ -106,13 +114,12 @@ renewParpool = iP.Results.RenewParpool;
 singleTrialNum = iP.Results.SingleTrialNum;
 plotSpikes = iP.Results.PlotSpikes;
 plotTuning = iP.Results.PlotTuning;
-plotOnly = iP.Results.PlotOnly;
 
 % Change default arguments if necessary
 if strcmp(outFolder, '@inFolder')
     outFolder = inFolder;
 end
-if ~plotSpikes || (numel(singleTrialNum) >= 1 && singleTrialNum ~= 0)
+if ~plotSpikes
     renewParpool = false;        % only plotting spikes will take up significant amount of memory
 end
 
@@ -162,12 +169,12 @@ if renewParpool
     delete(poolObj);                % delete the parallel pool object to release memory
 end
 while ct < nSims                  % while not trials are completed yet
-    if ~isempty(singleTrialNum) && singleTrialNum ~= 0
+    if singleTrialNum    % if running only one trial
         first = singleTrialNum; % run that trial
     else
         first = ct + 1;         % first trial in this batch
     end
-    if ~isempty(singleTrialNum) && singleTrialNum ~= 0
+    if singleTrialNum           % if running only one trial
         last = singleTrialNum;      % run only that trial
     elseif renewParpool && ...
         ct + numWorkers <= nSims  % if memory is to be released
@@ -253,11 +260,11 @@ while ct < nSims                  % while not trials are completed yet
                 TCspikecelln = [];
                 TCspiketimes = [];
             end
-            xLimitsLeft = tStart;
-            xLimitsRight = tStop;
+            xlim1 = tStart;
+            xlim2 = tStop;
             stimStartPlot = stimStart;
             stimDurPlot = stimDur;
-            xLabel = 'Spike time (ms)';
+            timelabel = 'Spike time (ms)';
     
             % Find number of cells activated
             %   i.e., number of unique cells with spike times
@@ -267,17 +274,17 @@ while ct < nSims                  % while not trials are completed yet
 			numActiveRE(i) = length(unique(REspikecelln(ind)));  
 
             % Find latency to activation (seconds) for each TC and RE cell
-            latencyTCThis = zeros(1, nCells);    % for parfor
+            latencyTC_this = zeros(1, nCells);    % for parfor
             for j = 1:nCells        % for each cellID == j-1
                 ind = find(TCspikecelln == j-1);
                 if isempty(ind)    
                     % Make latency infinite if cell not activated
-                    latencyTCThis(j) = Inf;
+                    latencyTC_this(j) = Inf;
                 else
-                    latencyTCThis(j) = (min(TCspiketimes(ind)) - stimStart) / 1000;
+                    latencyTC_this(j) = (min(TCspiketimes(ind)) - stimStart) / 1000;
                 end
             end
-            latencyTC(i, :) = latencyTCThis;       % for parfor
+            latencyTC(i, :) = latencyTC_this;       % for parfor
 
             latencyREThis = zeros(1, nCells);    % for parfor
             for j = 1:nCells        % for each cellID == j-1
@@ -396,18 +403,16 @@ while ct < nSims                  % while not trials are completed yet
             if tStop > 10000
                 REspiketimes = REspiketimes/1000;
                 TCspiketimes = TCspiketimes/1000;
-                xLabel = 'Spike time (s)';
-                xLimitsLeft = xLimitsLeft/1000;
-                xLimitsRight = xLimitsRight/1000;
+                timelabel = 'Spike time (s)';
+                xlim1 = xlim1/1000;
+                xlim2 = xlim2/1000;
                 stimStartPlot = stimStart/1000;
                 stimDurPlot = stimDur/1000;
             end
 
             % Find maximum and minimum time to plot
-            minSpikeTime = min([REspiketimes; TCspiketimes]);
-            maxSpikeTime = max([REspiketimes; TCspiketimes]);
-            xLimits = [min([xLimitsLeft, minSpikeTime]), ...
-                        max([xLimitsRight, maxSpikeTime])];
+            xmin = min([xlim1, min([REspiketimes; TCspiketimes])]);
+            xmax = max([xlim2, max([REspiketimes; TCspiketimes])]);
 
             % Find the IDs of cells that are stimulated or artificially activated
             stimcellIDs = m3ha_network_define_actmode (actMode, actCellID, nCells, RERErad, RETCrad);
@@ -430,92 +435,92 @@ while ct < nSims                  % while not trials are completed yet
                     cellIDToPlot = actCellID;
                 end
 
-                % Find the stimulation window
-                stimWindow = [stimStartPlot, stimStartPlot + stimDurPlot];
-
                 % Create plot
-                if ~plotOnly
-                    figNumber = 30000;
-                    clearFigure = true;
-                else
-                    figNumber = [];
-                    clearFigure = false;
-                end
+            %    h = figure(floor(rand()*10^4+1));
+                h = figure(30000);
+                clf(h);
 
-                % Create subplots without expanding
-                [~, ax] = create_subplots(2, 1, 'FigNumber', figNumber, ...
-                                            'ClearFigure', clearFigure, ...
-                                            'FigExpansion', [1, 1]);
+%                subplot(2, 1, 1)
+                hold on;
 
-                % Plot RT spikes
-                plot_spikes_one_layer(ax(1), 'RT Layer', xLimits, xLabel, ...
-                                REspikecellnNonstim, REspiketimesNonstim, ...
-                                REspikecellnStim, REspiketimesStim, ...
-                                nCells, stimWindow, stimFreq);
+                % Create raster plot
+                line([stimStartPlot, stimStartPlot], [-1, 2 * nCells], ...
+                    'Color', 'r', 'LineStyle', '--');       % line for stimulation on
+                text(stimStartPlot + 0.5, nCells*1.975, ['Stim ON: ', num2str(stimFreq), ' Hz'], ...
+                    'Color', 'r');                          % text for stimulation on
+                line([stimStartPlot + stimDurPlot, stimStartPlot + stimDurPlot], ...
+                    [-1,  2 * nCells], 'Color', 'r', 'LineStyle', '--');    % line for stimulation off
+                text(stimStartPlot + stimDurPlot + 0.5, nCells*1.975, 'Stim OFF', ...
+                    'Color', 'r');                          % text for stimulation off
+                line([TCspiketimes, TCspiketimes]', ...
+                    [TCspikecelln - 0.5, TCspikecelln + 0.5]', ...
+                    'Color', 'b', 'LineWidth', 0.5);        % plot spikes from TC cells
+                line([REspiketimesStim, REspiketimesStim]', ...
+                    nCells + [REspikecellnStim - 0.5, REspikecellnStim + 0.5]', ...
+                    'Color', 'c', 'LineWidth', 0.5);        % plot spikes from stimulated RE cells
+                line([REspiketimesNonstim, REspiketimesNonstim]', ...
+                    nCells + [REspikecellnNonstim - 0.5, REspikecellnNonstim + 0.5]', ...
+                    'Color', 'b', 'LineWidth', 0.5);        % plot spikes from nonstimulated RE cells
 
-                % Plot TC spikes
-                plot_spikes_one_layer(ax(2), 'TC Layer', xLimits, xLabel, ...
-                                TCspikecelln, TCspiketimes, ...
-                                [], [], ...
-                                nCells, stimWindow, []);
 %{
                 % RE text labels
-                text(xLimitsLeft + 0.5, nCells*1.925, ['Number of cells activated: ', num2str(numActiveRE(i))], ...
+                text(xlim1 + 0.5, nCells*1.925, ['Number of cells activated: ', num2str(numActiveRE(i))], ...
                     'Color', 'g');                          % text for number of RE cells activated
-                text(xLimitsLeft + 0.5, nCells*1.875, ...
+                text(xlim1 + 0.5, nCells*1.875, ...
                     ['Latency to activation for Cell#', num2str(cellIDToPlot), ': ', ...
                     num2str(latencyREThis(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for RE latency to activation (seconds)
-                text(xLimitsLeft + 0.5, nCells*1.825, ...
+                text(xlim1 + 0.5, nCells*1.825, ...
                     ['Oscillation Duration: ', num2str(oscDurRE(i)), ' seconds'], ...
                     'Color', 'g');                          % text for RE oscillation duration (seconds)
-                text(xLimitsLeft + 0.5, nCells*1.775, ...
+                text(xlim1 + 0.5, nCells*1.775, ...
                     ['Number of spikes for Cell#', num2str(cellIDToPlot), ': ', ...
                     num2str(nSpikesREThis(cellIDToPlot+1))], ...
                     'Color', 'g');                          % text for RE number of spikes 
-                text(xLimitsLeft + 0.5, nCells*1.725, ...
+                text(xlim1 + 0.5, nCells*1.725, ...
                     ['Activation duration for Cell#', num2str(cellIDToPlot), ': ', ...
                     num2str(actDurREThis(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for RE activation duration (seconds)
-                text(xLimitsLeft + 0.5, nCells*1.675, ...
+                text(xlim1 + 0.5, nCells*1.675, ...
                     ['Activation velocity: ', num2str(actVelRE(i)), ' cells/second'], ...
                     'Color', 'g');                          % text for RE activation velocity (cells/second) 
 
                 % TC text labels
-                text(xLimitsLeft + 0.5, nCells*0.9625, ['Number of cells activated: ', num2str(numActiveTC(i))], ...
+                text(xlim1 + 0.5, nCells*0.9625, ['Number of cells activated: ', num2str(numActiveTC(i))], ...
                     'Color', 'g');                          % text for number of TC cells activated
-                text(xLimitsLeft + 0.5, nCells*0.9125, ...
+                text(xlim1 + 0.5, nCells*0.9125, ...
                     ['Latency to activation for Cell#', num2str(cellIDToPlot), ': ', ...
-                    num2str(latencyTCThis(cellIDToPlot+1)), ' seconds'], ...
+                    num2str(latencyTC_this(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for TC latency to activation (seconds)
-                text(xLimitsLeft + 0.5, nCells*0.8625, ...
+                text(xlim1 + 0.5, nCells*0.8625, ...
                     ['Oscillation Duration: ', num2str(oscDurTC(i)), ' seconds'], ...
                     'Color', 'g');                          % text for TC oscillation duration (seconds)
-                text(xLimitsLeft + 0.5, nCells*0.8125, ...
+                text(xlim1 + 0.5, nCells*0.8125, ...
                     ['Number of spikes for Cell#', num2str(cellIDToPlot), ': ', ...
                     num2str(nSpikesTCThis(cellIDToPlot+1))], ...
                     'Color', 'g');                          % text for TC number of spikes 
-                text(xLimitsLeft + 0.5, nCells*0.7625, ...
+                text(xlim1 + 0.5, nCells*0.7625, ...
                     ['Activation duration for Cell#', num2str(cellIDToPlot), ': ', ...
                     num2str(actDurTCThis(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for TC activation duration (seconds)
-                text(xLimitsLeft + 0.5, nCells*0.7125, ...
+                text(xlim1 + 0.5, nCells*0.7125, ...
                     ['Activation velocity: ', num2str(actVelTC(i)), ' cells/second'], ...
                     'Color', 'g');                          % text for TC activation velocity (cells/second) 
 %}
+                    
+                xlim([xmin, xmax]);                         % time range to plot
+                ylim([-1, 2*nCells]);                       % cell ID runs from 0 to nCells-1
+                xlabel(timelabel);
+                ylabel('Neuron number');
+                figbaseWext = strrep(REfiles(jnowRE).name, 'RE_', '');
+                figbase = strrep(figbaseWext, '.spi', '');
+                title(strrep(figbase, '_', '\_'));
+%                suptitle(strrep(figbase, '_', '\_'));
 
-                if ~plotOnly
-                    figbaseWext = replace(REfiles(jnowRE).name, 'RE_', '');
-                    figbase = replace(figbaseWext, '.spi', '');
-                    suptitle(replace(figbase, '_', '\_'));
-                end
-
-                if ~plotOnly
-                    % Save figure
-                    figname = fullfile(outFolder, replace(figbaseWext, '.spi', '_raster_plot.png'));
-                    save_all_figtypes(h, figname, figtypes);
-                    % close(h);
-                end
+                % Save figure
+                figname = fullfile(outFolder, strrep(figbaseWext, '.spi', '_raster_plot.png'));
+                save_all_figtypes(h, figname, figtypes);
+                % close(h);
             end    
         end
 %        close all;
@@ -524,7 +529,7 @@ while ct < nSims                  % while not trials are completed yet
     if renewParpool
         delete(poolObj);    % delete the parallel pool object to release memory
     end
-    if ~isempty(singleTrialNum) && singleTrialNum ~= 0
+    if singleTrialNum
         ct = nSims + 1;   % don't run again
     else
         ct = last;          % update number of trials completed
@@ -558,61 +563,22 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_spikes_one_layer(axHandle, subTitle, xLimits, xLabel, ...
-                                cellNumNonStim, spikeTimesNonstim, ...
-                                cellNumStim, spikeTimesStim, ...
-                                nCells, stimWindow, stimFreq)
-
-% Pull up subplot
-subplot(axHandle); hold on;
-
-% Compute appropriate y axis limits
-yLimits = [-0.5, nCells - 0.5];
-yTicks = [0, round(nCells/4), round(nCells/2), round(nCells*3/4), nCells - 1];
-
-% Plot stimulation window
-if ~isempty(stimWindow)
-    plot_window_boundaries(stimWindow, 'YLimits', yLimits, ...
-                            'BoundaryType', 'verticalLines', ...
-                            'LineStyle', '-', 'Color', 'PaleGreen');
-end
-
-% Plot stimulation info text
-if ~isempty(stimFreq)
-    text(stimWindow(2) + 0.5, nCells * 0.975, ...
-        ['Stim: ', num2str(stimFreq), ' Hz'], 'Color', 'r');
-end
-
-% Plot spikes from non-stimulated cells
-line([spikeTimesNonstim, spikeTimesNonstim]', ...
-    [cellNumNonStim - 0.5, cellNumNonStim + 0.5]', ...
-    'Color', 'k', 'LineWidth', 0.5);
-
-% Plot spikes from stimulated cells
-line([spikeTimesStim, spikeTimesStim]', ...
-    [cellNumStim - 0.5, cellNumStim + 0.5]', ...
-    'Color', 'r', 'LineWidth', 0.5);
-
-% Set x axis limits
-xlim(xLimits);
-
-% Set y axis limits
-ylim(yLimits);
-
-% Set y tick locations
-yticks(yTicks);
-
-% Plot axis labels
-xlabel(xLabel);
-ylabel('Neuron ID');
-
-% Show a title for the subplot
-title(subTitle);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %{
 OLD CODE:
+
+fid = fopen(fullfile(inFolder, ['sim_params_', pstring, '.csv']));
+simfilecontent = textscan(fid, '%s %f %s', 'Delimiter', ',');
+paramNames = simfilecontent{1};
+paramValues = simfilecontent{2};
+tStart = paramValues(find_in_strings('tStart', paramNames, 'SearchMode', 'exact'));
+tStop = paramValues(find_in_strings('tStop', paramNames, 'SearchMode', 'exact'));
+RERErad = paramValues(find_in_strings('RERErad', paramNames, 'SearchMode', 'exact'));
+RETCrad = paramValues(find_in_strings('RETCrad', paramNames, 'SearchMode', 'exact'));
+actCellID = paramValues(find_in_strings('actCellID', paramNames, 'SearchMode', 'exact'));
+stimStart = paramValues(find_in_strings('stimStart', paramNames, 'SearchMode', 'exact'));
+stimDur = paramValues(find_in_strings('stimDur', paramNames, 'SearchMode', 'exact'));
+stimFreq = paramValues(find_in_strings('stimFreq', paramNames, 'SearchMode', 'exact'));
+fclose(fid);
 
 %}
 
