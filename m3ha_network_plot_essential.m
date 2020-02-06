@@ -47,6 +47,7 @@ function handles = m3ha_network_plot_essential (varargin)
 %       cd/extract_fileparts.m
 %       cd/load_neuron_outputs.m
 %       cd/plot_traces.m
+%       cd/plot_window_boundaries.m
 %       cd/set_figure_properties.m
 %
 % Used by:
@@ -95,11 +96,13 @@ xLabel = 'Time (ms)';
 pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
                 '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
 
-paramsPrefix = 'TCparams';
+tcParamsPrefix = 'TCparams';
+simParamsPrefix = 'sim_params';
 
 % TODO: Make optional arguments
 figTypes = 'png';
-simParamsTable = [];
+tcParamsTable = table.empty;
+simParamsTable = table.empty;
 
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
@@ -188,16 +191,27 @@ spKeyword = ['pCond_', num2str(pharmCondition), '_', ...
                             'Extension', spExtension, 'MaxNum', 1);
 
 % Decide on the TC parameters table
+if isempty(tcParamsTable)
+    % Find the corresponding parameters file
+    [~, tcParamsPath] = ...
+        all_files('Directory', inFolder, 'Keyword', spKeyword, ...
+                    'Prefix', tcParamsPrefix, 'Extension', 'csv', ...
+                    'MaxNum', 1);
+
+    % Load the simulation parameters table
+    tcParamsTable = readtable(tcParamsPath);
+end
+
+% Decide on the simulation parameters table
 if isempty(simParamsTable)
     % Find the corresponding parameters file
     [~, simParamsPath] = ...
         all_files('Directory', inFolder, 'Keyword', spKeyword, ...
-                    'Prefix', paramsPrefix, 'Extension', 'csv', ...
+                    'Prefix', simParamsPrefix, 'Extension', 'csv', ...
                     'MaxNum', 1);
 
     % Load the simulation parameters table
-    simParamsTable = readtable(simParamsPath);
-
+    simParamsTable = readtable(simParamsPath, 'ReadRowNames', true);
 end
 
 % Decide on figure name
@@ -213,12 +227,19 @@ if isempty(figTitle)
 end
 
 %% Do the job
+% Extract stimulation start and duration in ms
+stimStartMs = simParamsTable{'stimStart', 'Value'};
+stimDurMs = simParamsTable{'stimDur', 'Value'};
+
+% Construct stimulation window
+stimWindow = [stimStartMs, stimStartMs + stimDurMs];
+
 % Load simulated data
 [simDataRT, simDataTC] = ...
     argfun(@(x) load_neuron_outputs('FileNames', x), dataPathRT, dataPathTC);
 
 % Convert the table to a structure array
-simParamsStructArray = table2struct(simParamsTable);
+tcParamsStructArray = table2struct(tcParamsTable);
 
 % Extract vectors from simulated data
 [tVecsMs, vVecRT] = ...
@@ -236,7 +257,7 @@ gCmdTCNs = convert_units(gCmdTCUs, 'uS', 'nS');
 % Compute total T current
 itTotalTC = ...
     compute_total_current([itSomaTC, itDend1TC, itDend2TC], ...
-                            'GeomParams', simParamsStructArray);
+                            'GeomParams', tcParamsStructArray);
 
 % Compute m2h
 itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
@@ -246,7 +267,7 @@ itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
 clear simDataRT simDataTC
 
 % List all possible items to plot
-vecsAll = {vVecRT; vVecTC; gCmdTCUs; itTotalTC; itm2hDend2; itminf2hinfDend2};
+vecsAll = {vVecRT; vVecTC; gCmdTCNs; itTotalTC; itm2hDend2; itminf2hinfDend2};
 
 % List corresponding labels
 labelsAll = {'V_{RT} (mV)'; 'V_{TC,soma} (mV)'; 'g_{GABA_B} (nS)'; ...
@@ -265,6 +286,19 @@ handles = plot_traces(tVecsMs, vecsAll, ...
                         'FigTitle', figTitle, 'LegendLocation', 'suppress', ...
                         'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);
+
+% Extract the axes handles for the subplots
+subPlots = handles.subPlots;
+
+% Make the 5th and 6th subplot log-scaled
+arrayfun(@(x) set(subPlots(x), 'YScale', 'log'), 5:6);
+
+% Plot stimulation boundaries
+for i = 1:numel(subPlots)
+    subplot(subPlots(i));
+    plot_window_boundaries(stimWindow, 'BoundaryType', 'verticalShades', ...
+                            'Color', 'PaleGreen');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

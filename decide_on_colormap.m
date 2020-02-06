@@ -40,6 +40,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % Used by:
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_bar.m
 %       cd/plot_chevron.m

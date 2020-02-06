@@ -6,6 +6,7 @@
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
 %       cd/create_label_from_sequence.m
+%       cd/decide_on_colormap.m
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
 %       cd/m3ha_network_plot_gabab.m
@@ -74,7 +75,9 @@ measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
 ipscFigWidth = 8.5;
 ipscFigHeight = 4;
 xLimits2Cell = [2800, 4800];
-yLimits2Cell = {[-100, 50], [], [], [], [], []};
+% yLimits2Cell = {[], [], [], [], [], []};
+yLimits2Cell = {[-100, 100], [-100, 100], [-1, 12], [-15, 5], ...
+                    [1e-10, 1], [1e-10, 1]};
 example2CellFigWidth = 8.5;
 example2CellFigHeight = 1.5 * 6;
 example200CellFigWidth = 8.5;
@@ -114,6 +117,11 @@ popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
 popDataPath2Cell = fullfile(figure07Dir, popDataSheetName2Cell);
 popDataPath200Cell = fullfile(figure08Dir, popDataSheetName2Cell);
 
+% Create color maps
+colorMapPharm = decide_on_colormap([], 4);
+colorMapPharmCell = arrayfun(@(x) colorMapPharm(x, :), ...
+                            transpose(1:4), 'UniformOutput', false);
+
 %% Find example files and directories
 if plotIpscComparison || plot2CellExamples
     % Find example network directories
@@ -140,13 +148,13 @@ end
 
 %% Plots example 2-cell networks
 if plot2CellExamples
-    arrayfun(@(z) ...
+    cellfun(@(a, b) ...
         cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2Cell, ...
-                            gIncr, z, y, figure07Dir, figTypes, ...
+                            gIncr, a, y, figure07Dir, figTypes, ...
                             example2CellFigWidth, example2CellFigHeight, ...
-                            xLimits2Cell, yLimits2Cell), ...
+                            xLimits2Cell, yLimits2Cell, b), ...
                 exampleCellNames, exampleDirs2Cell), ...
-        pharmConditions);
+        num2cell(pharmConditions), colorMapPharmCell);
 end
 
 %% Plots example 200-cell networks
@@ -182,8 +190,8 @@ if plot2CellViolins
     if ~isfile(stats2dPath2Cell)
         % Compute statistics for all features
         disp('Computing statistics for violin plots ...');
-        statsTable = m3ha_network_compute_statistics(popDataPath2Cell, gIncr, ...
-                                            measuresOfInterest, measureTitles);
+        statsTable = m3ha_network_compute_statistics(popDataPath2Cell, ...
+                                    gIncr, measuresOfInterest, measureTitles);
 
         % Generate labels
         conditionLabel = conditionLabel2Cell;
@@ -210,8 +218,8 @@ if plot200CellViolins
     if ~isfile(stats2dPath200Cell)
         % Compute statistics for all features
         disp('Computing statistics for violin plots ...');
-        statsTable = m3ha_network_compute_statistics(popDataPath200Cell, gIncr, ...
-                                            measuresOfInterest, measureTitles);
+        statsTable = m3ha_network_compute_statistics(popDataPath200Cell, ...
+                                    gIncr, measuresOfInterest, measureTitles);
 
         % Generate labels
         conditionLabel = conditionLabel200Cell;
@@ -276,7 +284,7 @@ end
 
 function plot_2cell_examples (cellName, iterName, gIncr, pharm, ...
                             inFolder, outFolder, figTypes, ...
-                            figWidth, figHeight, xLimits, yLimits)
+                            figWidth, figHeight, xLimits, yLimits, colorMap)
 % Plot 2-cell network examples
 
 % Create a gIncr string
@@ -292,20 +300,28 @@ figPathBaseOrig = [figPathBase, '_orig'];
 fig = set_figure_properties('AlwaysNew', true);
 
 % Plot example
-m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
+handles = ...
+    m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
                         'FigTitle', 'suppress', ...
                         'AmpScaleFactor', gIncr, 'PharmCondition', pharm, ...
-                        'Color', 'k');
+                        'Color', colorMap);
 
 % Save original figure
 drawnow;
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
+
+% Plot a scale bar in the first subplot
+subPlots = handles.subPlots;
+subplot(subPlots(1));
+plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
+                'XPosNormalized', 0.9, 'YPosNormalized', 0.9);
+
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Width', figWidth, 'Height', figHeight, ...
-                        'AlignSubplots', true);
+                        'RemoveXRulers', true, 'AlignSubplots', true);
 
 % Save the figure
 drawnow;
@@ -393,6 +409,9 @@ update_figure_for_corel(fig, 'RemoveXLabels', true, 'RemoveTitles', true, ...
 % Save the figure with rasters only
 drawnow;
 save_all_figtypes(fig, figPathBaseRasterOnly, figTypes);
+
+% Close all figures
+close all
 
 end
 

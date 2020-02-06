@@ -1,7 +1,6 @@
 function handles = plot_traces (tVecs, data, varargin)
 %% Plots traces all in one place, overlapped or in parallel
-% Usage: [fig, subPlots, plotsData, plotsDataToCompare] = ...
-%               plot_traces (tVecs, data, varargin)
+% Usage: handles = plot_traces (tVecs, data, varargin)
 % Examples:
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'HorzBarWindow', [1.5, 2.5])
