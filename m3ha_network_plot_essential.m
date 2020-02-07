@@ -12,7 +12,12 @@ function handles = m3ha_network_plot_essential (varargin)
 %                   specified as a scalar structure
 %
 % Arguments:
-%       varargin    - 'InFolder': directory containing the .singsp files
+%       varargin    - 'PlotType': type of plot
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'essential'
+%                       'm2h'           - m2h plot
+%                   default == 'essential'
+%                   - 'InFolder': directory containing the .singsp files
 %                   must be a string scalar or a character vector
 %                   default == pwds
 %                   - 'AmpScaleFactor': amplitude scaling factor
@@ -48,6 +53,7 @@ function handles = m3ha_network_plot_essential (varargin)
 %       cd/load_neuron_outputs.m
 %       cd/plot_traces.m
 %       cd/plot_window_boundaries.m
+%       cd/set_default_flag.m
 %       cd/set_figure_properties.m
 %
 % Used by:
@@ -56,8 +62,11 @@ function handles = m3ha_network_plot_essential (varargin)
 % File History:
 % 2020-01-30 Modified from m3ha_network_plot_gabab.m
 % 2020-02-06 Added 'XLimits' as an optional argument
+% 2020-02-06 Now downsamples vectors
+% 2020-02-06 Added 'PlotType' as an optional argument
 
 %% Hard-coded parameters
+validPlotTypes = {'essential', 'm2h'};
 spExtension = 'singsp';
 cellIdRT = 0;
 cellIdTC = 0;
@@ -105,6 +114,7 @@ tcParamsTable = table.empty;
 simParamsTable = table.empty;
 
 %% Default values for optional arguments
+plotTypeDefault = 'essential';
 inFolderDefault = pwd;      % use current directory by default
 ampScaleFactorDefault = []; % set later
 pharmConditionDefault = []; % set later
@@ -123,6 +133,8 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'InFolder', inFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'AmpScaleFactor', ampScaleFactorDefault, ...
@@ -145,6 +157,7 @@ addParameter(iP, 'SaveNewFlag', saveNewFlagDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 inFolder = iP.Results.InFolder;
 ampScaleFactor = iP.Results.AmpScaleFactor;
 pharmCondition = iP.Results.PharmCondition;
@@ -166,6 +179,9 @@ if isempty(pharmCondition)
     pharmCondition = 1;
 end
 
+% Decide whether RT data is needed
+loadRT = set_default_flag([], strcmp(plotType, 'essential'));
+
 % Set default output folder
 if isempty(outFolder)
     outFolder = inFolder;
@@ -181,9 +197,11 @@ spKeyword = ['pCond_', num2str(pharmCondition), '_', ...
             'gIncr_', num2str(ampScaleFactorNetwork)];
 
 % Locate the RT neuron data
-[~, dataPathRT] = all_files('Directory', inFolder, ...
-                            'Prefix', spPrefixRT, 'Keyword', spKeyword, ...
-                            'Extension', spExtension, 'MaxNum', 1);
+if loadRT
+    [~, dataPathRT] = all_files('Directory', inFolder, ...
+                                'Prefix', spPrefixRT, 'Keyword', spKeyword, ...
+                                'Extension', spExtension, 'MaxNum', 1);
+end
 
 % Locate the TC neuron data
 [~, dataPathTC] = all_files('Directory', inFolder, ...
@@ -217,12 +235,17 @@ end
 % Decide on figure name
 if isempty(figName) && saveNewFlag
     commonSuffix = extract_fileparts({dataPathTC, dataPathRT}, 'commonsuffix');
-    figName = fullfile(outFolder, [commonSuffix, '_essential.png']);
+    figName = fullfile(outFolder, [commonSuffix, '_', plotType, '.png']);
 end
 
 % Decide on figure title
 if isempty(figTitle)
-    figTitle = ['Essential traces for ', commonSuffix];
+    switch plotType
+    case 'essential'
+        figTitle = ['Essential traces for ', commonSuffix];
+    case 'm2h'
+        figTitle = ['m2h for ', commonSuffix];            
+    end
     figTitle = replace(figTitle, '_', '\_');
 end
 
@@ -235,69 +258,129 @@ stimDurMs = simParamsTable{'stimDur', 'Value'};
 stimWindow = [stimStartMs, stimStartMs + stimDurMs];
 
 % Load simulated data
-[simDataRT, simDataTC] = ...
-    argfun(@(x) load_neuron_outputs('FileNames', x), dataPathRT, dataPathTC);
+if loadRT
+    simDataRT = load_neuron_outputs('FileNames', dataPathRT);
+end
+simDataTC = load_neuron_outputs('FileNames', dataPathTC);
 
 % Convert the table to a structure array
 tcParamsStructArray = table2struct(tcParamsTable);
 
 % Extract vectors from simulated data
-[tVecsMs, vVecRT] = ...
-    extract_columns(simDataRT, [RT_TIME, RT_VOLT]);
-[vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
-        itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
-    extract_columns(simDataTC, [TC_VOLT, TC_GGABAB, ...
-                                TC_ICA_SOMA, TC_ICA_DEND1, TC_ICA_DEND2, ...
-                                TC_IT_M_DEND2, TC_IT_MINF_DEND2, ...
-                                TC_IT_H_DEND2, TC_IT_HINF_DEND2]);
-
-% Convert conductance from uS to nS
-gCmdTCNs = convert_units(gCmdTCUs, 'uS', 'nS');
-
-% Compute total T current
-itTotalTC = ...
-    compute_total_current([itSomaTC, itDend1TC, itDend2TC], ...
-                            'GeomParams', tcParamsStructArray);
-
-% Compute m2h
-itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
-itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
+if loadRT
+    vVecRT = extract_columns(simDataRT, RT_VOLT);
+end
+switch plotType
+case 'essential'
+    [tVecsMs, vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
+            itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
+        extract_columns(simDataTC, [TC_TIME, TC_VOLT, TC_GGABAB, ...
+                                    TC_ICA_SOMA, TC_ICA_DEND1, TC_ICA_DEND2, ...
+                                    TC_IT_M_DEND2, TC_IT_MINF_DEND2, ...
+                                    TC_IT_H_DEND2, TC_IT_HINF_DEND2]);
+case 'm2h'
+    [tVecsMs, itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
+        extract_columns(simDataTC, [TC_TIME, TC_IT_M_DEND2, TC_IT_MINF_DEND2, ...
+                                    TC_IT_H_DEND2, TC_IT_HINF_DEND2]);
+end
 
 % Clear simData to release memory
 clear simDataRT simDataTC
 
-% List all possible items to plot
-vecsAll = {vVecRT; vVecTC; gCmdTCNs; itTotalTC; itm2hDend2; itminf2hinfDend2};
+% Downsample by 10;
+switch plotType
+case 'essential'
+    [tVecsMs, vVecRT, vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
+            itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
+        argfun(@(x) downsample(x, 10), ...
+                tVecsMs, vVecRT, vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
+                itmDend2, itminfDend2, ithDend2, ithinfDend2);
+case 'm2h'
+    [tVecsMs, itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
+        argfun(@(x) downsample(x, 10), ...
+                tVecsMs, itmDend2, itminfDend2, ithDend2, ithinfDend2);
+end
 
-% List corresponding labels
-labelsAll = {'V_{RT} (mV)'; 'V_{TC,soma} (mV)'; 'g_{GABA_B} (nS)'; ...
-            'I_{T} (nA)'; 'm_{T,dend2}^2h_{T,dend2}'; ...
-            'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'};
+% Compute m2h and its steady state
+itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
+itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
+
+switch plotType
+case 'essential'
+    % Convert conductance from uS to nS
+    gCmdTCNs = convert_units(gCmdTCUs, 'uS', 'nS');
+
+    % Compute total T current
+    itTotalTC = compute_total_current([itSomaTC, itDend1TC, itDend2TC], ...
+                                        'GeomParams', tcParamsStructArray);
+    % List all possible items to plot
+    vecsAll = {vVecRT; vVecTC; gCmdTCNs; itTotalTC; itm2hDend2; itminf2hinfDend2};
+
+    % List corresponding labels
+    labelsAll = {'V_{RT} (mV)'; 'V_{TC,soma} (mV)'; 'g_{GABA_B} (nS)'; ...
+                'I_{T} (nA)'; 'm_{T,dend2}^2h_{T,dend2}'; ...
+                'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'};
+case 'm2h'
+    % List all possible items to plot
+    vecsAll = {itm2hDend2; itminf2hinfDend2};
+
+    % List corresponding labels
+    labelsAll = {'m_{T,dend2}^2h_{T,dend2}'; ...
+                'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'};    
+end
 
 % Create a figure
 if saveNewFlag
     fig = set_figure_properties('AlwaysNew', true);
 end
 
-% Plot traces
-handles = plot_traces(tVecsMs, vecsAll, ...
-                        'PlotMode', 'parallel', 'XLimits', xLimits, ...
-                        'XLabel', 'suppress', 'YLabel', labelsAll, ...
-                        'FigTitle', figTitle, 'LegendLocation', 'suppress', ...
-                        'FigName', figName, 'FigTypes', figTypes, ...
-                        otherArguments);
+switch plotType
+case 'essential'
+    % Plot traces
+    handles = plot_traces(tVecsMs, vecsAll, ...
+                            'PlotMode', 'parallel', 'XLimits', xLimits, ...
+                            'XLabel', 'suppress', 'YLabel', labelsAll, ...
+                            'FigTitle', figTitle, 'LegendLocation', 'suppress', ...
+                            'FigName', figName, 'FigTypes', figTypes, ...
+                            otherArguments);
 
-% Extract the axes handles for the subplots
-subPlots = handles.subPlots;
+    % Extract the axes handles for the subplots
+    subPlots = handles.subPlots;
 
-% Make the 5th and 6th subplot log-scaled
-arrayfun(@(x) set(subPlots(x), 'YScale', 'log'), 5:6);
+    % Make the 5th and 6th subplot log-scaled
+    arrayfun(@(x) set(subPlots(x), 'YScale', 'log'), 5:6);
 
-% Plot stimulation boundaries
-for i = 1:numel(subPlots)
-    subplot(subPlots(i));
+    % Plot stimulation boundaries
+    for i = 1:numel(subPlots)
+        subplot(subPlots(i));
+        plot_window_boundaries(stimWindow, 'BoundaryType', 'verticalShades', ...
+                                'Color', 'PaleGreen');
+    end
+case 'm2h'
+    handlesInstantaneous = ...
+        plot_traces(tVecsMs, itm2hDend2, ...
+                    'LineStyle', '-', 'PlotMode', 'overlapped', ...
+                    'LegendLocation', 'suppress', ...
+                    'XLimits', xLimits, ...
+                    'LinkAxesOption', 'x', 'XUnits', 'ms', ...
+                    'YLabel', 'm^2h', 'FigTitle', figTitle, otherArguments);
+    hold on;
+    handlesSteadyState = ...
+        plot_traces(tVecsMs, itminf2hinfDend2, 'PlotOnly', true, ...
+                    'LineStyle', ':', 'PlotMode', 'overlapped', ...
+                    'XLimits', xLimits, otherArguments);
+
+    % set(gca, 'YLim', [1e-6, 1]);
+
+    % Set the y axis to be log-scaled
+    set(gca, 'YScale', 'log');
+
+    % Plot stimulation boundaries
     plot_window_boundaries(stimWindow, 'BoundaryType', 'verticalShades', ...
                             'Color', 'PaleGreen');
+
+    handles.handlesInstantaneous = handlesInstantaneous;
+    handles.handlesSteadyState = handlesSteadyState;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

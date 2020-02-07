@@ -21,11 +21,13 @@
 
 % File History:
 % 2020-01-30 Modified from m3ha_plot_figure05.m
+% 2020-02-06 Added plot200CellExamples and plot2CellM2h
 
 %% Hard-coded parameters
 % Flags
 plotIpscComparison = false; %true;
-plot2CellExamples = true;
+plot2CellEssential = false; %true;
+plot2CellM2h = true;
 
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
@@ -75,11 +77,15 @@ measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
 ipscFigWidth = 8.5;
 ipscFigHeight = 4;
 xLimits2Cell = [2800, 4800];
-% yLimits2Cell = {[], [], [], [], [], []};
-yLimits2Cell = {[-100, 100], [-100, 100], [-1, 12], [-15, 5], ...
+yLimitsGabab = [-1, 12];
+% yLimitsEssential = {[], [], [], [], [], []};
+yLimitsEssential = {[-100, 100], [-100, 100], [-1, 12], [-15, 5], ...
                     [1e-10, 1], [1e-10, 1]};
-example2CellFigWidth = 8.5;
-example2CellFigHeight = 1.5 * 6;
+yLimitsM2h = [1e-10, 1];
+essential2CellFigWidth = 8.5;
+essential2CellFigHeight = 1 * 6;
+m2h2CellFigWidth = 8.5;
+m2h2CellFigHeight = 1;
 example200CellFigWidth = 8.5;
 example200CellFigHeight = 3;
 pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
@@ -123,7 +129,7 @@ colorMapPharmCell = arrayfun(@(x) colorMapPharm(x, :), ...
                             transpose(1:4), 'UniformOutput', false);
 
 %% Find example files and directories
-if plotIpscComparison || plot2CellExamples
+if plotIpscComparison || plot2CellEssential || plot2CellM2h
     % Find example network directories
     [~, exampleDirs2Cell] = ...
         cellfun(@(x) all_subdirs('Directory', exampleIterDir2Cell, ...
@@ -142,17 +148,31 @@ end
 if plotIpscComparison
     cellfun(@(x, y) plot_ipsc_comparison(x, exampleIterName2Cell, gIncr, y, ...
                                         figure07Dir, figTypes, ...
-                                        ipscFigWidth, ipscFigHeight), ...
+                                        ipscFigWidth, ipscFigHeight, ...
+                                        xLimits2Cell, yLimitsGabab), ...
             exampleCellNames, exampleDirs2Cell);
 end
 
 %% Plots example 2-cell networks
-if plot2CellExamples
+if plot2CellEssential
     cellfun(@(a, b) ...
         cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2Cell, ...
                             gIncr, a, y, figure07Dir, figTypes, ...
-                            example2CellFigWidth, example2CellFigHeight, ...
-                            xLimits2Cell, yLimits2Cell, b), ...
+                            essential2CellFigWidth, essential2CellFigHeight, ...
+                            xLimits2Cell, yLimitsEssential, ...
+                            'essential', b), ...
+                exampleCellNames, exampleDirs2Cell), ...
+        num2cell(pharmConditions), colorMapPharmCell);
+end
+
+%% Plots m2h of example 2-cell networks
+if plot2CellM2h
+    cellfun(@(a, b) ...
+        cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2Cell, ...
+                            gIncr, a, y, figure07Dir, figTypes, ...
+                            m2h2CellFigWidth, m2h2CellFigHeight, ...
+                            xLimits2Cell, yLimitsM2h, ...
+                            'm2h', b), ...
                 exampleCellNames, exampleDirs2Cell), ...
         num2cell(pharmConditions), colorMapPharmCell);
 end
@@ -248,7 +268,8 @@ end
 
 function plot_ipsc_comparison (cellName, popIterName2Cell, gIncr, ...
                                 inFolder, outFolder, ...
-                                figTypes, figWidth, figHeight)
+                                figTypes, figWidth, figHeight, ...
+                                xLimits, yLimits)
 % Plot an IPSC comparison plot
 
 % Create a gIncr string
@@ -264,18 +285,25 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot comparison
 m3ha_network_plot_gabab('SaveNewFlag', false, 'InFolder', inFolder, ...
-                            'FigTitle', 'suppress', ...
-                            'AmpScaleFactor', gIncr);
+                        'XLimits', xLimits, 'YLimits', yLimits, ...
+                        'FigTitle', 'suppress', ...
+                        'AmpScaleFactor', gIncr);
 
 % Save original figure
+drawnow;
 save_all_figtypes(fig, figPathBaseOrig, 'png');
+
+% Plot a scale bar
+plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
+                'XPosNormalized', 0.9, 'YPosNormalized', 0.9);
 
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Width', figWidth, 'Height', figHeight, ...
-                        'AlignSubplots', true);
+                        'RemoveXRulers', true, 'AlignSubplots', true);
 
 % Save the figure
+drawnow;
 save_all_figtypes(fig, figPathBase, figTypes);
 
 end
@@ -284,7 +312,8 @@ end
 
 function plot_2cell_examples (cellName, iterName, gIncr, pharm, ...
                             inFolder, outFolder, figTypes, ...
-                            figWidth, figHeight, xLimits, yLimits, colorMap)
+                            figWidth, figHeight, xLimits, yLimits, ...
+                            plotType, colorMap)
 % Plot 2-cell network examples
 
 % Create a gIncr string
@@ -293,7 +322,7 @@ pharmStr = ['pharm', num2str(pharm)];
 
 % Create figure names
 figPathBase = fullfile(outFolder, [cellName, '_', iterName, ...
-                            '_', gIncrStr, '_', pharmStr, '_2cell_example']);
+                        '_', gIncrStr, '_', pharmStr, '_2cell_', plotType]);
 figPathBaseOrig = [figPathBase, '_orig'];
 
 % Create the figure
@@ -305,18 +334,31 @@ handles = ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
                         'FigTitle', 'suppress', ...
                         'AmpScaleFactor', gIncr, 'PharmCondition', pharm, ...
-                        'Color', colorMap);
+                        'PlotType', plotType, 'Color', colorMap);
 
 % Save original figure
 drawnow;
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
+% Fine tune
+switch plotType
+case 'essential'
+    % Get all subplots
+    subPlots = handles.subPlots;
 
-% Plot a scale bar in the first subplot
-subPlots = handles.subPlots;
-subplot(subPlots(1));
-plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
-                'XPosNormalized', 0.9, 'YPosNormalized', 0.9);
+    % Change the y ticks for the first two subplots
+    for i = 1:2
+        subplot(subPlots(i));
+        yticks([-75, 75]);
+    end
+
+    % Plot a scale bar in the first subplot
+    subplot(subPlots(1));
+    plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
+                    'XPosNormalized', 0.9, 'YPosNormalized', 0.9);
+case 'm2h'
+    yticks([1e-8, 1e-2]);   
+end
 
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...

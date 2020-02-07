@@ -18,6 +18,9 @@ function handles = m3ha_network_plot_gabab (varargin)
 %                   - 'AmpScaleFactor': amplitude scaling factor
 %                   must be a numeric scalar
 %                   default == 200%
+%                   - 'XLimits': x value limits
+%                   must be empty or a numeric vector of 2 elements
+%                   default == []
 %                   - 'OutFolder': output folder
 %                   must be a string scalar or a character vector
 %                   default == inFolder
@@ -35,6 +38,7 @@ function handles = m3ha_network_plot_gabab (varargin)
 %                   - Any other parameter-value pair for plot_traces()
 %
 % Requires:
+%       cd/argfun.m
 %       cd/compute_gabab_conductance.m
 %       cd/convert_units.m
 %       cd/create_labels_from_numbers.m
@@ -52,6 +56,7 @@ function handles = m3ha_network_plot_gabab (varargin)
 % File History:
 % 2020-01-22 Created by Adam Lu
 % 2020-01-30 Added input parser
+% 2020-02-06 Now downsamples vectors
 
 %% Hard-coded parameters
 spExtension = 'singsp';
@@ -72,7 +77,6 @@ CAI_COL_SIM = 8;
 GGABAB_COL_SIM = 9;
 
 % Plot parameters
-xLimits = [2000, 10000];
 xLabel = 'Time (ms)';
 pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
                     '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
@@ -83,6 +87,7 @@ figTypes = 'png';
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
 ampScaleFactorDefault = 200;
+xLimitsDefault = [2000, 10000];
 outFolderDefault = '';      % set later
 figTitleDefault = '';           % set later
 figNameDefault = '';        % no figure name by default
@@ -103,6 +108,7 @@ addParameter(iP, 'AmpScaleFactor', ampScaleFactorDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
                 ['AmpScaleFactor must be either empty ', ...
                     'or a numeric scalar!']));
+addParameter(iP, 'XLimits', xLimitsDefault);
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
@@ -116,6 +122,7 @@ addParameter(iP, 'SaveNewFlag', saveNewFlagDefault, ...
 parse(iP, varargin{:});
 inFolder = iP.Results.InFolder;
 ampScaleFactor = iP.Results.AmpScaleFactor;
+xLimits = iP.Results.XLimits;
 outFolder = iP.Results.OutFolder;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
@@ -162,6 +169,11 @@ simData = load_neuron_outputs('FileNames', dataPaths);
 
 % Extract vectors from simulated data
 [tVecsMs, gCmdSimUs] = extract_columns(simData, [TIME_COL_SIM, GGABAB_COL_SIM]);
+
+% Downsample by 100;
+[tVecsMs, gCmdSimUs] = ...
+    argfun(@(x) cellfun(@(y) downsample(y, 100), x, 'UniformOutput', false), ...
+            tVecsMs, gCmdSimUs);
 
 % Convert to nS
 gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
