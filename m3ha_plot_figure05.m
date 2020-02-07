@@ -30,13 +30,13 @@ plotAllComponentCurrents = false; %true;
 plotDend2ITproperties = false; %true;
 
 simulateTauhModes = false; %true;
-plotSomaVoltage = true;
+plotSomaVoltage = false; %true;
 
 computeIpscVariation = false; %true;
 simulateIpscVariation = false; %true;
 plotEssential = false; %true;
 
-plotM2h = true;
+plotM2h = false; %true;
 archiveScriptsFlag = false; %true;
 
 % Directories

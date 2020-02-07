@@ -454,9 +454,9 @@ end
 
 %% Network parameters
 if nCells == 100 || nCells == 20
-    TCRErad = 4; %1; %2;    % radius of TC-RE connections
+    TCRErad = 2; %4; %1; %2;    % radius of TC-RE connections
                     %   Sohal & Huguenard 2004 used 2
-    RETCrad = 8; %4; % radius of RE-TC connections
+    RETCrad = 4; %8; %4; % radius of RE-TC connections
                     %   Sohal & Huguenard 2004 used 4
 elseif nCells == 2
     TCRErad = 1;

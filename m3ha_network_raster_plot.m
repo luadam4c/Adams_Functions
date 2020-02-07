@@ -92,7 +92,7 @@ addParameter(iP, 'FigTypes', 'png', ...         % figure type(s) for saving; e.g
 addParameter(iP, 'OutFolder', '@inFolder', @isdir); % the name of the directory that the plots will be placed
 addParameter(iP, 'MaxNumWorkers', 20, ...       % maximum number of workers for running NEURON
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'RenewParpool', true, ...      % whether to renew parpool every batch to release memory
+addParameter(iP, 'RenewParpool', false, ...      % whether to renew parpool every batch to release memory
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SingleTrialNum', [], ...      % number of single trial ran
     @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
@@ -528,8 +528,8 @@ while ct < nSims                  % while not trials are completed yet
                 if ~plotOnly
                     % Save figure
                     figname = fullfile(outFolder, replace(figbaseWext, '.spi', '_raster_plot.png'));
-                    save_all_figtypes(h, figname, figtypes);
-                    % close(h);
+                    save_all_figtypes(fig, figname, figtypes);
+                    % close(fig);
                 end
             end    
         end
