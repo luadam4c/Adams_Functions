@@ -27,7 +27,7 @@
 % Flags
 plotIpscComparison = false; %true;
 plot2CellEssential = false; %true;
-plot2CellM2h = true;
+plot2CellM2h = false; %true;
 
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
@@ -35,6 +35,7 @@ plot2CellBars = false; %true;
 
 plot200CellExamples = false; %true;
 
+analyze200CellSpikes = false; %true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
@@ -69,9 +70,10 @@ pharmConditions = (1:4)';   % Pharmacological conditions
                             %   3 - GAT 3 Block
                             %   4 - Dual Block
 measuresOfInterest = {'oscDurationSec'; 'oscPeriod2Ms'; ...
-                        'oscIndex4'; 'hasOscillation'};
+                        'oscIndex4'; 'hasOscillation'; 'percentActive'};
 measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
-                    'Oscillatory Index'; 'Has Oscillation'};
+                    'Oscillatory Index'; 'Has Oscillation'; ...
+                    'Active Cells (%)'};
 
 % Plot settings
 ipscFigWidth = 8.5;
@@ -193,7 +195,12 @@ if combine2CellPopulation
                             rankNumsToUse, popDataPath2Cell);
 end
 
-%% Combines quantification over all 2-cell networks
+%% Analyzes spikes for all 200-cell networks
+if analyze200CellSpikes
+    reanalyze_network_spikes(popIterDir200Cell);
+end
+
+%% Combines quantification over all 200-cell networks
 if combine200CellPopulation
     combine_osc_params_data(popIterDir200Cell, candCellSheetPath, ...
                             rankNumsToUse, popDataPath200Cell);
@@ -482,8 +489,39 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_osc_params_data (popIterDir2Cell, candCellSheetPath, ...
-                                    rankNumsToUse, popDataPath2Cell);
+function reanalyze_network_spikes(popIterDir)
+%% Re-analyzes spikes for all networks
+
+%% Hard-coded parameters
+oscParamsSuffix = 'oscillation_params';
+oscParamsBackupSuffix = ['oscillation_params_backup_', create_time_stamp];
+
+% Locate all oscillation parameter paths
+[~, oscParamPaths] = ...
+    all_files('Directory', popIterDir, ...
+                'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
+                'Recursive', true, 'ForceCellOutput', true);
+            
+% Create backup paths
+oscParamBackupPaths = ...
+    replace(oscParamPaths, oscParamsSuffix, oscParamsBackupSuffix);
+
+% Backup parameters files
+cellfun(@(x, y) movefile(x, y), oscParamPaths, oscParamBackupPaths);
+
+% Find all subdirectories
+[~, netSimDirs] = all_subdirs('Directory', popIterDir);
+
+% Analyze spikes for all subdirectories
+cellfun(@(x) m3ha_network_analyze_spikes('Infolder', x), netSimDirs, ...
+        'UniformOutput', false);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function combine_osc_params_data (popIterDir, candCellSheetPath, ...
+                                    rankNumsToUse, popDataPath)
 
 %% Hard-coded parameters
 rankNumStr = 'rankNum';
@@ -503,7 +541,7 @@ cellNamesToUse = match_positions(cellNamesAll, rankNumbersAll, rankNumsToUse);
 
 % Locate corresponding oscillation parameter paths
 [~, oscParamPaths] = ...
-    find_matching_files(cellNamesToUse, 'Directory', popIterDir2Cell, ...
+    find_matching_files(cellNamesToUse, 'Directory', popIterDir, ...
                         'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
                         'Recursive', true, 'ForceCellOutput', true);
 
@@ -523,7 +561,7 @@ oscPopTable = apply_over_cells(@vertcat, oscParamTables);
 oscPopTable = join(oscPopTable, candCellTable, 'Keys', cellNameStr);
 
 % Save the table
-writetable(oscPopTable, popDataPath2Cell);
+writetable(oscPopTable, popDataPath);
 
 end
 
