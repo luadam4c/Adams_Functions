@@ -61,7 +61,7 @@ rankNeuronsFlag = false; %true;
 plotHistogramsFlag = false; %true;
 plotBarPlotFlag = false; %true;
 plotParamViolinsFlag = false; %true;
-plotErrorParamComparisonFlag = false; %true;
+plotErrorParamComparisonFlag = true;
 archiveScriptsFlag = false; %true;
 
 plotErrorHistoryFlag = false; %true;
@@ -226,9 +226,11 @@ cellNameStr = 'cellName';
 outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToPlot = [1, 2, 4, 7, 10];
 % rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33];
-% rankNumsToPlot = [1, 2, 4:10, 12:25, 29, 33];
-% rankNumsToPlot = [2, 7, 10, 12, 20];        % well-fitted, good response, not from D101310
-rankNumsToPlot = [7, 10, 22, 33];       % well-fitted, from curve-fitted geometry
+% rankNumsToPlot = [1, 2, 4:10, 12:25, 29, 33]; % old well-fitted
+% rankNumsToPlot = [2, 7, 10, 12, 20];        % old well-fitted, good response, not from D101310
+% rankNumsToPlot = [7, 10, 22, 33];       % old well-fitted, from curve-fitted geometry
+rankNumsToPlot = [1:2, 4:10, 12:25]; % new well-fitted
+
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2; %3;                       % data mode:
                                     %   0 - all data
@@ -283,6 +285,12 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20200203_manual_singleneuronfitting0-102');
 
 % For plots
+rankFigXLimits = [0, 3.5];
+rankFigWidth = 7.5;
+rankFigHeight = 6;
+selectedFigWidth = 10;
+selectedFigHeight = 7.5;
+
 errorParamXTicks = 6:6:36;
 
 %% Default values for optional arguments
@@ -341,8 +349,10 @@ check_dir(outFolder);
 rankBase = [iterSetStr, '_', rankSuffix];
 rankPathBase = fullfile(outFolder, rankBase);
 rankSheetPath = [rankPathBase, '.', rankSheetExtension];
+rankPathBaseOrig = [rankPathBase, 'orig'];
 
 paramViolinPathBase = [rankPathBase, '_params_violin'];
+paramViolinPathBaseOrig = [paramViolinPathBase, 'orig'];
 
 %% Choose the best parameters for each cell
 if chooseBestParamsFlag
@@ -517,6 +527,8 @@ if plotBarPlotFlag
 
     % Count the number of cells (number of rows)
     nCells = height(rankTable);
+    pLimits = 0.5 + [0, nCells];
+    rankFigXLimits = [0, 3.5];
 
     % Extract component errors
     [componentErrors, groupLabels] = m3ha_extract_component_errors(rankTable);
@@ -540,6 +552,7 @@ if plotBarPlotFlag
             'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
             'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
             'ColumnLabels', groupLabels, ...
+            'BarWidth', 1, 'PLimits', pLimits, ...
             'FigTitle', 'Total error separated by components');
 
     % Plot total error for verification
@@ -549,10 +562,31 @@ if plotBarPlotFlag
             'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
             'PTicks', pTicks, ...
             'ColumnLabels', groupLabels, ...
+            'BarWidth', 1, 'PLimits', pLimits, ...
             'FigTitle', 'Total error');
 
     % Save figure
+    save_all_figtypes(fig, rankPathBaseOrig, 'png');
+
+    % Create new figure
+    fig = set_figure_properties('Units', 'centimeters', ...
+                        'Width', rankFigWidth, 'Height', rankFigHeight, ...
+                        'AlwaysNew', true);
+
+    plot_bar(componentErrors, 'BarDirection', 'horizontal', ...
+            'ReverseOrder', true, 'GroupStyle', 'stacked', ...
+            'PLabel', 'Rank', 'ReadoutLabel', 'Error (dimensionless)', ...
+            'PTicks', pTicks, 'ColumnLabels', groupLabels, ...
+            'BarWidth', 1, 'PLimits', pLimits, ...
+            'ReadoutLimits', rankFigXLimits, ...
+            'FigTitle', 'Errors of Single Neuron Fits');
+
+    % Update figure for CorelDraw
+    update_figure_for_corel(fig, 'YTickLocs', [1, 8, 15, 22, 29, 36]);
+                        
+    % Save figure
     save_all_figtypes(fig, rankPathBase, figTypes);
+
 end
 
 %% Plot a parameters as violin plots
@@ -586,7 +620,7 @@ if plotErrorParamComparisonFlag
     % Decide on the errors and parameters to plot
     [errorParamToPlot, errorParamLabels, ...
             errorParamYLimits, errorParamIsLog] = m3ha_decide_on_plot_vars;
-
+%{
     % Create figure title and file name
     errorParamFigTitle = ['Error & Parameter Comparison for all cells'];
     errorParamFigName = strcat(rankPathBase, '_param_comparison_all');
@@ -598,24 +632,55 @@ if plotErrorParamComparisonFlag
             'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
             'FigTitle', errorParamFigTitle, 'FigTypes', figTypes, ...
             'FigName', errorParamFigName);
-
+%}
     % Create a rank string
     rankStr = ['rank', create_label_from_sequence(rankNumsToPlot)];
 
     % Create figure title and file name
     selectedFigTitle = ['Error & Parameter Comparison for cells with ranks ', rankStr];
     selectedFigName = strcat(rankPathBase, '_param_comparison_', rankStr);
+    selectedFigNameOrig = strcat(selectedFigName, '_orig');
 
     % Decide on x ticks
     selectedXTicks = 1:numel(rankNumsToPlot);
-
+%{
     % Plot error & parameter comparison
     plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
             'RowsToPlot', rankNumsToPlot, 'VarIsLog', errorParamIsLog, ...
             'YLimits', errorParamYLimits, 'XTicks', selectedXTicks, ...
             'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
-            'FigTitle', selectedFigTitle, 'FigTypes', figTypes, ...
-            'FigName', selectedFigName);
+            'FigTitle', selectedFigTitle, 'FigTypes', 'png', ...
+            'FigName', selectedFigNameOrig);
+%}
+    % Create figure
+    fig = set_figure_properties('AlwaysNew', true);
+
+    % Plot error & parameter comparison
+    handles = ...
+        plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
+            'RowsToPlot', rankNumsToPlot, 'VarIsLog', errorParamIsLog, ...
+            'YLimits', errorParamYLimits, 'AxTitles', errorParamLabels, ...
+            'XLabel', 'Rank Number', 'YLabel', 'suppress');
+
+    % Update ticks
+    ax = handles.ax;
+    set(ax, 'XTickLabelMode', 'auto');
+    for i = 11:25
+        subplot(ax(i));
+        yticks([1e-7, 1e-2]);
+    end
+    
+    % Change marker sizes
+    lines = findobj(fig, 'Type', 'Line');
+    set(lines, 'MarkerSize', 2);
+
+    % Update figure for CorelDraw
+    update_figure_for_corel(fig, 'Units', 'centimeters', ...
+            'Width', selectedFigWidth, 'Height', selectedFigHeight, ...
+            'RemoveXLabels', true, 'XTickLocs', [1, 25]);
+
+    % Save figure
+    save_all_figtypes(fig, selectedFigName, figTypes);
 end
 
 % Archive all scripts for this run

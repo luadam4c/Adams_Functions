@@ -43,7 +43,7 @@ archiveScriptsFlag = false; %true;
 
 % Flags (ALREADY DONE!)
 estimatePassiveParams = false; %true;
-plotCurveFit = false; %true;
+plotCurveFit = true;
 plotGeometry = false; %true;
 
 % Directories
@@ -66,7 +66,8 @@ paramFileSuffix = 'params';
 % Should be consistent with m3ha_plot_figure02.m & m3ha_plot_figure07.m
 % exampleCellNames = {'D101310'; 'C101210'};
 % exampleCellNames = {'C101210'};
-exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};
+% exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};
+exampleCellNames = {'D101310'; 'G101310'};
 
 % Simulation settings
 dataModeCpr = 1;                    % data mode for current pulse response
@@ -99,9 +100,9 @@ attemptNumberIpscr = 6;             % attempt number for IPSC response
 somaColor = rgb('DarkGreen');
 dendriteColor = rgb('DarkOrange');
 curveFigWidth = 8.5;
-curveFigHeight = 4;
+curveFigHeight = 3;
 curveXLimits = [0, 60];
-curveYLimits = [-1.2, 0];
+curveYLimits = [-1.5, 0];
 % geomFigWidth = 4;
 % geomFigHeight = 10.5;
 geomFigWidth = 10;
@@ -114,10 +115,11 @@ cprFigWidth = 8.5;
 cprFigHeight = 6;
 cprXLimits = [2070, 2250];
 cprYLimits = [];
-ipscrFigWidth = 8.5;
+ipscrFigWidth = 7.5;
 ipscrFigHeight = 7;
 ipscrXLimits = [2800, 4500];
-ipscrYLimits = [-100, -20];
+ipscrYLimits = [-100, -40];
+ipscrYTicks = [-80, -60];
 overlappedFigWidth = [];
 overlappedFigHeight = [];
 overlappedXLimits = [];
@@ -230,7 +232,7 @@ end
 if plotIpscr
     cellfun(@(x, y) plot_ipscr(x, y, figure03Dir, figTypes, ...
                                 ipscrFigWidth, ipscrFigHeight, ...
-                                ipscrXLimits, ipscrYLimits), ...
+                                ipscrXLimits, ipscrYLimits, ipscrYTicks), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -528,7 +530,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_ipscr(expStr, directory, outFolder, figTypes, ...
-                    figWidth, figHeight, xLimits, yLimits)
+                    figWidth, figHeight, xLimits, yLimits, yTicks)
 
 % Create a figure name
 figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
@@ -537,7 +539,8 @@ figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
 figIndividual = set_figure_properties('AlwaysNew', true);
 
 % Plot traces
-m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
+handles = ...
+    m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'PlotType', 'individual', 'FigHandle', figIndividual, ...
                 'XLimits', xLimits, 'YLimits', yLimits);
 
@@ -549,7 +552,8 @@ plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
 % Update figure for CorelDraw
 update_figure_for_corel(figIndividual, 'Units', 'centimeters', ...
                 'Width', figWidth, 'Height', figHeight, ...
-                'RemoveXTicks', true, 'RemoveXRulers', true);
+                'RemoveXTicks', true, 'RemoveXRulers', true, ...
+                'YTickLocs', yTicks);
 
 
 % Save the figure

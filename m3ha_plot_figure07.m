@@ -26,7 +26,7 @@
 %% Hard-coded parameters
 % Flags
 plotIpscComparison = false; %true;
-plot2CellEssential = false; %true;
+plot2CellEssential = true;
 plot2CellM2h = false; %true;
 
 combine2CellPopulation = false; %true;
@@ -39,7 +39,7 @@ analyze200CellSpikes = false; %true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -47,7 +47,8 @@ figure07Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure07');
 figure08Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure08');
 networkDirectory = fullfile(parentDirectory, 'network_model');
 % exampleIterName2Cell = '20200131T1345_using_bestparams_20200126_singleneuronfitting101';  % 20200131
-exampleIterName2Cell = '20200205T1353_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
+% exampleIterName2Cell = '20200205T1353_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
+exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88';
 exampleIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 popIterName2Cell = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65_2cell_spikes';
 popIterName200Cell = exampleIterName200Cell;

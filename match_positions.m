@@ -36,6 +36,7 @@ function elements1 = match_positions (array1, array2, elements2, varargin)
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_plot_figure07.m
 %       cd/plot_table_parallel.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu

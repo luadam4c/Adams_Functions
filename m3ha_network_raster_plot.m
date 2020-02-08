@@ -585,7 +585,13 @@ subplot(axHandle); hold on;
 
 % Compute appropriate y axis limits
 yLimits = [-0.5, nCells - 0.5];
-yTicks = [0, round(nCells/4), round(nCells/2), round(nCells*3/4), nCells - 1];
+
+% Set default y ticks for large networks
+if nCells > 4
+    yTicks = [0, round(nCells/4), round(nCells/2), round(nCells*3/4), nCells - 1];
+else
+    yTicks = [];
+end
 
 % Plot stimulation window
 if ~isempty(stimWindow) && ~noRasters
@@ -621,7 +627,9 @@ xlim(xLimits);
 ylim(yLimits);
 
 % Set y tick locations
-yticks(yTicks);
+if ~isempty(yTicks)
+    yticks(yTicks);
+end
 
 % Plot axis labels
 if ~rastersOnly

@@ -70,6 +70,9 @@ function handles = plot_table_parallel (myTable, varargin)
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == none
+%                   - 'AxTitles': title for each subplot
+%                   must be a string scalar or a character vector
+%                   default == none
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
@@ -106,6 +109,7 @@ function handles = plot_table_parallel (myTable, varargin)
 % File History:
 % 2019-12-29 Moved from m3ha_neuron_choose_best_params.m
 % 2019-12-30 Changed the default x label to 'row number'
+% 2020-02-06 Added 'AxTitles' as an optional argument
 % TODO: Merge with plot_table.m
 % TODO: 
 
@@ -128,6 +132,7 @@ yLabelDefault = {};             % set later
 colorMapDefault = [];           % set later
 legendLocationDefault = 'suppress';
 figTitleDefault = '';
+axTitlesDefault = {''};
 figNumberDefault = [];
 figNameDefault = '';
 figTypesDefault = 'png';
@@ -181,6 +186,8 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'AxTitles', axTitlesDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
@@ -204,6 +211,7 @@ yLabel = iP.Results.YLabel;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
+axTitles = iP.Results.AxTitles;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 figTypes = iP.Results.FigTypes;
@@ -290,7 +298,8 @@ if isempty(xTickLabels)
     else
         rowLabels = create_labels_from_numbers(rowsToPlot);
     end
-    xTickLabels = {match_positions(rowLabels, xValues, xTicks)};
+    xTickLabels = match_positions(rowLabels, xValues, xTicks);
+	xTickLabels = {xTickLabels};
 end
 
 % Decide on whether to plot on a log scale
@@ -305,9 +314,11 @@ end
 dataToPlot = extract_vars(myTable, varsToPlot);
 
 % Match the number of items with dataToPlot
-[varIsLog, xLimits, yLimits, xTicks, xTickLabels, colorMap, yLabel] = ...
+[varIsLog, xLimits, yLimits, xTicks, xTickLabels, ...
+        colorMap, yLabel, axTitles] = ...
     argfun(@(x) match_format_vector_sets(x, dataToPlot), ...
-            varIsLog, xLimits, yLimits, xTicks, xTickLabels, colorMap, yLabel);
+            varIsLog, xLimits, yLimits, xTicks, xTickLabels, ...
+            colorMap, yLabel, axTitles);
 
 % Decide whether to clear figure
 if ~isempty(figName)
@@ -330,11 +341,12 @@ if numel(ax) > nVarsToPlot
 end
             
 % Plot each variable on a separate subplot
-dots = cellfun(@(a, b, c, d, e, f, g, h, i) ...
+dots = cellfun(@(a, b, c, d, e, f, g, h, i, j) ...
                 update_subplot(a, xValues, b, c, d, e, f, g, ...
-                                xLabel, h, i, otherArguments), ...
+                                xLabel, h, i, j, otherArguments), ...
                 num2cell(axToUse), dataToPlot, varIsLog, xLimits, yLimits, ...
-                xTicks, colorMap, yLabel, xTickLabels, 'UniformOutput', false);
+                xTicks, colorMap, yLabel, xTickLabels, axTitles, ...
+                'UniformOutput', false);
 
 % Create an overarching title
 if ~isempty(figTitle)
@@ -362,10 +374,15 @@ handles.dots = dots;
 function dots = update_subplot(axHandle, iterNumber, vecToPlot, ...
                                 varIsLog, xLimits, yLimits, xTicks, ...
                                 colorMap, xLabel, yLabel, xTickLabels, ...
-                                otherArguments)
+                                axTitle, otherArguments)
 
 % Put the current subplot in focus
 subplot(axHandle);
+
+% Place a title for the axes
+if ~isempty(axTitle)
+    title(axTitle);
+end
 
 % Plot each iteration as a different color
 dots = plot_tuning_curve(transpose(iterNumber), transpose(vecToPlot), ...

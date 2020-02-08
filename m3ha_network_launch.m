@@ -934,7 +934,8 @@ candidateNamesUsed = match_positions(allCandNames, allIds, candidateIDsUsed);
 
 % Create full paths to the candidate files
 [~, candidatePaths] = find_matching_files(candidateNamesUsed, ...
-                                    'Directory', paramsDirectory);
+                                    'Directory', paramsDirectory, ...
+                                    'ForceCellOutput', true);
 
 % Import NEURON parameters
 TCparamTables = load_params(candidatePaths);

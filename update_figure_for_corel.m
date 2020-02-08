@@ -90,6 +90,7 @@ function figHandle = update_figure_for_corel (varargin)
 % Requires:
 %       cd/align_subplots.m
 %       cd/create_error_for_nargin.m
+%       cd/match_positions.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
 %
@@ -324,7 +325,16 @@ if removeYTicks
 else
     % Change the y tick values
     if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
-        set(ax, 'YTick', yTickLocs);
+        if numel(ax) == 1 && strcmp(ax.YTickLabelMode, 'manual')
+            yTickLocsOrig = get(ax, 'YTick');
+            yTickLabelsOrig = get(ax, 'YTickLabel');
+            yTickLabels = match_positions(yTickLabelsOrig, yTickLocsOrig, ...
+                                            yTickLocs);
+            set(ax, 'YTick', yTickLocs);
+            set(ax, 'YTickLabel', yTickLabels);
+        else
+            set(ax, 'YTick', yTickLocs);
+        end
     end
 end
 
