@@ -1,4 +1,4 @@
-function m3ha_network_launch (nCells, useHH, candidateIDs)
+function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode)
 %% Launches NEURON with simulation commands and plot output figures
 %
 % Requires:
@@ -110,13 +110,14 @@ loopMode = 'grid'; %cross;      % how to loop through parameters:
                                 %               combinations of parameters
 
 % Decide on what to save and plot
-if nCells == 1 || nCells == 2
-    savePlotMode = 'spikes&special';
-    % savePlotMode = 'spikes';
-elseif nCells == 20 || nCells == 100
-    savePlotMode = 'spikes';    
-else
-    error('nCells = %d is not implemented yet!', nCells);
+if isempty(savePlotMode)
+    if nCells == 1 || nCells == 2
+        savePlotMode = 'spikes&special';
+    elseif nCells == 20 || nCells == 100
+        savePlotMode = 'spikes';    
+    else
+        error('nCells = %d is not implemented yet!', nCells);
+    end
 end
 
 %% Simulation modes
