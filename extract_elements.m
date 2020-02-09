@@ -50,6 +50,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/adjust_edges.m
 %       cd/align_subplots.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
@@ -69,7 +70,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/plot_autocorrelogram.m
 %       cd/plot_repetitive_protocols.m
 %       cd/select_similar_values.m
-%       cd/adjust_edges.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu

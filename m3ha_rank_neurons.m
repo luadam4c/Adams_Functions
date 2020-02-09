@@ -60,7 +60,8 @@ plotIndividualFlag = false; %true;
 rankNeuronsFlag = false; %true;
 plotHistogramsFlag = false; %true;
 plotBarPlotFlag = false; %true;
-plotErrorParamComparisonFlag = true;
+plotErrorParamComparisonAllFlag = false; %true;
+plotErrorParamComparisonSelectedFlag = true;
 archiveScriptsFlag = false; %true;
 
 plotErrorHistoryFlag = false; %true;
@@ -229,8 +230,8 @@ cellNameStr = 'cellName';
 
 % outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
 % iterSetStr = 'manual_singleneuronfitting0-102';
-% rankNumsToPlot = [1, 2, 4, 7, 10];
-% rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33];
+% rankNumsToPlot = [1, 2, 4, 7, 10];            % old best-fitted
+% rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33]; % mistake
 % rankNumsToPlot = [1, 2, 4:10, 12:25, 29, 33]; % old well-fitted
 % rankNumsToPlot = [2, 7, 10, 12, 20];      % old well-fitted, good response, not from D101310
 % rankNumsToPlot = [7, 10, 22, 33];         % old well-fitted, from curve-fitted geometry
@@ -243,9 +244,11 @@ cellNameStr = 'cellName';
 %                         'bestparams_20200203_manual_singleneuronfitting0-102');
 % errorParamXTicks = 6:6:36;
 % rankYTickLocs = [1, 8, 15, 22, 29, 36];
+% selectedXTicks = [1, 25];
 
 outFolder = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToPlot = 1:23;                  % new well-fitted
+% rankNumsToPlot = [1:3, 6, 9];               % best-fitted
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2;                       % data mode:
                                     %   0 - all data
@@ -306,9 +309,25 @@ rankFigXLimits = [0, 3.5];
 rankFigWidth = 7.5;
 rankFigHeight = 8;
 selectedFigWidth = 10;
-selectedFigHeight = 7.5;
+selectedFigHeight = 6;
 
 errorParamXTicks = 1:4:33;
+selectedYLimits = {[8, 300]; [5, 400]; [1, 100]; ...
+                        [1e-6, 1e-4]; [-80, -60]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]};
+selectedYTicks = {[8, 150, 300]; [5, 200, 400]; [1, 50, 100]; ...
+                        [1e-6, 1e-5, 1e-4]; [-70]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]};
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -629,7 +648,7 @@ if plotParamViolinsFlag
 end
 
 %% Plot an error and parameter comparison plot
-if plotErrorParamComparisonFlag
+if plotErrorParamComparisonAllFlag || plotErrorParamComparisonSelectedFlag
     % Display message
     fprintf('Plotting error parameter comparison ... \n');
 
@@ -640,66 +659,80 @@ if plotErrorParamComparisonFlag
     [errorParamToPlot, errorParamLabels, ...
             errorParamYLimits, errorParamIsLog] = m3ha_decide_on_plot_vars;
 
-    % Create figure title and file name
-    errorParamFigTitle = ['Error & Parameter Comparison for all cells'];
-    errorParamFigName = strcat(rankPathBase, '_param_comparison_all');
+    % Decide on the errors and parameters to plot for CorelDraw
+    [errorParamToPlotForCorel, errorParamIsLogForCorel, ...       
+            errorParamYLimitsForCorel, errorParamLabelsForCorel] = ...
+        argfun(@(x) x(6:end), errorParamToPlot, errorParamIsLog, ...
+                errorParamYLimits, errorParamLabels);
 
-    % Plot error & parameter comparison
-    plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
-            'RowsToPlot', 'all', 'VarIsLog', errorParamIsLog, ...
-            'YLimits', errorParamYLimits, 'XTicks', errorParamXTicks, ...
-            'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
-            'FigTitle', errorParamFigTitle, 'FigTypes', figTypes, ...
-            'FigName', errorParamFigName);
+    if plotErrorParamComparisonAllFlag
+        % Create figure title and file name
+        errorParamFigTitle = ['Error & Parameter Comparison for all cells'];
+        errorParamFigName = strcat(rankPathBase, '_param_comparison_all');
 
-    % Create a rank string
-    rankStr = ['rank', create_label_from_sequence(rankNumsToPlot)];
-
-    % Create figure title and file name
-    selectedFigTitle = ['Error & Parameter Comparison for cells with ranks ', rankStr];
-    selectedFigName = strcat(rankPathBase, '_param_comparison_', rankStr);
-    selectedFigNameOrig = strcat(selectedFigName, '_orig');
-
-    % Decide on x ticks
-    selectedXTicks = 1:numel(rankNumsToPlot);
-
-    % Plot error & parameter comparison
-    plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
-            'RowsToPlot', rankNumsToPlot, 'VarIsLog', errorParamIsLog, ...
-            'YLimits', errorParamYLimits, 'XTicks', selectedXTicks, ...
-            'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
-            'FigTitle', selectedFigTitle, 'FigTypes', 'png', ...
-            'FigName', selectedFigNameOrig);
-
-    % Create figure
-    fig = set_figure_properties('AlwaysNew', true);
-
-    % Plot error & parameter comparison
-    handles = ...
+        % Plot error & parameter comparison
         plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
-            'RowsToPlot', rankNumsToPlot, 'VarIsLog', errorParamIsLog, ...
-            'YLimits', errorParamYLimits, 'AxTitles', errorParamLabels, ...
-            'XLabel', 'Rank Number', 'YLabel', 'suppress');
-
-    % Update ticks
-    ax = handles.ax;
-    set(ax, 'XTickLabelMode', 'auto');
-    for i = 11:25
-        subplot(ax(i));
-        yticks([1e-7, 1e-2]);
+                'RowsToPlot', 'all', 'VarIsLog', errorParamIsLog, ...
+                'YLimits', errorParamYLimits, 'XTicks', errorParamXTicks, ...
+                'SubplotDimensions', [5, 5], ...
+                'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
+                'FigTitle', errorParamFigTitle, 'FigTypes', figTypes, ...
+                'FigName', errorParamFigName);
     end
-    
-    % Change marker sizes
-    lines = findobj(fig, 'Type', 'Line');
-    set(lines, 'MarkerSize', 2);
 
-    % Update figure for CorelDraw
-    update_figure_for_corel(fig, 'Units', 'centimeters', ...
+    if plotErrorParamComparisonSelectedFlag
+        % Create a rank string
+        rankStr = ['rank', create_label_from_sequence(rankNumsToPlot)];
+
+        % Create figure title and file name
+        selectedFigTitle = ['Error & Parameter Comparison ', ...
+                            'for cells with ranks ', rankStr];
+        selectedFigName = strcat(rankPathBase, '_param_comparison_', rankStr);
+        selectedFigNameOrig = strcat(selectedFigName, '_orig');
+
+        % Plot error & parameter comparison
+        handles = ...
+            plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
+                'RowsToPlot', rankNumsToPlot, 'VarIsLog', errorParamIsLog, ...
+                'YLimits', errorParamYLimits, ...
+                'SubplotDimensions', [5, 5], ...
+                'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
+                'FigTitle', selectedFigTitle, 'FigTypes', 'png', ...
+                'FigName', selectedFigNameOrig);
+
+        % Create figure
+        fig = set_figure_properties('AlwaysNew', true);
+
+        % Plot error & parameter comparison
+        handles = ...
+            plot_table_parallel(rankTable, ...
+                'VarsToPlot', errorParamToPlotForCorel, ...
+                'RowsToPlot', rankNumsToPlot, ...
+                'VarIsLog', errorParamIsLogForCorel, ...
+                'YLimits', selectedYLimits, ...
+                'AxTitles', errorParamLabelsForCorel, ...
+                'SubplotDimensions', [4, 5], ...
+                'XLabel', 'suppress', 'YLabel', 'suppress');
+        
+        % Change marker sizes
+        lines = findobj(fig, 'Type', 'Line');
+        set(lines, 'MarkerSize', 2);
+
+        % Decide on x ticks
+        if numel(rankNumsToPlot) <= 5
+            selectedXTicks = 1:numel(rankNumsToPlot);
+        else
+            selectedXTicks = linspace(1, numel(rankNumsToPlot), 3);
+        end
+
+        % Update figure for CorelDraw
+        update_figure_for_corel(fig, 'Units', 'centimeters', ...
             'Width', selectedFigWidth, 'Height', selectedFigHeight, ...
-            'RemoveXLabels', true, 'XTickLocs', [1, 25]);
+            'XTickLocs', selectedXTicks, 'YTickLocs', selectedYTicks);
 
-    % Save figure
-    save_all_figtypes(fig, selectedFigName, figTypes);
+        % Save figure
+        save_all_figtypes(fig, selectedFigName, figTypes);
+    end
 end
 
 % Archive all scripts for this run
@@ -770,6 +803,13 @@ else
 end
 
                         'bestparams_20191231_singleneuronfitting93', ...
+
+% Update ticks
+ax = handles.ax;
+for i = 6:20
+    subplot(ax(i));
+    yticks([1e-7, 1e-2]);
+end
 
 %}
 

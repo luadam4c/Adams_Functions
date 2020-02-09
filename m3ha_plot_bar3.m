@@ -67,6 +67,7 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 % 2019-12-27 Moved from m3ha_plot_figure02.m
 % 2019-12-28 Added 'FigTypes' as an optional argument
 % 2019-12-28 Added 'FigHeight' and 'FigWidth' as optional arguments
+% 2020-02-08 Changed z axis label to title
 % 
 
 %% Hard-coded parameters
@@ -238,7 +239,10 @@ errorBarHorz = ...
             upper95ValueTransposed, upper95ValueTransposed);
 
 % Plot z axis label
-zlabel(measureTitle);
+% zlabel(measureTitle);
+
+% Plot title
+title(measureTitle);
 
 % Set x tick labels
 set(gca, 'XTickLabel', xTickLabels);

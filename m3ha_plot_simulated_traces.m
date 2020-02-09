@@ -116,6 +116,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-01-06 - Now makes the individual plot figure size proportional to the 
 %               number of rows and columns
 % 2020-01-30 Added 'somaVoltage'
+% 2020-02-08 Added m2h difference
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -812,9 +813,10 @@ end
 % Convert conductance from uS to nS
 gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
 
-% Compute m2h
+% Compute m2h, minf2hinf and m2h difference
 itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
 itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
+itm2hDiffDend2 = itm2hDend2 - itminf2hinfDend2;
 
 % List all possible items to plot
 if strcmpi(buildMode, 'passive')
@@ -829,7 +831,7 @@ else
                 itmSoma; itminfSoma; ithSoma; ithinfSoma; ...
                 itmDend1; itminfDend1; ithDend1; ithinfDend1; ...
                 itmDend2; itminfDend2; ithDend2; ithinfDend2; ...
-                itm2hDend2; itminf2hinfDend2};
+                itm2hDend2; itminf2hinfDend2; itm2hDiffDend2};
 end
 
 % List corresponding labels
@@ -852,7 +854,8 @@ else
                 'm_{T,dend2}'; 'm_{\infty,T,dend2}'; ...
                 'h_{T,dend2}'; 'h_{\infty,T,dend2}'; ...
                 'm_{T,dend2}^2h_{T,dend2}'; ...
-                'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'};
+                'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'; ...
+                'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}'};
 end
 
 % List indices
@@ -891,9 +894,10 @@ IDX_HT_DEND2 = 32;
 IDX_HINFT_DEND2 = 33;
 IDX_M2H_DEND2 = 34;
 IDX_MINF2HINF_DEND2 = 35;
+IDX_M2HDIFF_DEND2 = 36;
 
 % Error check
-if numel(labelsAll) ~= IDX_MINF2HINF_DEND2
+if numel(labelsAll) ~= IDX_M2HDIFF_DEND2
     error('Index numbers needs to be updated!');
 end
 
@@ -956,9 +960,9 @@ else
             indToPlot = [IDX_IT, IDX_IT_SOMA:IDX_IT_DEND2, ...
                             IDX_IA, IDX_IA_SOMA:IDX_IA_DEND2];
         case 'allITproperties'
-            indToPlot = IDX_MT_SOMA:IDX_MINF2HINF_DEND2;
+            indToPlot = IDX_MT_SOMA:IDX_M2HDIFF_DEND2;
         case 'dend2ITproperties'
-            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_MINF2HINF_DEND2];
+            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_M2HDIFF_DEND2];
         otherwise
             error('plotType unrecognized!');
     end

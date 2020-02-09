@@ -102,6 +102,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_traces_abf.m
 %       cd/test_var_difference.m
 %       cd/transform_vectors.m
+%       cd/update_figure_for_corel.m
 %       cd/xolotl_add_current_injection.m
 
 % File History:

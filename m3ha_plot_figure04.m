@@ -20,9 +20,9 @@
 
 %% Hard-coded parameters
 % Flags
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;        % Use MATLAB 2018a for this!
-archiveScriptsFlag = false; %true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;        % Use MATLAB 2018a for this!
+archiveScriptsFlag = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -42,8 +42,11 @@ fitDirName = 'optimizer4gabab';
 % rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
 
-rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
+
+rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+rankNumsToUse = 1:23;
 
 % Files
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
@@ -94,7 +97,7 @@ gCond3D = num2cell(gIncrAll);
 % bar3FigHeight = 4.3;              % in centimeters
 % bar3FigWidth = 4.3;               % in centimeters
 
-figTypes = {'png', 'epsc2'};
+figTypes = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

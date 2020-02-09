@@ -25,9 +25,9 @@
 
 %% Hard-coded parameters
 % Flags
-plotIpscComparison = false; %true;
+plotIpscComparison = true;
 plot2CellEssential = true;
-plot2CellM2h = false; %true;
+plot2CellM2h = true;
 
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
@@ -46,17 +46,23 @@ parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure07Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure07');
 figure08Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure08');
 networkDirectory = fullfile(parentDirectory, 'network_model');
+
 % exampleIterName2Cell = '20200131T1345_using_bestparams_20200126_singleneuronfitting101';  % 20200131
 % exampleIterName2Cell = '20200205T1353_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
-exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88';
-exampleIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-popIterName2Cell = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65_2cell_spikes';
+% popIterName2Cell = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65_2cell_spikes';
+% exampleIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+% popIterName200Cell = exampleIterName200Cell;
+% rankNumsToUse = [2, 4, 5, 7, 9, 10, 12, 13, 16, 20, 21, 23, 25, 29];
+
+exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
+popIterName2Cell = '20200208T1230_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
+exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 popIterName200Cell = exampleIterName200Cell;
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
 % Well-fitted, good 2-cell network response
-rankNumsToUse = [2, 4, 5, 7, 9, 10, 12, 13, 16, 20, 21, 23, 25, 29];
+rankNumsToUse = [2:4, 6, 8:11, 14, 18, 19, 21, 23];
 
 % Files
 

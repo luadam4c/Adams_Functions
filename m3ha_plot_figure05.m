@@ -34,10 +34,10 @@ plotSomaVoltage = false; %true;
 
 computeIpscVariation = false; %true;
 simulateIpscVariation = false; %true;
-plotEssential = false; %true;
+plotEssential = true;
 
-plotM2h = false; %true;
-archiveScriptsFlag = false; %true;
+plotM2h = true;
+archiveScriptsFlag = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -54,7 +54,8 @@ paramFileSuffix = 'params';
 
 % Analysis settings
 % exampleCellNames = {'D101310'; 'C101210'};
-exampleCellNames = {'D101310'; 'M101210'};
+% exampleCellNames = {'D101310'; 'M101210'};
+exampleCellNames = {'D101310'; 'G101310'};
 
 % Must be consistent with m3ha_compute_gabab_ipsc.m
 gababIpscSheetBases = {'gababipsc_gat3_vary_amp2', ...
@@ -92,16 +93,16 @@ tauhModesAll = 1:5;
 colorMapPharm = [];                 % use m3ha default
 colorMapVary = @jet;                % rainbow colors
 
-overlappedFigWidth = 5.7;
+overlappedFigWidth = 4.7; %5.7;
 overlappedFigHeightPerRow = 1.5;
 overlappedXLimits = [2800, 4800]; %[2800, 4000];
 overlappedYLimits = [];
-m2hFigWidth = 5.7;
+m2hFigWidth = 4.7; %5.7;
 m2hFigHeight = 3;
 m2hXLimits = [2800, 4800]; %[2800, 4000];
 m2hYLimits = [];
 
-figTypes = {'png', 'epsc2'};
+figTypes = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

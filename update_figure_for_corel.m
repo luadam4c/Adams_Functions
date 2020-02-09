@@ -89,7 +89,9 @@ function figHandle = update_figure_for_corel (varargin)
 %
 % Requires:
 %       cd/align_subplots.m
+%       cd/argfun.m
 %       cd/create_error_for_nargin.m
+%       cd/extract_elements.m
 %       cd/match_positions.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
@@ -205,11 +207,15 @@ addParameter(iP, 'RemoveLegends', removeLegendsDefault, ...
 addParameter(iP, 'RemoveTexts', removeTextsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
-    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
-        'XTickLocs must be ''suppress'' or a numeric vector!'));
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
+                    isnumericvector(x) || iscellnumericvector(x), ...
+        ['XTickLocs must be ''suppress'' or a numeric vector', ...
+            'or a cell array of numeric vectors!']));
 addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
-    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
-        'YTickLocs must be ''suppress'' or a numeric vector!'));
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
+                    isnumericvector(x) || iscellnumericvector(x), ...
+        ['YTickLocs must be ''suppress'' or a numeric vector', ...
+            'or a cell array of numeric vectors!']));
 addParameter(iP, 'LabelsFontSize', labelsFontSizeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'AxisFontSize', axisFontSizeDefault, ...
@@ -281,7 +287,10 @@ end
 
 %% Set figure properties
 % Might change sizes
-figHandle = set_figure_properties('FigHandle', figHandle, otherArguments);
+%   Note: Changing the renderer to 'painters' ensure graphics 
+%           are saved as vectors
+figHandle = set_figure_properties('FigHandle', figHandle, ...
+                        'Renderer', 'painters', otherArguments);
 
 % Update figure position units
 unitsOrig = get(figHandle, 'Units');
@@ -290,8 +299,11 @@ if ~strcmp(unitsOrig, units)
 end
 
 %% Set axes properties
-% Find all axes in the figure
+% Find all subplots in the figure
 ax = findall(figHandle, 'type', 'axes');
+
+% Sort the subplots in the figure
+ax = sort_subplots(ax);
 
 % Count the number of axes
 nAx = numel(ax);
@@ -315,7 +327,11 @@ if removeXTicks
 else
     % Change the x tick values
     if ~ischar(xTickLocs) || ~strcmpi(xTickLocs, 'suppress')
-        set(ax, 'XTick', xTickLocs);
+        if iscell(xTickLocs)
+            cellfun(@(a, b) update_ticks(a, 'x', b), num2cell(ax), xTickLocs);
+        else
+            arrayfun(@(a) update_ticks(a, 'x', xTickLocs), ax);
+        end
     end
 end
 
@@ -325,15 +341,10 @@ if removeYTicks
 else
     % Change the y tick values
     if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
-        if numel(ax) == 1 && strcmp(ax.YTickLabelMode, 'manual')
-            yTickLocsOrig = get(ax, 'YTick');
-            yTickLabelsOrig = get(ax, 'YTickLabel');
-            yTickLabels = match_positions(yTickLabelsOrig, yTickLocsOrig, ...
-                                            yTickLocs);
-            set(ax, 'YTick', yTickLocs);
-            set(ax, 'YTickLabel', yTickLabels);
+        if iscell(yTickLocs)
+            cellfun(@(a, b) update_ticks(a, 'y', b), num2cell(ax), yTickLocs);
         else
-            set(ax, 'YTick', yTickLocs);
+            arrayfun(@(a) update_ticks(a, 'y', yTickLocs), ax);
         end
     end
 end
@@ -456,6 +467,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function isPlot = is_plot(lineObject)
+% TODO: Pull out as its own function
 
 % Get x, y and z data
 xData = lineObject.XData;
@@ -468,12 +480,70 @@ isPlot = numel(xData) > 2 || numel(yData) > 2 || numel(zData) > 2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function set_string_empty (textObject)
+% TODO: Pull out as its own function
 
 if iscell(textObject)
     cellfun(@set_string_empty, textObject);
 else
     textObject.String = '';
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function update_ticks (ax, axisType, tickLocs)
+%% Updated the tick locations for an axes
+% TODO: Pull out as its own function
+
+% Decide on which ticks to update
+switch axisType
+    case 'x'
+        tickStr = 'XTick';
+        tickLabelStr = 'XTickLabel';
+        tickLabelModeStr = 'XTickLabelMode';
+    case 'y'
+        tickStr = 'YTick';        
+        tickLabelStr = 'YTickLabel';
+        tickLabelModeStr = 'YTickLabelMode';
+    otherwise
+        error('axisType unrecognized!');
+end
+
+% Update ticks and tick labels
+if strcmp(ax.(tickLabelModeStr), 'manual')
+    tickLocsOrig = get(ax, tickStr);
+    tickLabelsOrig = get(ax, tickLabelStr);
+    yTickLabels = match_positions(tickLabelsOrig, tickLocsOrig, ...
+                                    tickLocs);
+    set(ax, tickStr, tickLocs);
+    set(ax, tickLabelStr, yTickLabels);
+else
+    set(ax, tickStr, tickLocs);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function ax = sort_subplots (ax)
+%% Sort subplots of a figure in the same order as the subplot function
+% TODO: Pull out as its own function
+
+% Extract outer positions
+outerPositions = arrayfun(@(x) x.OuterPosition, ax, 'UniformOutput', false);
+
+% Extract the left and bottom positions
+[leftPositions, bottomPositions] = ...
+    argfun(@(a) extract_elements(outerPositions, 'specific', 'Index', a), ...
+            1, 2);
+
+% Put together into a table
+subplotTable = table(ax, outerPositions, leftPositions, bottomPositions);
+
+% First sort the bottom positions by descending order, 
+%   then sort the left positions by ascending order
+subplotTable = sortrows(subplotTable, {'bottomPositions', 'leftPositions'}, ...
+                        {'descend', 'ascend'});
+
+% Extract the axes
+ax = subplotTable.ax;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

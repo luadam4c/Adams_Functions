@@ -28,6 +28,9 @@ function handles = plot_table_parallel (myTable, varargin)
 %                       a string scalar or a character vector, 
 %                       or a cell array of character vectors
 %                   default == 'all' (no restrictions)
+%                   - 'SubplotDimensions': subplot dimensions
+%                   must be empty or a numeric vector
+%                   default == []
 %                   - 'XValues': x axis values corresponding to 
 %                               each row of the table
 %                   must be empty or a numeric vector
@@ -122,6 +125,7 @@ xTickLabels = {};
 %% Default values for optional arguments
 varsToPlotDefault = 'all';      % plot all variables by default
 rowsToPlotDefault = 'all';      % plot all rows by default
+subplotDimensionsDefault = [];         % set later
 xValuesDefault = [];            % set later
 varIsLogDefault = [];           % set later
 xLimitsDefault = [];            % set later
@@ -165,6 +169,8 @@ addParameter(iP, 'RowsToPlot', rowsToPlotDefault, ...
                     iscellstr(x) || isstring(x), ...
                 ['RowsToPlot must be either a positive integer vector, ', ...
                     'a string array or a cell array of character arrays!']));
+addParameter(iP, 'SubplotDimensions', subplotDimensionsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'XValues', xValuesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'VarIsLog', varIsLogDefault, ...
@@ -200,6 +206,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, myTable, varargin{:});
 varsToPlot = iP.Results.VarsToPlot;
 rowsToPlot = iP.Results.RowsToPlot;
+subplotDimensions = iP.Results.SubplotDimensions;
 xValues = iP.Results.XValues;
 varIsLog = iP.Results.VarIsLog;
 xLimits = iP.Results.XLimits;
@@ -260,11 +267,16 @@ end
 % Count the number of variables
 nVarsToPlot = count_strings(varsToPlot);
 
-% Decide on the number of rows for subplots
-nSubplotRows = ceil(sqrt(nVarsToPlot));
+if isempty(subplotDimensions)
+    % Decide on the number of rows for subplots
+    nSubplotRows = ceil(sqrt(nVarsToPlot));
 
-% Compute the number of columns
-nSubplotColumns = ceil(nVarsToPlot/nSubplotRows);
+    % Compute the number of columns
+    nSubplotColumns = ceil(nVarsToPlot/nSubplotRows);
+else
+    nSubplotRows = subplotDimensions(1);
+    nSubplotColumns = subplotDimensions(2);
+end
 
 % Decide on axis limits
 if isempty(xLimits)
