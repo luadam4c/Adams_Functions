@@ -217,6 +217,22 @@ violins = plot_violin(allValues, 'XTickLabels', pharmLabels, ...
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
+% Set y axis limits based on measureTitle
+switch measureTitle
+    case 'LTS probability'
+        ylim([0, 1]);
+    case 'LTS onset time (ms)'
+        ylim([0, 2000]);
+    case 'Spikes Per LTS'
+        ylim([0, 6.5]);
+    case 'LTS maximum slope (V/s)'
+        ylim([0, 5]);
+    case 'LTS amplitude (mV)'
+        ylim([-75, -45]);
+    otherwise
+        % Do nothing
+end
+
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth, ...

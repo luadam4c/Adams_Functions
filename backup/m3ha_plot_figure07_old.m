@@ -36,13 +36,12 @@ backupPrevious2Cell = false; %true;
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 
-plot200CellExamples = false; %true;
+plot200CellExamples = true;
 
-analyze200CellSpikes = true;
-plotAnalysis200Cell = true;
-backupPrevious200Cell = true;
-combine200CellPopulation = true;
-plot200CellViolins = true;
+analyze200CellSpikes = false; %true;
+backupPrevious200Cell = false; %true;
+combine200CellPopulation = false; %true;
+plot200CellViolins = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -413,6 +412,8 @@ simNumber = m3ha_network_find_sim_number(inFolder, pharm, gIncr);
 figPathBase = fullfile(outFolder, [cellName, '_', iterName, ...
                         '_', gIncrStr, '_', pharmStr, '_200cell_example']);
 figPathBaseOrig = [figPathBase, '_orig'];
+figPathBaseNoRasters = [figPathBase, '_noRasters'];
+figPathBaseRasterOnly = [figPathBase, '_rastersOnly'];
 
 %% Full figure
 % Create the figure
@@ -428,15 +429,49 @@ m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
 drawnow;
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
-% Update figure for CorelDraw
-update_figure_for_corel(fig, 'RemoveXLabels', true, 'RemoveYLabels', true, ...
-                        'RemoveTitles', true, 'RemoveXRulers', true);
-update_figure_for_corel(fig, 'Units', 'centimeters', ...
+%% Figure with no rasters
+% Create the figure with no rasters
+fig = set_figure_properties('AlwaysNew', true, 'Units', 'centimeters', ...
                             'Width', figWidth, 'Height', figHeight);
 
-% Save the figure
+% Plot spike raster plot again with no rasters
+m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
+                        'SingleTrialNum', simNumber, ...
+                        'PlotSpikes', true, 'PlotTuning', false, ...
+                        'PlotOnly', true, 'NoRasters', true);
+
+% Plot a scale bar only for the Dual Blockade condition
+if pharm == 4
+    plot_scale_bar('x', 'XBarUnits', 'sec', 'XBarLength', 2, ...
+                    'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
+end
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'RemoveXLabels', true, 'RemoveTitles', true, ...
+                        'BoxOn', true, 'RemoveXRulers', true);
+
+% Save figure with no rasters
 drawnow;
-save_all_figtypes(fig, figPathBase, figTypes);
+save_all_figtypes(fig, figPathBaseNoRasters, figTypes);
+
+%% Figure with rasters only
+% Create the figure with rasters only
+fig = set_figure_properties('AlwaysNew', true, 'Units', 'centimeters', ...
+                            'Width', figWidth, 'Height', figHeight);
+
+% Plot spike raster plot again with rasters only
+m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
+                        'SingleTrialNum', simNumber, ...
+                        'PlotSpikes', true, 'PlotTuning', false, ...
+                        'PlotOnly', true, 'RastersOnly', true);
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'RemoveXLabels', true, 'RemoveTitles', true, ...
+                        'BoxOn', true, 'RemoveXRulers', true);
+
+% Save the figure with rasters only
+drawnow;
+save_all_figtypes(fig, figPathBaseRasterOnly, figTypes);
 
 % Close all figures
 close all
@@ -630,6 +665,9 @@ end
 
 %{
 OLD CODE:
+
+rowToUse = find_in_list(rankNumsToUse, rankNumbersAll);
+cellNamesToUse = cellNamesAll(rowToUse);
 
 %}
 

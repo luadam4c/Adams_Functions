@@ -67,6 +67,7 @@ function handles = plot_autocorrelogram (autoCorrData, autoCorrParams, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
 

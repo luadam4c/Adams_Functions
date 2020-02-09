@@ -253,6 +253,25 @@ xtickangle(xTickAngle);
 % Set y tick labels
 set(gca, 'YTickLabel', yTickLabels);
 
+% Save the figure
+save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
+
+% Set z axis limits based on measureTitle
+switch measureTitle
+    case 'LTS probability'
+        zlim([0, 1]);
+    case 'LTS onset time (ms)'
+        zlim([0, 3000]);
+    case 'Spikes per LTS'
+        zlim([0, 6.5]);
+    case 'LTS maximum slope (V/s)'
+        zlim([0, 4]);
+    case 'LTS amplitude (mV)'
+        zlim([-75, 0]);
+    otherwise
+        % Do nothing
+end
+
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth);

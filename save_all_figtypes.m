@@ -22,6 +22,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
 %       cd/m3ha_compute_gabab_ipsc.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_example_jitter.m.m

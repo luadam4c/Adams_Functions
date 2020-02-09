@@ -64,9 +64,9 @@ simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotOpenProbabilityFlag = false; %true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;        % Use MATLAB 2018a for this!
-archiveScriptsFlag = false; %true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;        % Use MATLAB 2018a for this!
+archiveScriptsFlag = true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels

@@ -23,6 +23,9 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %                   must be a string scalar or a character vector
 %                   default == fullfile(outFolder, 
 %                                   [dirBase, '_oscillation_params.csv'])
+%                   - 'PlotFlag': whether to plot analysis results
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -32,10 +35,14 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %       cd/array_fun.m
 %       cd/compute_autocorrelogram.m
 %       cd/compute_spike_histogram.m
+%       cd/create_subplots.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
 %       cd/load_neuron_outputs.m
+%       cd/plot_autocorrelogram.m
+%       cd/plot_spike_histogram.m
 %       cd/renamevars.m
+%       cd/save_all_figtypes.m
 %       cd/transpose_table.m
 %
 % Used by:
@@ -46,6 +53,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 % 2020-02-05 Added percentActive
 % 2020-02-09 Changed definition of hasOscillation
 % 2020-02-09 Now sorts by 'datenum'
+% 2020-02-09 Add 'PlotFlag' as an optional argument
 
 %% Hard-coded parameters
 spiExtension = 'spi';
@@ -61,13 +69,13 @@ nCellsStr = 'nCells';
 simNumberStr = 'simNumber';
 
 % TODO: Make optional argument
-plotFlag = true;
 figTypes = 'png';
 
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
 outFolderDefault = '';      % set later
 sheetNameDefault = '';      % no spreadsheet name by default
+plotFlagDefault = true;     % plot analysis results by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,12 +92,15 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetName', sheetNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PlotFlag', plotFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
 sheetName = iP.Results.SheetName;
+plotFlag = iP.Results.PlotFlag;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = iP.Unmatched;
@@ -152,13 +163,6 @@ simNumber = oscParams.(simNumberStr);
     argfun(@(x) load_neuron_outputs('FileNames', x), spiPathsRT, spiPathsTC);
 
 
-% Reorder stuff
-[simNumber, origInd] = sort(simNumber);
-[spikesDataRT, spikesDataTC, stimStartMs, ...
-        stimDurMs, nCells, condStr] = ...
-    argfun(@(x) x(origInd), ...
-            spikesDataRT, spikesDataTC, stimStartMs, ...
-            stimDurMs, nCells, condStr);
 
 % Parse spikes
 [parsedParams, parsedData] = ...
@@ -174,6 +178,10 @@ simNumber = oscParams.(simNumberStr);
 %% Return as output
 oscParams = horzcat(oscParams, parsedParamsTable);
 oscData = parsedDataTable;
+
+% Reorder according to simNumber
+[oscParams, origInd] = sortrows(oscParams, simNumberStr);
+oscData = oscData(origInd, :);
 
 %% Save the output
 writetable(oscParams, sheetName);
@@ -295,6 +303,14 @@ hasOscillation = ~isempty(spikeTimesTC) && ...
     compute_autocorrelogram(spikeTimesRT, 'StimStartMs', stimStartMs, ...
                             'SpikeHistParams', histParams, ...
                             'SpikeHistData', histData);
+
+% Reorder stuff
+[simNumber, origInd] = sort(simNumber);
+[spikesDataRT, spikesDataTC, stimStartMs, ...
+        stimDurMs, nCells, condStr] = ...
+    argfun(@(x) x(origInd), ...
+            spikesDataRT, spikesDataTC, stimStartMs, ...
+            stimDurMs, nCells, condStr);
 
 %}
 
