@@ -44,6 +44,8 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 % File History:
 % 2020-01-30 Modified from m3ha_network_plot_essential.m
 % 2020-02-05 Added percentActive
+% 2020-02-09 Changed definition of hasOscillation
+% 2020-02-09 Now sorts by 'datenum'
 
 %% Hard-coded parameters
 spiExtension = 'spi';
@@ -56,6 +58,11 @@ paramPrefix = 'sim_params';
 stimStartStr = 'stimStart';
 stimDurStr = 'stimDur';
 nCellsStr = 'nCells';
+simNumberStr = 'simNumber';
+
+% TODO: Make optional argument
+plotFlag = true;
+figTypes = 'png';
 
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
@@ -95,7 +102,7 @@ end
 
 % Look for all RT neuron .spi files
 [~, spiPathsRT] = all_files('Directory', inFolder, 'Prefix', prefixRT, ...
-                            'Extension', spiExtension);
+                            'Extension', spiExtension, 'SortBy', 'datenum');
 
 % Create paths to corresponding params files
 spiPathBasesRT = extractBefore(spiPathsRT, ['.', spiExtension]);
@@ -134,20 +141,31 @@ allParamsTable = apply_over_cells(@horzcat, paramTables);
 % Initialize the oscillation table with simulation parameters
 oscParams = transpose_table(allParamsTable);
 
-% Extract the stimulation start time
+% Extract fields
 stimStartMs = oscParams.(stimStartStr);
 stimDurMs = oscParams.(stimDurStr);
 nCells = oscParams.(nCellsStr);
+simNumber = oscParams.(simNumberStr);
 
 % Load simulated data
 [spikesDataRT, spikesDataTC] = ...
     argfun(@(x) load_neuron_outputs('FileNames', x), spiPathsRT, spiPathsTC);
 
+
+% Reorder stuff
+[simNumber, origInd] = sort(simNumber);
+[spikesDataRT, spikesDataTC, stimStartMs, ...
+        stimDurMs, nCells, condStr] = ...
+    argfun(@(x) x(origInd), ...
+            spikesDataRT, spikesDataTC, stimStartMs, ...
+            stimDurMs, nCells, condStr);
+
 % Parse spikes
 [parsedParams, parsedData] = ...
-    cellfun(@(a, b, c, d, e) m3ha_network_parse_spikes(a, b, c, d, e), ...
+    cellfun(@(a, b, c, d, e, f) m3ha_network_parse_spikes(a, b, c, d, e, f, ...
+                                    plotFlag, outFolder, figTypes), ...
                 spikesDataRT, spikesDataTC, num2cell(stimStartMs), ...
-                num2cell(stimDurMs), num2cell(nCells));
+                num2cell(stimDurMs), num2cell(nCells), condStr);
 
 % Convert structure arrays to tables
 [parsedParamsTable, parsedDataTable] = ...
@@ -164,8 +182,18 @@ writetable(oscParams, sheetName);
 
 function [parsedParams, parsedData] = ...
             m3ha_network_parse_spikes (spikesDataRT, spikesDataTC, ...
-                                        stimStartMs, stimDurMs, nCells)
+                                        stimStartMs, stimDurMs, nCells, ...
+                                        condStr, plotFlag, outFolder, figTypes)
 %% Parse spikes from .spi files
+
+%% Hard-coded parameters
+xLimits = stimStartMs/1000 + [0, 10];          % in seconds
+figName = '';
+
+% Decide on figure name
+if isempty(figName)
+    figName = fullfile(outFolder, [condStr, '_analyze_spikes.png']);
+end
 
 % Column numbers for .spi files
 %   Note: Must be consistent with m3ha_net.hoc
@@ -181,9 +209,8 @@ TC_SPIKETIME = 2;
 [cellIdTC, spikeTimesTC] = ...
     extract_columns(spikesDataTC, [TC_CELLID, TC_SPIKETIME]);
 
-% Decide whether there is an oscillation based on TC spikes
-hasOscillation = ~isempty(spikeTimesTC) && ...
-                    any(spikeTimesTC > stimStartMs + stimDurMs);
+% Put all spike times together
+spikeTimesAll = [spikeTimesRT; spikeTimesTC];
 
 % Count the number of active neurons
 nActive = numel(unique(cellIdRT)) + numel(unique(cellIdTC));
@@ -191,17 +218,48 @@ nActive = numel(unique(cellIdRT)) + numel(unique(cellIdTC));
 % Compute the percentage of active neurons
 percentActive = 100 * nActive / (nCells * 2);
 
-% Use RT spikes to compute an oscillation duration
+% Use all spikes to compute an oscillation duration
 %   TODO: Modify this for multi-cell layers
 [histParams, histData] = ...
-    compute_spike_histogram(spikeTimesRT, 'StimStartMs', stimStartMs);
+    compute_spike_histogram(spikeTimesAll, 'StimStartMs', stimStartMs);
 
-% Use RT spikes to compute an oscillation period
+% Use all spikes to compute an oscillation period
 %   TODO: Modify this for multi-cell layers
 [autoCorrParams, autoCorrData] = ...
-    compute_autocorrelogram(spikeTimesRT, 'StimStartMs', stimStartMs, ...
+    compute_autocorrelogram(spikeTimesAll, 'StimStartMs', stimStartMs, ...
                             'SpikeHistParams', histParams, ...
                             'SpikeHistData', histData);
+
+% Decide whether there is an oscillation based on RT spikes
+%   Note: Number of bursts in an oscillation must be more than 2.
+hasOscillation = histParams.nBurstsInOsc > 2;
+
+%% Plot for verification
+if plotFlag
+    % Create a figure
+    [fig, ax] = create_subplots(2, 1, 'AlwaysNew', true, ...
+                                'FigExpansion', [2, 2]);
+
+    % Add figure title base
+    histParams.figTitleBase = replace(condStr, '_', '\_');
+    autoCorrParams.figTitleBase = replace(condStr, '_', '\_');
+
+    % Plot spike histogram with burst detection
+    subplot(ax(1));
+    plot_spike_histogram(histData, histParams, 'XLimits', xLimits);
+
+    % Plot autocorrelation function
+    subplot(ax(2));
+    plot_autocorrelogram(autoCorrData, autoCorrParams, ...
+                            'XLimits', xLimits, ...
+                            'PlotType', 'acfFiltered');
+
+    % Save figure
+    save_all_figtypes(fig, figName, figTypes);
+
+    % Close figure
+    close(fig);
+end
 
 %% Save results in output
 parsedParams.stimStartMs = stimStartMs;
@@ -225,6 +283,18 @@ parsedData = merge_structs(parsedData, autoCorrData);
 OLD CODE:
 
 allParamsTable = apply_over_cells(@outerjoin, paramTables, 'Keys', 'Row', 'MergeKeys', true);
+
+hasOscillation = ~isempty(spikeTimesTC) && ...
+                    any(spikeTimesTC > stimStartMs + stimDurMs);
+
+% Use RT spikes to compute an oscillation duration
+[histParams, histData] = ...
+    compute_spike_histogram(spikeTimesRT, 'StimStartMs', stimStartMs);
+% Use RT spikes to compute an oscillation period
+[autoCorrParams, autoCorrData] = ...
+    compute_autocorrelogram(spikeTimesRT, 'StimStartMs', stimStartMs, ...
+                            'SpikeHistParams', histParams, ...
+                            'SpikeHistData', histData);
 
 %}
 

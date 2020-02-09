@@ -72,6 +72,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 % 2019-10-15 Added 'ForceCellOutput' as an optional argument
 % 2019-12-20 Changed default extractDistinct to false
 % 2020-02-02 Added 'ReturnEmpty' as an optional argument
+% 2020-02-09 Fixed bug if file not found and returning empty
 % TODO: Add 'Delimiter' as an optional argument
 % TODO: 'MaxNum' not always 1
 % 
@@ -203,7 +204,11 @@ end
 
 % Extract the character array if it was one
 if wasChar && ~forceCellOutput
-    fullPaths = fullPaths{1};
+    if isempty(fullPaths)
+        fullPaths = '';
+    else
+        fullPaths = fullPaths{1};
+    end
 end
 
 % Get first output

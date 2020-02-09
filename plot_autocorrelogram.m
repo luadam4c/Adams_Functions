@@ -5,7 +5,8 @@ function handles = plot_autocorrelogram (autoCorrData, autoCorrParams, varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       plot_autocorrelogram(autoCorrData, autoCorrParams)
+%       plot_autocorrelogram(autoCorrData, autoCorrParams, 'PlotType', 'acfFiltered')
 %
 % Outputs:
 %       handles     - a structure with fields:

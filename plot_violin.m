@@ -178,7 +178,21 @@ bandWidth = relativeBandWidth * rangeValues;
 % violinplot(dataValues, xTickLabels);
 violins = violinplot(dataValues, xTickLabels, 'BandWidth', bandWidth, ...
                         otherArguments{:});
-
+%{
+while bandWidth > bandWidth * 10 ^ -2
+    try
+        violins = violinplot(dataValues, xTickLabels, 'BandWidth', bandWidth, ...
+                                otherArguments{:});
+        break
+    catch
+        relativeBandWidth = relativeBandWidth / 10;
+        fprintf('Warning: Relative bandwidth changed to %g!\n', relativeBandWidth);
+        bandWidth = bandWidth / 10;
+        clf;
+    end
+end
+%}
+                        
 % Apply the color map
 for iGroup = 1:nGroups
     violins(iGroup).ViolinColor = colorMap(iGroup, :);

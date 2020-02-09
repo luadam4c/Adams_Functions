@@ -2,9 +2,9 @@
 %% Chooses a heterogeneous population based on 2-cell network responses
 %% Hard-coded parameters
 oscDataDir = fullfile('/media', 'adamX', 'm3ha', 'manuscript', 'figures', 'Figure07');
-oscDataFileName = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65_rank2,4-5,7,9-10,12-13,16,20-21,23,25,29_oscillation_params.csv';
-
-pCondDesired = 2;
+% oscDataFileName = '20200204T1042_using_bestparams_20200203_manual_singleneuronfitting0-102_vtraub_-65_rank2,4-5,7,9-10,12-13,16,20-21,23,25,29_oscillation_params.csv';
+oscDataFileName = '20200208T1230_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes_rank2-4,6,8-11,14,18-19,21,23_oscillation_params.csv';
+pCondDesired = 3;
 gIncrDesired = 200;
 
 %% Create full path

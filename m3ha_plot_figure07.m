@@ -5,6 +5,7 @@
 %       cd/apply_over_cells.m
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
+%       cd/array_fun.m
 %       cd/create_label_from_sequence.m
 %       cd/decide_on_colormap.m
 %       cd/find_matching_files.m
@@ -25,17 +26,19 @@
 
 %% Hard-coded parameters
 % Flags
-plotIpscComparison = true;
-plot2CellEssential = true;
-plot2CellM2h = true;
+plotIpscComparison = false; %true;
+plot2CellEssential = false; %true;
+plot2CellM2h = false; %true;
 
-combine2CellPopulation = false; %true;
-plot2CellViolins = false; %true;
-plot2CellBars = false; %true;
+analyze2CellSpikes = false; %true;
+backupPrevious2Cell = false;
+combine2CellPopulation = true;
+plot2CellViolins = true;
 
 plot200CellExamples = false; %true;
 
 analyze200CellSpikes = false; %true;
+backupPrevious200Cell = true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
@@ -196,6 +199,11 @@ if plot200CellExamples
         pharmConditions);
 end
 
+%% Analyzes spikes for all 2-cell networks
+if analyze2CellSpikes
+    reanalyze_network_spikes(popIterDir2Cell, backupPrevious2Cell);
+end
+
 %% Combines quantification over all 2-cell networks
 if combine2CellPopulation
     combine_osc_params_data(popIterDir2Cell, candCellSheetPath, ...
@@ -204,7 +212,7 @@ end
 
 %% Analyzes spikes for all 200-cell networks
 if analyze200CellSpikes
-    reanalyze_network_spikes(popIterDir200Cell);
+    reanalyze_network_spikes(popIterDir200Cell, backupPrevious200Cell);
 end
 
 %% Combines quantification over all 200-cell networks
@@ -267,10 +275,6 @@ if plot200CellViolins
     % Plot violin plots
     m3ha_plot_violin(stats2dPath200Cell, 'RowsToPlot', measuresOfInterest, ...
                     'OutFolder', figure08Dir);
-end
-
-%% Plots percentage of 2-cell networks having oscillations over pharm condition
-if plot2CellBars
 end
 
 %% Archive all scripts for this run
@@ -496,32 +500,36 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function reanalyze_network_spikes(popIterDir)
+function reanalyze_network_spikes(popIterDir, backupPrevious)
 %% Re-analyzes spikes for all networks
 
 %% Hard-coded parameters
 oscParamsSuffix = 'oscillation_params';
 oscParamsBackupSuffix = ['oscillation_params_backup_', create_time_stamp];
 
-% Locate all oscillation parameter paths
-[~, oscParamPaths] = ...
-    all_files('Directory', popIterDir, ...
-                'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
-                'Recursive', true, 'ForceCellOutput', true);
-            
-% Create backup paths
-oscParamBackupPaths = ...
-    replace(oscParamPaths, oscParamsSuffix, oscParamsBackupSuffix);
+if backupPrevious
+    % Locate all oscillation parameter paths
+    [~, oscParamPaths] = ...
+        all_files('Directory', popIterDir, ...
+                    'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
+                    'Recursive', true, 'ForceCellOutput', true);
+                
+    % Create backup paths
+    oscParamBackupPaths = ...
+        replace(oscParamPaths, oscParamsSuffix, oscParamsBackupSuffix);
 
-% Backup parameters files
-cellfun(@(x, y) movefile(x, y), oscParamPaths, oscParamBackupPaths);
+    % Backup parameters files
+    cellfun(@(x, y) movefile(x, y), oscParamPaths, oscParamBackupPaths);
 
-% Find all subdirectories
-[~, netSimDirs] = all_subdirs('Directory', popIterDir);
+    % Find all subdirectories
+    [~, netSimDirs] = all_subdirs('Directory', popIterDir);
+end
 
 % Analyze spikes for all subdirectories
-cellfun(@(x) m3ha_network_analyze_spikes('Infolder', x), netSimDirs, ...
-        'UniformOutput', false);
+% array_fun(@(x) m3ha_network_analyze_spikes('Infolder', x), ...
+%         netSimDirs, 'UniformOutput', false);
+cellfun(@(x) m3ha_network_analyze_spikes('Infolder', x), ...
+        netSimDirs, 'UniformOutput', false);
 
 end
 

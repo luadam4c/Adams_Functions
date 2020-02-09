@@ -34,10 +34,10 @@ plotSomaVoltage = false; %true;
 
 computeIpscVariation = false; %true;
 simulateIpscVariation = false; %true;
-plotEssential = true;
+plotEssential = false; %true;
 
-plotM2h = true;
-archiveScriptsFlag = true;
+plotM2h = false; %true;
+archiveScriptsFlag = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
