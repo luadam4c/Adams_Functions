@@ -48,7 +48,7 @@ function sliceBases = all_slice_bases (varargin)
 % 
 
 %% Hard-coded parameters
-validSortBys = {'name', 'date', 'bytes'};
+validSortBys = {'name', 'date', 'bytes', 'datenum'};
 
 %% Default values for optional arguments
 directoryDefault = pwd;
