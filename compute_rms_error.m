@@ -58,6 +58,7 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %       cd/compute_baseline_noise.m
 %       cd/compute_lts_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2018-07-09 Modified from the built-in rms.m

@@ -23,6 +23,7 @@
 %       cd/all_files.m
 %       cd/all_subdirs.m
 %       cd/argfun.m
+%       cd/compute_rms_error.m
 %       cd/copy_into.m
 %       cd/create_time_stamp.m
 %       cd/create_labels_from_numbers.m
@@ -61,12 +62,12 @@
 % Flags
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
-combineFeatureTablesFlag = true;
+combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = true;
 plotOpenProbabilityFlag = true;
 plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;        % Use MATLAB 2018a for this!
-archiveScriptsFlag = true;
+plotBarPlotsFlag = false; %true;
+archiveScriptsFlag = false; %true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -433,11 +434,22 @@ if computeOpenProbabilityFlag
     minf2hinf = (minf .^ 2) .* hinf;
 
     % Compute the rms error between m2h and minf2hinf
-    openProbabilityDiscrepancy = ...
+    m2hRmsError = compute_rms_error(m2h, minf2hinf, ...
+                                            'ForceColumnOutput', true);
+
+    % Compute the maximum error between m2h and minf2hinf
+    m2hMaxError = ...
         force_column_vector(max(abs(m2h - minf2hinf), [], 1));
-    
+
+    % Compute the maximum ratio between m2h and minf2hinf
+    m2hRatioRaw = m2h ./ minf2hinf;
+    m2hRatioRaw(isinf(m2hRatioRaw)) = NaN;
+    m2hMaxRatio = force_column_vector(max(m2hRatioRaw, [], 1));
+
     % Add or replace variable
-    simSwpInfo = addvars(simSwpInfo, openProbabilityDiscrepancy);
+    simSwpInfo = replacevars(simSwpInfo, m2hRmsError);
+    simSwpInfo = replacevars(simSwpInfo, m2hMaxError);
+    simSwpInfo = replacevars(simSwpInfo, m2hMaxRatio);
 
     % Resave the simulated sweep info table
     writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
@@ -464,10 +476,12 @@ if plotOpenProbabilityFlag
     end
 
     % Read the LTS peak times
-    if ~is_field(simSwpInfo, 'openProbabilityDiscrepancy')
-        error('openProbabilityDiscrepancy does not exist yet!');
+    if ~is_field(simSwpInfo, 'm2hMaxRatio')
+        error('m2hMaxRatio does not exist yet!');
     else
-        openProbabilityDiscrepancy = simSwpInfo.openProbabilityDiscrepancy;
+        % openProbabilityDiscrepancy = simSwpInfo.m2hRmsError;
+        % openProbabilityDiscrepancy = simSwpInfo.m2hMaxError;
+        openProbabilityDiscrepancy = simSwpInfo.m2hMaxRatio;
     end
 
     % Determine whether each sweep has an LTS
@@ -482,7 +496,9 @@ if plotOpenProbabilityFlag
 
     % Plot violin plot
     violins = plot_violin(twoGroups, 'XTickLabels', {'No LTS', 'With LTS'}, ...
-                            'YLabel', 'rms(m^2h - m_{inf}^2h_{inf})');
+                            'YLabel', 'max(m^2h / m_{inf}^2h_{inf})');
+                            % 'YLabel', 'max(abs(m^2h - m_{inf}^2h_{inf}))');
+                            % 'YLabel', 'rms(m^2h - m_{inf}^2h_{inf})');
 
     % Create a title
     title(sprintf('Open Probability Discrepancy for %s', ...
@@ -573,6 +589,21 @@ end
 % Archive all scripts for this run
 if archiveScriptsFlag
     archive_dependent_scripts(mfilename, 'OutFolder', outFolder);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function myTable = replacevars (myTable, varValue)
+%% Replace a variable in a table or add it if it doesn't exist
+% TODO: Pull out as its own function
+
+varName = inputname(2);
+if is_field(myTable, varName)
+    myTable.(varName) = varValue;
+else
+    myTable = addvars(myTable, varValue, 'NewVariableNames', varName);
+end
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

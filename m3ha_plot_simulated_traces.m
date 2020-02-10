@@ -118,6 +118,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-01-30 Added 'somaVoltage'
 % 2020-02-08 Added m2h difference
 % 2020-02-09 Now plots m2h subplots in log scale
+% 2020-02-10 Added m2h ratio
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -818,6 +819,7 @@ gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
 itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
 itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
 itm2hDiffDend2 = abs(itm2hDend2 - itminf2hinfDend2);
+itm2hRatioDend2 = itm2hDend2 ./ itminf2hinfDend2;
 
 % List all possible items to plot
 if strcmpi(buildMode, 'passive')
@@ -834,7 +836,7 @@ else
                 itmSoma; itminfSoma; ithSoma; ithinfSoma; ...
                 itmDend1; itminfDend1; ithDend1; ithinfDend1; ...
                 itmDend2; itminfDend2; ithDend2; ithinfDend2; ...
-                itm2hDend2; itminf2hinfDend2; itm2hDiffDend2};
+                itm2hDend2; itminf2hinfDend2; itm2hDiffDend2; itm2hRatioDend2};
 end
 
 % List corresponding labels
@@ -858,14 +860,15 @@ else
                 'h_{T,dend2}'; 'h_{\infty,T,dend2}'; ...
                 'm_{T,dend2}^2h_{T,dend2}'; ...
                 'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'; ...
-                '|m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}|'};
+                '|m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}|'; ...
+                'm_{T}^2h_{T} / m_{\infty,T}^2h_{\infty,T}'};
 end
 
 % List whether y axis should be log scaled
 if strcmpi(buildMode, 'passive')
     yIsLogAll = zeros(9, 1);
 else
-    yIsLogAll = [zeros(33, 1); ones(3, 1)];
+    yIsLogAll = [zeros(33, 1); ones(4, 1)];
 end
 
 % List indices
@@ -905,9 +908,10 @@ IDX_HINFT_DEND2 = 33;
 IDX_M2H_DEND2 = 34;
 IDX_MINF2HINF_DEND2 = 35;
 IDX_M2HDIFF_DEND2 = 36;
+IDX_M2HRATIO_DEND2 = 37;
 
 % Error check
-if numel(labelsAll) ~= IDX_M2HDIFF_DEND2
+if numel(labelsAll) ~= IDX_M2HRATIO_DEND2
     error('Index numbers needs to be updated!');
 end
 
@@ -953,12 +957,12 @@ else
             end
         case 'essential'
             indToPlot = [IDX_VSOMA, IDX_GGABAB, IDX_ISTIM, IDX_IT, ...
-                            IDX_M2HDIFF_DEND2];
+                            IDX_M2HRATIO_DEND2];
             if ~isempty(vVecsRec)
                 indToPlot = [IDX_VREC, indToPlot];
             end
         case 'somaVoltage'
-            indToPlot = [IDX_VSOMA, IDX_M2HDIFF_DEND2];
+            indToPlot = [IDX_VSOMA, IDX_M2HRATIO_DEND2];
         case 'allVoltages'
             indToPlot = IDX_VSOMA:IDX_IINT;
             if ~isempty(vVecsRec)
@@ -970,9 +974,9 @@ else
             indToPlot = [IDX_IT, IDX_IT_SOMA:IDX_IT_DEND2, ...
                             IDX_IA, IDX_IA_SOMA:IDX_IA_DEND2];
         case 'allITproperties'
-            indToPlot = IDX_MT_SOMA:IDX_M2HDIFF_DEND2;
+            indToPlot = IDX_MT_SOMA:IDX_M2HRATIO_DEND2;
         case 'dend2ITproperties'
-            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_M2HDIFF_DEND2];
+            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_M2HRATIO_DEND2];
         otherwise
             error('plotType unrecognized!');
     end

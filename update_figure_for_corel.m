@@ -92,6 +92,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
+%       cd/force_column_cell.m
 %       cd/match_positions.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
@@ -328,6 +329,7 @@ else
     % Change the x tick values
     if ~ischar(xTickLocs) || ~strcmpi(xTickLocs, 'suppress')
         if iscell(xTickLocs)
+            xTickLocs = force_column_cell(xTickLocs);
             cellfun(@(a, b) update_ticks(a, 'x', b), num2cell(ax), xTickLocs);
         else
             arrayfun(@(a) update_ticks(a, 'x', xTickLocs), ax);
@@ -342,6 +344,7 @@ else
     % Change the y tick values
     if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
         if iscell(yTickLocs)
+            yTickLocs = force_column_cell(yTickLocs);
             cellfun(@(a, b) update_ticks(a, 'y', b), num2cell(ax), yTickLocs);
         else
             arrayfun(@(a) update_ticks(a, 'y', yTickLocs), ax);
@@ -492,7 +495,12 @@ end
 
 function update_ticks (ax, axisType, tickLocs)
 %% Updated the tick locations for an axes
+%   Note: this function won't remove ticks if tickLocs is empty
 % TODO: Pull out as its own function
+
+if isempty(tickLocs)
+    return
+end
 
 % Decide on which ticks to update
 switch axisType

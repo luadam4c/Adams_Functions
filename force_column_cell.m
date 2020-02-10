@@ -103,6 +103,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/struct2arglist.m
 %       cd/test_normality.m
 %       cd/test_var_difference.m
+%       cd/update_figure_for_corel.m
 %       cd/vertcat_spreadsheets.m
 
 % File History:
