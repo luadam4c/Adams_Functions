@@ -21,7 +21,7 @@
 %% Hard-coded parameters
 % Flags
 plotViolinPlotsFlag = true;
-plotBarPlotsFlag = true;        % Use MATLAB 2018a for this!
+plotBarPlotsFlag = false; %true;        % Use MATLAB 2018a for this!
 archiveScriptsFlag = true;
 
 % Directories

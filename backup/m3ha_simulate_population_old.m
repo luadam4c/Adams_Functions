@@ -24,12 +24,12 @@
 %       cd/all_subdirs.m
 %       cd/argfun.m
 %       cd/copy_into.m
+%       cd/compute_rms_error.m
 %       cd/create_time_stamp.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
 %       cd/extract_columns.m
 %       cd/find_matching_files.m
-%       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/is_field.m
 %       cd/load_neuron_outputs.m
@@ -61,11 +61,11 @@
 % Flags
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
-combineFeatureTablesFlag = true;
-computeOpenProbabilityFlag = true;
-plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;        % Use MATLAB 2018a for this!
+combineFeatureTablesFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;        % Use MATLAB 2018a for this!
 archiveScriptsFlag = true;
 
 % Simulation parameters
@@ -433,10 +433,10 @@ if computeOpenProbabilityFlag
     minf2hinf = (minf .^ 2) .* hinf;
 
     % Compute the rms error between m2h and minf2hinf
-    openProbabilityDiscrepancy = ...
-        force_column_vector(max(abs(m2h - minf2hinf), [], 1));
+    openProbabilityDiscrepancy = compute_rms_error(m2h, minf2hinf, ...
+                                                    'ForceColumnOutput', true);
     
-    % Add or replace variable
+    % Add variable
     simSwpInfo = addvars(simSwpInfo, openProbabilityDiscrepancy);
 
     % Resave the simulated sweep info table

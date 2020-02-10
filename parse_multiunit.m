@@ -945,7 +945,7 @@ if plotCombinedFlag
     fprintf('Plotting a combined plot for %s ...\n', fileBase);    
 
     % Hard-Coded Parameters
-    iTraceToSample = 21;
+    iTraceToSample = min(21, height(parsedParams));
     MS_PER_S = 1000;
     vertBarWidth2Range = 1/10;
 

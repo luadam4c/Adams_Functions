@@ -26,7 +26,7 @@
 
 %% Hard-coded parameters
 % Flags
-plotIpscComparison = false; %true;
+plotIpscComparison = true;
 plot2CellEssential = false; %true;
 plot2CellM2h = false; %true;
 
@@ -38,11 +38,11 @@ plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
-analyze200CellSpikes = true;
-plotAnalysis200Cell = true;
-backupPrevious200Cell = true;
-combine200CellPopulation = true;
-plot200CellViolins = true;
+analyze200CellSpikes = false; %true;
+plotAnalysis200Cell = false; %true;
+backupPrevious200Cell = false; %true;
+combine200CellPopulation = false; %true;
+plot200CellViolins = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -82,16 +82,17 @@ pharmConditions = (1:4)';   % Pharmacological conditions
                             %   3 - GAT 3 Block
                             %   4 - Dual Block
 measuresOfInterest = {'oscDurationSec'; 'oscPeriod2Ms'; ...
-                        'oscIndex4'; 'hasOscillation'; 'percentActive'};
+                        'oscIndex4'; 'hasOscillation'; ...
+                        'percentActive'};
 measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
                     'Oscillatory Index'; 'Has Oscillation'; ...
                     'Active Cells (%)'};
 
 % Plot settings
 ipscFigWidth = 8.5;
-ipscFigHeight = 4;
+ipscFigHeight = 6;
 xLimits2Cell = [2800, 4800];
-yLimitsGabab = [-1, 12];
+yLimitsGabab = [-1, 15];
 % yLimitsEssential = {[], [], [], [], [], []};
 yLimitsEssential = {[-100, 100], [-100, 100], [-1, 12], [-15, 5], ...
                     [1e-10, 1], [1e-10, 1]};
@@ -433,6 +434,12 @@ update_figure_for_corel(fig, 'RemoveXLabels', true, 'RemoveYLabels', true, ...
                         'RemoveTitles', true, 'RemoveXRulers', true);
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                             'Width', figWidth, 'Height', figHeight);
+
+% Plot a scale bar only for the Dual Blockade condition
+if pharm == 4
+    plot_scale_bar('x', 'XBarUnits', 'sec', 'XBarLength', 2, ...
+                    'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
+end
 
 % Save the figure
 drawnow;

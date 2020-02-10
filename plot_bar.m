@@ -772,7 +772,11 @@ if ~isempty(pTickLabels)
     end
 
     % Extract the corresponding tick labels
-    pTickLabelsNeeded = match_positions(pTickLabels, pValues, pTicksNow);
+    if numel(pTickLabels) == numel(pValues)
+        pTickLabelsNeeded = match_positions(pTickLabels, pValues, pTicksNow);
+    else
+        pTickLabelsNeeded = pTickLabels;
+    end
 
     % Plot the tick locations
     switch barDirection

@@ -229,6 +229,7 @@ switch measureTitle
         ylim([0, 5]);
     case 'LTS amplitude (mV)'
         ylim([-75, -45]);
+        yticks(-75:10:-45);
     otherwise
         % Do nothing
 end

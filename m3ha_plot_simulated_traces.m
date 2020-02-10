@@ -117,6 +117,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %               number of rows and columns
 % 2020-01-30 Added 'somaVoltage'
 % 2020-02-08 Added m2h difference
+% 2020-02-09 Now plots m2h subplots in log scale
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -816,11 +817,13 @@ gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
 % Compute m2h, minf2hinf and m2h difference
 itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
 itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
-itm2hDiffDend2 = itm2hDend2 - itminf2hinfDend2;
+itm2hDiffDend2 = abs(itm2hDend2 - itminf2hinfDend2);
 
 % List all possible items to plot
 if strcmpi(buildMode, 'passive')
-    vecsAll = {vVecsRec; vVecsSim; vVecsDend1; vVecsDend2; iExtSim; iPasTotal};
+    vecsAll = {vVecsRec; vVecsSim; vVecsDend1; ...
+                vVecsDend2; iTotal; iExtSim; ...
+                gCmdSimNs; iIntTotal; iPasTotal};
 else
     vecsAll = {vVecsRec; vVecsSim; vVecsDend1; ...
                 vVecsDend2; iTotal; iExtSim; ...
@@ -855,7 +858,14 @@ else
                 'h_{T,dend2}'; 'h_{\infty,T,dend2}'; ...
                 'm_{T,dend2}^2h_{T,dend2}'; ...
                 'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'; ...
-                'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}'};
+                '|m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}|'};
+end
+
+% List whether y axis should be log scaled
+if strcmpi(buildMode, 'passive')
+    yIsLogAll = zeros(9, 1);
+else
+    yIsLogAll = [zeros(33, 1); ones(3, 1)];
 end
 
 % List indices
@@ -943,12 +953,12 @@ else
             end
         case 'essential'
             indToPlot = [IDX_VSOMA, IDX_GGABAB, IDX_ISTIM, IDX_IT, ...
-                            IDX_M2H_DEND2, IDX_MINF2HINF_DEND2];
+                            IDX_M2HDIFF_DEND2];
             if ~isempty(vVecsRec)
                 indToPlot = [IDX_VREC, indToPlot];
             end
         case 'somaVoltage'
-            indToPlot = IDX_VSOMA;
+            indToPlot = [IDX_VSOMA, IDX_M2HDIFF_DEND2];
         case 'allVoltages'
             indToPlot = IDX_VSOMA:IDX_IINT;
             if ~isempty(vVecsRec)
@@ -969,8 +979,8 @@ else
 end
 
 % Extract data to plot
-[dataForOverlapped, yLabelsOverlapped] = ...
-    argfun(@(x) x(indToPlot), vecsAll, labelsAll);
+[dataForOverlapped, yLabelsOverlapped, yIsLog] = ...
+    argfun(@(x) x(indToPlot), vecsAll, labelsAll, yIsLogAll);
 
 % Construct matching time vectors
 tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
@@ -992,6 +1002,14 @@ handles = plot_traces(tVecsForOverlapped, dataForOverlapped, ...
                     'YLabel', yLabelsOverlapped, ...
                     'FigTitle', figTitle, 'LineWidth', lineWidth, ...
                     otherArguments);
+
+% Update y axis scale
+subPlots = handles.subPlots;
+for iAx = 1:numel(subPlots)
+    if yIsLog(iAx)
+        set(subPlots(iAx), 'YScale', 'log');
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
