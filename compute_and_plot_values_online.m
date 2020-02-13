@@ -542,7 +542,9 @@ while ishandle(fig)
         end
 
         % Apply new y limits
-        ylim(yLimitsNew);
+        if yLimitsNew(1) ~= yLimitsNew(2)
+            ylim(yLimitsNew);
+        end
     end
 
     % Delete previous horizontal line(s) if any

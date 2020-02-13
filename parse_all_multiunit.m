@@ -199,6 +199,12 @@ phaseStrs = allDataTable.phaseStrs;
 if isnumeric(phaseBoundaries)
     phaseBoundaries = num2cell(phaseBoundaries);
 end
+if isnumeric(vVecsSl)
+    vVecsSl = {vVecsSl};
+end
+if isnumeric(iVecsSl)
+    iVecsSl = {iVecsSl};
+end
 
 
 %% Parse all slices

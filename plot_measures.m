@@ -276,11 +276,6 @@ varLabelsDefault = varLabelsAll;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
@@ -1041,6 +1036,11 @@ phaseNum = myTable.phaseNumber;
 % Get the first row that is drug on
 %   Note: this is set #2
 rowDrugOn = find(phaseNum == 2, 1, 'first');
+
+% Error check
+if isempty(rowDrugOn)
+    error('Phase 2 not found in one of the slices!');
+end
 
 % Compute time in sweeps relative to drug on
 timeSwps = transpose(1:nRows) - rowDrugOn;

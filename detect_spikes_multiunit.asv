@@ -265,9 +265,6 @@ if isempty(idxDetectStart)
     idxDetectStart = max(1, idxStimStart + minDelaySamples);
 end
 
-% Compute the number of samples
-nSamples = numel(tVec);
-
 % Find the ending index for detecting a spike
 if isempty(idxDetectEnd) && ~isempty(maxDelayMs)
     % Compute the maximum delay in samples
@@ -281,7 +278,7 @@ elseif ~isempty(idxDetectEnd) && isempty(maxDelayMs)
     maxDelayMs = maxDelaySamples .* siMs;
 else
     % The last index is idxDetectEnd
-    idxDetectEnd = nSamples;
+    idxDetectEnd = numel(tVec);
 
     % Compute the maximum delay in samples and in ms
     maxDelaySamples = idxDetectEnd - idxStimStart;
@@ -294,7 +291,7 @@ if isempty(idxEndOfInterest)
     maxRangeOfInterestSamples = round(maxRangeOfInterestMs ./ siMs);
 
     % Find the ending index for computing slope and value ranges
-    idxEndOfInterest = min(max(idxStimStart + maxRangeOfInterestSamples, 1), nSamples);
+    idxEndOfInterest = max(1, idxStimStart + maxRangeOfInterestSamples);
 end
 
 % Find the corresponding times
