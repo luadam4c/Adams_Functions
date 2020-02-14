@@ -34,7 +34,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Arguments:
 %       pValues     - vector(s) of parameter values
-%                       each column is a readout vector
 %                   must be a numeric 2-D array
 %       readout     - vector(s) of readout values 
 %                       each column is a readout vector
@@ -247,6 +246,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/hold_on.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
+%       cd/match_column_count.m
 %       cd/parse_phase_info.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_selected.m
@@ -421,7 +421,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'pValues', ...              % vector of parameter values
-    @(x) validateattributes(x, {'numeric', 'datetime', 'duration'}, {'vector'}));
+    @(x) validateattributes(x, {'numeric', 'datetime', 'duration'}, ...
+                                {'2d'}));
 addRequired(iP, 'readout', ...              % a readout matrix
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
@@ -1108,6 +1109,10 @@ end
 % Plot selected values if any
 if plotIndSelected && ~isempty(indSelected)
     if iscell(indSelected)
+        % Match the column count
+        nColumns = size(readoutToPlot, 2);
+        pValuesToPlot = match_column_count(pValuesToPlot, nColumns);
+        
         % Color arbitrarily first
         selectedCell = ...
             arrayfun(@(x) ...

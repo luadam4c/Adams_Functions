@@ -188,6 +188,9 @@ function handles = m3ha_plot_violin_helper (allValues, relativeBandWidth, ...
 MS_PER_S = 1000;
 xTickAngle = 320;
 
+% Compute statistics
+% TODO
+
 % Create figure for conductance traces
 fig = set_figure_properties('AlwaysNew', true);
 
