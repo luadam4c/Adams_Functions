@@ -6,6 +6,7 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %
 % Example(s):
 %       [a, b] = test_normality(randn(100, 1))
+%       [a, b] = test_normality(randn(100, 1) + 1)
 %       [a, b] = test_normality({randn(100, 1), rand(100, 1)})
 %
 % Outputs:
@@ -29,7 +30,7 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/test_var_difference.m
+%       cd/test_difference.m
 
 % File History:
 % 2019-09-01 Created by Adam Lu

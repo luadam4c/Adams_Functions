@@ -56,6 +56,8 @@ function varargout = unique_groups (grouping, varargin)
 %       cd/unique_custom.m
 %
 % Used by:
+%       cd/test_difference.m
+%       cd/test_var_difference.m
 
 % File History:
 % 2019-08-21 Created by Adam Lu

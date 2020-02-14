@@ -569,6 +569,7 @@ There are 2 MATLAB scripts in this directory:
 - [**structofstruct2structarray.m**](https://github.com/blabuva/Adams_Functions/blob/master/structofstruct2structarray.m): Converts a structure of structures to a structure array
 - [**structs2vecs.m**](https://github.com/blabuva/Adams_Functions/blob/master/structs2vecs.m): Converts a cell array of structs with equal numbers of fields to a column cell array of row vectors or cell arrays
 - [**suptitle.m**](https://github.com/blabuva/Adams_Functions/blob/master/suptitle.m): SUPTITLE puts a title above all subplots.
+- [**test_difference.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_difference.m): Performs the appropriate test between groups based on the normality
 - [**test_normality.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_normality.m): Test whether set(s) of values are normally distributed
 - [**test_passive_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_passive_fit.m): Tests passive fitting 
 - [**test_var_difference.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_var_difference.m): Tests whether groups are different for each measured variable

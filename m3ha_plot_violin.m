@@ -187,9 +187,10 @@ function handles = m3ha_plot_violin_helper (allValues, relativeBandWidth, ...
 % Hard-coded parameters
 MS_PER_S = 1000;
 xTickAngle = 320;
+colControl = 1;
 
-% Compute statistics
-% TODO
+% Compute paired comparison between the control group and other groups
+statsStruct = test_difference(allValues);
 
 % Create figure for conductance traces
 fig = set_figure_properties('AlwaysNew', true);

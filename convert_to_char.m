@@ -22,6 +22,9 @@ function strs = convert_to_char (data, varargin)
 %       varargin    - 'SingleOutput': whether to output a single character array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'Delimiter': used to delimit separate entries
 %                   must be a character array
 %                   default == '_'
@@ -40,6 +43,7 @@ function strs = convert_to_char (data, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/m3ha_rank_neurons.m
 %       cd/parse_spike2_mat.m
+%       cd/test_ifference.m
 %       cd/test_var_difference.m
 
 % File History:
@@ -47,6 +51,7 @@ function strs = convert_to_char (data, varargin)
 % 2019-01-11 Now accepts any data type
 % 2019-01-11 Added 'SingleOutput' and 'Delimiter' as optional arguments
 % 2019-08-14 Added 'Precision' and 'FormatSpec' as optional arguments
+% 2020-02-14 Added 'ForceCellOutput' as an optional argument
 % TODO: Make a convert_to_string.m for string array outputs
 %           that can take non-scalar arguments
 % 
@@ -55,6 +60,7 @@ function strs = convert_to_char (data, varargin)
 
 %% Default values for optional arguments
 singleOutputDefault = false;    % accept cell array outputs by default
+forceCellOutputDefault = false; % don't force output as a cell array by default
 delimiterDefault = '_';
 precisionDefault = [];
 formatSpecDefault = '';
@@ -78,6 +84,8 @@ addRequired(iP, 'data');
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SingleOutput', singleOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Delimiter', delimiterDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Precision', precisionDefault, ...
@@ -90,6 +98,7 @@ addParameter(iP, 'FormatSpec', formatSpecDefault, ...
 % Read from the Input Parser
 parse(iP, data, varargin{:});
 singleOutput = iP.Results.SingleOutput;
+forceCellOutput = iP.Results.ForceCellOutput;
 delimiter = iP.Results.Delimiter;               % Examples: ',' '/'
 precision = iP.Results.Precision;
 formatSpec = iP.Results.FormatSpec;
@@ -127,6 +136,11 @@ end
 if singleOutput && ~ischar(strs)
     strs = convert_to_char(strs, 'SingleOutput', singleOutput, ...
                     'Precision', precision, 'FormatSpec', formatSpec);
+end
+
+% Force as cell array if requested
+if forceCellOutput && ischar(strs)
+    strs = {strs};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
