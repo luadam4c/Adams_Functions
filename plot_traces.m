@@ -643,7 +643,7 @@ switch colorMode
 end
 
 % Decide on a colormap for data to compare
-colorMapToCompare = decide_on_colormap(colorMapToCompare);
+colorMapToCompare = decide_on_colormap(colorMapToCompare, nPlots);
 
 if isempty(horzBarColorMap)
     horzBarColorMap = colorMap;

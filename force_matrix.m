@@ -6,7 +6,7 @@ function vecs = force_matrix (vecs, varargin)
 %
 % Example(s):
 %       force_matrix({1:5, 1:3, 1:4})
-%       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftadjust')
+%       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftAdjust')
 %       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'none')
 %       force_matrix({1:5, magic(3)})
 %       force_matrix({{1:3, 1:3}, {1:3, 1:3}})
@@ -73,6 +73,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
 %       cd/force_data_as_matrix.m
+%       cd/compute_pairwise_differences.m
 %       cd/compute_rms_error.m
 %       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_neuron_choose_best_params.m

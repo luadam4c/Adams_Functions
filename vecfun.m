@@ -28,6 +28,7 @@ function outVecs = vecfun (myFunction, inVecs, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/compute_pairwise_differences.m
 %       cd/medianfilter.m
 %       cd/movingaveragefilter.m
 

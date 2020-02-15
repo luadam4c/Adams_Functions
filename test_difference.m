@@ -9,10 +9,14 @@ function statsStruct = test_difference (data, varargin)
 %       data2 = randn(100, 1) + 1;
 %       data3 = rand(100, 1);
 %       data4 = rand(100, 1) + 1;
+%       data5 = [data1, data2];
+%       data6 = [data3, data4];
 %       statsStruct1 = test_difference(data1)
 %       statsStruct2 = test_difference(data2)
 %       statsStruct3 = test_difference(data3)
 %       statsStruct4 = test_difference(data4)
+%       statsStruct5 = test_difference(data5)
+%       statsStruct6 = test_difference(data6)
 %
 % Outputs:
 %       statsStruct - a structure with fields:
@@ -44,6 +48,9 @@ function statsStruct = test_difference (data, varargin)
 %                   - 'AlphaDifference': significance level for difference test
 %                   must be a positive scalar
 %                   default == 0.05
+%                   - 'IsPaired': whether data is paired
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'DisplayAnova': whether to display ANOVA table
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -51,7 +58,9 @@ function statsStruct = test_difference (data, varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_pairwise_differences.m
 %       cd/convert_to_char.m
+%       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_vectors.m
 %       cd/test_normality.m
@@ -63,6 +72,7 @@ function statsStruct = test_difference (data, varargin)
 % File History:
 % 2020-02-14 Moved from test_var_difference.m
 % 2020-02-14 Added the input parser
+% 2020-02-14 Added 'IsPaired' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -75,7 +85,8 @@ uniqueGroupsDefault = [];       % set later
 groupNamesDefault = {};         % set later
 alphaNormalityDefault = 0.05;   % significance level for normality test
 alphaDifferenceDefault = 0.05;  % significance level for difference test
-displayAnovaDefault = true;     % whether to display ANOVA table
+isPairedDefault = false;        % data is not paired by default
+displayAnovaDefault = true;     % display ANOVA table by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -106,6 +117,8 @@ addParameter(iP, 'AlphaNormality', alphaNormalityDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'AlphaDifference', alphaDifferenceDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'IsPaired', isPairedDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'DisplayAnova', displayAnovaDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -116,6 +129,7 @@ uniqueGroups = iP.Results.UniqueGroups;
 groupNames = iP.Results.GroupNames;
 alphaNormality = iP.Results.AlphaNormality;
 alphaDifference = iP.Results.AlphaDifference;
+isPaired = iP.Results.IsPaired;
 displayAnova = iP.Results.DisplayAnova;
 
 % Keep unmatched arguments for the TODO() function
@@ -183,12 +197,23 @@ else
                     'UniformOutput', false);
 end
 
+% Compute pairwise differences
+if isPaired
+    diffData = compute_pairwise_differences(data);
+end
+
 % Test the normality of the data
-[isNormal, pTable] = test_normality(data, 'SigLevel', alphaNormality);
-pNormLill = pTable.pNormLill; 
-pNormAd = pTable.pNormAd; 
-pNormJb = pTable.pNormJb;
-pNormAvg = pTable.pNormAvg;
+if isPaired
+    % Test the normality of pairwise differences
+    % TODO    
+else
+    % Test the normality of each column
+    [isNormal, pTable] = test_normality(data, 'SigLevel', alphaNormality);
+    pNormLill = pTable.pNormLill; 
+    pNormAd = pTable.pNormAd; 
+    pNormJb = pTable.pNormJb;
+    pNormAvg = pTable.pNormAvg;
+end
 
 %% Perform the correct difference test among groups
 if nGroups == 1
@@ -304,7 +329,6 @@ for iGroup = 1:nGroups
     statsStruct.(pNormAdStrs{iGroup}) = pNormAd(iGroup);
     statsStruct.(pNormJbStrs{iGroup}) = pNormJb(iGroup);
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
