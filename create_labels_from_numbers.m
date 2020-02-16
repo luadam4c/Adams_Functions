@@ -79,6 +79,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/renamevars.m
 %       cd/save_all_zooms.m
+%       cd/test_difference.m
 %       cd/transpose_table.m
 
 % File History:

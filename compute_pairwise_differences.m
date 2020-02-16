@@ -9,6 +9,7 @@ function diffVectors = compute_pairwise_differences (vectors, varargin)
 %       compute_pairwise_differences(magic(3))
 %       compute_pairwise_differences(magic(4))
 %       compute_pairwise_differences(magic(5))
+%       compute_pairwise_differences((1:10)')
 %
 % Outputs:
 %       diffVectors - difference vectors
@@ -27,7 +28,6 @@ function diffVectors = compute_pairwise_differences (vectors, varargin)
 %       cd/vecfun.m
 %
 % Used by:
-%       cd/test_difference.m
 
 % File History:
 % 2020-02-15 Created by Adam Lu
@@ -66,6 +66,12 @@ vectors = force_matrix(vectors, 'AlignMethod', 'leftAdjustPad');
 
 % Count the number of vectors
 nVectors = size(vectors, 2);
+
+% If there are less than 2 vectors, return original vectors
+if nVectors < 2
+    diffVectors = vectors;
+    return
+end
 
 % List all pairs of indices
 %   Note: nchoosek returns a nPairs x 2 matrix, 

@@ -75,6 +75,7 @@ function testResults = test_var_difference (dataTable, measureVars, groupingVar,
 % 2019-10-12 Now uses test_normality.m
 % 2020-02-14 Now uses unique_groups.m
 % 2020-02-14 Pulled out test_difference.m
+% TODO: IsPaired, especially for more than one grouping variables
 % 
 
 %% Hard-coded parameters

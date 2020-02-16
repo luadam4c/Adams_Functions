@@ -17,6 +17,7 @@ function finalString = combine_strings (varargin)
 % Outputs:
 %       finalString    - a string (may be empty) that is a final substring
 %
+%
 % Arguments:
 %       strs     - (opt) either 'Substrings' or 'NameValuePairs'
 %       varargin    - 'Delimiter': delimiter used
