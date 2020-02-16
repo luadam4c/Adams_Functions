@@ -85,7 +85,7 @@ rowsToPlotDefault = 'all';
 outFolderDefault = '';          % set later
 figWidthDefault = 3.4; %5;
 figHeightDefault = 3; %3.4;
-figTypesDefault = {'png', 'epsc2'};
+figTypesDefault = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -208,7 +208,6 @@ function [handles, diffStruct, diffStructFirstThree] = ...
 % Hard-coded parameters
 MS_PER_S = 1000;
 xTickAngle = 320;
-colControl = 1;
 
 % Construct the pharm group names
 pharmNames = extractAfter(pharmLabels, '-');

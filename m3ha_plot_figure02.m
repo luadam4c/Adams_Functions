@@ -47,7 +47,7 @@ measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
                     'ltsWidth'; 'ltsOnsetTime'; 'ltsTimeJitter'; ...
                     'ltsProbability'; 'spikesPerLts'; ...
                     'spikeMaxAmp'; 'spikeMinAmp'; ...
-                    'spikeFrequency'; 'spikeAdaptation'
+                    'spikeFrequency'; 'spikeAdaptation'; ...
                     'burstOnsetTime'; 'burstTimeJitter'; ...
                     'burstProbability'; 'spikesPerBurst'};
 dataMode = 0;           % data mode:
@@ -80,13 +80,10 @@ conditionLabel3D = 'pharm_1-4_gincr_all';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 
-% violinFigHeight = 5;            % in centimeters
-% violinFigWidth = 3.4;           % in centimeters
-% violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
-% medianColor = rgb('GreenYellow');     % color of median circle
-% medianSize = 6;                % size of median circle in points
-% bar3FigHeight = 6;              % in centimeters
-% bar3FigWidth = 6;               % in centimeters
+violinFigHeight = 5;            % in centimeters
+violinFigWidth = 3.4;           % in centimeters
+bar3FigHeight = 6;              % in centimeters
+bar3FigWidth = 6;               % in centimeters
 
 figTypes = {'png', 'epsc'};
 
@@ -152,7 +149,8 @@ if plotViolinPlotsFlag
 
     % Plot violin plots
     m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest, ...
-                    'OutFolder', figure02Dir);
+                    'OutFolder', figure02Dir, 'FigTypes', figTypes, ...
+                    'FigWidth', violinFigWidth, 'FigHeight', violinFigHeight);
 end
 
 %% Plot 3D bar plots
@@ -180,7 +178,8 @@ if plotBarPlotsFlag
 
     % Plot bar plots
     m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest, ...
-                    'OutFolder', figure02Dir);
+                    'OutFolder', figure02Dir, 'FigTypes', figTypes, ...
+                    'FigWidth', bar3FigWidth, 'FigHeight', bar3FigHeight);
 end
 
 % Archive all scripts for this run

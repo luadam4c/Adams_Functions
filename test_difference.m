@@ -219,7 +219,7 @@ groupingVec = groupingMatrix(:);
 
 % Remove NaN values if not paired
 if ~isPaired
-    indToKeep = ~any(isnan(dataVec));
+    indToKeep = ~isnan(dataVec);
     dataVec = dataVec(indToKeep);
     groupingVec = groupingVec(indToKeep);
 end
@@ -249,7 +249,9 @@ groupNames = replace(groupNames, '-', 'neg');
 nGroups = numel(uniqueGroups);
 
 % Count the number of pairs
-nPairs = nchoosek(nGroups, 2);
+if nGroups > 1
+    nPairs = nchoosek(nGroups, 2);
+end
 
 % Create group names for normality tests
 if isPaired
@@ -271,14 +273,17 @@ nNormGroups = numel(normGroupNames);
             'isNormal_', 'pNormAvg_', 'pNormLill_', 'pNormAd_', 'pNormJb_');
 
 % Create group name vectors
-groupNamesPaired = nchoosek(groupNames, 2);
-firstGroupNames = groupNamesPaired(:, 1);
-secondGroupNames = groupNamesPaired(:, 2);
+if nGroups > 1
+    groupNamesPaired = nchoosek(groupNames, 2);
+    firstGroupNames = groupNamesPaired(:, 1);
+    secondGroupNames = groupNamesPaired(:, 2);
 
-% Create strings
-[isDifferentStrs, pValueStrs, meanDiffStrs] = ...
-    argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-            'isDifferent_', 'pValue_', 'meanDifference_');
+    % Create strings
+    [isDifferentStrs, pValueStrs, meanDiffStrs] = ...
+        argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
+                'isDifferent_', 'pValue_', 'meanDifference_');
+end
+
 
 %% Do the job
 % Initialize statsStruct
@@ -287,10 +292,12 @@ statsStruct.pValue = NaN;
 statsStruct.nSamples = NaN;
 statsStruct.degreesOfFreedom = NaN;
 statsStruct.testFunction = 'none';
-for iPair = 1:nPairs
-    statsStruct.(isDifferentStrs{iPair}) = NaN;
-    statsStruct.(pValueStrs{iPair}) = NaN;
-    statsStruct.(meanDiffStrs{iPair}) = NaN;
+if nGroups > 1
+    for iPair = 1:nPairs
+        statsStruct.(isDifferentStrs{iPair}) = NaN;
+        statsStruct.(pValueStrs{iPair}) = NaN;
+        statsStruct.(meanDiffStrs{iPair}) = NaN;
+    end
 end
 for iGroup = 1:nNormGroups
     statsStruct.(isNormalStrs{iGroup}) = NaN;
