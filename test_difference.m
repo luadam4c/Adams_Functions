@@ -61,13 +61,19 @@ function statsStruct = test_difference (data, varargin)
 %
 % Outputs:
 %       statsStruct - a structure with fields:
-%                       isDifferentXXX (between each pair of groups)
+%                       isDifferent
+%                       pValue
+%                       nSamples
+%                       degreesOfFreedom
 %                       testFunction
-%                       isNormal
-%                       pNormAvg
-%                       pNormLill
-%                       pNormAd
-%                       pNormJb
+%                       isDifferent_Group1_Group2, etc.
+%                       pValue_Group1_Group2, etc.
+%                       meanDifference_Group1_Group2, etc.
+%                       isNormal_Group1, etc.
+%                       pNormAvg_Group1, etc.
+%                       pNormLill_Group1, etc.
+%                       pNormAd_Group1, etc.
+%                       pNormJb_Group1, etc.
 %                   specified as a scalar structure
 %
 % Arguments:
@@ -100,7 +106,7 @@ function statsStruct = test_difference (data, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/convert_to_char.m
-%       cd/count_vectors.m
+%       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_vectors.m
 %       cd/create_labels_from_numbers.m
@@ -124,6 +130,8 @@ function statsStruct = test_difference (data, varargin)
 nullMean = 0;                   % null hypothesis mean for one-sample test
 nullMedian = 0;                 % null hypothesis median for one-sample test
 diffDelimiter = '_minus_';
+ranovaTimeVar = 'Time';
+ranovaRowOfInterest = ['(Intercept):', ranovaTimeVar];
 
 %% Default values for optional arguments
 groupingDefault  = [];          % set later
@@ -183,8 +191,22 @@ displayAnova = iP.Results.DisplayAnova;
 
 %% Preparation
 % Force the data into a numeric matrix
-dataMatrix = force_matrix(data);
-groupingMatrix = force_matrix(grouping);
+dataMatrixOrig = force_matrix(data);
+groupingMatrixOrig = force_matrix(grouping);
+
+% Remove any row with NaN if is paired
+if isPaired
+    rowsToKeep = ~any(isnan(dataMatrixOrig), 2);
+    dataMatrix = dataMatrixOrig(rowsToKeep, :);
+    if ~isempty(groupingMatrixOrig)
+        groupingMatrix = groupingMatrixOrig(rowsToKeep, :);
+    else
+        groupingMatrix = groupingMatrixOrig;
+    end
+else
+    dataMatrix = dataMatrixOrig;
+    groupingMatrix = groupingMatrixOrig;
+end
 
 % Create a grouping matrix if not provided
 if isempty(groupingMatrix)
@@ -194,6 +216,13 @@ end
 % Linearize data and grouping array
 dataVec = dataMatrix(:);
 groupingVec = groupingMatrix(:);
+
+% Remove NaN values if not paired
+if ~isPaired
+    indToKeep = ~any(isnan(dataVec));
+    dataVec = dataVec(indToKeep);
+    groupingVec = groupingVec(indToKeep);
+end
 
 % Get the unique grouping values
 if isempty(uniqueGroups)
@@ -219,6 +248,9 @@ groupNames = replace(groupNames, '-', 'neg');
 % Count the number of groups
 nGroups = numel(uniqueGroups);
 
+% Count the number of pairs
+nPairs = nchoosek(nGroups, 2);
+
 % Create group names for normality tests
 if isPaired
     if nGroups > 2
@@ -238,25 +270,34 @@ nNormGroups = numel(normGroupNames);
     argfun(@(x) strcat(x, normGroupNames), ...
             'isNormal_', 'pNormAvg_', 'pNormLill_', 'pNormAd_', 'pNormJb_');
 
+% Create group name vectors
+groupNamesPaired = nchoosek(groupNames, 2);
+firstGroupNames = groupNamesPaired(:, 1);
+secondGroupNames = groupNamesPaired(:, 2);
+
+% Create strings
+[isDifferentStrs, pValueStrs, meanDiffStrs] = ...
+    argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
+            'isDifferent_', 'pValue_', 'meanDifference_');
+
 %% Do the job
-% If there are too many NaNs, return
-if sum(isnan(dataVec)) >= numel(dataVec) / 2
-    statsStruct.isDifferent = false;
-    statsStruct.pValue = NaN;
-    statsStruct.testFunction = 'none';
-    for iGroup = 1:nGroups
-        statsStruct.(isNormalStrs{iGroup}) = false;
-        statsStruct.(pNormAvgStrs{iGroup}) = NaN;
-        statsStruct.(pNormLillStrs{iGroup}) = NaN;
-        statsStruct.(pNormAdStrs{iGroup}) = NaN;
-        statsStruct.(pNormJbStrs{iGroup}) = NaN;
-    end
-    statsStruct.isNormal = false;
-    statsStruct.pNormAvg = NaN;
-    statsStruct.pNormLill = NaN;
-    statsStruct.pNormAd = NaN;
-    statsStruct.pNormJb = NaN;
-    return
+% Initialize statsStruct
+statsStruct.isDifferent = false;
+statsStruct.pValue = NaN;
+statsStruct.nSamples = NaN;
+statsStruct.degreesOfFreedom = NaN;
+statsStruct.testFunction = 'none';
+for iPair = 1:nPairs
+    statsStruct.(isDifferentStrs{iPair}) = NaN;
+    statsStruct.(pValueStrs{iPair}) = NaN;
+    statsStruct.(meanDiffStrs{iPair}) = NaN;
+end
+for iGroup = 1:nNormGroups
+    statsStruct.(isNormalStrs{iGroup}) = NaN;
+    statsStruct.(pNormAvgStrs{iGroup}) = NaN;
+    statsStruct.(pNormLillStrs{iGroup}) = NaN;
+    statsStruct.(pNormAdStrs{iGroup}) = NaN;
+    statsStruct.(pNormJbStrs{iGroup}) = NaN;
 end
 
 % Separate the data into groups
@@ -267,6 +308,15 @@ if iscell(uniqueGroups)
 else
     dataCell = arrayfun(@(w) dataVec(ismatch(groupingVec, w)), ...
                         uniqueGroups, 'UniformOutput', false);
+end
+
+% Compute number of samples
+nSamples = min(count_samples(dataCell));
+statsStruct.nSamples = nSamples;
+
+% If there is less than 2 samples, return
+if nSamples < 2
+    return
 end
 
 % Decide on the data for normality tests
@@ -298,7 +348,8 @@ if nGroups == 1
     if all(isNormal)
         % Perform a 1-sample t-test 
         %   (tests difference of mean with nullMean)
-        [isDifferent, pValue] = ttest(dataCell{1}, nullMean, ...
+        [isDifferent, pValue, ~, testStats] = ...
+            ttest(dataCell{1}, nullMean, ...
                                         'Alpha', alphaDifference);
 
         % Store test function
@@ -315,15 +366,15 @@ if nGroups == 1
 elseif nGroups == 2
     if all(isNormal) && isPaired
         % Perform a 2-sample paired t-test (tests difference between means)
-        [isDifferent, pValue] = ttest(dataCell{1}, dataCell{2}, ...
-                                        'Alpha', alphaDifference);
+        [isDifferent, pValue, ~, testStats] = ...
+            ttest(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'ttest';
     elseif all(isNormal) && ~isPaired
         % Perform a 2-sample unpaired t-test (tests difference between means)
-        [isDifferent, pValue] = ttest2(dataCell{1}, dataCell{2}, ...
-                                        'Alpha', alphaDifference);
+        [isDifferent, pValue, ~, testStats] = ...
+            ttest2(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'ttest2';
@@ -368,7 +419,7 @@ else
 
         % Extract the p value for testing any difference in the means
         %   across the within-subjects factors
-        pValue = ranovatbl{'(Intercept):Time', 'pValue'};
+        pValue = ranovatbl{ranovaRowOfInterest, 'pValue'};
 
         % Decide whether the group means are different
         isDifferent = pValue < alphaDifference;
@@ -379,7 +430,7 @@ else
         % Perform a one-way ANOVA 
         %   (tests whether means of normal distributions are the same,
         %       assuming common variance)
-        [pValue, ~, stats] = anova1(dataVec, groupingVec, displayOpt);
+        [pValue, ~, testStats] = anova1(dataVec, groupingVec, displayOpt);
 
         % Decide whether the group means are different
         isDifferent = pValue < alphaDifference;
@@ -387,13 +438,20 @@ else
         % Store test function
         testFunction = 'anova1';
     elseif ~all(isNormal) && isPaired
-        % Perform the nonparametric Friedman's test 
-        %   (tests whether medians are the same,
-        %       assuming common continuous distributions)
-        [pValue, ~, stats] = friedman(dataMatrix, 1, displayOpt);
+        % If there are less than two rows left, return empty
+        if size(dataMatrix, 1) < 2
+            % Cannot perform Friedman's test
+            isDifferent = NaN;
+            pValue = NaN;
+        else
+            % Perform the nonparametric Friedman's test 
+            %   (tests whether medians are the same,
+            %       assuming common continuous distributions)
+            [pValue, ~, testStats] = friedman(dataMatrix, 1, displayOpt);
 
-        % Decide whether the group medians are different
-        isDifferent = pValue < alphaDifference;
+            % Decide whether the group medians are different
+            isDifferent = pValue < alphaDifference;
+        end
 
         % Store test function
         testFunction = 'friedman';
@@ -401,7 +459,8 @@ else
         % Perform a Kruskal-Wallis test 
         %   (tests whether medians are the same,
         %       assuming common continuous distributions)
-        [pValue, ~, stats] = kruskalwallis(dataVec, groupingVec, displayOpt);
+        [pValue, ~, testStats] = ...
+            kruskalwallis(dataVec, groupingVec, displayOpt);
 
         % Decide whether the group medians are different
         isDifferent = pValue < alphaDifference;
@@ -411,12 +470,26 @@ else
     end
 end
 
-% Store in statsStruct
+% Extract or compute degrees of freedom
+switch testFunction
+    case {'ttest', 'ttest2', 'anova1'}
+        degreesOfFreedom = testStats.df;
+    case {'signrank', 'ranksum', 'friedman', 'kruskalwallis'}
+        degreesOfFreedom = NaN;
+    case 'ranova'
+        degreesOfFreedom = ranovatbl{ranovaRowOfInterest, 'DF'};
+    otherwise
+        error('testFunction unrecognized!');
+end
+
+% Store overall differences in statsStruct
 statsStruct.isDifferent = isDifferent;
 statsStruct.pValue = pValue;
+statsStruct.degreesOfFreedom = degreesOfFreedom;
+statsStruct.testFunction = testFunction;
 
 % Decide whether there is a difference between each pair of groups
-if nGroups > 2
+if nGroups > 2 && ~isnan(pValue)
     if strcmp(testFunction, 'ranova')
         % Multiple comparison of estimated marginal means
         %   Note: otherStats is an array with 
@@ -428,11 +501,11 @@ if nGroups > 2
         %           pValue      - p value
         %           Lower       - lower confidence interval of difference
         %           Upper       - upper confidence interval of difference
-        otherStats = multcompare(rm, 'Time');
+        otherStats = multcompare(rm, ranovaTimeVar);
 
         % Extract columns
-        firstGroupIndicesAll = otherStats{:, 'Time_1'};
-        secondGroupIndicesAll = otherStats{:, 'Time_2'};
+        firstGroupIndicesAll = otherStats{:, [ranovaTimeVar, '_1']};
+        secondGroupIndicesAll = otherStats{:, [ranovaTimeVar, '_2']};
         meanDifferenceEachPairAll = otherStats{:, 'Difference'};
         pValuesEachPairAll = otherStats{:, 'pValue'};
 
@@ -443,8 +516,10 @@ if nGroups > 2
         meanDifferenceEachPair = meanDifferenceEachPairAll(rowsToKeep);
         pValuesEachPair = pValuesEachPairAll(rowsToKeep);
 
-        % Count the number of pairs
-        nPairs = numel(pValuesEachPair);
+        % Check the number of pairs
+        if nPairs ~= numel(pValuesEachPair)
+            error('Code logic error!');
+        end
     else
         % Apply multcompare()
         %   Note: otherStats is a numeric matrix with 
@@ -455,7 +530,7 @@ if nGroups > 2
         %           4 - mean difference
         %           5 - upper confidence interval of difference
         %           6 - p value
-        otherStats = multcompare(stats, 'Display', displayOpt);
+        otherStats = multcompare(testStats, 'Display', displayOpt);
 
         % Extract columns
         firstGroupIndices = otherStats(:, 1);
@@ -463,22 +538,20 @@ if nGroups > 2
         meanDifferenceEachPair = otherStats(:, 4);
         pValuesEachPair = otherStats(:, 6);
 
-        % Count the number of pairs
-        nPairs = size(otherStats, 1);
+        % Check the number of pairs
+        if nPairs ~= size(otherStats, 1)
+            error('Code logic error!');
+        end
     end
 
     % Create group name vectors
     [firstGroupNames, secondGroupNames] = ...
         argfun(@(x) groupNames(x), firstGroupIndices, secondGroupIndices);
 
-    % Create isDifferentStrs
-    isDifferentStrs = strcat('isDifferent_', firstGroupNames, ...
-                                '_', secondGroupNames);
-
     % Create strings
-    [pValueStrs, meanDiffStrs] = ...
+    [isDifferentStrs, pValueStrs, meanDiffStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'pValue_', 'meanDifference_');
+                'isDifferent_', 'pValue_', 'meanDifference_');
 
     % Store p values in statsStruct
     for iPair = 1:nPairs
@@ -498,9 +571,6 @@ if nGroups > 2
     end
 end
 
-% Store other information
-statsStruct.testFunction = testFunction;
-
 % Store normality test results in statsStruct
 for iGroup = 1:nNormGroups
     statsStruct.(isNormalStrs{iGroup}) = isNormal(iGroup);
@@ -509,13 +579,6 @@ for iGroup = 1:nNormGroups
     statsStruct.(pNormAdStrs{iGroup}) = pNormAd(iGroup);
     statsStruct.(pNormJbStrs{iGroup}) = pNormJb(iGroup);
 end
-
-% Store vectors
-% statsStruct.isNormal = isNormal;
-% statsStruct.pNormAvg = pNormAvg;
-% statsStruct.pNormLill = pNormLill;
-% statsStruct.pNormAd = pNormAd;
-% statsStruct.pNormJb = pNormJb;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -546,6 +609,22 @@ normData = compute_pairwise_differences(dataCell);
 % Compute the repeated measures analysis of variance table
 [ranovatbl, betweenSubjectsSpec, ...
     withinSubjectsSpec, hypothesisValue] = ranova(rm);
+
+% Store vectors
+statsStruct.isNormal = false;
+statsStruct.pNormAvg = NaN;
+statsStruct.pNormLill = NaN;
+statsStruct.pNormAd = NaN;
+statsStruct.pNormJb = NaN;
+statsStruct.isNormal = isNormal;
+statsStruct.pNormAvg = pNormAvg;
+statsStruct.pNormLill = pNormLill;
+statsStruct.pNormAd = pNormAd;
+statsStruct.pNormJb = pNormJb;
+
+% If there are too many NaNs, return
+if sum(isnan(dataVec)) >= numel(dataVec) / 2
+end
 
 %}
 

@@ -100,7 +100,7 @@ pTable = table(pNormAvg, pNormLill, pNormAd, pNormJb);
 
 function pNormLill = compute_pnorm_lill (x, sigLevel)
 
-if numel(x) >= 4
+if sum(~isnan(x)) >= 4
     [~, pNormLill] = lillietest(x, 'Alpha', sigLevel);
 else
     pNormLill = NaN;
@@ -110,7 +110,7 @@ end
 
 function pNormAd = compute_pnorm_ad (x, sigLevel)
 
-if numel(x) >= 4
+if sum(~isnan(x)) >= 4
     [~, pNormAd] = adtest(x, 'Alpha', sigLevel);
 else
     pNormAd = NaN;
@@ -120,7 +120,7 @@ end
 
 function pNormJb = compute_pnorm_jb (x, sigLevel)
 
-if numel(x) >= 2
+if sum(~isnan(x)) >= 2
     [~, pNormJb] = jbtest(x, sigLevel);
 else
     pNormJb = NaN;

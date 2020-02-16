@@ -36,9 +36,9 @@ datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
 saveCellInfo = false;
 copyExampleFiles = false; %true;
 plotExamplesFlag = false; %true;
-plotViolinPlotsFlag = false; %true;
+plotViolinPlotsFlag = true;
 plotBarPlotsFlag = false; %true;
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % Analysis settings
 % Note: must be consistent with m3ha_compute_statistics.m
@@ -88,7 +88,7 @@ gCond3D = num2cell(gIncrAll);
 % bar3FigHeight = 6;              % in centimeters
 % bar3FigWidth = 6;               % in centimeters
 
-figTypes = {'png', 'epsc2'};
+figTypes = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
