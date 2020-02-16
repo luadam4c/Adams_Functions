@@ -68,7 +68,7 @@ function statsStruct = test_difference (data, varargin)
 %                       testFunction
 %                       isDifferent_Group1_Group2, etc.
 %                       pValue_Group1_Group2, etc.
-%                       meanDifference_Group1_Group2, etc.
+%                       diffValue_Group1_Group2, etc.
 %                       isNormal_Group1, etc.
 %                       pNormAvg_Group1, etc.
 %                       pNormLill_Group1, etc.
@@ -281,7 +281,7 @@ if nGroups > 1
     % Create strings
     [isDifferentStrs, pValueStrs, meanDiffStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', 'meanDifference_');
+                'isDifferent_', 'pValue_', 'diffValue_');
 end
 
 
@@ -513,14 +513,14 @@ if nGroups > 2 && ~isnan(pValue)
         % Extract columns
         firstGroupIndicesAll = otherStats{:, [ranovaTimeVar, '_1']};
         secondGroupIndicesAll = otherStats{:, [ranovaTimeVar, '_2']};
-        meanDifferenceEachPairAll = otherStats{:, 'Difference'};
+        diffValueEachPairAll = otherStats{:, 'Difference'};
         pValuesEachPairAll = otherStats{:, 'pValue'};
 
         % Remove duplicate rows
         rowsToKeep = firstGroupIndicesAll < secondGroupIndicesAll;
         firstGroupIndices = firstGroupIndicesAll(rowsToKeep);
         secondGroupIndices = secondGroupIndicesAll(rowsToKeep);
-        meanDifferenceEachPair = meanDifferenceEachPairAll(rowsToKeep);
+        diffValueEachPair = diffValueEachPairAll(rowsToKeep);
         pValuesEachPair = pValuesEachPairAll(rowsToKeep);
 
         % Check the number of pairs
@@ -542,7 +542,7 @@ if nGroups > 2 && ~isnan(pValue)
         % Extract columns
         firstGroupIndices = otherStats(:, 1);
         secondGroupIndices = otherStats(:, 2);
-        meanDifferenceEachPair = otherStats(:, 4);
+        diffValueEachPair = otherStats(:, 4);
         pValuesEachPair = otherStats(:, 6);
 
         % Check the number of pairs
@@ -558,13 +558,13 @@ if nGroups > 2 && ~isnan(pValue)
     % Create strings
     [isDifferentStrs, pValueStrs, meanDiffStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', 'meanDifference_');
+                'isDifferent_', 'pValue_', 'diffValue_');
 
     % Store p values in statsStruct
     for iPair = 1:nPairs
         % Extract pvalue
         pValueThis = pValuesEachPair(iPair);
-        meanDifferenceThis = meanDifferenceEachPair(iPair);
+        diffValueThis = diffValueEachPair(iPair);
 
         % Test whether there is a difference between this pair
         isDifferentThis = pValueThis < alphaDifference;
@@ -574,7 +574,7 @@ if nGroups > 2 && ~isnan(pValue)
 
         % Store p values
         statsStruct.(pValueStrs{iPair}) = pValueThis;
-        statsStruct.(meanDiffStrs{iPair}) = meanDifferenceThis;
+        statsStruct.(meanDiffStrs{iPair}) = diffValueThis;
     end
 end
 
