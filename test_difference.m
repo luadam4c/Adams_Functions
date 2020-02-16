@@ -182,14 +182,18 @@ displayAnova = iP.Results.DisplayAnova;
 % otherArguments = iP.Unmatched;
 
 %% Preparation
-% Create a grouping array if not provided
-if isempty(grouping)
-    grouping = create_grouping_by_vectors(data);
+% Force the data into a numeric matrix
+dataMatrix = force_matrix(data);
+groupingMatrix = force_matrix(grouping);
+
+% Create a grouping matrix if not provided
+if isempty(groupingMatrix)
+    groupingMatrix = create_grouping_by_vectors(dataMatrix);
 end
 
 % Linearize data and grouping array
-dataVec = data(:);
-groupingVec = grouping(:);
+dataVec = dataMatrix(:);
+groupingVec = groupingMatrix(:);
 
 % Get the unique grouping values
 if isempty(uniqueGroups)
@@ -267,9 +271,6 @@ end
 
 % Decide on the data for normality tests
 if isPaired
-    % Put the data in a table
-    dataMatrix = force_matrix(dataCell);
-
     % Eliminate between-sample differences
     if nGroups > 2
         % Compute the means for each sample
@@ -428,13 +429,22 @@ if nGroups > 2
         %           Lower       - lower confidence interval of difference
         %           Upper       - upper confidence interval of difference
         otherStats = multcompare(rm, 'Time');
-        firstGroupIndices = otherStats{:, 'Time_1'};
-        secondGroupIndices = otherStats{:, 'Time_2'};
-        meanDifferenceEachPair = otherStats{:, 'Difference'};
-        pValuesEachPair = otherStats{:, 'pValue'};
+
+        % Extract columns
+        firstGroupIndicesAll = otherStats{:, 'Time_1'};
+        secondGroupIndicesAll = otherStats{:, 'Time_2'};
+        meanDifferenceEachPairAll = otherStats{:, 'Difference'};
+        pValuesEachPairAll = otherStats{:, 'pValue'};
+
+        % Remove duplicate rows
+        rowsToKeep = firstGroupIndicesAll < secondGroupIndicesAll;
+        firstGroupIndices = firstGroupIndicesAll(rowsToKeep);
+        secondGroupIndices = secondGroupIndicesAll(rowsToKeep);
+        meanDifferenceEachPair = meanDifferenceEachPairAll(rowsToKeep);
+        pValuesEachPair = pValuesEachPairAll(rowsToKeep);
 
         % Count the number of pairs
-        nPairs = height(otherStats);
+        nPairs = numel(pValuesEachPair);
     else
         % Apply multcompare()
         %   Note: otherStats is a numeric matrix with 
@@ -446,6 +456,8 @@ if nGroups > 2
         %           5 - upper confidence interval of difference
         %           6 - p value
         otherStats = multcompare(stats, 'Display', displayOpt);
+
+        % Extract columns
         firstGroupIndices = otherStats(:, 1);
         secondGroupIndices = otherStats(:, 2);
         meanDifferenceEachPair = otherStats(:, 4);
