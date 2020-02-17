@@ -124,7 +124,7 @@ function statsStruct = test_difference (data, varargin)
 % 2020-02-14 Added 'IsPaired' as an optional argument
 % 2020-02-15 Finished implementing 'IsPaired'
 % 2020-02-15 Added nonparametric tests for multiple groups
-% 
+% 2020-02-16 Added meanDiff
 
 %% Hard-coded parameters
 nullMean = 0;                   % null hypothesis mean for one-sample test
@@ -273,29 +273,37 @@ nNormGroups = numel(normGroupNames);
             'isNormal_', 'pNormAvg_', 'pNormLill_', 'pNormAd_', 'pNormJb_');
 
 % Create group name vectors
-if nGroups > 1
+if nGroups > 2
     groupNamesPaired = nchoosek(groupNames, 2);
     firstGroupNames = groupNamesPaired(:, 1);
     secondGroupNames = groupNamesPaired(:, 2);
 
     % Create strings
-    [isDifferentStrs, pValueStrs, meanDiffStrs] = ...
+    [isDifferentStrs, pValueStrs, diffValueStrs, meanDiffStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', 'diffValue_');
+                'isDifferent_', 'pValue_', 'diffValue_', 'meanDiff_');
 end
 
+% Decide whether to display the ANOVA table and pairwise comparison graphs
+if displayAnova
+    displayOpt = 'on';
+else
+    displayOpt = 'off';
+end
 
 %% Do the job
 % Initialize statsStruct
 statsStruct.isDifferent = false;
 statsStruct.pValue = NaN;
+statsStruct.meanDiff = NaN;
 statsStruct.nSamples = NaN;
 statsStruct.degreesOfFreedom = NaN;
 statsStruct.testFunction = 'none';
-if nGroups > 1
+if nGroups > 2
     for iPair = 1:nPairs
         statsStruct.(isDifferentStrs{iPair}) = NaN;
         statsStruct.(pValueStrs{iPair}) = NaN;
+        statsStruct.(diffValueStrs{iPair}) = NaN;
         statsStruct.(meanDiffStrs{iPair}) = NaN;
     end
 end
@@ -350,14 +358,24 @@ pNormAd = pTable.pNormAd;
 pNormJb = pTable.pNormJb;
 pNormAvg = pTable.pNormAvg;
 
+%% Compute the mean difference
+if nGroups == 1
+    statsStruct.meanDiff = nanmean(dataCell{1});
+elseif nGroups == 2
+    if isPaired
+        statsStruct.meanDiff = nanmean(dataCell{2} - dataCell{1});
+    else
+        statsStruct.meanDiff = nanmean(dataCell{2}) - nanmean(dataCell{1});
+    end
+end
+
 %% Perform the correct difference test among groups
 if nGroups == 1
     if all(isNormal)
         % Perform a 1-sample t-test 
         %   (tests difference of mean with nullMean)
         [isDifferent, pValue, ~, testStats] = ...
-            ttest(dataCell{1}, nullMean, ...
-                                        'Alpha', alphaDifference);
+            ttest(dataCell{1}, nullMean, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'ttest';
@@ -387,27 +405,20 @@ elseif nGroups == 2
         testFunction = 'ttest2';
     elseif ~all(isNormal) && isPaired
         % Perform a Wilcoxon signed-rank test (tests difference between medians)
-        [pValue, isDifferent] = signrank(dataCell{1}, dataCell{2}, ...
-                                        'Alpha', alphaDifference);
+        [pValue, isDifferent] = ...
+            signrank(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'signrank';
     elseif ~all(isNormal) && ~isPaired
         % Perform a Wilcoxon rank-sum test (tests difference between medians)
-        [pValue, isDifferent] = ranksum(dataCell{1}, dataCell{2}, ...
-                                        'Alpha', alphaDifference);
+        [pValue, isDifferent] = ...
+            ranksum(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'ranksum';
     end
 else
-    % Decide whether to display the ANOVA table and pairwise comparison graphs
-    if displayAnova
-        displayOpt = 'on';
-    else
-        displayOpt = 'off';
-    end
-
     % Use the appropriate test to compare across groups
     if all(isNormal) && isPaired
         % Create a data table
@@ -551,20 +562,32 @@ if nGroups > 2 && ~isnan(pValue)
         end
     end
 
+    % Compute mean differences for each pair
+    if isPaired
+        meanDiffEachPair = ...
+            arrayfun(@(a, b) nanmean(dataCell{b} - dataCell{a}), ...
+                    firstGroupIndices, secondGroupIndices);
+    else
+        meanDiffEachPair = ...
+            arrayfun(@(a, b) nanmean(dataCell{b}) - nanmean(dataCell{a}), ...
+                    firstGroupIndices, secondGroupIndices);
+    end
+
     % Create group name vectors
     [firstGroupNames, secondGroupNames] = ...
         argfun(@(x) groupNames(x), firstGroupIndices, secondGroupIndices);
 
     % Create strings
-    [isDifferentStrs, pValueStrs, meanDiffStrs] = ...
+    [isDifferentStrs, pValueStrs, diffValueStrs, meanDiffStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', 'diffValue_');
+                'isDifferent_', 'pValue_', 'diffValue_', 'meanDiff_');
 
     % Store p values in statsStruct
     for iPair = 1:nPairs
         % Extract pvalue
         pValueThis = pValuesEachPair(iPair);
         diffValueThis = diffValueEachPair(iPair);
+        meanDiffThis = meanDiffEachPair(iPair);
 
         % Test whether there is a difference between this pair
         isDifferentThis = pValueThis < alphaDifference;
@@ -574,7 +597,8 @@ if nGroups > 2 && ~isnan(pValue)
 
         % Store p values
         statsStruct.(pValueStrs{iPair}) = pValueThis;
-        statsStruct.(meanDiffStrs{iPair}) = diffValueThis;
+        statsStruct.(diffValueStrs{iPair}) = diffValueThis;
+        statsStruct.(meanDiffStrs{iPair}) = meanDiffThis;
     end
 end
 

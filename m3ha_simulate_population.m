@@ -63,11 +63,11 @@
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = true;
-plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+plotViolinPlotsFlag = true;
 plotBarPlotsFlag = false; %true;
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels

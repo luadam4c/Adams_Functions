@@ -40,7 +40,7 @@ parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
 %                       'parse_multiunit_m3ha');
 archiveDir = parentDir;
-dirsToAnalyze = {'dual-final', 'snap5114-final', 'no711-final'};
+dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
@@ -54,7 +54,7 @@ specificSlicesToAnalyze = {};
 
 % For manuscript
 figTypesForVis = {'png'};
-figTypesForCorel = {'epsc2'};
+figTypesForCorel = {'epsc'};
 
 plotFigure1Individual = false; % true;
 parseExamplesFlag = false;
@@ -99,19 +99,19 @@ barInsetWidth = 1;              % figure width in cm
 barInsetHeight = 2;             % figure height in cm
 
 % Flags
-parseIndividualFlag = false; % true;
+parseIndividualFlag = true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
 plotRasterFlag = false; % true;
 plotSpikeDensityFlag = false; % true;
-plotSpikeHistogramFlag = true;
-plotAutoCorrFlag = true;
+plotSpikeHistogramFlag = false; % true;
+plotAutoCorrFlag = false; % true;
 plotMeasuresFlag = false; % true;
-plotContourFlag = false; % true;
-plotCombinedFlag = true;
+plotContourFlag = true;
+plotCombinedFlag = false; % true;
 
-parsePopulationRestrictedFlag = false; %true;
+parsePopulationRestrictedFlag = true;
 plotChevronFlag = true;
 plotByFileFlag = true;
 plotByPhaseFlag = true;
@@ -122,7 +122,7 @@ plotSmoothNormPopAvgFlag = true;
 parsePopulationAllFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;

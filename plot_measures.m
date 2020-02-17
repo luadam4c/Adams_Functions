@@ -495,7 +495,8 @@ end
 % Find all files with the pattern *slice*_params in the file name
 fprintf('Finding all spreadsheets ...\n');
 [~, sliceParamSheets] = all_files('Directory', inFolder, 'Keyword', 'slice', ...
-                                'Suffix', 'params', 'ForceCellOutput', true);
+                                'Suffix', 'params', 'Extension', 'csv', ...
+                                'ForceCellOutput', true);
 
 % If nothing found, return
 if isempty(sliceParamSheets)

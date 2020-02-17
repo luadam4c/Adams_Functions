@@ -26,7 +26,7 @@
 
 %% Hard-coded parameters
 % Flags
-plotIpscComparison = true;
+plotIpscComparison = false; %true;
 plot2CellEssential = false; %true;
 plot2CellM2h = false; %true;
 
@@ -34,7 +34,7 @@ analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
 combine2CellPopulation = false; %true;
-plot2CellViolins = false; %true;
+plot2CellViolins = true;
 
 plot200CellExamples = false; %true;
 
@@ -42,7 +42,7 @@ analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false; %true;
 backupPrevious200Cell = false; %true;
 combine200CellPopulation = false; %true;
-plot200CellViolins = false; %true;
+plot200CellViolins = true;
 
 archiveScriptsFlag = true;
 
