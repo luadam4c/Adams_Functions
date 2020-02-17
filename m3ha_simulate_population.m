@@ -63,9 +63,9 @@
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
-plotOpenProbabilityFlag = false; %true;
-plotViolinPlotsFlag = true;
+computeOpenProbabilityFlag = true;
+plotOpenProbabilityFlag = true;
+plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
@@ -177,11 +177,13 @@ openProbFigHeight = 3;      % (cm)
 % outFolder = '20200204_population_rank1-2,4-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
 % rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
+% rankNumsOpenProbability = [];   % same as rankNumsToUse
 
 outFolder = '20200208_population_rank1-23_dataMode1_attemptNumber3';
 figTypes = {'png', 'epsc'};
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
+rankNumsOpenProbability = TODO;
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie

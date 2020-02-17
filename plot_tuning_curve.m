@@ -255,6 +255,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
 %       cd/set_default_flag.m
+%       cd/test_normality.m
 %       cd/unique_custom.m
 %       cd/union_over_cells.m
 %
@@ -313,6 +314,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-12-18 Now allows pValues to be multiple vectors
 % 2019-12-23 Fixed colorMap argument
 % 2019-12-23 Added 'ReadoutIsLog' as an optional argument
+% 2020-02-17 Added normality tests
+% TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 
 %% Hard-coded constants
@@ -746,15 +749,27 @@ else
 end
 
 % Run paired t-tests if requested
-if (runTTest || runRankTest) && size(readout, 1) > 1
-    % Transpose the readout matrix
-    readoutTransposed = transpose(readout);
+if (runTTest || runRankTest)
+    if size(readout, 1) > 1
+        % Transpose the readout matrix
+        readoutTransposed = transpose(readout);
 
-    % Extract the before columns
-    befores = readoutTransposed(:, 1:end-1);
+        % Extract the before columns
+        befores = readoutTransposed(:, 1:end-1);
 
-    % Extract the after columns
-    afters = readoutTransposed(:, 2:end);
+        % Extract the after columns
+        afters = readoutTransposed(:, 2:end);
+
+        % Compute consecutive differences
+        diffData = afters - befores;
+
+        % Test whether each pair of differences is normally-distributed
+        isNormal = test_normality(diffData);
+    else
+        disp('Difference test can''t be conducted for less than 2 groups!');
+        runTTest = false;
+        runRankTest = false;
+    end
 end
 
 % Run paired t-tests if requested
@@ -1180,14 +1195,16 @@ end
 if ~isempty(tTestPValues)
     plot_test_result(tTestPValues, tTestPString, ...
                     tTestYLocText, tTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValuesAll, sigLevel);
+                    testXLocRel, starXLocRel, pValuesAll, ...
+                    sigLevel, isNormal);
 end
 
 % Plot rank test p values if any
 if ~isempty(rankTestPValues)
     plot_test_result(rankTestPValues, rankTestPString, ...
                     rankTestYLocText, rankTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValuesAll, sigLevel);
+                    testXLocRel, starXLocRel, pValuesAll, ...
+                    sigLevel, ~isNormal);
 end
 
 % Hold off
@@ -1260,8 +1277,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_test_result (tTestPValues, pString, yLocTextRel, yLocStarRel, ...
-                            xLocTextRel, xLocStarRel, pValuesAll, sigLevel)
+function plot_test_result (testPValues, pString, yLocTextRel, yLocStarRel, ...
+                            xLocTextRel, xLocStarRel, pValuesAll, ...
+                            sigLevel, isAppropriate)
 %% Plots p values and star if significant
 
 % Decide on the x locations
@@ -1278,17 +1296,20 @@ yLocText = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocTextRel;
 yLocStar = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocStarRel;
 
 % Plot texts
-for iValue =  1:numel(tTestPValues)
+for iValue =  1:numel(testPValues)
     % Get the current values
-    tTestPValueThis = tTestPValues(iValue);
+    testPValueThis = testPValues(iValue);
     xLocTextThis = xLocsText(iValue);
     xLocStarThis = xLocsStar(iValue);
+    isAppropriateThis = isAppropriate(iValue);
 
     % Create a p value string to 2 significant digits
-    pValueString = [pString, ' = ', num2str(tTestPValueThis, 2)];
+    pValueString = [pString, ' = ', num2str(testPValueThis, 2)];
 
-    % Plot red if significant
-    if tTestPValueThis < sigLevel
+    % Plot gray if inappropriate, red if significant
+    if ~isAppropriateThis
+        pColor = [0.5, 0.5, 0.5];       % rgb('Gray')
+    elseif testPValueThis < sigLevel
         pColor = 'r';
     else
         pColor = 'k';
@@ -1300,7 +1321,7 @@ for iValue =  1:numel(tTestPValues)
             'HorizontalAlignment', 'center');
 
     % Plot star if significant, 'NS' if not
-    if tTestPValueThis < sigLevel
+    if testPValueThis < sigLevel
         plot(xLocStarThis, yLocStar, '*', 'Color', [0, 0, 0], ...
             'MarkerSize', 4);
     else

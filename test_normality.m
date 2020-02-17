@@ -1,5 +1,5 @@
 function [isNormal, pTable] = test_normality (data, varargin)
-%% Test whether set(s) of values are normally distributed
+%% Test whether each set of values is normally distributed
 % Usage: [isNormal, pTable] = test_normality (data, varargin)
 % Explanation:
 %       TODO
@@ -30,6 +30,7 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/plot_tuning_curve.m
 %       cd/test_difference.m
 
 % File History:
