@@ -40,7 +40,7 @@ parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
 %                       'parse_multiunit_m3ha');
 archiveDir = parentDir;
-dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'};
+% dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
@@ -50,6 +50,8 @@ dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'}
 % dirsToAnalyze = {'dual-test'};
 % dirsToAnalyze = {'important-cases'};
 % dirsToAnalyze = {'difficult-cases'};
+dirsToAnalyze = {'dual-60'};
+sweepsRelToPhase2 = -19:60;         % select between -20 & 60 min
 specificSlicesToAnalyze = {};
 
 % For manuscript
@@ -99,7 +101,7 @@ barInsetWidth = 1;              % figure width in cm
 barInsetHeight = 2;             % figure height in cm
 
 % Flags
-parseIndividualFlag = true;
+parseIndividualFlag = false; % true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
@@ -148,7 +150,7 @@ filterWidthMs = 100;
 minRelProm = 0.02;
 
 % For compute_phase_average.m & plot_measures.m
-sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
+% sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
 nSweepsLastOfPhase = 10;            % select from last 10 values of each phase
 nSweepsToAverage = 5;               % select 5 values to average
 % nSweepsToAverage = 10;            % select 10 values to average
