@@ -56,6 +56,7 @@
 % 2019-12-11 Created by Adam Lu
 % 2019-12-26 Completed
 % 2019-12-27 Added HH channels
+% 2020-02-18 Now computes open probability discrepancies over fit window only
 % 
 
 %% Hard-coded parameters
@@ -183,7 +184,7 @@ outFolder = '20200208_population_rank1-23_dataMode1_attemptNumber3';
 figTypes = {'png', 'epsc'};
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
-rankNumsOpenProbability = TODO;
+rankNumsOpenProbability = [6, 9];
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
@@ -236,6 +237,11 @@ if isempty(rankNumsToUse)
     rankNumsToUse = 1:maxRankToSim;
 end
 
+% Decide on the ranking numbers of cells to compute open probability
+if isempty(rankNumsOpenProbability)
+    rankNumsOpenProbability = rankNumsToUse;
+end
+
 % Decide on output folder
 if isempty(outFolder)
     % Create a rank string
@@ -267,25 +273,13 @@ end
 simSwpInfoPath = fullfile(outFolder, [prefix, '_', simSwpInfoSuffix, '.csv']);
 stats2dPath = fullfile(outFolder, [prefix, '_', stats2dSuffix, '.mat']);
 stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
-openProbPathBase = fullfile(outFolder, [prefix, '_', openProbSuffix]);
-openProbPathBaseOrig = [openProbPathBase, '_orig'];
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
-    % Create rank number prefixes
-    rankPrefixes = create_labels_from_numbers(rankNumsToUse, ...
-                                        'Prefix', 'rank_', 'Suffix', '_');
-
-    % Find png files matching the rank prefixes
-    [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'prefix', ...
-                            'Directory', rankDirectory, 'Extension', 'png', ...
-                            'ExtractDistinct', false);
-
-    % Extract the cell names
-    cellNames = m3ha_extract_cell_name(pngPaths, 'FromBaseName', true);
-
-    % Extract the iteration numbers
-    iterStrs = m3ha_extract_iteration_string(pngPaths, 'FromBaseName', true);
+    % Extract the corresponding cell names and iteration strings from 
+    %   given rank numbers
+    [cellNames, iterStrs] = ...
+        extract_from_rank_numbers(rankNumsToUse, rankDirectory);
 
     % Find the parameter file directories
     [~, paramDirs] = cellfun(@(x) all_subdirs('Directory', rankDirectory, ...
@@ -421,7 +415,8 @@ if computeOpenProbabilityFlag
     %   interpolate simulated data to match the time points of recorded data
     % Note: This is necessary because CVODE (variable time step method) 
     %       is applied in NEURON
-    simData = load_neuron_outputs('FileNames', simOutPaths, 'tVecs', tVecsRec);
+    simData = load_neuron_outputs('FileNames', simOutPaths, 'tVecs', tVecsRec, ...
+                                    'TimeWindow', fitWindowIpscr);
 
     % Extract vectors from simulated data
     [m, minf, h, hinf] = ...
@@ -467,23 +462,38 @@ if plotOpenProbabilityFlag
     % Display message
     fprintf('Plotting open probability discrepancies ... \n');
 
+    % Create a rank string
+    rankStrOP = ['rank', create_label_from_sequence(rankNumsOpenProbability)];
+
+    % Construct figure paths
+    openProbPathBase = fullfile(outFolder, ...
+                                [prefix, '_', rankStrOP, '_', openProbSuffix]);
+    openProbPathBaseOrig = [openProbPathBase, '_orig'];
+
+    % Extract the corresponding cell names
+    cellNamesOP = ...
+        extract_from_rank_numbers(rankNumsOpenProbability, rankDirectory);
+
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
+    % Restrict to the cells of interest
+    simSwpInfoOP = simSwpInfo(contains(simSwpInfo.fileBase, cellNamesOP), :);
+
     % Read the LTS peak times
-    if ~is_field(simSwpInfo, 'ltsPeakTime')
+    if ~is_field(simSwpInfoOP, 'ltsPeakTime')
         error('ltsPeakTime does not exist!');
     else
-        ltsPeakTime = simSwpInfo.ltsPeakTime;
+        ltsPeakTime = simSwpInfoOP.ltsPeakTime;
     end
 
     % Read the LTS peak times
-    if ~is_field(simSwpInfo, 'm2hMaxRatio')
+    if ~is_field(simSwpInfoOP, 'm2hMaxRatio')
         error('m2hMaxRatio does not exist yet!');
     else
-        % openProbabilityDiscrepancy = simSwpInfo.m2hRmsError;
-        % openProbabilityDiscrepancy = simSwpInfo.m2hMaxError;
-        openProbabilityDiscrepancy = simSwpInfo.m2hMaxRatio;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hRmsError;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxError;
+        openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxRatio;
     end
 
     % Determine whether each sweep has an LTS
@@ -492,6 +502,10 @@ if plotOpenProbabilityFlag
     % Separate into two groups
     twoGroups = {openProbabilityDiscrepancy(noLts); ...
                     openProbabilityDiscrepancy(~noLts)};
+
+    % Test for differences
+    openProbabilityDiscrepancyDifferences = test_difference(twoGroups);
+    disp(openProbabilityDiscrepancyDifferences)
 
     % Create figure
     fig = set_figure_properties('AlwaysNew', true);
@@ -518,7 +532,6 @@ if plotOpenProbabilityFlag
 
     % Save figure
     save_all_figtypes(fig, openProbPathBase, figTypes);
-
 end 
 
 %% Plot violin plots
@@ -605,6 +618,28 @@ if is_field(myTable, varName)
 else
     myTable = addvars(myTable, varValue, 'NewVariableNames', varName);
 end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [cellNames, iterStrs] = ...
+                extract_from_rank_numbers (rankNumsToUse, rankDirectory)
+
+% Create rank number prefixes
+rankPrefixes = create_labels_from_numbers(rankNumsToUse, ...
+                                    'Prefix', 'rank_', 'Suffix', '_');
+
+% Find png files matching the rank prefixes
+[~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'prefix', ...
+                        'Directory', rankDirectory, 'Extension', 'png', ...
+                        'ExtractDistinct', false);
+
+% Extract the cell names
+cellNames = m3ha_extract_cell_name(pngPaths, 'FromBaseName', true);
+
+% Extract the iteration numbers
+iterStrs = m3ha_extract_iteration_string(pngPaths, 'FromBaseName', true);
 
 end
 

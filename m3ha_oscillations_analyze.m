@@ -40,7 +40,7 @@ parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
 %                       'parse_multiunit_m3ha');
 archiveDir = parentDir;
-% dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'};
+dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
@@ -50,9 +50,12 @@ archiveDir = parentDir;
 % dirsToAnalyze = {'dual-test'};
 % dirsToAnalyze = {'important-cases'};
 % dirsToAnalyze = {'difficult-cases'};
-dirsToAnalyze = {'dual-60'};
-sweepsRelToPhase2 = -19:60;         % select between -20 & 60 min
 specificSlicesToAnalyze = {};
+sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
+
+% Special cases
+% dirsToAnalyze = {'dual-60'};
+% sweepsRelToPhase2 = -19:60;         % select between -20 & 60 min
 
 % For manuscript
 figTypesForVis = {'png'};
@@ -115,13 +118,14 @@ plotCombinedFlag = false; % true;
 
 parsePopulationRestrictedFlag = true;
 plotChevronFlag = true;
-plotByFileFlag = true;
-plotByPhaseFlag = true;
-plotNormByFileFlag = true;
-plotNormByPhaseFlag = true;
-plotPopAverageFlag = true;
-plotSmoothNormPopAvgFlag = true;
-parsePopulationAllFlag = false; %true;
+plotByFileFlag = false; %true;
+plotByPhaseFlag = false; %true;
+plotNormByFileFlag = false; %true;
+plotNormByPhaseFlag = false; %true;
+plotPopAverageFlag = false; %true;
+plotSmoothNormPopAvgFlag = false; %true;
+
+parsePopulationAllFlag = true;
 plotAllMeasurePlotsFlag = false; %true;
 
 archiveScriptsFlag = true;
@@ -150,7 +154,6 @@ filterWidthMs = 100;
 minRelProm = 0.02;
 
 % For compute_phase_average.m & plot_measures.m
-% sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
 nSweepsLastOfPhase = 10;            % select from last 10 values of each phase
 nSweepsToAverage = 5;               % select 5 values to average
 % nSweepsToAverage = 10;            % select 10 values to average

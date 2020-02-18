@@ -69,11 +69,12 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_closest.m
 %       cd/find_passive_params.m
+%       cd/load_neuron_outputs.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/plot_fitted_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_ipsc.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 

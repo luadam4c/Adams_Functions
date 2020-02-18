@@ -33,10 +33,17 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TimeWindows' - time window(s) to restrict to
+%                   must be empty or a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
 %
 % Requires:
 %       cd/array_fun.m
 %       cd/construct_and_check_fullpath.m
+%       cd/extract_columns.m
+%       cd/extract_subvectors.m
+%       cd/find_window_endpoints.m
 %       cd/is_in_parallel.m
 %       cd/match_format_vector_sets.m
 %       cd/match_time_points.m
@@ -55,6 +62,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % 2018-11-16 Fixed directories and allowed it to be a cell array TODO: fix all_files?
 % 2020-01-01 Now uses array_fun.m
 % 2020-01-31 Added 'ForceCellOutput' as an optional argument
+% 2020-02-18 Added 'TimeWindows' as an optional argument
 
 %% Hard-coded parameters
 outputExtension = '.out';
@@ -66,6 +74,7 @@ verboseDefault = false;             % print to standard output by default
 removeAfterLoadDefault = false;     % don't remove .out files by default
 tVecsDefault = [];
 forceCellOutputDefault = false; % don't force output as a cell array by default
+timeWindowsDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -89,6 +98,10 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TimeWindows', timeWindowsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['TimeWindows must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -98,6 +111,7 @@ verbose = iP.Results.Verbose;
 removeAfterLoad = iP.Results.RemoveAfterLoad;
 tVecs = iP.Results.tVecs;
 forceCellOutput = iP.Results.ForceCellOutput;
+timeWindows = iP.Results.TimeWindows;
 
 %% Preparation
 % Decide on the files to use
@@ -150,6 +164,20 @@ if ~isempty(tVecs)
     % Interpolated simulated data
     outputs = array_fun(@(x, y) match_time_points(x, y), ...
                         outputs, tVecs, 'UniformOutput', false);
+end
+
+%% Restrict outputs
+if ~isempty(timeWindows)
+    % Extract time vectors if needed
+    if isempty(tVecs)
+        tVecs = extract_columns(outputs, 1);
+    end
+
+    % Find window endpoints
+    endPoints = find_window_endpoints(timeWindows, tVecs);
+
+    % Restrict to those endpoints
+    outputs = extract_subvectors(outputs, 'EndPoints', endPoints);
 end
 
 %% Outputs
