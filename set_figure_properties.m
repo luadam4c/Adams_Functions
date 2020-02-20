@@ -81,6 +81,7 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_chevron.m
 %       cd/plot_frame.m
 %       cd/plot_histogram.m
+%       cd/plot_measures.m
 %       cd/plot_raster.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_traces.m

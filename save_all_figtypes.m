@@ -38,9 +38,10 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_measures.m
 %       cd/plot_small_chevrons.m
-%       cd/plot_table_parallel.m
 %       cd/plot_struct.m
+%       cd/plot_table_parallel.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m

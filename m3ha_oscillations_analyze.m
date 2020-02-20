@@ -39,7 +39,8 @@ figure01Dir = fullfile('/media', 'adamX', 'm3ha', ...
 parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
 %                       'parse_multiunit_m3ha');
-archiveDir = parentDir;
+% archiveDir = parentDir;
+archiveDir = figure01Dir;
 dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
@@ -61,36 +62,36 @@ sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
 figTypesForVis = {'png'};
 figTypesForCorel = {'epsc'};
 
-plotFigure1Individual = false; % true;
-parseExamplesFlag = false;
-plotExampleContourFlag = false; % true;
+plotFigure1Individual = true;
+parseExamplesFlag = true;
+plotExampleContourFlag = true;
 contourXLimitsSeconds = [2, 20];
 contourWidth = 11;
 contourHeight = 3;
-plotExampleRawTracesFlag = false; % true;
+plotExampleRawTracesFlag = true;
 rawPlotLineWidth = 0.25;
 rawSweepNumbers = [16, 56];
 rawWidth = 8;
 rawHeight = 2.75;
 rawXLimits = [2, 15];
 rawYLimits = [-5, 5];
-plotExampleSpikeDetectionFlag = false; % true;
+plotExampleSpikeDetectionFlag = false; %true;
 sampleXLimits = [2.5, 8.5];
 sampleSweepNumber = 16;
 samplePlotLineWidth = 0.25;
 sampleRasterLineWidth = 0.25;
 spikeDetWidth = 8;
 spikeDetHeight = 2;
-plotExampleSpikeHistogramFlag = false; % true;
+plotExampleSpikeHistogramFlag = false; %true;
 spikeHistWidth = 8;
 spikeHistHeight = 2;
 spikeHistYLimits = [0, 8.5];
-plotExampleAcfFlag = false; % true;
+plotExampleAcfFlag = false; %true;
 acfWidth = 7;
 acfHeight = 4;
 acfXLimits = [0, 5];        % Good for 20190525_slice4_gat3_trace16
 acfYLimits = [-75, 2000];   % Good for 20190525_slice4_gat3_trace16
-plotExampleAutoCorrFlag = false; % true;
+plotExampleAutoCorrFlag = false; %true;
 autoCorrWidth = 3.5;
 autoCorrHeight = 2.5;
 autoCorrXLimits = [-5, 5];      % Good for 20190525_slice4_gat3_trace16
@@ -116,7 +117,7 @@ plotMeasuresFlag = false; % true;
 plotContourFlag = true;
 plotCombinedFlag = false; % true;
 
-parsePopulationRestrictedFlag = true;
+parsePopulationRestrictedFlag = false; %true;
 plotChevronFlag = true;
 plotByFileFlag = false; %true;
 plotByPhaseFlag = false; %true;
@@ -125,7 +126,7 @@ plotNormByPhaseFlag = false; %true;
 plotPopAverageFlag = false; %true;
 plotSmoothNormPopAvgFlag = false; %true;
 
-parsePopulationAllFlag = true;
+parsePopulationAllFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 
 archiveScriptsFlag = true;
@@ -590,17 +591,21 @@ drugName = extractBefore(figBase, '-');
 
 % Modify stuff based on drug name
 switch drugName
+    case 'control'
+        condLabel = 'Control';
+        meanColorMap = decide_on_colormap('Black', 1);
+        insetColorMap = decide_on_colormap({'Black'; 'Black'}, 2);
     case 'no711'
         condLabel = 'NO-711';
-        colorMap = decide_on_colormap('Blue', 1);
+        meanColorMap = decide_on_colormap('Blue', 1);
         insetColorMap = decide_on_colormap({'Black'; 'Blue'}, 2);
     case 'snap5114'
         condLabel = 'SNAP-5114';
-        colorMap = decide_on_colormap('Red', 1);
+        meanColorMap = decide_on_colormap('Red', 1);
         insetColorMap = decide_on_colormap({'Black'; 'Red'}, 2);
     case 'dual'
         condLabel = 'Dual';
-        colorMap = decide_on_colormap('Purple', 1);
+        meanColorMap = decide_on_colormap('Purple', 1);
         insetColorMap = decide_on_colormap({'Black'; 'Purple'}, 2);
     otherwise
         error('drugName unrecognized!');
@@ -642,7 +647,7 @@ fig1 = set_figure_properties('AlwaysNew', true);
 % Plot Chevron
 plot_chevron(chevronTable, 'PlotMeanValues', true, ...
                 'PlotMeanDifference', true, 'PlotErrorBars', false, ...
-                'ColorMap', 'k', 'MeanColorMap', colorMap, ...
+                'ColorMap', 'k', 'MeanColorMap', meanColorMap, ...
                 'ReadoutLimits', readoutLimits, ...
                 'PTickLabels', pTickLabels, ...
                 'ReadoutLabel', readoutLabel, 'FigTitle', 'suppress', ...

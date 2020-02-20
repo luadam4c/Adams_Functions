@@ -653,7 +653,7 @@ resultsPath = fullfile(outFolder, [fileBase, resultsSuffix]);
 
 % Extract data only if results not provided
 if ~isfile(resultsPath)
-    toExtractData = false;
+    toExtractData = true;
 end
 
 % Extract data if needed

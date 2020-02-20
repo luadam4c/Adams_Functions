@@ -443,10 +443,22 @@ if computeOpenProbabilityFlag
     m2hRatioRaw(isinf(m2hRatioRaw)) = NaN;
     m2hMaxRatio = force_column_vector(max(m2hRatioRaw, [], 1));
 
+    % Compute the maximum log ratio between m2h and minf2hinf
+    m2hLogRatioRaw = log(m2h ./ minf2hinf);
+    m2hLogRatioRaw(isinf(m2hLogRatioRaw)) = NaN;
+    m2hMaxLogRatio = force_column_vector(max(m2hLogRatioRaw, [], 1));
+
+    % Compute the log of everything
+    m2hLogRmsError = log10(m2hRmsError);
+    m2hLogMaxError = log10(m2hMaxError);
+
     % Add or replace variable
     simSwpInfo = replacevars(simSwpInfo, m2hRmsError);
     simSwpInfo = replacevars(simSwpInfo, m2hMaxError);
     simSwpInfo = replacevars(simSwpInfo, m2hMaxRatio);
+    simSwpInfo = replacevars(simSwpInfo, m2hLogRmsError);
+    simSwpInfo = replacevars(simSwpInfo, m2hLogMaxError);
+    simSwpInfo = replacevars(simSwpInfo, m2hMaxLogRatio);
 
     % Resave the simulated sweep info table
     writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
@@ -487,13 +499,14 @@ if plotOpenProbabilityFlag
         ltsPeakTime = simSwpInfoOP.ltsPeakTime;
     end
 
-    % Read the LTS peak times
-    if ~is_field(simSwpInfoOP, 'm2hMaxRatio')
-        error('m2hMaxRatio does not exist yet!');
+    % Read the open probability discrepancy measure
+    if ~is_field(simSwpInfoOP, 'm2hMaxLogRatio')
+        error('m2hMaxLogRatio does not exist yet!');
     else
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hRmsError;
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxError;
-        openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxRatio;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxRatio;
+        openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxLogRatio;
     end
 
     % Determine whether each sweep has an LTS
@@ -511,8 +524,10 @@ if plotOpenProbabilityFlag
     fig = set_figure_properties('AlwaysNew', true);
 
     % Plot violin plot
-    violins = plot_violin(twoGroups, 'XTickLabels', {'No LTS', 'With LTS'}, ...
-                            'YLabel', 'max(m^2h / m_{inf}^2h_{inf})');
+    violins = plot_violin(twoGroups, 'ColorMap', {'Black', 'DarkGreen'}, ...
+                             'XTickLabels', {'No LTS', 'With LTS'}, ...
+                            'YLabel', 'max(log(m^2h / m_{inf}^2h_{inf}))');
+                            % 'YLabel', 'max(m^2h / m_{inf}^2h_{inf})');
                             % 'YLabel', 'max(abs(m^2h - m_{inf}^2h_{inf}))');
                             % 'YLabel', 'rms(m^2h - m_{inf}^2h_{inf})');
 
@@ -521,7 +536,7 @@ if plotOpenProbabilityFlag
             replace(prefix, '_', '\_')));
 
     % Set y axis to be on a log scale
-    set(gca, 'YScale', 'log');
+    % set(gca, 'YScale', 'log');
 
     % Save the figure
     save_all_figtypes(fig, openProbPathBaseOrig, 'png');

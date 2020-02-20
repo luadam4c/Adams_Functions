@@ -130,6 +130,9 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'PlotOnly': whether to plot the curves only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotForCorel': whether to plot for CorelDraw
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if PhaseVectors provided, false otherwise
@@ -237,8 +240,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
-%       cd/set_axes_properties.m
-%       cd/set_figure_properties.m
+%       cd/extract_fileparts.m
 %       cd/fill_markers.m
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
@@ -254,10 +256,13 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
+%       cd/set_axes_properties.m
 %       cd/set_default_flag.m
+%       cd/set_figure_properties.m
 %       cd/test_normality.m
 %       cd/unique_custom.m
 %       cd/union_over_cells.m
+%       cd/update_figure_for_corel.m
 %
 % Used by:
 %       cd/m3ha_network_tuning_curves.m
@@ -315,6 +320,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-12-23 Fixed colorMap argument
 % 2019-12-23 Added 'ReadoutIsLog' as an optional argument
 % 2020-02-17 Added normality tests
+% 2020-02-19 Added 'PlotForCorel' as an optional argument
 % TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 
@@ -382,6 +388,7 @@ confIntColorMapDefault = [];        % set later
 selectedColorMapDefault = [];       % set later
 legendLocationDefault = 'auto';     % set later
 plotOnlyDefault = false;            % setup default labels by default
+plotForCorelDefault = false;
 plotPhaseBoundariesDefault = [];    % set later
 plotPhaseAveragesDefault = [];      % set later
 plotIndSelectedDefault = [];        % set later
@@ -482,6 +489,8 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotForCorel', plotForCorelDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseAverages', plotPhaseAveragesDefault, ...
@@ -568,6 +577,7 @@ selectedColorMap = iP.Results.SelectedColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 plotOnly = iP.Results.PlotOnly;
+plotForCorel = iP.Results.PlotForCorel;
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
 plotPhaseAverages = iP.Results.PlotPhaseAverages;
 plotIndSelected = iP.Results.PlotIndSelected;
@@ -1234,6 +1244,19 @@ end
 
 % Save figure if figName provided
 if ~isempty(figName)
+    % Plot for CorelDraw
+    if plotForCorel
+        % Create path for original figure
+        figNameOrig = [extract_fileparts(figName, 'pathbase'), '_orig'];
+
+        % Save original figure as png
+        save_all_figtypes(fig, figNameOrig, 'png');
+
+        % Update figure for CorelDraw
+        update_figure_for_corel(fig);
+    end
+
+    % Save figure
     save_all_figtypes(fig, figName, figTypes);
 end
 

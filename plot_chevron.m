@@ -67,6 +67,9 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   - 'MeanColorMap': color map for the mean
 %                   must be a 2-D numeric array with 3 columns
 %                   default == 'r' if colorMap is black; 'k' otherwise
+%                   - 'Marker': marker type
+%                   must be empty or a positive scalar
+%                   default == 'o'
 %                   - 'MarkerSize': marker size for individual data
 %                   must be empty or a positive scalar
 %                   default == 6
@@ -102,6 +105,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/set_figure_properties.m
 %
 % Used by:
+%       cd/plot_measures.m
 %       cd/plot_relative_events.m
 %       cd/plot_small_chevrons.m
 
@@ -139,6 +143,7 @@ pLabelDefault = 'suppress';
 columnLabelsDefault = '';           % set later
 colorMapDefault = [];               % set later
 meanColorMapDefault = [];           % set later
+markerDefault = 'o';
 markerSizeDefault = 6;
 lineWidthDefault = 1;
 legendLocationDefault = 'eastoutside';
@@ -188,6 +193,7 @@ addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'MeanColorMap', meanColorMapDefault);
+addParameter(iP, 'Marker', markerDefault);
 addParameter(iP, 'MarkerSize', markerSizeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'LineWidth', lineWidthDefault, ...
@@ -213,6 +219,7 @@ pLabel = iP.Results.PLabel;
 columnLabels = iP.Results.ColumnLabels;
 colorMap = iP.Results.ColorMap;
 meanColorMap = iP.Results.MeanColorMap;
+marker = iP.Results.Marker;
 markerSize = iP.Results.MarkerSize;
 lineWidth = iP.Results.LineWidth;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
@@ -292,7 +299,7 @@ handles = plot_tuning_curve(pValues, transpose(dataValues), ...
                     'LegendLocation', legendLocation, ...
                     'AxesHandle', axHandle, ...                    
                     'LineWidth', lineWidth, ...
-                    'Marker', 'o', 'MarkerSize', markerSize, ...
+                    'Marker', marker, 'MarkerSize', markerSize, ...
                     otherArguments);
 
 % Plot the mean and confidence intervals of the differences
