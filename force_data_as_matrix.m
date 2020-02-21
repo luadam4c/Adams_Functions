@@ -38,6 +38,7 @@ function [dataValues, varargout] = force_data_as_matrix (data, varargin)
 %
 % Used by:
 %       cd/plot_chevron.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/plot_violin.m
 
 % File History:

@@ -168,6 +168,7 @@ function plot_measures (varargin)
 %       cd/ismatch.m
 %       cd/modify_table.m
 %       cd/plot_chevron.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/plot_table.m
 %       cd/plot_tuning_curve.m
 %       cd/renamevars.m
@@ -217,6 +218,7 @@ smoothFunc = @(x) movingaveragefilter(x, 5, 1);
 %% TODO: Make optional argument
 backupSheets = true;
 plotForCorel = true;
+figTypes = {'png', 'epsc'};
 
 % Must be consistent with parse_multiunit.m
 varsToPlotAll = {'oscIndex1'; 'oscIndex2'; 'oscIndex3'; 'oscIndex4'; ...
@@ -1025,7 +1027,8 @@ if plotSmoothNormPopAvgFlag
                     'ClearFigure', true, ...
                     'ReadoutLimits', [0, Inf], ...
                     'PLabel', timeLabel, 'ReadoutLabel', z, ...
-                    'FigTitle', w, 'FigName', v, otherArguments), ...
+                    'FigTitle', w, 'FigName', v, 'FigTypes', figTypes, ...
+                    otherArguments), ...
             smoothNormPopAvgTables, varsToPlot, varLabelsNorm, ...
             figTitlesPopAvg, figNamesSmoothNormPopAvg);
 end
@@ -1041,8 +1044,18 @@ function plot_chevron_from_table(chevronTable, varToPlot, varLabel, ...
 %% Hard-coded parameters
 chevronFigWidth = 3.25;           % in cm
 chevronFigHeight = 4;             % in cm
+chevronMarkerSize = 1;          % marker size in points
+barInsetWidth = 1;              % figure width in cm
+barInsetHeight = 2;             % figure height in cm
+barInsetRulerLineWidth = 0.5;
+barInsetAxisFontSize = 5;
+barInsetLabelsFontSize = 6;
 figTypes = {'png', 'epsc'};
 
+%% Preparation
+figPathBase = extract_fileparts(figName, 'pathbase');
+
+%% Plot
 % Create a new figure
 fig = set_figure_properties('AlwaysNew', true);
 
@@ -1072,9 +1085,10 @@ plot_chevron(chevronData, 'PlotMeanValues', true, ...
             otherArguments);
 
 % Update for CorelDraw
+% TODO: Move this into plot_chevron.m?
 if plotForCorel
     % Create path for original figure
-    figNameOrig = [extract_fileparts(figName, 'pathbase'), '_orig'];
+    figNameOrig = [figPathBase, '_orig'];
 
     % Save original figure as png
     save_all_figtypes(fig, figNameOrig, 'png');
@@ -1082,11 +1096,41 @@ if plotForCorel
     % Update figure for CorelDraw
     update_figure_for_corel(fig, 'Units', 'centimeters', ...
                     'Width', chevronFigWidth, 'Height', chevronFigHeight, ...
+                    'PlotMarkerSize', chevronMarkerSize, ...
                     'RemoveLegends', true);
 end
 
 % Save figure
 save_all_figtypes(fig, figName, figTypes);
+
+% Create figure for bar inset
+fig2 = set_figure_properties('AlwaysNew', true);
+
+% Create figure path base for bar inset
+figPathBaseBar = [figPathBase, '_bar_inset'];
+
+% Plot bar inset
+plot_chevron_bar_inset(chevronTable, 'PTickLabels', phaseStrs);
+
+% Update for CorelDraw
+% TODO: Move this into plot_chevron_bar_inset.m?
+if plotForCorel
+    % Create path for original figure
+    figPathBaseBarOrig = [figPathBase, '_bar_inset_orig'];
+
+    % Save figure
+    save_all_figtypes(fig2, figPathBaseBarOrig, 'png');
+
+    % Update figure for CorelDraw
+    update_figure_for_corel(fig2, 'Units', 'centimeters', ...
+                        'Width', barInsetWidth, 'Height', barInsetHeight, ...
+                        'RulerLineWidth', barInsetRulerLineWidth, ...
+                        'AxisFontSize', barInsetAxisFontSize, ...
+                        'LabelsFontSize', barInsetLabelsFontSize);
+end
+
+% Save figure
+save_all_figtypes(fig2, figPathBaseBar, figTypes);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

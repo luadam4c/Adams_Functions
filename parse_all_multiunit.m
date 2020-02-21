@@ -194,6 +194,12 @@ else
         allMatPaths = allMatPaths(~contains(allMatPaths, sliceBasesCsv));
     end
 
+    % Return if all slices already analyzed
+    if isempty(allMatPaths)
+        disp('All slices already analyzed!');
+        return
+    end
+    
     % Load data for each slice as a structure array
     fprintf('Loading data for each slice ...\n');
     allDataStruct = cellfun(@(x) load(x, varsNeeded{:}), allMatPaths);

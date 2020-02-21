@@ -82,6 +82,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/plot_autocorrelogram.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/select_similar_values.m
 %
 % Related functions:

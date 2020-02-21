@@ -224,8 +224,8 @@ function handles = plot_bar (val, varargin)
 %       cd/m3ha_compute_and_compare_lts_statistics.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
-%       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/plot_struct.m
 %       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m

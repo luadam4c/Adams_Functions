@@ -105,6 +105,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/set_figure_properties.m
 %
 % Used by:
+%       cd/m3ha_oscillations_analyze.m
 %       cd/plot_measures.m
 %       cd/plot_relative_events.m
 %       cd/plot_small_chevrons.m

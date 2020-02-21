@@ -3,10 +3,10 @@
 %
 % Requires:
 %       cd/archive_dependent_scripts.m
+%       cd/force_row_vector.m
 %       cd/parse_all_multiunit.m
 %       cd/plot_autocorrelogram.m
-%       cd/plot_chevron.m
-%       cd/plot_chevron_bar_inset.m
+%       cd/plot_bar.m
 %       cd/plot_measures.m
 %       cd/plot_raster.m
 %       cd/plot_raw_multiunit.m
@@ -641,9 +641,6 @@ switch measureName
         error('measureName unrecognized!');
 end
 
-barInsetRulerLineWidth = 0.5;
-barInsetAxisFontSize = 5;
-barInsetLabelsFontSize = 6;
 insetPLimits = [0.5, 2.5];
 
 % Create figure
@@ -677,7 +674,22 @@ fig2 = set_figure_properties('AlwaysNew', true);
 figPathBaseBar = strcat(figPathBase, '_bar_inset');
 
 % Plot bar inset
-plot_chevron_bar_inset(chevronTable, 'PTickLabels', pTickLabels, ...
+% TODO: plot_chevron_bar_inset.m
+
+% Extract values so that each column is a parameter
+dataValues = table2array(chevronTable);
+
+% Compute means
+means = compute_stats(dataValues, 'mean', 2);
+
+% Compute normalized means
+normalizedMeans = (means ./ means(1)) .* 100;
+
+% Force as a row so that bars are different groups
+normalizedMeans = force_row_vector(normalizedMeans);
+
+% Plot bar inset
+plot_bar(normalizedMeans, 'PTickLabels', pTickLabels, ...
         'ReadoutLabel', 'suppress', 'PLabel', 'suppress', ...
         'PLimits', insetPLimits, 'ReadoutLimits', insetReadoutLimits, ...
         'FigTitle', '% Baseline', 'ColorMap', insetColorMap);
@@ -688,9 +700,8 @@ save_all_figtypes(fig2, figPathBaseBar, 'png');
 % Update figure for CorelDraw
 update_figure_for_corel(fig2, 'Units', 'centimeters', ...
                         'Width', barInsetWidth, 'Height', barInsetHeight, ...
-                        'RulerLineWidth', barInsetRulerLineWidth, ...
-                        'AxisFontSize', barInsetAxisFontSize, ...
-                        'LabelsFontSize', barInsetLabelsFontSize, ...
+                        'RulerLineWidth', 0.5, 'AxisFontSize', 5, ...
+                        'LabelsFontSize', 6, ...
                         'RemoveXTicks', true);
 
 % Save figure
@@ -702,6 +713,12 @@ end
 
 %{
 OLD CODE:
+
+parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
+lastSweepToMeasure = 45;        % select between sweeps 1:45
+
+% Make drug name all caps
+drugLabel = upper(drugName);
 
 %}
 
