@@ -62,13 +62,13 @@ sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
 figTypesForVis = {'png'};
 figTypesForCorel = {'epsc'};
 
-plotFigure1Individual = true;
-parseExamplesFlag = true;
-plotExampleContourFlag = true;
+plotFigure1Individual = false; %true;
+parseExamplesFlag = false; %true;
+plotExampleContourFlag = false; %true;
 contourXLimitsSeconds = [2, 20];
 contourWidth = 11;
 contourHeight = 3;
-plotExampleRawTracesFlag = true;
+plotExampleRawTracesFlag = false; %true;
 rawPlotLineWidth = 0.25;
 rawSweepNumbers = [16, 56];
 rawWidth = 8;
@@ -97,7 +97,7 @@ autoCorrHeight = 2.5;
 autoCorrXLimits = [-5, 5];      % Good for 20190525_slice4_gat3_trace16
 autoCorrYLimits = [0, 1700];    % Good for 20190525_slice4_gat3_trace16
 
-plotFigure1Population = false; %true;
+plotFigure1Population = true;
 chevronWidth = 3.25;            % figure width in cm
 chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
@@ -114,11 +114,11 @@ plotSpikeDensityFlag = false; % true;
 plotSpikeHistogramFlag = false; % true;
 plotAutoCorrFlag = false; % true;
 plotMeasuresFlag = false; % true;
-plotContourFlag = true;
+plotContourFlag = false; %true;
 plotCombinedFlag = false; % true;
 
 parsePopulationRestrictedFlag = false; %true;
-plotChevronFlag = true;
+plotChevronFlag = false; %true;
 plotByFileFlag = false; %true;
 plotByPhaseFlag = false; %true;
 plotNormByFileFlag = false; %true;
@@ -129,7 +129,7 @@ plotSmoothNormPopAvgFlag = false; %true;
 parsePopulationAllFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -476,10 +476,16 @@ if plotFigure1Population
     figPathBasesChevron = extract_fileparts(allSheetPaths, 'pathbase');
  
     % Plot and save all Chevron tables
-    cellfun(@(x, y) plot_and_save_chevron(x, y, figTypesForCorel, ...
+    diffStructs = ...
+        cellfun(@(x, y) plot_and_save_chevron(x, y, figTypesForCorel, ...
                             chevronWidth, chevronHeight, chevronMarkerSize, ...
                             barInsetWidth, barInsetHeight), ...
-            allChevronTables, figPathBasesChevron);
+                allChevronTables, figPathBasesChevron);
+
+    % Save difference table
+    diffTable = struct2table(diffStructs);
+    addvars(diffTable, figPathBasesChevron, 'Before', 1);
+    writetable(diffTable, fullfile(figure01Dir, 'difference_table.csv'));
 end
 
 % Run through all directories
@@ -579,7 +585,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_and_save_chevron(chevronTable, figPathBase, figTypesForCorel, ...
+function diffStruct = ...
+        plot_and_save_chevron(chevronTable, figPathBase, figTypesForCorel, ...
                             chevronWidth, chevronHeight, chevronMarkerSize, ...
                             barInsetWidth, barInsetHeight)
 
@@ -657,6 +664,9 @@ plot_chevron(chevronTable, 'PlotMeanValues', true, ...
                 'PTickLabels', pTickLabels, ...
                 'ReadoutLabel', readoutLabel, 'FigTitle', 'suppress', ...
                 'LegendLocation', 'suppress');
+
+% Test the difference
+diffStruct = test_difference(chevronTable, 'IsPaired', true);
 
 % Save figure
 save_all_figtypes(fig1, figPathBase, 'png');

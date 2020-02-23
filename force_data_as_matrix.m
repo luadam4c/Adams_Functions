@@ -40,6 +40,7 @@ function [dataValues, varargout] = force_data_as_matrix (data, varargin)
 %       cd/plot_chevron.m
 %       cd/plot_chevron_bar_inset.m
 %       cd/plot_violin.m
+%       cd/test_difference.m
 
 % File History:
 % 2019-12-30 Moved from plot_chevron.m

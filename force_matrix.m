@@ -88,7 +88,6 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 %       cd/spike2Mat2Text.m
-%       cd/test_difference.m
 %       cd/transform_vectors.m
 %       cd/vecfun.m
 

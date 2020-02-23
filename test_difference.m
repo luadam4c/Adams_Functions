@@ -111,7 +111,7 @@ function statsStruct = test_difference (data, varargin)
 %       cd/create_grouping_by_vectors.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
-%       cd/force_matrix.m
+%       cd/force_data_as_matrix.m
 %       cd/test_normality.m
 %       cd/unique_groups.m
 %
@@ -125,6 +125,8 @@ function statsStruct = test_difference (data, varargin)
 % 2020-02-15 Finished implementing 'IsPaired'
 % 2020-02-15 Added nonparametric tests for multiple groups
 % 2020-02-16 Added meanDiff
+% 2020-02-23 Now uses force_data_as_matrix.m
+% 2020-02-23 Added percChange
 
 %% Hard-coded parameters
 nullMean = 0;                   % null hypothesis mean for one-sample test
@@ -191,8 +193,8 @@ displayAnova = iP.Results.DisplayAnova;
 
 %% Preparation
 % Force the data into a numeric matrix
-dataMatrixOrig = force_matrix(data);
-groupingMatrixOrig = force_matrix(grouping);
+dataMatrixOrig = force_data_as_matrix(data);
+groupingMatrixOrig = force_data_as_matrix(grouping);
 
 % Remove any row with NaN if is paired
 if isPaired
@@ -279,9 +281,9 @@ if nGroups > 2
     secondGroupNames = groupNamesPaired(:, 2);
 
     % Create strings
-    [isDifferentStrs, pValueStrs, diffValueStrs, meanDiffStrs] = ...
+    [isDifferentStrs, pValueStrs, diffValueStrs, meanDiffStrs, percChangeStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', 'diffValue_', 'meanDiff_');
+                'isDifferent_', 'pValue_', 'diffValue_', 'meanDiff_', 'percChange_');
 end
 
 % Decide whether to display the ANOVA table and pairwise comparison graphs
@@ -296,6 +298,7 @@ end
 statsStruct.isDifferent = false;
 statsStruct.pValue = NaN;
 statsStruct.meanDiff = NaN;
+statsStruct.percChange = NaN;
 statsStruct.nSamples = NaN;
 statsStruct.degreesOfFreedom = NaN;
 statsStruct.testFunction = 'none';
@@ -305,6 +308,7 @@ if nGroups > 2
         statsStruct.(pValueStrs{iPair}) = NaN;
         statsStruct.(diffValueStrs{iPair}) = NaN;
         statsStruct.(meanDiffStrs{iPair}) = NaN;
+        statsStruct.(percChangeStrs{iPair}) = NaN;
     end
 end
 for iGroup = 1:nNormGroups
@@ -361,12 +365,18 @@ pNormAvg = pTable.pNormAvg;
 %% Compute the mean difference
 if nGroups == 1
     statsStruct.meanDiff = nanmean(dataCell{1});
+    statsStruct.percChange = NaN;
 elseif nGroups == 2
+    meanGroup1 = nanmean(dataCell{1});
+    meanGroup2 = nanmean(dataCell{2});
+    meanDiff = nanmean(dataCell{2} - dataCell{1});
+    percChange = ((meanGroup2 - meanGroup1) / meanGroup1) * 100;
     if isPaired
-        statsStruct.meanDiff = nanmean(dataCell{2} - dataCell{1});
+        statsStruct.meanDiff = meanDiff;
     else
-        statsStruct.meanDiff = nanmean(dataCell{2}) - nanmean(dataCell{1});
+        statsStruct.meanDiff = meanGroup2 - meanGroup1;
     end
+    statsStruct.percChange = percChange;
 end
 
 %% Perform the correct difference test among groups
@@ -572,6 +582,12 @@ if nGroups > 2 && ~isnan(pValue)
             arrayfun(@(a, b) nanmean(dataCell{b}) - nanmean(dataCell{a}), ...
                     firstGroupIndices, secondGroupIndices);
     end
+    
+    % Compute percentage change for each pair
+    percChangeEachPair = ...
+        arrayfun(@(a, b) 100 * (nanmean(dataCell{b}) - nanmean(dataCell{a})) / ...
+                            nanmean(dataCell{a}), ...
+                firstGroupIndices, secondGroupIndices);
 
     % Create group name vectors
     [firstGroupNames, secondGroupNames] = ...
@@ -588,6 +604,7 @@ if nGroups > 2 && ~isnan(pValue)
         pValueThis = pValuesEachPair(iPair);
         diffValueThis = diffValueEachPair(iPair);
         meanDiffThis = meanDiffEachPair(iPair);
+        percChangeThis = percChangeEachPair(iPair);
 
         % Test whether there is a difference between this pair
         isDifferentThis = pValueThis < alphaDifference;
@@ -599,6 +616,7 @@ if nGroups > 2 && ~isnan(pValue)
         statsStruct.(pValueStrs{iPair}) = pValueThis;
         statsStruct.(diffValueStrs{iPair}) = diffValueThis;
         statsStruct.(meanDiffStrs{iPair}) = meanDiffThis;
+        statsStruct.(percChangeStrs{iPair}) = percChangeThis;
     end
 end
 
@@ -656,6 +674,9 @@ statsStruct.pNormJb = pNormJb;
 % If there are too many NaNs, return
 if sum(isnan(dataVec)) >= numel(dataVec) / 2
 end
+
+dataMatrixOrig = force_matrix(data);
+groupingMatrixOrig = force_matrix(grouping);
 
 %}
 
