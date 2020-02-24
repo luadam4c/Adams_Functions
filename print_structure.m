@@ -3,10 +3,13 @@ function print_structure (structure, varargin)
 % Usage: print_structure (structure, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Side Effects:
 %       Prints to standard output
+%
 % Arguments:    
 %       structure   - the structure to print
 %                   must be a structure
@@ -26,6 +29,7 @@ function print_structure (structure, varargin)
 %
 % Used by:
 %       cd/find_passive_params.m
+%       cd/m3ha_simulate_population.m
 %
 % 2016-11-02 Created
 % 2018-06-21 Added comments and input parser

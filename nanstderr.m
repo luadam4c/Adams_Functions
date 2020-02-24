@@ -7,6 +7,7 @@ function stdErr = nanstderr(X, varargin)
 %
 % Used by:
 %       cd/compute_stats.m
+%       cd/test_difference.m
 %		/media/adamX/Paula_IEIs/paula_iei4.m
 %       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
 

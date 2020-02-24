@@ -97,12 +97,13 @@ autoCorrHeight = 2.5;
 autoCorrXLimits = [-5, 5];      % Good for 20190525_slice4_gat3_trace16
 autoCorrYLimits = [0, 1700];    % Good for 20190525_slice4_gat3_trace16
 
-plotFigure1Population = true;
+plotFigure1Population = false; %true;
 chevronWidth = 3.25;            % figure width in cm
 chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
 barInsetWidth = 1;              % figure width in cm
 barInsetHeight = 2;             % figure height in cm
+computeFigure1Stats = true;
 
 % Flags
 parseIndividualFlag = false; % true;
@@ -129,7 +130,7 @@ plotSmoothNormPopAvgFlag = false; %true;
 parsePopulationAllFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -463,7 +464,7 @@ if plotFigure1Individual
 end
 
 % Plot Chevron plots for Figure 01
-if plotFigure1Population
+if plotFigure1Population || computeFigure1Stats
     % Get all paths to Chevron tables
     [~, allSheetPaths] = all_files('Directory', figure01Dir, ...
                                 'Suffix', 'chevron', 'Extension', 'csv');
@@ -474,20 +475,34 @@ if plotFigure1Population
 
     % Create figure names
     figPathBasesChevron = extract_fileparts(allSheetPaths, 'pathbase');
- 
+end
+
+% Plot Chevrons if requested
+if plotFigure1Population
     % Plot and save all Chevron tables
-    diffStructs = ...
-        cellfun(@(x, y) plot_and_save_chevron(x, y, figTypesForCorel, ...
+    cellfun(@(x, y) plot_and_save_chevron(x, y, figTypesForCorel, ...
                             chevronWidth, chevronHeight, chevronMarkerSize, ...
                             barInsetWidth, barInsetHeight), ...
                 allChevronTables, figPathBasesChevron);
 
-    % Save difference table
-    diffTable = struct2table(diffStructs);
-    addvars(diffTable, figPathBasesChevron, 'Before', 1);
-    writetable(diffTable, fullfile(figure01Dir, 'difference_table.csv'));
 end
 
+% Compute statistics if requested
+if computeFigure1Stats
+    % Test differences for all Chevron tables
+    diffStructs = cellfun(@(a) test_difference(a, 'IsPaired', true), ...
+                            allChevronTables);
+    
+    % Convert to a table
+    diffTable = struct2table(diffStructs);
+
+    % Add Chevron path
+    diffTable = addvars(diffTable, figPathBasesChevron, 'Before', 1);
+
+    % Save difference table
+    writetable(diffTable, fullfile(figure01Dir, 'difference_table.csv'));
+end
+    
 % Run through all directories
 for iDir = 1:numel(dirsToAnalyze)
     % Get the current directory to analyze
@@ -585,8 +600,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function diffStruct = ...
-        plot_and_save_chevron(chevronTable, figPathBase, figTypesForCorel, ...
+function plot_and_save_chevron(chevronTable, figPathBase, figTypesForCorel, ...
                             chevronWidth, chevronHeight, chevronMarkerSize, ...
                             barInsetWidth, barInsetHeight)
 
@@ -664,9 +678,6 @@ plot_chevron(chevronTable, 'PlotMeanValues', true, ...
                 'PTickLabels', pTickLabels, ...
                 'ReadoutLabel', readoutLabel, 'FigTitle', 'suppress', ...
                 'LegendLocation', 'suppress');
-
-% Test the difference
-diffStruct = test_difference(chevronTable, 'IsPaired', true);
 
 % Save figure
 save_all_figtypes(fig1, figPathBase, 'png');

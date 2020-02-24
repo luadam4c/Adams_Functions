@@ -44,6 +44,7 @@
 %       cd/m3ha_plot_violin.m
 %       cd/plot_violin.m
 %       cd/print_cellstr.m
+%       cd/print_structure.m
 %       cd/renamevars.m
 %       cd/vertcat_spreadsheets.m
 %       cd/save_all_figtypes.m
@@ -57,13 +58,14 @@
 % 2019-12-26 Completed
 % 2019-12-27 Added HH channels
 % 2020-02-18 Now computes open probability discrepancies over fit window only
+% 2020-02-23 Now saves open probability stats
 % 
 
 %% Hard-coded parameters
 % Flags
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
-combineFeatureTablesFlag = false; %true;
+combineFeatureTablesFlag = true;
 computeOpenProbabilityFlag = true;
 plotOpenProbabilityFlag = true;
 plotViolinPlotsFlag = false; %true;
@@ -443,12 +445,12 @@ if computeOpenProbabilityFlag
     m2hRatioRaw(isinf(m2hRatioRaw)) = NaN;
     m2hMaxRatio = force_column_vector(max(m2hRatioRaw, [], 1));
 
-    % Compute the maximum log ratio between m2h and minf2hinf
-    m2hLogRatioRaw = log(m2h ./ minf2hinf);
+    % Compute the maximum log10 ratio between m2h and minf2hinf
+    m2hLogRatioRaw = log10(m2h ./ minf2hinf);
     m2hLogRatioRaw(isinf(m2hLogRatioRaw)) = NaN;
     m2hMaxLogRatio = force_column_vector(max(m2hLogRatioRaw, [], 1));
 
-    % Compute the log of everything
+    % Compute the log10 of everything
     m2hLogRmsError = log10(m2hRmsError);
     m2hLogMaxError = log10(m2hMaxError);
 
@@ -481,6 +483,7 @@ if plotOpenProbabilityFlag
     openProbPathBase = fullfile(outFolder, ...
                                 [prefix, '_', rankStrOP, '_', openProbSuffix]);
     openProbPathBaseOrig = [openProbPathBase, '_orig'];
+    openProbStatsPath = [openProbPathBase, '_stats.txt'];
 
     % Extract the corresponding cell names
     cellNamesOP = ...
@@ -517,9 +520,11 @@ if plotOpenProbabilityFlag
                     openProbabilityDiscrepancy(~noLts)};
 
     % Test for differences
+    fid = fopen(openProbStatsPath, 'w');
     openProbabilityDiscrepancyDifferences = test_difference(twoGroups);
-    disp(openProbabilityDiscrepancyDifferences)
-
+    print_structure(openProbabilityDiscrepancyDifferences, 'FileID', fid);
+    fclose(fid);
+    
     % Create figure
     fig = set_figure_properties('AlwaysNew', true);
 
