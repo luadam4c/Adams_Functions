@@ -105,12 +105,12 @@ function statsStruct = test_difference (data, varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_stats.m
 %       cd/convert_to_char.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_vectors.m
 %       cd/create_labels_from_numbers.m
-%       cd/nanstderr.m
 %       cd/force_column_cell.m
 %       cd/force_data_as_matrix.m
 %       cd/test_normality.m

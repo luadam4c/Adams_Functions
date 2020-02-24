@@ -86,6 +86,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/plot_chevron.m
 %       cd/plot_chevron_bar_inset.m
 %       cd/select_similar_values.m
+%       cd/test_difference.m
 %
 % Related functions:
 %       cd/compute_weighted_average.m
