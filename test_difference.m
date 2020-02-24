@@ -129,6 +129,7 @@ function statsStruct = test_difference (data, varargin)
 % 2020-02-23 Now uses force_data_as_matrix.m
 % 2020-02-23 Added percChange
 % 2020-02-23 diffValue is now the negative of before
+% 2020-02-23 Added stderrDiff, lowerDiff, upperDiff
 
 %% Hard-coded parameters
 nullMean = 0;                   % null hypothesis mean for one-sample test
@@ -283,11 +284,19 @@ if nGroups > 2
     secondGroupNames = groupNamesPaired(:, 2);
 
     % Create strings
-    [isDifferentStrs, pValueStrs, diffValueStrs, ...
-            meanDiffStrs, stderrDiffStrs, percChangeStrs] = ...
+    [isDifferentStrs, pValueStrs, ...
+            diffValueStrs, stderrValueStrs, ...
+            errValueStrs, lowerValueStrs, upperValueStrs, ...
+            meanDiffStrs, stderrDiffStrs, ...
+            errDiffStrs, lowerDiffStrs, upperDiffStrs, ...
+            percChangeStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', 'diffValue_', ...
-                'meanDiff_', 'stderrDiff_', 'percChange_');
+                'isDifferent_', 'pValue_', ...
+                'diffValue_', 'stderrValue_', ...
+                'errValue_', 'lowerValue_', 'upperValue_', ...
+                'meanDiff_', 'stderrDiff_', ...
+                'errDiff_', 'lowerDiff_', 'upperDiff_', ...
+                'percChange_');
 end
 
 % Decide whether to display the ANOVA table and pairwise comparison graphs
@@ -303,6 +312,9 @@ statsStruct.isDifferent = false;
 statsStruct.pValue = NaN;
 statsStruct.meanDiff = NaN;
 statsStruct.stderrDiff = NaN;
+statsStruct.errDiff = NaN;
+statsStruct.lowerDiff = NaN;
+statsStruct.upperDiff = NaN;
 statsStruct.percChange = NaN;
 statsStruct.nSamples = NaN;
 statsStruct.degreesOfFreedom = NaN;
@@ -312,8 +324,15 @@ if nGroups > 2
         statsStruct.(isDifferentStrs{iPair}) = NaN;
         statsStruct.(pValueStrs{iPair}) = NaN;
         statsStruct.(diffValueStrs{iPair}) = NaN;
+        statsStruct.(stderrValueStrs{iPair}) = NaN;
+        statsStruct.(errValueStrs{iPair}) = NaN;
+        statsStruct.(lowerValueStrs{iPair}) = NaN;
+        statsStruct.(upperValueStrs{iPair}) = NaN;
         statsStruct.(meanDiffStrs{iPair}) = NaN;
         statsStruct.(stderrDiffStrs{iPair}) = NaN;
+        statsStruct.(errDiffStrs{iPair}) = NaN;
+        statsStruct.(lowerDiffStrs{iPair}) = NaN;
+        statsStruct.(upperDiffStrs{iPair}) = NaN;
         statsStruct.(percChangeStrs{iPair}) = NaN;
     end
 end
@@ -370,19 +389,27 @@ pNormAvg = pTable.pNormAvg;
 
 %% Compute the mean difference
 if nGroups == 1
-    statsStruct.meanDiff = nanmean(dataCell{1});
-    statsStruct.stderrDiff = nanstderr(dataCell{1});
+    [statsStruct.meanDiff, statsStruct.stderrDiff, ...
+            statsStruct.errDiff, statsStruct.lowerDiff, statsStruct.upperDiff] = ...
+        argfun(@(a) compute_stats(dataCell{1}, a, 'IgnoreNan', true), ...
+                'mean', 'stderr', 'err', 'lower95', 'upper95');
     statsStruct.percChange = NaN;
 elseif nGroups == 2
     meanGroup1 = nanmean(dataCell{1});
     meanGroup2 = nanmean(dataCell{2});
     percChange = ((meanGroup2 - meanGroup1) / meanGroup1) * 100;
     if isPaired
-        statsStruct.meanDiff = nanmean(dataCell{2} - dataCell{1});
-        statsStruct.stderrDiff = nanstderr(dataCell{2} - dataCell{1});
+        diffData = dataCell{2} - dataCell{1};
+        [statsStruct.meanDiff, statsStruct.stderrDiff, ...
+                statsStruct.errDiff, statsStruct.lowerDiff, statsStruct.upperDiff] = ...
+            argfun(@(a) compute_stats(diffData, a, 'IgnoreNan', true), ...
+                    'mean', 'stderr', 'err', 'lower95', 'upper95');
     else
         statsStruct.meanDiff = meanGroup2 - meanGroup1;
         statsStruct.stderrDiff = NaN;
+        statsStruct.errDiff = NaN;
+        statsStruct.lowerDiff = NaN;
+        statsStruct.upperDiff = NaN;
     end
     statsStruct.percChange = percChange;
 end
@@ -543,6 +570,9 @@ if nGroups > 2 && ~isnan(pValue)
         firstGroupIndicesAll = otherStats{:, [ranovaTimeVar, '_1']};
         secondGroupIndicesAll = otherStats{:, [ranovaTimeVar, '_2']};
         diffValueEachPairAll = -otherStats{:, 'Difference'};
+        stderrValueEachPairAll = otherStats{:, 'StdErr'};
+        lowerValueEachPairAll = -otherStats{:, 'Upper'};
+        upperValueEachPairAll = -otherStats{:, 'Lower'};
         pValuesEachPairAll = otherStats{:, 'pValue'};
 
         % Remove duplicate rows
@@ -550,6 +580,9 @@ if nGroups > 2 && ~isnan(pValue)
         firstGroupIndices = firstGroupIndicesAll(rowsToKeep);
         secondGroupIndices = secondGroupIndicesAll(rowsToKeep);
         diffValueEachPair = diffValueEachPairAll(rowsToKeep);
+        stderrValueEachPair = stderrValueEachPairAll(rowsToKeep);
+        lowerValueEachPair = lowerValueEachPairAll(rowsToKeep);
+        upperValueEachPair = upperValueEachPairAll(rowsToKeep);
         pValuesEachPair = pValuesEachPairAll(rowsToKeep);
 
         % Check the number of pairs
@@ -572,6 +605,10 @@ if nGroups > 2 && ~isnan(pValue)
         firstGroupIndices = otherStats(:, 1);
         secondGroupIndices = otherStats(:, 2);
         diffValueEachPair = -otherStats(:, 4);
+        lowerValueEachPair = -otherStats(:, 5);
+        upperValueEachPair = -otherStats(:, 3);
+        stderrValueEachPair = (upperValueEachPair - diffValueEachPair) / ...
+                                    tinv(0.975, nSamples);
         pValuesEachPair = otherStats(:, 6);
 
         % Check the number of pairs
@@ -580,21 +617,32 @@ if nGroups > 2 && ~isnan(pValue)
         end
     end
 
-    % Compute mean differences for each pair
+    % Compute error margins for each pair
+    errValueEachPair = upperValueEachPair - diffValueEachPair;
+
+    % Compute difference data for each pair
     if isPaired
-        meanDiffEachPair = ...
-            arrayfun(@(a, b) nanmean(dataCell{b} - dataCell{a}), ...
-                    firstGroupIndices, secondGroupIndices);
+        diffDataEachPair = ...
+            arrayfun(@(a, b) dataCell{b} - dataCell{a}, ...
+                    firstGroupIndices, secondGroupIndices, 'UniformOutput', false);
+    end
+    
+    % Compute mean differences for each pair
+    if isPaired                
+        [meanDiffEachPair, stderrDiffEachPair, ...
+                errDiffEachPair, lowerDiffEachPair, upperDiffEachPair] = ...
+            argfun(@(a) cellfun(@(b) compute_stats(b, a, 'IgnoreNan', true), ...
+                                diffDataEachPair), ...
+                    'mean', 'stderr', 'err', 'lower95', 'upper95');
     else
         meanDiffEachPair = ...
             arrayfun(@(a, b) nanmean(dataCell{b}) - nanmean(dataCell{a}), ...
                     firstGroupIndices, secondGroupIndices);
+        stderrDiffEachPair = nan(nPairs, 1);
+        errDiffEachPair = nan(nPairs, 1);
+        lowerDiffEachPair = nan(nPairs, 1);
+        upperDiffEachPair = nan(nPairs, 1);
     end
-
-    % Compute standard errors of differences for each pair
-    stderrDiffEachPair = ...
-        arrayfun(@(a, b) nanstderr(dataCell{b} - dataCell{a}), ...
-                firstGroupIndices, secondGroupIndices);
 
     % Compute percentage change for each pair
     percChangeEachPair = ...
@@ -606,18 +654,35 @@ if nGroups > 2 && ~isnan(pValue)
     [firstGroupNames, secondGroupNames] = ...
         argfun(@(x) groupNames(x), firstGroupIndices, secondGroupIndices);
 
-    % Create strings
-    [isDifferentStrs, pValueStrs, diffValueStrs, meanDiffStrs] = ...
+    % Create strings again
+    [isDifferentStrs, pValueStrs, ...
+            diffValueStrs, stderrValueStrs, ...
+            errValueStrs, lowerValueStrs, upperValueStrs, ...
+            meanDiffStrs, stderrDiffStrs, ...
+            errDiffStrs, lowerDiffStrs, upperDiffStrs, ...
+            percChangeStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', 'diffValue_', 'meanDiff_');
+                'isDifferent_', 'pValue_', ...
+                'diffValue_', 'stderrValue_', ...
+                'errValue_', 'lowerValue_', 'upperValue_', ...
+                'meanDiff_', 'stderrDiff_', ...
+                'errDiff_', 'lowerDiff_', 'upperDiff_', ...
+                'percChange_');
 
     % Store p values in statsStruct
     for iPair = 1:nPairs
         % Extract pvalue
         pValueThis = pValuesEachPair(iPair);
         diffValueThis = diffValueEachPair(iPair);
+        stderrValueThis = stderrValueEachPair(iPair);
+        errValueThis = errValueEachPair(iPair);
+        lowerValueThis = lowerValueEachPair(iPair);
+        upperValueThis = upperValueEachPair(iPair);
         meanDiffThis = meanDiffEachPair(iPair);
         stderrDiffThis = stderrDiffEachPair(iPair);
+        errDiffThis = errDiffEachPair(iPair);
+        lowerDiffThis = lowerDiffEachPair(iPair);
+        upperDiffThis = upperDiffEachPair(iPair);
         percChangeThis = percChangeEachPair(iPair);
 
         % Test whether there is a difference between this pair
@@ -629,8 +694,15 @@ if nGroups > 2 && ~isnan(pValue)
         % Store p values
         statsStruct.(pValueStrs{iPair}) = pValueThis;
         statsStruct.(diffValueStrs{iPair}) = diffValueThis;
+        statsStruct.(stderrValueStrs{iPair}) = stderrValueThis;
+        statsStruct.(errValueStrs{iPair}) = errValueThis;
+        statsStruct.(lowerValueStrs{iPair}) = lowerValueThis;
+        statsStruct.(upperValueStrs{iPair}) = upperValueThis;
         statsStruct.(meanDiffStrs{iPair}) = meanDiffThis;
         statsStruct.(stderrDiffStrs{iPair}) = stderrDiffThis;
+        statsStruct.(errDiffStrs{iPair}) = errDiffThis;
+        statsStruct.(lowerDiffStrs{iPair}) = lowerDiffThis;
+        statsStruct.(upperDiffStrs{iPair}) = upperDiffThis;
         statsStruct.(percChangeStrs{iPair}) = percChangeThis;
     end
 end

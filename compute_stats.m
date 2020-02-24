@@ -10,6 +10,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'mean')
 %       compute_stats(data, 'std')
 %       compute_stats(data, 'stderr')
+%       compute_stats(data, 'err')
 %       compute_stats(data, 'lower95')
 %       compute_stats(data, 'upper95')
 %       compute_stats(data, 'cov')
@@ -29,6 +30,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %                       'average' or 'mean' - mean
 %                       'std'       - standard deviation
 %                       'stderr'    - standard error
+%                       'err'       - error margin
 %                       'lower95'   - lower bound of the 95% confidence interval
 %                       'upper95'   - upper bound of the 95% confidence interval
 %                       'cov'       - coefficient of variation

@@ -65,10 +65,10 @@
 % Flags
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
-combineFeatureTablesFlag = true;
-computeOpenProbabilityFlag = true;
-plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = false; %true;
+combineFeatureTablesFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+plotViolinPlotsFlag = true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
