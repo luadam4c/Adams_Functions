@@ -175,6 +175,7 @@ end
 %   Note: this makes functions like plot_traces.m not use xlim() or ylim()
 if minValue == maxValue
     limits = [];
+    axisRange = [];
     return
 end
 

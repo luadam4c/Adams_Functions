@@ -93,6 +93,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/force_column_cell.m
+%       cd/is_field.m
 %       cd/match_positions.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
@@ -469,6 +470,11 @@ if ~strcmp(unitsNow, unitsOrig)
     set(figHandle, 'Units', unitsOrig);
 end
 
+%% Change color coding
+% Find all objects in the figure
+objects = findall(figHandle);
+arrayfun(@convert_color_to_rgb, objects);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function isPlot = is_plot(lineObject)
@@ -556,6 +562,16 @@ subplotTable = sortrows(subplotTable, {'bottomPositions', 'leftPositions'}, ...
 ax = subplotTable.ax;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function convert_color_to_rgb(object)
+% TODO: Convert all grayscale to rgb?
+
+if is_field(object, 'Color')
+    % object.Color
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %{
 OLD CODE:
