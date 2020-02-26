@@ -45,11 +45,6 @@ burstProbAll = burstProbAll{1};
     argfun(@(allValues) nanmean(allValues), ...
             conBurstProbValues, gat1BurstProbValues);
 
-% Compute Control vs. GAT1 burst probabilitie standard deviations
-[conBurstStdProb, gat1BurstStdProb] = ...
-    argfun(@(allValues) nanstd(allValues), ...
-            conBurstProbValues, gat1BurstProbValues);
-
 % Read oscillation table
 [aDrugOscTable, gat1OscTable] = ...
     argfun(@(file) readtable(fullfile(powerDir, file)), ...
@@ -68,13 +63,20 @@ aDrugBurstProbAltValue = conBurstMeanProb + ...
                             (gat1BurstMeanProb - conBurstMeanProb) * ...
                             (aDrugOscEffect / gat1OscEffect);
 
-% Estimate burst probability standard deviation
-burstProbStdev = sqrt(conBurstStdProb^2 + gat1BurstStdProb^2);
+% Estimate burst probability difference standard deviation
+burstProbStdev = nanstd(gat1BurstProbValues - conBurstProbValues);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Compute Control vs. GAT1 burst probability standard deviations
+[conBurstStdProb, gat1BurstStdProb] = ...
+    argfun(@(allValues) nanstd(allValues), ...
+            conBurstProbValues, gat1BurstProbValues);
+% Estimate burst probability standard deviation
+burstProbStdev = sqrt(conBurstStdProb^2 + gat1BurstStdProb^2);
 
 %}
 
