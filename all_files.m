@@ -90,6 +90,7 @@ function varargout = all_files (varargin)
 %       cd/m3ha_pfiles2csv.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/metabolismR01_plot_chevrons.m
 %       cd/parse_all_abfs.m
 %       cd/parse_all_multiunit.m
 %       cd/parse_all_swds.m

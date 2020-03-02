@@ -17,11 +17,12 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   specified as a structure
 %
 % Arguments:
-%       data        - data table or data vectors
+%       data        - data vectors or data table or path to data table
 %                   Note: The dimension with fewer elements is taken as 
 %                           the parameter
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
+%                       or a string scalar or a character vector
 %       varargin    - 'IsLog2Data': whether data is log 2-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -88,6 +89,13 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   - 'AxesHandle': axes handle for created axes
 %                   must be a empty or a axes object handle
 %                   default == set in set_axes_properties.m
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if data is a path, false otherwise
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - Any other parameter-value pair for plot_tuning_curve()
 %
 % Requires:
@@ -96,16 +104,19 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
+%       cd/extract_fileparts.m
 %       cd/force_data_as_matrix.m
 %       cd/hold_off.m
 %       cd/hold_on.m
 %       cd/plot_error_bar.m
 %       cd/plot_tuning_curve.m
+%       cd/save_all_figtypes.m
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
 %
 % Used by:
 %       cd/m3ha_oscillations_analyze.m
+%       cd/metabolismR01_plot_chevrons.m
 %       cd/plot_measures.m
 %       cd/plot_relative_events.m
 %       cd/plot_small_chevrons.m
@@ -118,6 +129,9 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 % 2019-11-27 Added 'PlotMeanValues' as an optional argument
 % 2019-11-27 Now adds transparency to mean circles
 % 2019-11-27 Added 'MeanColorMap' as an optional argument
+% 2020-02-29 Now allows the first argument to be a string
+% 2020-02-29 Added 'AlwaysNew' as an optional argument
+% 2020-02-29 Added 'FigName' as an optional argument
 % TODO: Use this in plot_table.m?
 
 %% Hard-coded parameters
@@ -150,6 +164,9 @@ lineWidthDefault = 1;
 legendLocationDefault = 'eastoutside';
 figExpansionDefault = [];
 axHandleDefault = [];               % gca by default
+alwaysNewDefault = [];              % set later
+figNameDefault = '';                % don't save figure by default
+figTypesDefault = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -166,7 +183,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'data', ...
-    @(x) validateattributes(x, {'numeric', 'cell', 'table'}, {'2d'}));
+    @(x) validateattributes(x, {'numeric', 'cell', 'table', ...
+                            'char', 'string'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IsLog2Data', isLog2DataDefault, ...
@@ -204,6 +222,12 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
 addParameter(iP, 'AxesHandle', axHandleDefault);
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
@@ -227,11 +251,24 @@ lineWidth = iP.Results.LineWidth;
                                         'ValidateMode', true);
 figExpansion = iP.Results.FigExpansion;
 axHandle = iP.Results.AxesHandle;
+alwaysNew = iP.Results.AlwaysNew;
+figName = iP.Results.FigName;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot_tuning_curve() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Set default flags
+if ischar(data) || isstring(data)
+    alwaysNew = true;
+    if isempty(figName)
+        figName = extract_fileparts(data, 'pathbase');
+    end
+else
+    alwaysNew = false;
+end
+
 % Force data values as a numeric matrix 
 %   where each group is a column and each row is a sample
 [dataValues, groupLabelsAuto, sampleLabelsAuto] = force_data_as_matrix(data);
@@ -285,7 +322,8 @@ meanLineWidth = meanLineWidthRatio * lineWidth;
 
 %% Do the job
 % Decide on the figure
-figHandle = set_figure_properties('FigExpansion', figExpansion);
+figHandle = set_figure_properties('FigExpansion', figExpansion, ...
+                                    'AlwaysNew', alwaysNew);
 
 % Decide on the axes
 axHandle = set_axes_properties('AxesHandle', axHandle, 'FigHandle', figHandle);
@@ -426,6 +464,11 @@ if isLog2Data
     % Set new ticks and labels
     set(axHandle, 'YTick', newYTickLocs, 'YTickMode', 'manual');
     set(axHandle, 'YTickLabel', newYTickLabels, 'YTickLabelMode', 'manual');
+end
+
+% Save figure
+if ~isempty(figName)
+    save_all_figtypes(figHandle, figName, figTypes);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

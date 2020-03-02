@@ -37,6 +37,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/parse_current_family.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_chevron.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_measures.m
 %       cd/plot_small_chevrons.m

@@ -92,6 +92,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/parse_current_family.m
 %       cd/parse_iox.m
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_chevron.m
 %       cd/plot_measures.m
 %       cd/plot_relative_events.m
 %       cd/plot_small_chevrons.m
