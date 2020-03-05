@@ -186,17 +186,20 @@ taum = tau0;
 
 % Compute the specific membrane resistivity (Ohm-cm^2)
 %   Note: 1 F = 1 s / 1 Ohm
+%       This is equation 4.3.3 of Johnston & Wu
 Rm = (taum * S_PER_MS) / (Cm * F_PER_UF);
 
 % Assume the soma is a sphere or a cylinder with length == diameter 
 %   and no ends), find the radius of the soma (um): 
 %       Rsoma = Rm/(4*pi*)
 %       => r = sqrt(Rm/(4*pi*Rsoma))
+%       This is equation 4.3.8 of Johnston & Wu
 radiusSoma = UM_PER_CM * sqrt(Rm / (4 * pi * (Rsoma * OHM_PER_MOHM)));
 
 % Modeling the dendrite as a cylinder, compute the diameter of the dendrite (um)
 %       Rdend = (2/pi) * (Rm*Ra)^(1/2) * d^(-3/2) * coth(L)
 %       => d = ((2/pi) * (Rm*Ra)^(1/2) * Rdend^(-1) * coth(L) )^(2/3)
+%       This is equation 4.5.47 of Johnston & Wu
 if isinf(Rdend)
     diameterDendrite = 0;
 else
@@ -209,6 +212,7 @@ end
 radiusDendrite = diameterDendrite / 2;
 
 % Compute the space constant lambda (um)
+%       This is equation 4.4.15 of Johnston & Wu
 lambda = sqrt((radiusDendrite * Rm) / (2 * Ra));
 
 % Compute the length of the dendrite (um)
@@ -300,6 +304,7 @@ else
     syms x f(x)
 
     % Define the equation to solve for L
+    %       This is equation 4.5.57 of Johnston & Wu
     f(x) = abs(C1 / (2*C0*tau1/tau0 - C1)) - ...
                 cot(alpha1*x) * (cot(alpha1*x) - 1/(alpha1*x));
 
@@ -368,6 +373,7 @@ end
 
 function rho = compute_rho (alpha1, L)
 
+%       This is equation 4.5.58 of Johnston & Wu
 rho = -alpha1 * cot(alpha1 * L) / coth(L);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

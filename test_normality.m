@@ -100,6 +100,7 @@ pTable = table(pNormAvg, pNormLill, pNormAd, pNormJb);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function pNormLill = compute_pnorm_lill (x, sigLevel)
+%% Compute a p value using the Lilliefors test
 
 if sum(~isnan(x)) >= 4
     [~, pNormLill] = lillietest(x, 'Alpha', sigLevel);
@@ -110,6 +111,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function pNormAd = compute_pnorm_ad (x, sigLevel)
+%% Compute a p value using the Anderson-Darling test
 
 if sum(~isnan(x)) >= 4
     [~, pNormAd] = adtest(x, 'Alpha', sigLevel);
@@ -120,6 +122,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function pNormJb = compute_pnorm_jb (x, sigLevel)
+%% Compute a p value using the Jarque-Bera test
 
 if sum(~isnan(x)) >= 2
     [~, pNormJb] = jbtest(x, sigLevel);
