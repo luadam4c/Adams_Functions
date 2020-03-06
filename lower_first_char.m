@@ -26,7 +26,7 @@ function strs = lower_first_char (strs, varargin)
 
 % File History:
 % 2020-03-06 Created by Adam Lu
-% TODO: Make 'UpperInstead' an optional argument
+% TODO FOR UNDERGRAD: Make 'UpperInstead' an optional argument
 
 %% Hard-coded parameters
 
@@ -59,7 +59,7 @@ parse(iP, strs, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
-% TODO: apply_to_each_str.m
+% TODO: apply_to_each_str.m and use it for all functions with this pattern
 if isempty(strs)
     return
 elseif ischar(strs)
