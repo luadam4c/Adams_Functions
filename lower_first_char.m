@@ -8,73 +8,90 @@ function strs = lower_first_char (strs, varargin)
 %       TODO
 %
 % Outputs:
-%       strs     - TODO: Description of strs
+%       strs        - returned strings
 %                   specified as a TODO
 %
 % Arguments:
-%       strs     - TODO: Description of strs
-%                   must be a TODO
+%       strs        - strings
+%                   must be empty or a character vector or a string vector
+%                       or a cell array of character vectors
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
-%                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_plot_figure07.m
 
 % File History:
 % 2020-03-06 Created by Adam Lu
-% 
+% TODO: Make 'UpperInstead' an optional argument
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+% param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'strs');
+addRequired(iP, 'strs', ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['strs must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+% addParameter(iP, 'param1', param1Default);
 
 % Read from the Input Parser
 parse(iP, strs, varargin{:});
-param1 = iP.Results.param1;
-
-% Keep unmatched arguments for the TODO() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
-
-%% Preparation
-% TODO
+% param1 = iP.Results.param1;
 
 %% Do the job
-if ischar(strs)
-    strs = [lower(strs(1)), strs(2:end)];
+% TODO: apply_to_each_str.m
+if isempty(strs)
+    return
+elseif ischar(strs)
+    strs = lower_first_char_helper(strs);
 elseif iscell(strs)
-    strs = cellfun(@(x) [lower(x(1)), x(2:end)], strs, 'UniformOutput', false);
+    strs = cellfun(@lower_first_char_helper, strs, 'UniformOutput', false);
 elseif isstring(strs)
-    error('Not implemented yet!');
+    strs = arrayfun(@lower_first_char_helper, strs);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function str = lower_first_char_helper (str)
+
+% Convert to character array
+if isstring(str)
+    str = str{1};
+    wasString = true;
+else
+    wasString = false;
+end
+
+% Lower the first character
+if numel(str) >= 2
+    str = [lower(str(1)), str(2:end)];
+else
+    str = lower(str);
+end
+
+% Convert back to string if necessary
+if wasString
+    str = string(str);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

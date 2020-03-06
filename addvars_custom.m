@@ -25,7 +25,7 @@ function myTable = addvars_custom (myTable, value, varargin)
 %       cd/m3ha_plot_figure07.m
 
 % File History:
-% 2020-03-06 Created by Adam Lu
+% 2020-03-06 Moved from m3ha_plot_figure07.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

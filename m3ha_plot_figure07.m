@@ -13,6 +13,7 @@
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
+%       cd/lower_first_char.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_plot_violin.m
@@ -569,8 +570,7 @@ function oscParamTables = retrieve_osc_param_tables (seedNumDir, ...
                                             seedNumStr, cellNameStr)
 
 % Extract the seed number
-seedNumberStr = extract_fileparts(seedNumDir, 'base');
-seedNumber = sscanf_full(seedNumberStr, '%d');
+seedNumber = sscanf_full(extract_fileparts(seedNumDir, 'base'), '%d');
 
 % Locate corresponding oscillation parameter paths
 [~, oscParamPaths] = ...
@@ -621,7 +621,7 @@ measureStrNoMean = replace(measureStr, {'mean', 'oscillationProbability'}, ...
 measureStrOrig = lower_first_char(measureStrNoMean);
 
 % Locate the columns of interest
-colsOfInterest = [{cellNameStr}; {pharmStr}; measureStrOrig];
+colsOfInterest = [{cellNameStr}; {seedNumStr}; {pharmStr}; measureStrOrig];
 
 % Extract the table of interest
 popTableOfInterest = popDataTable(rowsToUse, colsOfInterest);
@@ -666,8 +666,8 @@ rowsEachCellEachPharm = ...
 % Get mean values across iterations for all cells
 %    for each pharm condition, for this measure
 allValuesEachPharm = ...
-    cellfun(@(r) cellfun(@(c) nanmean(popDataTable{x, measureStr}), r), ... 
-            rowsEachPharmEachCell, 'UniformOutput', false);
+    cellfun(@(a) cellfun(@(b) nanmean(popDataTable{b, measureStr}), a), ... 
+            rowsEachCellEachPharm, 'UniformOutput', false);
 
 end
 
