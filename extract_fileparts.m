@@ -86,6 +86,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure05.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_select_sweeps.m
 %       cd/parse_atf_swd.m

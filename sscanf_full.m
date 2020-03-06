@@ -22,10 +22,11 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 % Requires:
 %
 % Used by:
+%       cd/m3ha_plot_figure07.m
 %       cd/parse_atf_swd.m
 %       /media/adamX/m3ha/data_dclamp/CountSweeps.m
 %       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
-%
+
 % File History:
 % 2018-07-31 Created by Adam Lu
 % 

@@ -2,25 +2,22 @@
 %% Plots Figure 07 for the GAT Blocker paper
 %
 % Requires:
-%       cd/addvars_custom.m
-%       cd/all_subdirs.m
 %       cd/apply_over_cells.m
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
 %       cd/array_fun.m
 %       cd/create_label_from_sequence.m
 %       cd/decide_on_colormap.m
-%       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_plot_violin.m
 %       cd/match_positions.m
+%       cd/match_row_count.m
 %       cd/plot_scale_bar.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
-%       cd/sscanf_full.m
 %       cd/update_figure_for_corel.m
 
 % File History:
@@ -45,7 +42,7 @@ analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false; %true;
 backupPrevious200Cell = false; %true;
 combine200CellPopulation = false; %true;
-plot200CellViolins = false; %true;
+plot200CellViolins = true;
 
 archiveScriptsFlag = true;
 
@@ -61,10 +58,9 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % exampleIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 % popIterName200Cell = exampleIterName200Cell;
 % rankNumsToUse = [2, 4, 5, 7, 9, 10, 12, 13, 16, 20, 21, 23, 25, 29];
-% popIterName2Cell = '20200208T1230_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
-popIterName2Cell = '20200305T2334_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
+popIterName2Cell = '20200208T1230_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 popIterName200Cell = exampleIterName200Cell;
 candCellSheetName = 'candidate_cells.csv';
@@ -85,12 +81,12 @@ pharmConditions = (1:4)';   % Pharmacological conditions
                             %   2 - GAT 1 Block
                             %   3 - GAT 3 Block
                             %   4 - Dual Block
-measuresOfInterest = {'oscillationProbability'; 'meanOscPeriod2Ms'; ...
-                        'meanOscIndex4'; 'meanPercentActive'; ...
-                        'meanOscDurationSec'};
-measureTitles = {'Oscillation Probability'; 'Oscillation Period (ms)'; ...
-                    'Oscillatory Index'; 'Active Cells (%)'; ...
-                    'Oscillation Duration (sec)'};
+measuresOfInterest = {'oscDurationSec'; 'oscPeriod2Ms'; ...
+                        'oscIndex4'; 'hasOscillation'; ...
+                        'percentActive'};
+measureTitles = {'Oscillation Duration (sec)'; 'Oscillation Period (ms)'; ...
+                    'Oscillatory Index'; 'Has Oscillation'; ...
+                    'Active Cells (%)'};
 
 % Plot settings
 ipscFigWidth = 8.5;
@@ -503,13 +499,13 @@ if backupPrevious
     cellfun(@(x, y) movefile(x, y), oscParamPaths, oscParamBackupPaths);
 end
 
-% Find all network subdirectories
-[~, netSimDirs] = all_subdirs('Directory', popIterDir, 'Level', 2);
+% Find all subdirectories
+[~, netSimDirs] = all_subdirs('Directory', popIterDir);
 
-% Analyze spikes for all network subdirectories
+% Analyze spikes for all subdirectories
 array_fun(@(x) m3ha_network_analyze_spikes('Infolder', x, ...
                 'PlotFlag', plotAnalysis), ...
-            netSimDirs, 'UniformOutput', false);
+        netSimDirs, 'UniformOutput', false);
 % cellfun(@(x) m3ha_network_analyze_spikes('Infolder', x, ...
 %                 'PlotFlag', plotAnalysis), ...
 %         netSimDirs, 'UniformOutput', false);
@@ -524,7 +520,6 @@ function combine_osc_params_data (popIterDir, candCellSheetPath, ...
 %% Hard-coded parameters
 rankNumStr = 'rankNum';
 cellNameStr = 'cellName';
-seedNumStr = 'seedNumber';
 oscParamsSuffix = 'oscillation_params';
 
 %% Do the job
@@ -538,18 +533,20 @@ rankNumbersAll = candCellTable.(rankNumStr);
 cellNamesAll = candCellTable.(cellNameStr);
 cellNamesToUse = match_positions(cellNamesAll, rankNumbersAll, rankNumsToUse);
 
-% Find all seed number subdirectories
-[~, seedNumDirs] = all_subdirs('Directory', popIterDir, 'Recursive', false);
+% Locate corresponding oscillation parameter paths
+[~, oscParamPaths] = ...
+    find_matching_files(cellNamesToUse, 'Directory', popIterDir, ...
+                        'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
+                        'Recursive', true, 'ForceCellOutput', true);
 
-% Extract all tables for each seed number
-oscParamTablesCell = ...
-    cellfun(@(seedNumDir) retrieve_osc_param_tables(seedNumDir, ...
-                                        cellNamesToUse, oscParamsSuffix, ...
-                                        seedNumStr, cellNameStr), ...
-            seedNumDirs, 'UniformOutput', false);
+% Read the oscillation parameter tables
+oscParamTables = cellfun(@readtable, oscParamPaths, 'UniformOutput', false);
 
-% Vertically concatenate the cell arrays
-oscParamTables = apply_over_cells(@vertcat, oscParamTablesCell);
+% Add the cell name to the tables
+oscParamTables = ...
+    cellfun(@(x, y) addvars_custom(x, {y}, 'NewVariableNames', cellNameStr, ...
+                                    'Before', 1), ...
+            oscParamTables, cellNamesToUse, 'UniformOutput', false);
 
 % Vertically concatenate the tables
 oscPopTable = apply_over_cells(@vertcat, oscParamTables);
@@ -564,34 +561,18 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function oscParamTables = retrieve_osc_param_tables (seedNumDir, ...
-                                            cellNamesToUse, oscParamsSuffix, ...
-                                            seedNumStr, cellNameStr)
+function myTable = addvars_custom (myTable, value, varargin)
+%% Adds a column to a table, matching rows if necessary 
+%% TODO: Pull out as its own function
 
-% Extract the seed number
-seedNumberStr = extract_fileparts(seedNumDir, 'base');
-seedNumber = sscanf_full(seedNumberStr, '%d');
+% Count the number of rows
+nRows = height(myTable);
 
-% Locate corresponding oscillation parameter paths
-[~, oscParamPaths] = ...
-    find_matching_files(cellNamesToUse, 'Directory', seedNumDir, ...
-                        'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
-                        'Recursive', true, 'ForceCellOutput', true);
+% Make sure value has the same number of rows
+value = match_row_count(value, nRows);
 
-% Read the oscillation parameter tables
-oscParamTables = cellfun(@readtable, oscParamPaths, 'UniformOutput', false);
-
-% Add the seed number to the tables
-oscParamTables = ...
-    cellfun(@(x, y) addvars_custom(x, seedNumber, ...
-                            'NewVariableNames', seedNumStr, 'Before', 1), ...
-            oscParamTables, 'UniformOutput', false);
-
-% Add the cell name to the tables
-oscParamTables = ...
-    cellfun(@(x, y) addvars_custom(x, {y}, 'NewVariableNames', cellNameStr, ...
-                                    'Before', 1), ...
-            oscParamTables, cellNamesToUse, 'UniformOutput', false);
+% Add the column to the table
+myTable = addvars(myTable, value, varargin{:});
 
 end
 
@@ -603,7 +584,6 @@ function statsTable = m3ha_network_compute_statistics (popDataPath2Cell, ...
 
 %% Hard-coded parameters
 cellNameStr = 'cellName';
-seedNumStr = 'seedNumber';
 gIncrStr = 'gIncr';
 pharmStr = 'pCond';
 dclamp2NetworkAmpRatio = 12;
@@ -615,22 +595,16 @@ popDataTable = readtable(popDataPath2Cell);
 % Restrict to the rows with given gIncr
 rowsToUse = round(popDataTable.(gIncrStr) * dclamp2NetworkAmpRatio) == gIncr;
 
-% Change the measure strings the original non-averaged strings
-measureStrNoMean = replace(measureStr, {'mean', 'oscillationProbability'}, ...
-                                    {'', 'hasOscillation'});
-measureStrOrig = lower_first_char(measureStrNoMean);
-
 % Locate the columns of interest
-colsOfInterest = [{cellNameStr}; {pharmStr}; measureStrOrig];
+colsOfInterest = [{cellNameStr}; {pharmStr}; measureStr];
 
 % Extract the table of interest
 popTableOfInterest = popDataTable(rowsToUse, colsOfInterest);
 
 % Compute statistics for each measure of interest
 [allValues, pharmCondition] = ...
-    cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, seedNumStr, ...
-                                            pharmStr, cellNameStr, x), ...
-                    measureStrOrig, 'UniformOutput', false);
+    cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, pharmStr, x), ...
+                    measureStr, 'UniformOutput', false);
 
 % Create the statistics table
 statsTable = table(measureTitle, measureStr, pharmCondition, allValues, ...
@@ -640,34 +614,22 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [allValuesEachPharm, pharmCondition] = ...
-                m3ha_network_stats_helper (popDataTable, seedNumStr, ...
-                                            pharmStr, cellNameStr, measureStr)
-%% Computes the statistics for one measure
+function [allValues, pharmCondition] = ...
+                m3ha_network_stats_helper (popDataTable, pharmStr, measureStr)
+%% Plots one violin plot for the 2-cell network
 
 %% Do the job
-% Extract from table
-pharmAll = popDataTable.(pharmStr);
-cellNameAll = popDataTable.(cellNameStr);
-seedNumberAll = popDataTable.(seedNumStr);
-
 % Get all possible pharmacological conditions
+pharmAll = popDataTable.(pharmStr);
 pharmCondition = force_column_cell(num2cell(unique(pharmAll, 'sorted')));
 
-% Get all cell names
-uniqueCellNames = force_column_cell(unique(cellNameAll));
-
 % Find corresponding row numbers
-rowsEachCellEachPharm = ...
-    cellfun(@(p) cellfun(@(c) pharmAll == p & strcmp(cellNameAll, c), ...
-                        uniqueCellNames, 'UniformOutput', false), ...
-            pharmCondition, 'UniformOutput', false);
+rowsEachPharm = cellfun(@(x) pharmAll == x, ...
+                        pharmCondition, 'UniformOutput', false);
 
-% Get mean values across iterations for all cells
-%    for each pharm condition, for this measure
-allValuesEachPharm = ...
-    cellfun(@(r) cellfun(@(c) nanmean(popDataTable{x, measureStr}), r), ... 
-            rowsEachPharmEachCell, 'UniformOutput', false);
+% Get all values for this measure under each pharm condition
+allValues = cellfun(@(x) popDataTable{x, measureStr}, ...
+                    rowsEachPharm, 'UniformOutput', false);
 
 end
 
