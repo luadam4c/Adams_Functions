@@ -1,4 +1,4 @@
-function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, seedNumberNeuron)
+function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode)
 %% Launches NEURON with simulation commands and plot output figures
 %
 % Requires:
@@ -43,7 +43,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, seedNum
 % 2017-11-07 Added candidateIDs
 % 2017-11-07 Added actMode = 8~10
 % 2017-11-08 Added candidateLabel to fileLabel
-% 2017-11-08 Added seedNumberMatlab
+% 2017-11-08 Added seedNumber
 % 2018-02-28 Don't use HH
 % 2018-03-29 Fixed ordering of useHH and REnsegs
 % 2018-04-17 Plot inSlopeWatching if useHH is 0
@@ -63,7 +63,6 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, seedNum
 % 2020-01-24 Added isCircular and made it true
 % 2020-02-06 For heterogeneous networks, now ensures representation 
 %               of all neurons
-% 2020-03-05 Added seedNumberNeuron as an optional argument
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Perform simulations to generate a linear model
 % TODO: Update specs for m3ha_network_raster_plot.m
@@ -95,17 +94,9 @@ paramsDirName = 'bestparams_20200203_manual_singleneuronfitting0-102';
 homeDirName = 'network_model';
 candidateSheetName = 'candidate_cells.csv';
 
-%% Optional arguments
-if nargin <= 4
-    seedNumberNeuron = 0;       % number to seed random number generator
-                                %   for gpas variation
-end
-
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
-seedNumberMatlab = seedNumberNeuron;  %1;
-                                % number to seed random number generator
-                                %   for TC template selection
+seedNumber = 1;                 % number to seed random number generator
 simNumbers = []; %5;            % run only these simulation numbers
 onLargeMemFlag = false;         % whether to run on large memory nodes
 onHpcFlag = false;              % whether on high-performance computing server
@@ -268,7 +259,6 @@ case 'all'
     plotSpikes = 1;         % whether to plot spike data
     plotTuning = 1;         % whether to plot tuning curves
     plotSingleNeuronData = 1;% whether to plot single neuron data
-    analyzeSpikes = 1;
 case 'curves'
     %% Save flags
     saveNetwork = 0;        % whether to save network topology
@@ -282,7 +272,6 @@ case 'curves'
     plotSpikes = 0;         % whether to plot spike data
     plotTuning = 1;         % whether to plot tuning curves
     plotSingleNeuronData = 0;% whether to plot single neuron data
-    analyzeSpikes = 1;
 case 'spikes'
     %% Save flags
     saveNetwork = 0;        % whether to save network topology
@@ -296,7 +285,6 @@ case 'spikes'
     plotSpikes = 1;         % whether to plot spike data
     plotTuning = 1;         % whether to plot tuning curves
     plotSingleNeuronData = 0;% whether to plot single neuron data
-    analyzeSpikes = 1;
 case 'spikes&special'
     %% Save flags
     saveNetwork = 0;        % whether to save network topology
@@ -310,11 +298,11 @@ case 'spikes&special'
     plotSpikes = 1;         % whether to plot spike data
     plotTuning = 1;         % whether to plot tuning curves
     plotSingleNeuronData = 1;% whether to plot single neuron data
-    analyzeSpikes = 1;
 end
 
 % Code not fixed yet
 plotTuning = 0;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -435,23 +423,12 @@ pInc    = 1;                        % increments of parameters to loop through
 pIsLog  = 0;                        % whether increments of parameters is in log
 %}
 
-%{
 pCond = 1;
 gIncr = 100/12;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
 pMin    = [1, 25/12];               % minimum values of parameters to loop through
 pMax    = [4, 800/12];              % maximum values of parameters to loop through
-pInc    = [1, 2];                   % increments of parameters to loop through
-pIsLog  = [0, 1];                   % whether increments of parameters is in log
-%}
-
-pCond = 1;
-gIncr = 200/12;
-pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
-pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
-pMin    = [1, 100/12];               % minimum values of parameters to loop through
-pMax    = [4, 400/12];              % maximum values of parameters to loop through
 pInc    = [1, 2];                   % increments of parameters to loop through
 pIsLog  = [0, 1];                   % whether increments of parameters is in log
 
@@ -722,13 +699,11 @@ paramsDirectory = fullfile(parentDirectory, bestParamsDirName, paramsDirName);
 homeDirectory = fullfile(parentDirectory, homeDirName);
 
 % Compile or re-compile .mod files in the home directory
-%compile_mod_files(homeDirectory);
+compile_mod_files(homeDirectory);
 
 % Create or locate the parent output folder
 dateStamp = create_time_stamp('FormatOut', 'yyyymmdd');
-outFolderParent = fullfile(homeDirectory, ...
-                            [dateStamp, '_using_', paramsDirName], ...
-                            ['seedNumber_', num2str(seedNumberNeuron)]);
+outFolderParent = fullfile(homeDirectory, [dateStamp, '_using_', paramsDirName]);
 check_dir(outFolderParent);
 
 % Decide on the file label suffix
@@ -851,8 +826,7 @@ simParamLabels = { ...
     'ID # of the activated neuron'; 'ID # of the neuron one below the activated neuron'; ...
     'ID # of the neuron 2 below the activated neuron'; 'ID # of a far away neuron'; ...
     'whether in debug mode'; ...
-    'number to seed random number generator for TC template selection'; ...
-    'number to seed random number generator for gpas variation'; ...
+    'number to seed random number generator'; ...
     'whether to run on large memory nodes'; ...
     'whether TC neurons are heterogeneous'; ...
     'whether GABA-A conductances are removed'; ...
@@ -881,7 +855,7 @@ simParamNames = { ...
     'REsp1cellID'; 'REsp2cellID'; ...
     'TCsp1cellID'; 'TCsp2cellID'; ...
     'act'; 'actLeft1'; 'actLeft2'; 'far'; ...
-    'debugFlag'; 'seedNumberMatlab'; 'seedNumberNeuron'; ...
+    'debugFlag'; 'seedNumber'; ...
     'onLargeMemFlag'; 'heteroTCFlag'; 'bicucullineFlag'; ...
     'saveNetwork'; 'saveSpikes'; 'saveSomaVoltage'; ...
     'saveSomaCli'; 'saveSpecial'; ...
@@ -907,7 +881,7 @@ simParamsInit = [ ...
     dt; tStart; ...
     REsp1cellID; REsp2cellID; TCsp1cellID; TCsp2cellID; ...
     act; actLeft1; actLeft2; far; ...
-    debugFlag; seedNumberMatlab; seedNumberNeuron; ...
+    debugFlag; seedNumber; ...
     onLargeMemFlag; heteroTCFlag; bicucullineFlag; ...
     saveNetwork; saveSpikes; saveSomaVoltage; ...
     saveSomaCli; saveSpecial; ...
@@ -948,7 +922,7 @@ stimCellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
                                             RERErad, RETCrad);
 
 % Seed random number generator with repetition number
-rng(seedNumberMatlab);
+rng(seedNumber);
 
 % Force as a column vector
 candidateIDs = force_column_vector(candidateIDs, 'ToLinearize', true);
@@ -1069,8 +1043,8 @@ for iSim = 1:nSims
 
     % Commands to randomize leak current properties
     %     uniformly randomizes leak conductance in [REgpasLB, REgpasUB]
-    simCommand = [simCommand, sprintf('randleak(%g, %g, "%s", %g)\n', ...
-        REgpasLB, REgpasUB, sREleakPaths{iSim}, seedNumberNeuron)];
+    simCommand = [simCommand, sprintf('randleak(%g, %g, "%s")\n', ...
+        REgpasLB, REgpasUB, sREleakPaths{iSim})];
 
     % Commands to initialize variables
     simCommand = [simCommand, sprintf('vinitRE(%g)\n', REepas)];
@@ -1185,9 +1159,7 @@ if plotSingleNeuronData
 end
 
 % Analyze spikes for oscillations
-if analyzeSpikes
-    m3ha_network_analyze_spikes('InFolder', inFolder, 'OutFolder', outFolder);
-end
+m3ha_network_analyze_spikes('InFolder', inFolder, 'OutFolder', outFolder);
 
 %% Compute time taken
 timeTaken = toc(timer2);
@@ -1222,6 +1194,110 @@ paramsTable = m3ha_network_change_params(paramsTable, pchname, pchvalue, ...
 
 %{
 OLD CODE:
+
+%% Setup parameters and filenames for each trial
+paramValues = cell(1, nSims);     % stores parameters used for each trial
+simParamsPaths = cell(1, nSims);
+sREREsynPaths = cell(1, nSims);
+sTCREsynPaths = cell(1, nSims);
+sRETCsynPaths = cell(1, nSims);
+sREspikePaths = cell(1, nSims);
+sTCspikePaths = cell(1, nSims);
+sREvPaths = cell(1, nSims);
+sTCvPaths = cell(1, nSims);
+sREcliPaths = cell(1, nSims);
+sREsp1Paths = cell(1, nSims);
+sREsp2Paths = cell(1, nSims);
+sTCsp1Paths = cell(1, nSims);
+sTCsp2Paths = cell(1, nSims);
+sREleakPaths = cell(1, nSims);
+sREparamsPaths = cell(1, nSims);
+sTCparamsPaths = cell(1, nSims);
+for k = 1:nSims
+    % Update trial count
+    idxTrialNumber = find_in_strings('simNumber', simParamNames);
+    paramValues{k}(idxTrialNumber) = k;
+
+    % Set parameters for this trial according to pchnames and pchvalues
+    pchnamesThis = pchnames{k};
+    if iscell(pchvalues)
+        pchvaluesThis = pchvalues{k};
+    elseif isnumeric(pchvalues)
+        pchvaluesThis = pchvalues(k);
+    end
+    paramValues{k} = ...
+        m3ha_network_change_params(pchnamesThis, pchvaluesThis, ...
+                    simParamNames, simParamsInit, 'ExperimentName', experimentName);
+
+    % Create name-value pairs
+    nameValuePairsThis = {pchnamesThis, pchvaluesThis};
+
+    % Print parameters to a comma-separated-value file
+    simParamsPaths{k} = construct_fullpath(simparamsF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    fid = fopen(simParamsPaths{k}, 'w');
+    for iParam = 1:length(paramValues{k})
+        fprintf(fid, '%s, %g, %s\n', ...
+            simParamNames{iParam}, paramValues{k}(iParam), simParamLabels{iParam});
+    end
+    fclose(fid);
+
+    % Construct full file names
+    sREREsynPaths{k}   = construct_fullpath(sREREsynF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sTCREsynPaths{k}   = construct_fullpath(sTCREsynF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sRETCsynPaths{k}   = construct_fullpath(sRETCsynF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sREspikePaths{k}   = construct_fullpath(sREspikeF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sTCspikePaths{k}   = construct_fullpath(sTCspikeF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sREvPaths{k}       = construct_fullpath(sREvF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sTCvPaths{k}       = construct_fullpath(sTCvF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sREcliPaths{k}     = construct_fullpath(sREcliF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sREsp1Paths{k}     = construct_fullpath(sREsp1F, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sREsp2Paths{k}     = construct_fullpath(sREsp2F, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sTCsp1Paths{k}     = construct_fullpath(sTCsp1F, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sTCsp2Paths{k}     = construct_fullpath(sTCsp2F, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sREleakPaths{k}     = construct_fullpath(sREleakF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sREparamsPaths{k}     = construct_fullpath(sREparamsF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+    sTCparamsPaths{k}     = construct_fullpath(sTCparamsF, 'Directory', outFolder, ...
+                        'NameValuePairs', nameValuePairsThis);
+end
+
+% Import .p file data
+pfiledata = importdata(sprintf('pfiles/bestparams_%s.p', ...
+                                candidateNamesUsed{iCell}));  % a XX x 4 array
+nTCParams = size(pfiledata, 1);
+for k = 1:nTCParams                 % for each parameter saved
+    % Store parameter in the corresponding vector
+    eval(sprintf('TC%s(%d) = %g;', pfiledata{k, 1}, iCell, pfiledata{k, 2}));
+end
+
+paramsIn = paramsTable{:, 'Value'};
+simParamNames = paramsTable.Properties.RowNames;
+paramsOut = m3ha_network_change_params(pchname, pchvalue, ...
+                    simParamNames, paramsIn, 'ExperimentName', experimentName);
+paramsTable{:, 'Value'} = paramsOut;
+
+% Create candidate file names
+candidateFileNames = strcat('bestparams_', candidateNamesUsed, '.csv');
+
+candidateNames = candidateTable{find_in_list(candidateIDs, allIds), 'cellName'};
+
+% Generate candidate IDs to use for each TC neuron
+candidateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
+candidateNamesUsed = allCandNames(candidateIDsUsed);
 
 %}
 

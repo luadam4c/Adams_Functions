@@ -28,6 +28,7 @@ function structArray = rmfield_custom (structArray, fields, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/all_subdirs.m
 %       cd/compute_bins.m
 
 % File History:

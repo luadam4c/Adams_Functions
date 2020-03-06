@@ -49,6 +49,7 @@ function [REspikes, TCspikes, numActiveTC, numActiveRE, ...
 %       cd/create_subplots.m
 %       cd/find_in_strings.m
 %       cd/extract_looped_params.m
+%       cd/is_in_parallel.m
 %       cd/isfigtype.m
 %       cd/m3ha_network_define_actmode.m
 %       cd/m3ha_network_tuning_curves.m
@@ -124,7 +125,7 @@ noRasters = iP.Results.NoRasters;
 if strcmp(outFolder, '@inFolder')
     outFolder = inFolder;
 end
-if ~plotSpikes || (numel(singleTrialNum) >= 1 && singleTrialNum ~= 0)
+if is_in_parallel || ~plotSpikes || (numel(singleTrialNum) >= 1 && singleTrialNum ~= 0)
     renewParpool = false;        % only plotting spikes will take up significant amount of memory
 end
 
@@ -162,17 +163,21 @@ oscDurRE = zeros(nSims, 1);       % oscillation duration (seconds)
 actVelTC = zeros(nSims, 1);       % activation velocity (cells/seconds)
 actVelRE = zeros(nSims, 1);       % activation velocity (cells/seconds)
 ct = 0;                             % counts number of trials completed
-poolObj = gcp('nocreate');          % get current parallel pool object without creating a new one
-if isempty(poolObj)
-    poolObj = parpool;              % create a default parallel pool object
-    oldNumWorkers = poolObj.NumWorkers;    % number of workers in the default parallel pool object
-else
-    oldNumWorkers = poolObj.NumWorkers;    % number of workers in the current parallel pool object
+if renewParpool
+    poolObj = gcp('nocreate');          % get current parallel pool object without creating a new one
+    if isempty(poolObj)
+        poolObj = parpool;              % create a default parallel pool object
+        oldNumWorkers = poolObj.NumWorkers;    % number of workers in the default parallel pool object
+    else
+        oldNumWorkers = poolObj.NumWorkers;    % number of workers in the current parallel pool object
+    end
+    numWorkers = min(oldNumWorkers, maxNumWorkers);    % number of workers to use for running NEURON
 end
-numWorkers = min(oldNumWorkers, maxNumWorkers);    % number of workers to use for running NEURON
+
 if renewParpool
     delete(poolObj);                % delete the parallel pool object to release memory
 end
+
 while ct < nSims                  % while not trials are completed yet
     if ~isempty(singleTrialNum) && singleTrialNum ~= 0
         first = singleTrialNum; % run that trial
@@ -191,8 +196,8 @@ while ct < nSims                  % while not trials are completed yet
         % Recreate a parallel pool object using fewer workers to prevent running out of memory
         poolObj = parpool('local', numWorkers);    
     end
-    %parfor i = first:last
-    for i = first:last
+    parfor i = first:last
+    %for i = first:last
         % Construct current parameter string
         pstring = '';               % initialize for parfor
         if iscell(pchvalues)

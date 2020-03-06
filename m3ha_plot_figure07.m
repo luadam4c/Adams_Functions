@@ -2,6 +2,7 @@
 %% Plots Figure 07 for the GAT Blocker paper
 %
 % Requires:
+%       cd/all_subdirs.m
 %       cd/apply_over_cells.m
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
@@ -34,7 +35,7 @@ analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
 combine2CellPopulation = false; %true;
-plot2CellViolins = true;
+plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
@@ -42,7 +43,7 @@ analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false; %true;
 backupPrevious200Cell = false; %true;
 combine200CellPopulation = false; %true;
-plot200CellViolins = true;
+plot200CellViolins = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -58,9 +59,10 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % exampleIterName200Cell = '20200204T1239_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 % popIterName200Cell = exampleIterName200Cell;
 % rankNumsToUse = [2, 4, 5, 7, 9, 10, 12, 13, 16, 20, 21, 23, 25, 29];
+% popIterName2Cell = '20200208T1230_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
-popIterName2Cell = '20200208T1230_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
+popIterName2Cell = '20200305T2334_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 popIterName200Cell = exampleIterName200Cell;
 candCellSheetName = 'candidate_cells.csv';
@@ -499,10 +501,10 @@ if backupPrevious
     cellfun(@(x, y) movefile(x, y), oscParamPaths, oscParamBackupPaths);
 end
 
-% Find all subdirectories
-[~, netSimDirs] = all_subdirs('Directory', popIterDir);
+% Find all seed number subdirectories
+[~, netSimDirs] = all_subdirs('Directory', popIterDir, 'Level', 2);
 
-% Analyze spikes for all subdirectories
+% Analyze spikes for all network subdirectories
 array_fun(@(x) m3ha_network_analyze_spikes('Infolder', x, ...
                 'PlotFlag', plotAnalysis), ...
         netSimDirs, 'UniformOutput', false);

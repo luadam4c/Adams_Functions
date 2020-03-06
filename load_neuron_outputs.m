@@ -74,7 +74,7 @@ verboseDefault = false;             % print to standard output by default
 removeAfterLoadDefault = false;     % don't remove .out files by default
 tVecsDefault = [];
 forceCellOutputDefault = false; % don't force output as a cell array by default
-timeWindowsDefault = false;
+timeWindowsDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

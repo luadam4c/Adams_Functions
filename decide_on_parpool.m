@@ -34,6 +34,7 @@ function poolObj = decide_on_parpool (varargin)
 %
 % Requires:
 %       cd/struct2arglist.m
+%       cd/is_in_parallel.m
 %
 % Used by:
 %       cd/run_neuron.m
@@ -93,6 +94,11 @@ end
 %% Do the job
 % Get current parallel pool object without creating a new one
 poolObj = gcp('nocreate');
+
+% Return if in parallel loop
+if is_in_parallel
+    return
+end
 
 % Create a default parallel pool object if it doesn't exist
 if isempty(poolObj)

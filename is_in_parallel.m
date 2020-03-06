@@ -16,6 +16,9 @@ function answer = is_in_parallel ()
 % Used by:
 %       cd/array_fun.m
 %       cd/load_neuron_outputs.m
+%       cd/decide_on_parpool.m
+%       cd/m3ha_network_raster_plot.m
+%       cd/run_neuron.m
 
 % File History:
 % 2018-11-01 Copied from https://www.mathworks.com/matlabcentral/answers/

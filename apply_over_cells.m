@@ -33,6 +33,7 @@ function output = apply_over_cells (myFunction, inputs, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/all_subdirs.m
 %       cd/combine_variables_across_tables.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_plot_figure07.m
