@@ -1101,7 +1101,7 @@ for iSim = 1:nSims
                 sLeakPaths{iSim}, seedNumberNeuron)];
 
     % Command to initialize voltages
-    simCommand = [simCommand, sprintf('vinit_to_epas(%g)\n')];
+    simCommand = [simCommand, sprintf('vinit_to_epas()\n')];
 
     % Commands to set up neural activation protocol
     switch actMode
