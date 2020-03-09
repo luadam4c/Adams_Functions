@@ -29,6 +29,7 @@ function structArray = rmfield_custom (structArray, fields, varargin)
 %
 % Used by:
 %       cd/all_subdirs.m
+%       cd/array_fun.m
 %       cd/compute_bins.m
 
 % File History:
