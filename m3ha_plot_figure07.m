@@ -67,7 +67,7 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName2Cell = '20200306T1724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_gpas_varied';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
-popIterName2Cell = '20200308T1925_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
+popIterName2Cell = '20200308T2306_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 popIterName200Cell = exampleIterName200Cell;
 candCellSheetName = 'candidate_cells.csv';

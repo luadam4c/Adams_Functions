@@ -518,7 +518,7 @@ REgpasUB = 5.5e-5;  % upper bound for passive leak conductance (S/cm^2) in RE ce
                 %     Jedlicka et al 2011 used 2e-4 S/cm^2 %%% What should we use?
 TCgpasRange = 0.2; %0;  
                 % relative range for passive leak conductance (S/cm^2) in TC cells
-TCepasLB = -70;  % lower bound for passive leak conductance (mV) in TC cells
+TCepasLB = -75;  % lower bound for passive leak conductance (mV) in TC cells
 TCepasUB = -60;  % upper bound for passive leak conductance (mV) in TC cells
 
 %% Synapse parameters
