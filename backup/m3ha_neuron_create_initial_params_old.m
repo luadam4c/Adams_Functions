@@ -194,7 +194,7 @@ neuronParamsIsLog = logical([ ...
     ]);
 
 % Whether the parameter is considered a 'passive' parameter
-%   Note: must be consistent with TC3.tem and m3ha_neuron_create_TC_commands.m
+%   Note: must be consistent with TC3.tem and m3ha_neuron_create_sim_commands.m
 neuronParamsIsPassive = logical([ ...
     1, 1, 1, ...
     1, 1, 1, 1, 1, ...
@@ -502,7 +502,7 @@ if toUpdatePassive
     cellNameAllCells = passiveTable.cellName;
 
     % Extract the passive parameters needed
-    %   Note: Must be consistent with m3ha_neuron_create_TC_commands.m
+    %   Note: Must be consistent with m3ha_neuron_create_sim_commands.m
     radiusSomaAllCells = passiveTable.radiusSoma;
     diamDendAllCells = passiveTable.diameterDendrite;
     LDendAllCells = passiveTable.lengthDendrite;

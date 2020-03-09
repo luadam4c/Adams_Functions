@@ -30,7 +30,7 @@ function [amp, tauRise, tauFallFast, tauFallSlow, weight] = ...
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_update_dependent_params.m
-%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_sim_params.m
 %       cd/m3ha_parse_sweep_settings.m
 
 % File History:

@@ -1,8 +1,8 @@
 function [simParamsTable, simParamsPath] = ...
-                m3ha_neuron_create_simulation_params (neuronParamsTable, varargin)
+                m3ha_neuron_create_sim_params (neuronParamsTable, varargin)
 %% Generates a table of simulation parameters from table(s) of neuron parameters
 % Usage: [simParamsTable, simParamsPath] = ...
-%               m3ha_neuron_create_simulation_params (neuronParamsTable, varargin)
+%               m3ha_neuron_create_sim_params (neuronParamsTable, varargin)
 % Explanation:
 %       TODO
 %

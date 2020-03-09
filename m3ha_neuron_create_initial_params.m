@@ -388,7 +388,7 @@ if useCurveFitParams
     cellNameAllCells = passiveTable.cellName;
 
     % Extract the passive parameters needed
-    %   Note: Must be consistent with m3ha_neuron_create_TC_commands.m
+    %   Note: Must be consistent with m3ha_neuron_create_sim_commands.m
     radiusSomaAllCells = passiveTable.radiusSoma;
     diamDendAllCells = passiveTable.diameterDendrite;
     LDendAllCells = passiveTable.lengthDendrite;

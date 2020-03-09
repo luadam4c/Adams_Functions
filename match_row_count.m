@@ -44,7 +44,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/match_format_vector_sets.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_network_launch.m
-%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_sim_params.m
 %       cd/m3ha_plot_figure07.m
 %       cd/match_column_count.m
 %       cd/match_format_vectors.m

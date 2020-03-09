@@ -23,7 +23,7 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 %       cd/detect_spikes_multiunit.m
 %       cd/find_custom.m
 %       cd/find_in_strings.m
-%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_sim_params.m
 %       cd/match_positions.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_grouped_histogram.m

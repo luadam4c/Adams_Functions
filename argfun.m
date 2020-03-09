@@ -60,7 +60,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
-%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_sim_params.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure03.m
