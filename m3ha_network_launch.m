@@ -245,9 +245,13 @@ else
         renewParpoolFlagPlots = 0; % whether to renew parpool every batch to release memory
         maxNumWorkersPlots = 20;   % maximum number of workers for plotting things
     case 'spikes'           % saving spikes and plotting raster plots and curves/maps only
-        renewParpoolFlagNeuron = 0;% whether to renew parpool every batch to release memory
+        if nCells == 100
+            renewParpoolFlagNeuron = 1;
+        else
+            renewParpoolFlagNeuron = 0;
+        end
         maxNumWorkersNeuron = 20;  % maximum number of workers for running NEURON 
-        renewParpoolFlagPlots = 0; % whether to renew parpool every batch to release memory
+        renewParpoolFlagPlots = 0;
         maxNumWorkersPlots = 20;   % maximum number of workers for plotting things
     case 'spikes&special'   % saving spikes and special neuron traces only
         renewParpoolFlagNeuron = 0;% whether to renew parpool every batch to release memory
@@ -449,7 +453,7 @@ pInc    = [1, 2];                   % increments of parameters to loop through
 pIsLog  = [0, 1];                   % whether increments of parameters is in log
 %}
 
-%{
+
 pCond = 1;
 gIncr = 200/12;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
@@ -458,8 +462,9 @@ pMin    = [1, 100/12];               % minimum values of parameters to loop thro
 pMax    = [4, 400/12];              % maximum values of parameters to loop through
 pInc    = [1, 2];                   % increments of parameters to loop through
 pIsLog  = [0, 1];                   % whether increments of parameters is in log
-%}
 
+
+%{
 pCond = 1;
 gIncr = 200/12;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
@@ -468,6 +473,7 @@ pMin    = [1, 200/12];               % minimum values of parameters to loop thro
 pMax    = [4, 200/12];              % maximum values of parameters to loop through
 pInc    = [1, 2];                   % increments of parameters to loop through
 pIsLog  = [0, 1];                   % whether increments of parameters is in log
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -162,15 +162,6 @@ else
             last = nItems;
         end
 
-        % Renew parallel pool object with desired number of workers
-        if renewParpool
-            % Delete the parallel pool object to release memory
-            delete(poolObj);
-
-            % Recreate a parallel pool object with desired number of workers
-            poolObj = parpool('local', numWorkers);
-        end
-
         parfor iItem = first:last
             % Get all the arguments for this item
             inputsThis = inputMatrix(iItem, :);
@@ -180,6 +171,15 @@ else
 
             % Save in output
             outputMatrix(iItem, :) = outputsThis;        
+        end
+
+        % Renew parallel pool object to clear memory
+        if renewParpool
+            % Delete the parallel pool object to release memory
+            delete(poolObj);
+
+            % Recreate a parallel pool object with desired number of workers
+            poolObj = parpool('local', numWorkers);
         end
 
         % Update the number of trials completed
