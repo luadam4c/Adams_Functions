@@ -23,6 +23,7 @@
 % File History:
 % 2019-11-25 Created by Adam Lu
 % 2020-03-10 Reordered measuresOfInterest
+% 2020-03-10 Updated pharm labels
 
 %% Hard-coded parameters
 % Directories
@@ -67,10 +68,10 @@ exampleYlimits = [-100, 10];
 exampleYTicks = [-80, -50, -20];
 
 pharmAll = [1; 2; 3; 4];          
-pharmLabelsLong = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
-                    '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
-pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
-                    '{\it d}-GAT3', '{\it d}-Dual'};
+pharmLabelsLong = {'{\it d}Control', '{\it d}GAT1-Block', ...
+                    '{\it d}GAT3-Block', '{\it d}Dual-Block'};
+pharmLabelsShort = {'{\it d}Con', '{\it d}GAT1', ...
+                    '{\it d}GAT3', '{\it d}Dual'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
 gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
 conditionLabel2D = 'pharm_1-4_gincr_200';

@@ -61,11 +61,13 @@ function statsStruct = test_difference (data, varargin)
 %
 % Outputs:
 %       statsStruct - a structure with fields:
+%                       symbol
 %                       isDifferent
 %                       pValue
 %                       nSamples
 %                       degreesOfFreedom
 %                       testFunction
+%                       symbol_Group1_Group2, etc.
 %                       isDifferent_Group1_Group2, etc.
 %                       pValue_Group1_Group2, etc.
 %                       diffValue_Group1_Group2, etc.
@@ -95,6 +97,14 @@ function statsStruct = test_difference (data, varargin)
 %                   - 'AlphaDifference': significance level for difference test
 %                   must be a positive scalar
 %                   default == 0.05
+%                   - 'AlphaTwoStars': significance level for having two stars
+%                                       as the symbol
+%                   must be a positive scalar
+%                   default == 0.01
+%                   - 'AlphaThreeStars': significance level for 
+%                                           having three stars as the symbol
+%                   must be a positive scalar
+%                   default == 0.001
 %                   - 'IsPaired': whether data is paired
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -130,6 +140,8 @@ function statsStruct = test_difference (data, varargin)
 % 2020-02-23 Added percChange
 % 2020-02-23 diffValue is now the negative of before
 % 2020-02-23 Added stderrDiff, lowerDiff, upperDiff
+% 2020-03-10 Added symbol, alphaTwoStars, alphaThreeStars
+% TODO: 2020-03-10 Added alternative tests
 
 %% Hard-coded parameters
 nullMean = 0;                   % null hypothesis mean for one-sample test
@@ -144,6 +156,8 @@ uniqueGroupsDefault = [];       % set later
 groupNamesDefault = {};         % set later
 alphaNormalityDefault = 0.05;   % significance level for normality test
 alphaDifferenceDefault = 0.05;  % significance level for difference test
+alphaTwoStarsDefault = 0.01;    % significance level for two stars
+alphaThreeStarsDefault = 0.001; % significance level for three stars
 isPairedDefault = false;        % data is not paired by default
 displayAnovaDefault = true;     % display ANOVA table by default
 
@@ -176,6 +190,10 @@ addParameter(iP, 'AlphaNormality', alphaNormalityDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'AlphaDifference', alphaDifferenceDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'AlphaTwoStars', alphaTwoStarsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'AlphaThreeStars', alphaThreeStarsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'IsPaired', isPairedDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'DisplayAnova', displayAnovaDefault, ...
@@ -188,6 +206,8 @@ uniqueGroups = iP.Results.UniqueGroups;
 groupNames = iP.Results.GroupNames;
 alphaNormality = iP.Results.AlphaNormality;
 alphaDifference = iP.Results.AlphaDifference;
+alphaTwoStars = iP.Results.AlphaTwoStars;
+alphaThreeStars = iP.Results.AlphaThreeStars;
 isPaired = iP.Results.IsPaired;
 displayAnova = iP.Results.DisplayAnova;
 
@@ -284,14 +304,14 @@ if nGroups > 2
     secondGroupNames = groupNamesPaired(:, 2);
 
     % Create strings
-    [isDifferentStrs, pValueStrs, ...
+    [isDifferentStrs, symbolStrs, pValueStrs, ...
             diffValueStrs, stderrValueStrs, ...
             errValueStrs, lowerValueStrs, upperValueStrs, ...
             meanDiffStrs, stderrDiffStrs, ...
             errDiffStrs, lowerDiffStrs, upperDiffStrs, ...
             percChangeStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', ...
+                'isDifferent_', 'symbol_', 'pValue_', ...
                 'diffValue_', 'stderrValue_', ...
                 'errValue_', 'lowerValue_', 'upperValue_', ...
                 'meanDiff_', 'stderrDiff_', ...
@@ -309,6 +329,7 @@ end
 %% Do the job
 % Initialize statsStruct
 statsStruct.isDifferent = false;
+statsStruct.symbol = '';
 statsStruct.pValue = NaN;
 statsStruct.meanDiff = NaN;
 statsStruct.stderrDiff = NaN;
@@ -322,6 +343,7 @@ statsStruct.testFunction = 'none';
 if nGroups > 2
     for iPair = 1:nPairs
         statsStruct.(isDifferentStrs{iPair}) = NaN;
+        statsStruct.(symbolStrs{iPair}) = '';
         statsStruct.(pValueStrs{iPair}) = NaN;
         statsStruct.(diffValueStrs{iPair}) = NaN;
         statsStruct.(stderrValueStrs{iPair}) = NaN;
@@ -533,6 +555,10 @@ else
     end
 end
 
+% Decide on the symbol
+symbol = decide_on_symbol(pValue, alphaDifference, ...
+                            alphaTwoStars, alphaThreeStars);
+
 % Extract or compute degrees of freedom
 switch testFunction
     case {'ttest', 'ttest2', 'anova1'}
@@ -547,6 +573,7 @@ end
 
 % Store overall differences in statsStruct
 statsStruct.isDifferent = isDifferent;
+statsStruct.symbol = symbol;
 statsStruct.pValue = pValue;
 statsStruct.degreesOfFreedom = degreesOfFreedom;
 statsStruct.testFunction = testFunction;
@@ -655,14 +682,14 @@ if nGroups > 2 && ~isnan(pValue)
         argfun(@(x) groupNames(x), firstGroupIndices, secondGroupIndices);
 
     % Create strings again
-    [isDifferentStrs, pValueStrs, ...
+    [isDifferentStrs, symbolStrs, pValueStrs, ...
             diffValueStrs, stderrValueStrs, ...
             errValueStrs, lowerValueStrs, upperValueStrs, ...
             meanDiffStrs, stderrDiffStrs, ...
             errDiffStrs, lowerDiffStrs, upperDiffStrs, ...
             percChangeStrs] = ...
         argfun(@(a) strcat(a, firstGroupNames, '_', secondGroupNames), ...
-                'isDifferent_', 'pValue_', ...
+                'isDifferent_', 'symbol_', 'pValue_', ...
                 'diffValue_', 'stderrValue_', ...
                 'errValue_', 'lowerValue_', 'upperValue_', ...
                 'meanDiff_', 'stderrDiff_', ...
@@ -688,10 +715,13 @@ if nGroups > 2 && ~isnan(pValue)
         % Test whether there is a difference between this pair
         isDifferentThis = pValueThis < alphaDifference;
 
-        % Store isDifferent for this pair
-        statsStruct.(isDifferentStrs{iPair}) = isDifferentThis;
+        % Decide on a symbol between this pair
+        symbolThis = decide_on_symbol(pValueThis, alphaDifference, ...
+                                    alphaTwoStars, alphaThreeStars);
 
-        % Store p values
+        % Store values for this pair
+        statsStruct.(isDifferentStrs{iPair}) = isDifferentThis;
+        statsStruct.(symbolStrs{iPair}) = symbolThis;
         statsStruct.(pValueStrs{iPair}) = pValueThis;
         statsStruct.(diffValueStrs{iPair}) = diffValueThis;
         statsStruct.(stderrValueStrs{iPair}) = stderrValueThis;
@@ -714,6 +744,22 @@ for iGroup = 1:nNormGroups
     statsStruct.(pNormLillStrs{iGroup}) = pNormLill(iGroup);
     statsStruct.(pNormAdStrs{iGroup}) = pNormAd(iGroup);
     statsStruct.(pNormJbStrs{iGroup}) = pNormJb(iGroup);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function symbol = decide_on_symbol(pValue, alphaDifference, ...
+                                    alphaTwoStars, alphaThreeStars)
+% Decide on the difference symbol
+
+if pValue < alphaThreeStars
+    symbol = '***';
+elseif pValue < alphaTwoStars
+    symbol = '**';
+elseif pValue < alphaDifference
+    symbol = '*';
+else
+    symbol = 'NS';
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

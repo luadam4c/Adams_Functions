@@ -60,6 +60,7 @@
 % 2020-02-18 Now computes open probability discrepancies over fit window only
 % 2020-02-23 Now saves open probability stats
 % 2020-03-10 Reordered measuresOfInterest
+% 2020-03-10 Updated pharm labels
 % 
 
 %% Hard-coded parameters
@@ -123,10 +124,10 @@ condVarStrs = {'cellidrow', 'prow', 'vrow', 'grow', 'swpnrow', ...
                 'gabab_amp', 'gabab_Trise', 'gabab_TfallFast', ...
                 'gabab_TfallSlow', 'gabab_w'};
 pharmAll = [1; 2; 3; 4];          
-pharmLabelsLong = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
-                    '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
-pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
-                    '{\it s}-GAT3', '{\it s}-Dual'};
+pharmLabelsLong = {'{\it s}Control', '{\it s}GAT1-Block', ...
+                    '{\it s}GAT3-Block', '{\it s}Dual-Block'};
+pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
+                    '{\it s}GAT3', '{\it s}Dual'};
 if dataMode == 0 || dataMode == 3
     gIncrAll = [25; 50; 100; 200; 400; 800];
     gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};

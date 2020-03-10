@@ -18,6 +18,7 @@
 % File History:
 % 2020-01-02 Modified from m3ha_plot_figure02.m
 % 2020-03-10 Reordered measuresOfInterest
+% 2020-03-10 Updated pharm labels
 
 %% Hard-coded parameters
 % Flags
@@ -70,10 +71,10 @@ dataMode = 1;           % data mode:
 
 % Plot settings
 pharmAll = [1; 2; 3; 4];
-pharmLabelsLong = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
-                    '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
-pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
-                    '{\it d}-GAT3', '{\it d}-Dual'};
+pharmLabelsLong = {'{\it d}Control', '{\it d}GAT1-Block', ...
+                    '{\it d}GAT3-Block', '{\it d}Dual-Block'};
+pharmLabelsShort = {'{\it d}Con', '{\it d}GAT1', ...
+                    '{\it d}GAT3', '{\it d}Dual'};
 if dataMode == 0
     gIncrAll = [25; 50; 100; 200; 400; 800];
     gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};

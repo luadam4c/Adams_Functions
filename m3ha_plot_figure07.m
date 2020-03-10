@@ -27,6 +27,7 @@
 % File History:
 % 2020-01-30 Modified from m3ha_plot_figure05.m
 % 2020-02-06 Added plot200CellExamples and plot2CellM2h
+% 2020-03-10 Updated pharm labels
 
 %% Hard-coded parameters
 % Flags
@@ -111,8 +112,8 @@ m2h2CellFigWidth = 8.5;
 m2h2CellFigHeight = 1;
 example200CellFigWidth = 8.5;
 example200CellFigHeight = 3;
-pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
-                    '{\it s}-GAT3', '{\it s}-Dual'};
+pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
+                    '{\it s}GAT3', '{\it s}Dual'};
 
 figTypes = {'png', 'epsc'};
 
