@@ -13,23 +13,6 @@ function statsTable = m3ha_compute_statistics (varargin)
 %       statsTable = m3ha_compute_statistics('PharmConditions', num2cell(1:4))
 %       statsTable = m3ha_compute_statistics('PharmConditions', num2cell(1:4), 'GIncrCondition', num2cell([100; 200; 400]))
 %
-% Requires:
-%       cd/argfun.m
-%       cd/array_fun.m
-%       cd/compute_stats.m
-%       cd/first_matching_field.m
-%       cd/force_column_cell.m
-%       cd/force_column_vector.m
-%       cd/match_row_count.m
-%       cd/m3ha_load_sweep_info.m
-%       cd/m3ha_select_sweeps.m
-%
-% Used by:
-%       cd/m3ha_compute_and_plot_statistics.m
-%       cd/m3ha_plot_figure02.m
-%       cd/m3ha_plot_figure04.m
-%       cd/m3ha_simulate_population.m
-%
 % Outputs:
 %       statsTable  - a table containing measures as row names
 %                       and the following variables:
@@ -87,6 +70,21 @@ function statsTable = m3ha_compute_statistics (varargin)
 %                   must be empty or some of: -60, -65, -70
 %                       or a cell array of them (will become 3rd dimension)
 %                   default == no restrictions
+%
+% Requires:
+%       cd/argfun.m
+%       cd/array_fun.m
+%       cd/compute_stats.m
+%       cd/first_matching_field.m
+%       cd/force_column_cell.m
+%       cd/force_column_vector.m
+%       cd/match_row_count.m
+%       cd/m3ha_load_sweep_info.m
+%       cd/m3ha_select_sweeps.m
+%
+% Used by:
+%       cd/m3ha_compute_and_plot_statistics.m
+%       cd/m3ha_compute_and_plot_violin.m
 
 % File History:
 % 2016-08-19 Created

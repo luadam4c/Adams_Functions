@@ -82,7 +82,7 @@ addRequired(iP, 'colorMap');
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'nColors', nColorsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'nonnegative', 'integer'}));
 
 % Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default);
@@ -94,6 +94,12 @@ nColors = iP.Results.nColors;
 
 % Keep unmatched arguments for the create_colormap() function
 otherArguments = iP.Unmatched;
+
+%% Preparation
+% Make sure nColors is not zero
+if nColors == 0
+    nColors = nColorsDefault;
+end
 
 %% Do the job
 if isempty(colorMap)

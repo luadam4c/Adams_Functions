@@ -542,6 +542,10 @@ function ax = sort_subplots (ax)
 %% Sort subplots of a figure in the same order as the subplot function
 % TODO: Pull out as its own function
 
+if isempty(ax)
+    return
+end
+
 % Extract outer positions
 outerPositions = arrayfun(@(x) x.OuterPosition, ax, 'UniformOutput', false);
 

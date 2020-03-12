@@ -61,7 +61,6 @@
 % 2020-02-23 Now saves open probability stats
 % 2020-03-10 Reordered measuresOfInterest
 % 2020-03-10 Updated pharm labels
-% 2020-03-11 Now plots violin plots for all gIncr
 % 
 
 %% Hard-coded parameters
@@ -136,11 +135,10 @@ elseif dataMode == 1 || dataMode == 2
     gIncrAll = [100; 200; 400];
     gIncrLabels = {'100%', '200%', '400%'};
 end
-conditionLabels2D = [create_labels_from_numbers(gIncrAll, ...
-                    'Prefix', 'pharm_1-4_gincr_', 'Suffix', ['_', simStr]); ...
-                    'pharm_1-4_gincr_pooled'];
-pConds2D = repmat({num2cell(pharmAll)}, numel(gIncrAll) + 1, 1);
-gConds2D = [num2cell(gIncrAll); {gIncrAll}];
+conditionLabel2D = 'pharm_1-4_gincr_200_sim';
+pCond2D = num2cell(pharmAll);
+gCond2D = 200;
+stats2dSuffix = strcat(simStr, '_', conditionLabel2D, '_stats.mat');
 conditionLabel3D = 'pharm_1-4_gincr_all_sim';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
@@ -276,7 +274,7 @@ end
 
 % Construct full paths
 simSwpInfoPath = fullfile(outFolder, [prefix, '_', simSwpInfoSuffix, '.csv']);
-conditionLabels2D = strcat(prefix, '_', conditionLabels2D);
+stats2dPath = fullfile(outFolder, [prefix, '_', stats2dSuffix, '.mat']);
 stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
 
 %% Choose the best cells and the best parameters for each cell
@@ -566,16 +564,29 @@ if plotViolinPlotsFlag
 
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
+    % Compute statistics if not done already
+    if ~isfile(stats2dPath)
+        % Load sweep info
+        simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
-    % Compute and plot violin plots
-    cellfun(@(conditionLabel2D, pCond2D, gCond2D) ...
-            m3ha_compute_and_plot_violin(outFolder, ...
-                    pharmLabelsShort, conditionLabel2D, ...
-                    'SwpInfo', simSwpInfo, 'DataMode', dataMode, ...
-                    'PharmConditions', pCond2D, 'GIncrConditions', gCond2D, ...
-                    'RowsToPlot', measuresOfInterest, ...
-                    'OutFolder', outFolder), ...
-            conditionLabels2D, pConds2D, gConds2D);
+        % Compute statistics for all features
+        disp('Computing statistics for violin plots ...');
+        statsTable = m3ha_compute_statistics('SwpInfo', simSwpInfo, ...
+                                                'PharmConditions', pCond2D, ...
+                                                'GIncrConditions', gCond2D, ...
+                                                'DataMode', dataMode);
+
+        % Generate labels
+        conditionLabel = conditionLabel2D;
+        pharmLabels = pharmLabelsShort;
+
+        % Save stats table
+        save(stats2dPath, 'statsTable', 'pharmLabels', ...
+                            'conditionLabel', '-v7.3');
+    end
+
+    % Plot all 2D violin plots
+    m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest);
 end
 
 %% Plot bar plots

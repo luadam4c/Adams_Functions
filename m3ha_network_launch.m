@@ -66,6 +66,8 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, seedNum
 % 2020-03-05 Added seedNumberNeuron as an optional argument
 % 2020-03-06 Now randomizes the leak conductance of TC neurons
 % 2020-03-08 Now randomizes the leak reversal potential of TC neurons
+% 2020-03-08 Now randomizes the leak reversal potential of TC neurons 
+%               across trials but make it the same across neurons
 
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Perform simulations to generate a linear model
@@ -453,27 +455,21 @@ pInc    = [1, 2];                   % increments of parameters to loop through
 pIsLog  = [0, 1];                   % whether increments of parameters is in log
 %}
 
-
 pCond = 1;
 gIncr = 200/12;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
-pMin    = [1, 100/12];               % minimum values of parameters to loop through
-pMax    = [4, 400/12];              % maximum values of parameters to loop through
-pInc    = [1, 2];                   % increments of parameters to loop through
-pIsLog  = [0, 1];                   % whether increments of parameters is in log
-
-
-%{
-pCond = 1;
-gIncr = 200/12;
-pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
-pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
-pMin    = [1, 200/12];               % minimum values of parameters to loop through
-pMax    = [4, 200/12];              % maximum values of parameters to loop through
-pInc    = [1, 2];                   % increments of parameters to loop through
-pIsLog  = [0, 1];                   % whether increments of parameters is in log
-%}
+if nCells == 100
+    pMin    = [1, 200/12];               % minimum values of parameters to loop through
+    pMax    = [4, 200/12];              % maximum values of parameters to loop through
+    pInc    = [1, 2];                   % increments of parameters to loop through
+    pIsLog  = [0, 1];                   % whether increments of parameters is in log
+else
+    pMin    = [1, 100/12];               % minimum values of parameters to loop through
+    pMax    = [4, 400/12];              % maximum values of parameters to loop through
+    pInc    = [1, 2];                   % increments of parameters to loop through
+    pIsLog  = [0, 1];                   % whether increments of parameters is in log
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -535,8 +531,10 @@ REgpasUB = 5.5e-5;  % upper bound for passive leak conductance (S/cm^2) in RE ce
                 %     Jedlicka et al 2011 used 2e-4 S/cm^2 %%% What should we use?
 TCgpasRange = 0.2; %0;  
                 % relative range for passive leak conductance (S/cm^2) in TC cells
-TCepasLB = -75;  % lower bound for passive leak conductance (mV) in TC cells
-TCepasUB = -60;  % upper bound for passive leak conductance (mV) in TC cells
+TCepasLB = -75 + mod(seedNumberNeuron, 15);
+                % lower bound for passive leak conductance (mV) in TC cells
+TCepasUB = TCepasLB;
+                % upper bound for passive leak conductance (mV) in TC cells
 
 %% Synapse parameters
 % Set the maximal conductance (uS) of the GABA-A receptor on RE cells

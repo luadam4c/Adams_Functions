@@ -67,11 +67,14 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName2Cell = '20200305T2334_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_REgpas_varied';
 % popIterName2Cell = '20200306T1724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_gpas_varied';
 % popIterName2Cell = '20200308T2306_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
+% popIterName200Cell = exampleIterName200Cell;
+% popIterName200Cell = '20200309T1346_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
+% popIterName2Cell = '20200309T0013_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
-popIterName2Cell = '20200309T0013_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
+popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-popIterName200Cell = exampleIterName200Cell;
+popIterName200Cell = '';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -145,7 +148,7 @@ popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
 
 % Contruct the full path to the population data spreadsheet
 popDataPath2Cell = fullfile(figure07Dir, popDataSheetName2Cell);
-popDataPath200Cell = fullfile(figure08Dir, popDataSheetName2Cell);
+popDataPath200Cell = fullfile(figure08Dir, popDataSheetName200Cell);
 
 % Create color maps
 colorMapPharm = decide_on_colormap([], 4);
@@ -544,7 +547,8 @@ cellNamesAll = candCellTable.(cellNameStr);
 cellNamesToUse = match_positions(cellNamesAll, rankNumbersAll, rankNumsToUse);
 
 % Find all seed number subdirectories
-[~, seedNumDirs] = all_subdirs('Directory', popIterDir, 'Recursive', false);
+[~, seedNumDirs] = all_subdirs('Directory', popIterDir, 'Recursive', false, ...
+                                'Prefix', 'seedNumber');
 
 % Extract all tables for each seed number
 oscParamTablesCell = ...
@@ -601,8 +605,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function statsTable = m3ha_network_compute_statistics (popDataPath2Cell, ...
-                                                gIncr, measureStr, measureTitle)
+function statsTable = m3ha_network_compute_statistics (popDataPath, gIncr, ...
+                                                        measureStr, measureTitle)
 %% Computes all statistics for the 2-cell network
 
 %% Hard-coded parameters
@@ -614,7 +618,7 @@ dclamp2NetworkAmpRatio = 12;
 
 %% Do the job
 % Read the data table
-popDataTable = readtable(popDataPath2Cell);
+popDataTable = readtable(popDataPath);
 
 % Restrict to the rows with given gIncr
 rowsToUse = round(popDataTable.(gIncrStr) * dclamp2NetworkAmpRatio) == gIncr;

@@ -62,6 +62,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
 %       cd/m3ha_simulate_population.m

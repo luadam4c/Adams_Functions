@@ -219,23 +219,28 @@ displayAnova = iP.Results.DisplayAnova;
 dataMatrixOrig = force_data_as_matrix(data);
 groupingMatrixOrig = force_data_as_matrix(grouping);
 
+% Create a grouping matrix if not provided
+if isempty(groupingMatrixOrig)
+    groupingMatrixOrig = create_grouping_by_vectors(dataMatrixOrig);
+end
+
 % Remove any row with NaN if is paired
 if isPaired
     rowsToKeep = ~any(isnan(dataMatrixOrig), 2);
     dataMatrix = dataMatrixOrig(rowsToKeep, :);
-    if ~isempty(groupingMatrixOrig)
-        groupingMatrix = groupingMatrixOrig(rowsToKeep, :);
-    else
-        groupingMatrix = groupingMatrixOrig;
-    end
+    groupingMatrix = groupingMatrixOrig(rowsToKeep, :);
 else
     dataMatrix = dataMatrixOrig;
     groupingMatrix = groupingMatrixOrig;
 end
 
-% Create a grouping matrix if not provided
+% If groupingMatrix is empty, no data remains
+%   Use original grouping matrix to generate default fields
 if isempty(groupingMatrix)
-    groupingMatrix = create_grouping_by_vectors(dataMatrix);
+    noDataRemains = true;
+    groupingMatrix = groupingMatrixOrig;
+else
+    noDataRemains = false;
 end
 
 % Linearize data and grouping array
@@ -254,7 +259,7 @@ if isempty(uniqueGroups)
     uniqueGroups = unique_groups(groupingVec, 'IgnoreNaN', true);
 end
 
-% Get the unique group names, but 
+% Get the unique group names
 if isempty(groupNames)
     if isnumeric(uniqueGroups)
         groupNames = create_labels_from_numbers(uniqueGroups, ...
@@ -364,6 +369,11 @@ for iGroup = 1:nNormGroups
     statsStruct.(pNormLillStrs{iGroup}) = NaN;
     statsStruct.(pNormAdStrs{iGroup}) = NaN;
     statsStruct.(pNormJbStrs{iGroup}) = NaN;
+end
+
+% Return if no data remains or if nGroups is less than 1
+if noDataRemains || nGroups < 1
+    return;
 end
 
 % Separate the data into groups

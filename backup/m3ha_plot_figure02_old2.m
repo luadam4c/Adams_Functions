@@ -5,7 +5,6 @@
 %       cd/all_files.m
 %       cd/archive_dependent_scripts.m
 %       cd/copy_into.m
-%       cd/create_labels_from_numbers.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
 %       cd/m3ha_compute_statistics.m
@@ -25,7 +24,6 @@
 % 2019-11-25 Created by Adam Lu
 % 2020-03-10 Reordered measuresOfInterest
 % 2020-03-10 Updated pharm labels
-% 2020-03-11 Now plots violin plots for all gIncr
 
 %% Hard-coded parameters
 % Directories
@@ -76,11 +74,9 @@ pharmLabelsShort = {'{\it d}Con', '{\it d}GAT1', ...
                     '{\it d}GAT3', '{\it d}Dual'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
 gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
-conditionLabels2D = [create_labels_from_numbers(gIncrAll, ...
-                                            'Prefix', 'pharm_1-4_gincr_'); ...
-                    'pharm_1-4_gincr_pooled'];
-pConds2D = repmat({num2cell(pharmAll)}, numel(gIncrAll) + 1, 1);
-gConds2D = [num2cell(gIncrAll); {gIncrAll}];
+conditionLabel2D = 'pharm_1-4_gincr_200';
+pCond2D = num2cell(pharmAll);
+gCond2D = 200;
 conditionLabel3D = 'pharm_1-4_gincr_all';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
@@ -131,15 +127,31 @@ end
 
 %% Plot 2D violin plots
 if plotViolinPlotsFlag
-    cellfun(@(conditionLabel2D, pCond2D, gCond2D) ...
-            m3ha_compute_and_plot_violin(figure02Dir, ...
-                    pharmLabelsShort, conditionLabel2D, ...
-                    'SwpInfo', swpInfo, 'DataMode', dataMode, ...
-                    'PharmConditions', pCond2D, 'GIncrConditions', gCond2D, ...
-                    'RowsToPlot', measuresOfInterest, ...
+    % Construct stats table path
+    stats2dPath = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
+
+    % Compute statistics if not done already
+    if ~isfile(stats2dPath)
+        % Compute statistics for all features
+        disp('Computing statistics for violin plots ...');
+        statsTable = m3ha_compute_statistics('SwpInfo', swpInfo, ...
+                                                'PharmConditions', pCond2D, ...
+                                                'GIncrConditions', gCond2D, ...
+                                                'DataMode', dataMode);
+
+        % Generate labels
+        conditionLabel = conditionLabel2D;
+        pharmLabels = pharmLabelsShort;
+
+        % Save stats table
+        save(stats2dPath, 'statsTable', 'pharmLabels', ...
+                            'conditionLabel', '-v7.3');
+    end
+
+    % Plot violin plots
+    m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest, ...
                     'OutFolder', figure02Dir, 'FigTypes', figTypes, ...
-                    'FigWidth', violinFigWidth, 'FigHeight', violinFigHeight), ...
-            conditionLabels2D, pConds2D, gConds2D);
+                    'FigWidth', violinFigWidth, 'FigHeight', violinFigHeight);
 end
 
 %% Plot 3D bar plots

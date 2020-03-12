@@ -63,9 +63,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %       ~/Downloaded_Functions/Violinplot/violinplot.m
 %
 % Used by:
-%       cd/m3ha_plot_figure02.m
-%       cd/m3ha_plot_figure04.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_compute_and_plot_violin.m
 %       cd/m3ha_simulate_population.m
 
 % File History:
@@ -226,7 +224,7 @@ MS_PER_S = 1000;
 xTickAngle = 320;
 
 % Construct the pharm group names
-pharmNames = extractAfter(pharmLabels, '-');
+pharmNames = extractAfter(pharmLabels, '}');
 
 % Test whether groups are different
 diffStruct = test_difference(allValues, 'GroupNames', pharmNames, ...
@@ -318,6 +316,9 @@ handles.violins = violins;
 
 %{
 OLD CODE:
+
+% Construct the pharm group names
+pharmNames = extractAfter(pharmLabels, '-');
 
 %}
 

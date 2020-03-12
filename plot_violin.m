@@ -171,8 +171,19 @@ rangeValues = apply_iteratively(@max, dataValues) - ...
                 apply_iteratively(@min, dataValues);
 
 %% Do the job
+% Return if there is no data
+if isempty(dataValues)
+    violins = Violin.empty;
+    return
+end
+
 % Compute the bandwidth for the kernel density estimates
 bandWidth = relativeBandWidth * rangeValues;
+
+% Make sure the bandwidth is nonzero
+if bandWidth == 0
+    bandWidth = 1e-9;
+end
 
 % Plot a violin plot
 % violinplot(dataValues, xTickLabels);
