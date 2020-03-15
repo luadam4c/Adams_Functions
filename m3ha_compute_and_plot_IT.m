@@ -174,6 +174,11 @@ IMax = compute_IMax_GHK (v, pcabar, z, celsius, cOut, cIn);
 IInit = IMax .* minfsq;
 IInf = IMax .* minfsq .* hinf;
 
+% Compute maximum open probability at steady state
+openProbability = minf .^ 2 .* hinf;
+maxOpenProbability = max(openProbability);
+fprintf("maxOpenProbability = %g\n", maxOpenProbability);
+
 % Plot and save the steady state values
 if plotInfFlag
     hfig1 = figure('Visible', 'off');

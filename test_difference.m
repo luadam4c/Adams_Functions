@@ -127,6 +127,7 @@ function statsStruct = test_difference (data, varargin)
 %       cd/unique_groups.m
 %
 % Used by:
+%       cd/m3ha_simulate_population.m
 %       cd/test_var_difference.m
 
 % File History:

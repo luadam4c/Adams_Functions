@@ -95,6 +95,7 @@ nArgOut = nargout;
 [params, inputList] = extract_parameter_value_pairs(varargin);
 
 % Deal with parameter-value pairs for this function
+% TODO: Use parse_and_remove_from_struct.m
 if isfield(params, 'RenewParpool')
     renewParpool = params.RenewParpool;
     params = rmfield_custom(params, 'RenewParpool');

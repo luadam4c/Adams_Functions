@@ -25,6 +25,7 @@ function structure = arglist2struct (argList, varargin)
 %
 % Used by:
 %       cd/extract_vars.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-12-28 Moved from annotation_in_plot.m
@@ -49,7 +50,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'argList', ...
-    @(x) validateattributes(x, {'cell'}, {'2d'}));
+    @(x) validateattributes(x, {'cell', 'struct'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default, ...
@@ -60,6 +61,12 @@ parse(iP, argList, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
+% If a structure, return it
+if isstruct(argList)
+    structure = argList;
+    return
+end
+
 % Initialize structure
 structure = struct;
 

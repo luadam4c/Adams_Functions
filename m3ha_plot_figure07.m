@@ -38,16 +38,16 @@ plot2CellM2h = false; %true;
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPopulation = true;
-plot2CellViolins = true;
+combine2CellPopulation = false; %true;
+plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false; %true;
 backupPrevious200Cell = false; %true;
-combine200CellPopulation = false; %true;
-plot200CellViolins = false; %true;
+combine200CellPopulation = true;
+plot200CellViolins = true;
 
 archiveScriptsFlag = true;
 
@@ -74,7 +74,7 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-popIterName200Cell = '';
+popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -296,7 +296,11 @@ end
 
 %% Archive all scripts for this run
 if archiveScriptsFlag
-    archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
+    if plot200CellViolins
+        archive_dependent_scripts(mfilename, 'OutFolder', figure08Dir);
+    else
+        archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

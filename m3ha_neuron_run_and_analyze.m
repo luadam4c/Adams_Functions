@@ -48,6 +48,10 @@ function [errorStruct, hFig, simData] = ...
 %                       7 - 2 times larger amplitude
 %                       consistent with IT.mod
 %                   default == 0
+%                   - 'NewParams': new parameter-value pairs that updates
+%                                   neuronParamsTable
+%                   must be a list of string-numeric pairs or a structure
+%                   default == none (empty struct)
 %                   - 'BuildMode': TC neuron build mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'passive' - insert leak channels only
@@ -331,6 +335,7 @@ function [errorStruct, hFig, simData] = ...
 % Requires:
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
 %       cd/argfun.m
+%       cd/arglist2struct.m
 %       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_maximum_numel.m
@@ -362,6 +367,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/test_var_difference.m
+%       cd/update_param_values.m
 %
 % Used by:    
 %       cd/m3ha_fminsearch3.m
@@ -493,6 +499,7 @@ function [errorStruct, hFig, simData] = ...
 % 2020-01-05 - Fixed the determination of nSweeps when no realData is passed in
 % 2020-01-06 - Now makes the individual plot figure size proportional to the 
 %               number of rows and columns
+% 2020-03-12 - Added 'NewParams' as an optional argument
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -576,6 +583,7 @@ INAPH_COL_SIM = 28;
 hFigDefault = '';               % no prior hFig structure by default
 useHHDefault = false;           % don't use HH channels by default
 tauhModeDefault = 0;            % regular tauh by default
+newParamsDefault = struct.empty;% don't update parameters by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate active responses by default
 columnModeDefault = [];         % set in m3ha_select_raw_traces.m
@@ -682,6 +690,8 @@ addParameter(iP, 'UseHH', useHHDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TauhMode', tauhModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
+addParameter(iP, 'NewParams', newParamsDefault, ...
+    @(x) validateattributes(x, {'cell', 'struct'}, {'2d'}));
 addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
@@ -859,6 +869,7 @@ parse(iP, neuronParamsTableOrFile, varargin{:});
 hFig = iP.Results.HFig;
 useHH = iP.Results.UseHH;
 tauhMode = iP.Results.TauhMode;
+newParams = iP.Results.NewParams;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 columnMode = iP.Results.ColumnMode;
@@ -991,6 +1002,16 @@ else
 
     % Cell name is not provided yet at this stage
     cellName = '';
+end
+
+% Replace with new parameters
+if ~isempty(newParams)
+    % Make sure it is a structure
+    newParams = arglist2struct(newParams);
+
+    % Update table with new parameters
+    neuronParamsTable = update_param_values(neuronParamsTable, newParams, ...
+                                            'IgnoreRange', true);
 end
 
 % Choose data files to compare against if cell name provided

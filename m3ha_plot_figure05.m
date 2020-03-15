@@ -30,13 +30,16 @@ plotAllComponentCurrents = false; %true;
 plotDend2ITproperties = false; %true;
 
 simulateTauhModes = false; %true;
-plotSomaVoltage = true;
+plotSomaVoltage = false; %true;
 
 computeIpscVariation = false; %true;
 simulateIpscVariation = false; %true;
 plotEssential = false; %true;
 
 plotM2h = false; %true;
+
+simulateNoITSoma = true;
+
 archiveScriptsFlag = true;
 
 % Directories
@@ -94,6 +97,8 @@ attemptNumberIpscr = 7;             % attempt number for IPSC response
 % tauhModesAll = 1:5;
 tauhModesAll = 6:7;
 
+newParamsNoITSoma = {'pcabarITSoma', 0};
+
 % Plot settings
 colorMapPharm = [];                 % use m3ha default
 colorMapVary = @jet;                % rainbow colors
@@ -138,7 +143,7 @@ figTypes = {'png', 'epsc'};
 
 %% Make sure NEURON scripts are up to date in figure05Dir
 if updateScripts
-    update_neuron_scripts(fitDirectory, figure05Dir);
+    update_neuron_scripts(fitDirectory, c);
 end
 
 %% Load sweep info
@@ -149,7 +154,7 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 if simulateIpscr || simulateTauhModes || simulateIpscVariation || ...
         plotEssential || plotAllVoltages || plotAllTotalCurrents || ...
         plotAllComponentCurrents || plotDend2ITproperties || ...
-        plotSomaVoltage || plotM2h
+        plotSomaVoltage || plotM2h || simulateNoITSoma
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure05Dir, ...
@@ -174,6 +179,7 @@ if simulateIpscr || simulateTauhModes || simulateIpscVariation || ...
                                     tauhModeSuffixes, 'UniformOutput', false);
     exampleLabelsVaryAll = cellfun(@(x) strcat(exampleLabels, '_', x), ...
                                 gababIpscSheetBases, 'UniformOutput', false);
+    exampleLabelsNoITSoma = strcat(exampleLabels, '_ipscr_no_ITsoma');
 
     % Create output folder names
     outFoldersIpscr = fullfile(figure05Dir, exampleLabelsIpscr);
@@ -181,10 +187,12 @@ if simulateIpscr || simulateTauhModes || simulateIpscVariation || ...
                                 exampleLabelsModeAll, 'UniformOutput', false);
     outFoldersVaryAll = cellfun(@(x) fullfile(figure06Dir, x), ...
                                 exampleLabelsVaryAll, 'UniformOutput', false);
+    outFoldersNoITSoma = fullfile(figure05Dir, exampleLabelsNoITSoma);
 end
 
 %% Simulate regular IPSC responses
 if simulateIpscr
+    cd(figure05Dir);
     check_dir(outFoldersIpscr);
     cellfun(@(x, y, z) simulate_ipscr(x, y, z, 0, dataModeIpscr, ...
                                     rowmodeIpscr, attemptNumberIpscr), ...
@@ -193,6 +201,7 @@ end
 
 %% Simulate tauhMode == 1, 2 and 3
 if simulateTauhModes
+    cd(figure05Dir);
     check_dir([outFoldersModeAll{:}]);
     for iMode = 1:numel(tauhModesAll)
         cellfun(@(x, y, z) simulate_ipscr(x, y, z, tauhModesAll(iMode), ...
@@ -209,6 +218,7 @@ end
 
 %% Simulate IPSC variation
 if simulateIpscVariation
+    cd(figure05Dir);
     for iSheet = 1:numel(gababIpscSheetBases)
         % Construct full path to GABA-B IPSC parameters spreadsheet
         gababIpscSheetPath = fullfile(gababIpscDir, ...
@@ -330,6 +340,16 @@ if plotM2h
     end
 end
 
+%% Simulate when there is no T current in the soma
+if simulateNoITSoma
+    cd(figure05Dir);
+    check_dir(outFoldersNoITSoma);
+    cellfun(@(x, y, z) simulate_ipscr(x, y, z, 0, dataModeIpscr, ...
+                                    rowmodeIpscr, attemptNumberIpscr, ...
+                                    newParamsNoITSoma), ...
+            exampleLabelsNoITSoma, exampleParamPaths, outFoldersNoITSoma);
+end
+
 %% Archive all scripts for this run
 if archiveScriptsFlag
     archive_dependent_scripts(mfilename, 'OutFolder', figure05Dir);
@@ -338,7 +358,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function simulate_ipscr(label, neuronParamsFile, outFolder, ...
-                        tauhMode, dataMode, rowmode, attemptNumber)
+                        tauhMode, dataMode, rowmode, attemptNumber, newParams)
+
+if nargin < 8
+    newParams = struct.empty;
+end
 
 % Simulate
 m3ha_neuron_run_and_analyze(neuronParamsFile, ...
@@ -348,7 +372,7 @@ m3ha_neuron_run_and_analyze(neuronParamsFile, ...
                         'ColumnMode', 1, 'Rowmode', rowmode, ...
                         'AttemptNumber', attemptNumber, ...
                         'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
-                        'SaveSimOutFlag', true);
+                        'SaveSimOutFlag', true, 'NewParams', newParams);
 
 end
 

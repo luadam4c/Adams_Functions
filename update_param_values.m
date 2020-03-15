@@ -16,19 +16,24 @@ function paramsTable = update_param_values (paramsTable, varargin)
 %                       parameter names and a 'Value' column
 %                   must be a table
 %       varargin    - name-value pairs that matches row names in the table
-%                   must be a list of string-numeric pairs
+%                   must be a list of string-numeric pairs or a structure
+%                   - 'IgnoreRange': whether to ignore parameter range
+%                   must be logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/is_contained_in.m
+%       cd/rmfield_custom.m
 %
 % Used by:    
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-31 Created by Adam Lu
 % 2018-11-14 Now checks if each parameter exists in rownames
 % 2018-11-14 Now check bounds if 'UpperBound' and 'LowerBound' fields exist
-% 
+% 2020-03-12 Added 'IgnoreRange' as an optional argument
 
 %% Hard-coded parameters
 upperBoundStr = 'UpperBound';
@@ -68,6 +73,15 @@ parse(iP, paramsTable, varargin{:});
 %   These will be name-value pairs for the parameters
 allParamValuePairs = iP.Unmatched;
 
+% Deal with parameter-value pairs for this function
+% TODO: Use parse_and_remove_from_struct.m
+if isfield(allParamValuePairs, 'IgnoreRange')
+    ignoreRange = allParamValuePairs.IgnoreRange;
+    allParamValuePairs = rmfield_custom(allParamValuePairs, 'IgnoreRange');
+else
+    ignoreRange = false;
+end
+
 %% Preparation
 % Get all parameter names from the table
 paramsTableRowNames = paramsTable.Properties.RowNames;
@@ -90,7 +104,7 @@ paramValuesCell = struct2cell(allParamValuePairs);
 
 % If upper bounds and lower bounds exist, 
 %   check whether the values are within bounds
-if is_contained_in({upperBoundStr, lowerBoundStr}, ...
+if ~ignoreRange && is_contained_in({upperBoundStr, lowerBoundStr}, ...
                     paramsTableVariableNames, 'SuppressOutput', true)
     % Convert to a numeric array if poss
     paramValues = cell2mat(paramValuesCell);

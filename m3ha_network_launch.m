@@ -1243,10 +1243,12 @@ if saveAllVariablesFlag
 end
 
 %% Play Handel if not on Rivanna
+%{
 if exist('/media/adamX/', 'dir') == 7
     load handel
     sound(y, Fs);
 end
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

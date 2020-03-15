@@ -24,7 +24,6 @@
 %       cd/all_subdirs.m
 %       cd/argfun.m
 %       cd/compute_rms_error.m
-%       cd/compute_weighted_average.m
 %       cd/copy_into.m
 %       cd/create_time_stamp.m
 %       cd/create_labels_from_numbers.m
@@ -50,7 +49,6 @@
 %       cd/vertcat_spreadsheets.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
-%       cd/test_difference.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -72,8 +70,8 @@ chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
-plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+plotViolinPlotsFlag = true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
@@ -186,13 +184,12 @@ openProbFigHeight = 3;      % (cm)
 % rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
 % rankNumsOpenProbability = [];   % same as rankNumsToUse
-% rankNumsOpenProbability = [6, 9];
 
 outFolder = '20200208_population_rank1-23_dataMode1_attemptNumber3';
 figTypes = {'png', 'epsc'};
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
-rankNumsOpenProbability = 1:23;
+rankNumsOpenProbability = [6, 9];
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
@@ -501,12 +498,6 @@ if plotOpenProbabilityFlag
     % Restrict to the cells of interest
     simSwpInfoOP = simSwpInfo(contains(simSwpInfo.fileBase, cellNamesOP), :);
 
-    % Read file bases 
-    fileBasesOP = simSwpInfoOP.fileBase;
-
-    % Extract cell names
-    cellNamesEachFile = m3ha_extract_cell_name(fileBasesOP);
-
     % Read the LTS peak times
     if ~is_field(simSwpInfoOP, 'ltsPeakTime')
         error('ltsPeakTime does not exist!');
@@ -527,30 +518,13 @@ if plotOpenProbabilityFlag
     % Determine whether each sweep has an LTS
     noLts = isnan(ltsPeakTime);
 
-    % Find the indices for each cell with or without LTS
-    [indEachCellWithLTS, indEachCellWithNoLTS] = ...
-        argfun(@(condition) ...
-                cellfun(@(cellName) condition & ...
-                                    strcmp(cellNamesEachFile, cellName), ...
-                        cellNamesOP, 'UniformOutput', false), ...
-                ~noLts, noLts);
-
-    % Compute the average (geometric mean) open probability discrepancy
-    %   for each cell with or without LTS
-    [opdWithLTS, opdWithNoLTS] = ...
-        argfun(@(indEachCell) ...
-                cellfun(@(ind) compute_weighted_average(...
-                        openProbabilityDiscrepancy(ind), ...
-                        'AverageMethod', 'geometric'), indEachCell), ...
-                indEachCellWithLTS, indEachCellWithNoLTS);
-
     % Separate into two groups
-    twoGroups = {opdWithNoLTS; opdWithLTS};
+    twoGroups = {openProbabilityDiscrepancy(noLts); ...
+                    openProbabilityDiscrepancy(~noLts)};
 
     % Test for differences
     fid = fopen(openProbStatsPath, 'w');
-    openProbabilityDiscrepancyDifferences = ...
-        test_difference(twoGroups, 'IsPaired', true);
+    openProbabilityDiscrepancyDifferences = test_difference(twoGroups);
     print_structure(openProbabilityDiscrepancyDifferences, 'FileID', fid);
     fclose(fid);
     
@@ -713,12 +687,6 @@ swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
                     columnMode, attemptNumberAcrossTrials, ...
                     x, swpInfo, cellInfo), ...
             cellNamesToFit, 'UniformOutput', false);
-
-% Separate into two groups
-twoGroups = {openProbabilityDiscrepancy(noLts); ...
-                openProbabilityDiscrepancy(~noLts)};
-
-openProbabilityDiscrepancyDifferences = test_difference(twoGroups);
 
 %}
 
