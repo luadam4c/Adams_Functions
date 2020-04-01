@@ -141,8 +141,7 @@ nFrames = reader1.getImageCount();
 omeMeta = reader1.getMetadataStore();
 
 % Create frame numbers
-frameNumbers = transpose(1:100);
-% frameNumbers = transpose(1:nFrames);
+frameNumbers = transpose(1:nFrames);
 
 switch outputFormat
     case 'separated'
