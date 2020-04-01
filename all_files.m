@@ -100,7 +100,8 @@ function varargout = all_files (varargin)
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_traces_EEG.m
 %       cd/update_file_base_in_matfiles.m
-%       /home/Matlab/plethR01/plethR01_analyze.m
+%       ~/plethR01/plethR01_analyze.m
+%       ~/FluoroSNNAP/FluroSNNAP.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting63.m
 %       
 

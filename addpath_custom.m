@@ -3,10 +3,13 @@ function varargout = addpath_custom (folder, varargin)
 % Usage: varargout = addpath_custom (folder, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       varargout   - see addpath()
+%
 % Arguments:
 %       folder      - folder to add to path
 %                   must be something recognized by addpath()
@@ -18,6 +21,7 @@ function varargout = addpath_custom (folder, varargin)
 % Used by:
 %       cd/char2rgb.m
 %       cd/plot_violin.m
+%       ~/FluoroSNNAP/FluroSNNAP.m
 
 % File History:
 % 2019-01-10 Created by Adam Lu
@@ -32,10 +36,15 @@ if nargin < 1
 end
 
 %% Do the job
+if iscell(folder)
+    [varargout{1:nargout}] = cellfun(@(f) addpath_custom(f, varargin{:}), folder, 'UniformOutput', false);
+    return
+end
+
 % Add path for each folder if it does not already exist on the MATLAB path
 %   and it exists
 if ~is_on_path(folder) && isfolder(folder)
-    varargout{:} = addpath(folder, varargin{:});
+    [varargout{1:nargout}] = addpath(folder, varargin{:});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

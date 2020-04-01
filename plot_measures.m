@@ -43,7 +43,7 @@ function plot_measures (varargin)
 %                   default == false
 %                   - 'ComputeSmoothTimeTablesFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == fPlotType',tuning,'alse
 %                   - 'ComputeSmoothNormTimeTablesFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -163,6 +163,7 @@ function plot_measures (varargin)
 %       cd/create_indices.m
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
+%       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/is_var_in_table.m
 %       cd/ismatch.m
@@ -440,6 +441,14 @@ varLabels = iP.Results.VarLabels;
 
 % Keep unmatched arguments for the plot_table() and plot_tuning_curve() function
 otherArguments = iP.Unmatched;
+
+% Force as a column cell array
+[varsToPlot, varLabels] = argfun(@force_column_cell, varsToPlot, varLabels);
+
+% Make sure the arguments match
+if numel(varsToPlot) ~= numel(varLabels)
+    error('VarsToPlot and VarLabels must have the same number of elements!');
+end
 
 %% Preparation
 % Set default flags
