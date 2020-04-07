@@ -68,6 +68,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, seedNum
 % 2020-03-08 Now randomizes the leak reversal potential of TC neurons
 % 2020-03-08 Now randomizes the leak reversal potential of TC neurons 
 %               across trials but make it the same across neurons
+% 2020-04-07 Fixed TCepas for seed number 15
 
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Perform simulations to generate a linear model
@@ -529,9 +530,9 @@ REdiam = 10;    % diameter (um) of an RE cell, Peter's value
 REgpasLB = 4.5e-5;  % lower bound for passive leak conductance (S/cm^2) in RE cells, Sohal & Huguenard 2003
 REgpasUB = 5.5e-5;  % upper bound for passive leak conductance (S/cm^2) in RE cells, Sohal & Huguenard 2003
                 %     Jedlicka et al 2011 used 2e-4 S/cm^2 %%% What should we use?
-TCgpasRange = 0.2; %0;  
+TCgpasRange = 0.2; %0;
                 % relative range for passive leak conductance (S/cm^2) in TC cells
-TCepasLB = -75 + mod(seedNumberNeuron, 15);
+TCepasLB = -75 + mod(seedNumberNeuron, 16);
                 % lower bound for passive leak conductance (mV) in TC cells
 TCepasUB = TCepasLB;
                 % upper bound for passive leak conductance (mV) in TC cells
