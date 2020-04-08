@@ -59,6 +59,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %
 % Used by:
 %       cd/atfwrite.m
+%       cd/compute_activation_profile.m
 %       cd/compute_lts_errors.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m

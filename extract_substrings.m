@@ -40,6 +40,7 @@ function subStrs = extract_substrings (strs, varargin)
 %       cd/extract_common_prefix.m
 %
 % Used by:
+%       cd/compute_activation_profile.m
 %       cd/extract_common_prefix.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m

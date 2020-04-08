@@ -63,6 +63,7 @@ function vecs = force_matrix (vecs, varargin)
 % Used by:
 %       cd/alternate_elements.m
 %       cd/combine_abf_data.m
+%       cd/compute_activation_profile.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
 %       cd/compute_gabab_conductance.m

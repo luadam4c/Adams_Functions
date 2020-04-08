@@ -28,6 +28,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/alternate_elements.m
 %       cd/annotation_in_plot.m
 %       cd/combine_abf_data.m
+%       cd/compute_activation_profile.m
 %       cd/compute_average_pulse_response.m
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m

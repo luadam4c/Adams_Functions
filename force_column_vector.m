@@ -74,6 +74,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/adjust_edges.m
 %       cd/annotation_in_plot.m
 %       cd/combine_variables_across_tables.m
+%       cd/compute_activation_profile.m
 %       cd/compute_centers_from_edges.m
 %       cd/compute_combined_trace.m
 %       cd/compute_bins.m

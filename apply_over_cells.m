@@ -35,6 +35,7 @@ function output = apply_over_cells (myFunction, inputs, varargin)
 % Used by:
 %       cd/all_subdirs.m
 %       cd/combine_variables_across_tables.m
+%       cd/compute_activation_profile.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_plot_figure07.m
 %       cd/m3ha_rank_neurons.m

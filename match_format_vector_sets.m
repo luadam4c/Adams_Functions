@@ -82,6 +82,7 @@ function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
 %       cd/match_row_count.m
 %
 % Used by:
+%       cd/compute_activation_profile.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_relative_event_times.m
 %       cd/compute_residuals.m
