@@ -198,6 +198,7 @@ if isempty(spikeTimesMs)
     autoCorrParams.oscPeriod2Ms = 0;
     autoCorrParams.minOscPeriod2Bins = 0;
     autoCorrParams.maxOscPeriod2Bins = 0;
+
     autoCorrData.autoCorr = [];
     autoCorrData.acf = [];
     autoCorrData.acfFiltered = [];

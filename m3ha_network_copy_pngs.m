@@ -5,7 +5,8 @@ networdDir = '/media/adamX/m3ha/network_model/';
 % iterDirName = '20200407_using_bestparams_20200203_manual_singleneuronfitting0-102';
 iterDirName = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 iterDir = fullfile(networdDir, iterDirName);
-pngsDir = fullfile(iterDir, 'pngfiles');
+% pngsDir = fullfile(iterDir, 'pngfiles');
+pngsDir = fullfile(iterDir, 'rasters');
 seedNumbers = transpose(0:79);
 
 pCondStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
@@ -38,8 +39,8 @@ seedDir = fullfile(iterDir, ['seedNumber_', num2str(seedNum)]);
 
 condStr = extract_fileparts(condDir, 'name');
 
-% keyword = [condStr, '_raster_plot'];
-keyword = condStr;
+keyword = [condStr, '_raster_plot'];
+% keyword = condStr;
 
 [~, copyFrom] = all_files('Directory', seedDir, 'Keyword', keyword, ...
                         'Extension', 'png', 'Recursive', true);

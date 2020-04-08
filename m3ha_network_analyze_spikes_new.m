@@ -78,6 +78,7 @@ nCellsStr = 'nCells';
 simNumberStr = 'simNumber';
 
 % TODO: Make optional argument
+verbose = true;
 figTypes = 'png';
 
 %% Default values for optional arguments
@@ -161,6 +162,11 @@ if isempty(matFileName)
 end
 
 %% Do the job
+% Print message
+if verbose
+    fprintf('Analyzing Spikes for %s ... \n', dirBase);
+end
+
 % Load simulation parameters
 paramTables = array_fun(@(x) readtable(x, 'ReadRowNames', true), ...
                         paramFilePaths, 'UniformOutput', false);
@@ -229,6 +235,9 @@ xLimits = stimStartMs/1000 + [0, 10];          % in seconds
 figName = '';
 binWidthMs = 500;
 
+% Compute stimulation end
+stimEndMs = stimStartMs + stimDurMs;
+
 % Compute time bins
 nBins = floor(tStopMs/binWidthMs);
 timeBinsMs = create_time_vectors(nBins, 'SamplingIntervalMs', binWidthMs, ...
@@ -253,11 +262,11 @@ TC_SPIKETIME = 2;
 [cellIdTC, spikeTimesMsTC] = ...
     extract_columns(spikesDataTC, [TC_CELLID, TC_SPIKETIME]);
 
-% Remove spike times less than stimulation start
-toRemoveRT = spikeTimesMsRT < stimStartMs;
+% Remove spike times less than stimulation end
+toRemoveRT = spikeTimesMsRT < stimEndMs;
 cellIdRT(toRemoveRT) = [];
 spikeTimesMsRT(toRemoveRT) = [];
-toRemoveTC = spikeTimesMsTC < stimStartMs;
+toRemoveTC = spikeTimesMsTC < stimEndMs;
 cellIdTC(toRemoveTC) = [];
 spikeTimesMsTC(toRemoveTC) = [];
 
@@ -310,18 +319,8 @@ if plotFlag
     histParams.figTitleBase = figTitleBase;
     autoCorrParams.figTitleBase = figTitleBase;
 
-    % Plot spike histogram with burst detection
-    subplot(ax(1));
-    plot_spike_histogram(histData, histParams, 'XLimits', xLimits);
-
-    % Plot autocorrelation function
-    subplot(ax(2));
-    plot_autocorrelogram(autoCorrData, autoCorrParams, ...
-                            'XLimits', xLimits, ...
-                            'PlotType', 'acfFiltered');
-
     % Plot activation profile
-    subplot(ax(3)); hold on
+    subplot(ax(1)); hold on
     plot(timeBinsSeconds, percentActivatedRT, 'r', ...
             'DisplayName', 'RT', 'LineWidth', 1);
     plot(timeBinsSeconds, percentActivatedTC, 'g', ...
@@ -331,6 +330,16 @@ if plotFlag
     ylabel('Percent Activated (%)');
     title(['Activation profile for ', figTitleBase]);
     legend('location', 'northeast');
+
+    % Plot spike histogram with burst detection
+    subplot(ax(2));
+    plot_spike_histogram(histData, histParams, 'XLimits', xLimits);
+
+    % Plot autocorrelation function
+    subplot(ax(3));
+    plot_autocorrelogram(autoCorrData, autoCorrParams, ...
+                            'XLimits', xLimits, ...
+                            'PlotType', 'acfFiltered');
 
     % Save figure
     save_all_figtypes(fig, figName, figTypes);

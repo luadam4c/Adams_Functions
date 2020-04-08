@@ -45,8 +45,8 @@ plot2CellViolins = false; %true;
 plot200CellExamples = false; %true;
 
 analyze200CellSpikes = true;
-plotAnalysis200Cell = true;
-backupPrevious200Cell = true;
+plotAnalysis200Cell = false;
+backupPrevious200Cell = false;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
@@ -521,12 +521,12 @@ end
 [~, netSimDirs] = all_subdirs('Directory', popIterDir, 'Level', 2);
 
 % Analyze spikes for all network subdirectories
-% array_fun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
-%                 'PlotFlag', plotAnalysis), ...
-%             netSimDirs, 'UniformOutput', false);
-cellfun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
+array_fun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
                 'PlotFlag', plotAnalysis), ...
-        netSimDirs, 'UniformOutput', false);
+            netSimDirs, 'UniformOutput', false);
+% cellfun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
+%                 'PlotFlag', plotAnalysis), ...
+%         netSimDirs, 'UniformOutput', false);
 
 end
 
