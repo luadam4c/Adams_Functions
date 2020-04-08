@@ -137,7 +137,7 @@ nCellsFirstSpike = compute_grouped_histcounts(firstSpikeTimes, ...
 nCellsActivated = cumsum(nCellsFirstSpike);
 
 % Compute the percent of cells activated over time
-percentActivated = nCellsActivated ./ nCells;
+percentActivated = (nCellsActivated ./ nCells) .* 100;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

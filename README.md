@@ -391,6 +391,7 @@ There are 2 MATLAB scripts in this directory:
 - [**m3ha_network_analyze_spikes_new.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_analyze_spikes_new.m): Analyzes .spi files in a directory
 - [**m3ha_network_autocorrelogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_autocorrelogram.m): Shows an m3ha_network_autocorrelogram for each set of neurons (each .spi file in the infolder)
 - [**m3ha_network_change_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_change_params.m): Change parameter values in a parameters table
+- [**m3ha_network_copy_pngs.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_copy_pngs.m): Hard-coded parameters
 - [**m3ha_network_define_actmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_define_actmode.m): Determine what cells are stimulated in each activation mode
 - [**m3ha_network_launch.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_launch.m): Launches NEURON with simulation commands and plot output figures
 - [**m3ha_network_plot_essential.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_plot_essential.m): Plots essential traces from special cells in the network
@@ -615,8 +616,3 @@ There are 2 MATLAB scripts in this directory:
 - [**xolotl_estimate_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_estimate_holding_current.m): Estimates the holding current necessary to match a certain holding potential
 - [**xolotl_set_simparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_set_simparams.m): Runs a simulation on a xolotl object
 - [**xolotl_simulate.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_simulate.m): Simulates and returns output
-- [**ZG_compute_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_compute_IEI_thresholds.m): Compute all possible inter-event interval thresholds from the data within an all_output directory
-- [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own
-- [**ZG_extract_all_IEIs.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_IEIs.m): Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
-- [**ZG_extract_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_IEI_thresholds.m): Extract/compute inter-event-interval distribution thresholds, separating events from spikes
-- [**ZG_fit_IEI_distributions.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_fit_IEI_distributions.m): Fit inter-event-interval distributions and log distributions

@@ -51,6 +51,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes_new (varargin)
 %
 % Used by:
 %       cd/m3ha_network_launch.m
+%       cd/m3ha_plot_figure07.m
 
 % File History:
 % 2020-01-30 Modified from m3ha_network_plot_essential.m
@@ -126,6 +127,13 @@ end
 % Look for all RT neuron .spi files
 [~, spiPathsRT] = all_files('Directory', inFolder, 'Prefix', prefixRT, ...
                             'Extension', spiExtension, 'SortBy', 'datenum');
+
+% If nothing found, return
+if isempty(spiPathsRT)
+    oscParams = table.empty;
+    oscData = table.empty;
+    return
+end
 
 % Create paths to corresponding params files
 spiPathBasesRT = extractBefore(spiPathsRT, ['.', spiExtension]);
@@ -216,6 +224,7 @@ function [parsedParams, parsedData] = ...
 %% Parse spikes from .spi files
 
 %% Hard-coded parameters
+MS_PER_S = 1000;
 xLimits = stimStartMs/1000 + [0, 10];          % in seconds
 figName = '';
 binWidthMs = 500;
@@ -271,6 +280,9 @@ percentActivatedRT = compute_activation_profile(cellIdRT, spikeTimesMsRT, ...
 percentActivatedTC = compute_activation_profile(cellIdTC, spikeTimesMsTC, ...
                                 'TimeBins', timeBinsMs, 'NCells', nCells);
 
+% Store time bins in seconds
+timeBinsSeconds = timeBinsMs ./ MS_PER_S;
+
 % Use all spikes to compute an oscillation duration
 %   TODO: Modify this for multi-cell layers
 [histParams, histData] = ...
@@ -314,9 +326,11 @@ if plotFlag
             'DisplayName', 'RT', 'LineWidth', 1);
     plot(timeBinsSeconds, percentActivatedTC, 'g', ...
             'DisplayName', 'TC', 'LineWidth', 1);
+    ylim([0, nCells]);
     xlabel('Time (s)');
     ylabel('Percent Activated (%)');
     title(['Activation profile for ', figTitleBase]);
+    legend('location', 'northeast');
 
     % Save figure
     save_all_figtypes(fig, figName, figTypes);

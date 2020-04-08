@@ -14,6 +14,7 @@
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
 %       cd/lower_first_char.m
+%       cd/m3ha_network_analyze_spikes_new.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_plot_violin.m
@@ -43,13 +44,13 @@ plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
-analyze200CellSpikes = false; %true;
-plotAnalysis200Cell = false; %true;
-backupPrevious200Cell = false; %true;
-combine200CellPopulation = true;
-plot200CellViolins = true;
+analyze200CellSpikes = true;
+plotAnalysis200Cell = true;
+backupPrevious200Cell = true;
+combine200CellPopulation = false; %true;
+plot200CellViolins = false; %true;
 
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -70,11 +71,12 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName200Cell = exampleIterName200Cell;
 % popIterName200Cell = '20200309T1346_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 % popIterName2Cell = '20200309T0013_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
+% popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
+popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -519,12 +521,12 @@ end
 [~, netSimDirs] = all_subdirs('Directory', popIterDir, 'Level', 2);
 
 % Analyze spikes for all network subdirectories
-array_fun(@(x) m3ha_network_analyze_spikes('Infolder', x, ...
-                'PlotFlag', plotAnalysis), ...
-            netSimDirs, 'UniformOutput', false);
-% cellfun(@(x) m3ha_network_analyze_spikes('Infolder', x, ...
+% array_fun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
 %                 'PlotFlag', plotAnalysis), ...
-%         netSimDirs, 'UniformOutput', false);
+%             netSimDirs, 'UniformOutput', false);
+cellfun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
+                'PlotFlag', plotAnalysis), ...
+        netSimDirs, 'UniformOutput', false);
 
 end
 
