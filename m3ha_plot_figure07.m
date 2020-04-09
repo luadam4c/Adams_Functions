@@ -19,7 +19,7 @@
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/lower_first_char.m
-%       cd/m3ha_network_analyze_spikes_new.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_plot_violin.m
@@ -50,7 +50,7 @@ plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
-analyze200CellSpikes = true;
+analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
 combine200CellPopulation = false; %true;
@@ -533,10 +533,10 @@ end
 [~, netSimDirs] = all_subdirs('Directory', popIterDir, 'Level', 2);
 
 % Analyze spikes for all network subdirectories
-array_fun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
+array_fun(@(x) m3ha_network_analyze_spikes('Infolder', x, ...
                 'PlotFlag', plotAnalysis), ...
             netSimDirs, 'UniformOutput', false);
-% cellfun(@(x) m3ha_network_analyze_spikes_new('Infolder', x, ...
+% cellfun(@(x) m3ha_network_analyze_spikes('Infolder', x, ...
 %                 'PlotFlag', plotAnalysis), ...
 %         netSimDirs, 'UniformOutput', false);
 
@@ -594,7 +594,8 @@ end
 function combine_activation_profiles (popIterDir, outFolder)
 
 % TODO: Loop over this
-candidateLabel = 'candidateIDs_2,14,32,35';
+% candidateLabel = 'candidateIDs_2,14,32,35';
+candidateLabel = 'candidateIDs_32';
 
 %% Hard-coded parameters
 oscDataSuffix = 'oscillation_data';
