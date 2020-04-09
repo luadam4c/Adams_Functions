@@ -266,6 +266,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Used by:
 %       cd/m3ha_network_tuning_curves.m
+%       cd/m3ha_plot_figure07.m
 %       cd/parse_current_family.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m
@@ -321,6 +322,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-12-23 Added 'ReadoutIsLog' as an optional argument
 % 2020-02-17 Added normality tests
 % 2020-02-19 Added 'PlotForCorel' as an optional argument
+% TODO: Allow inputs to be cell arrays (use force_matrix.m)
 % TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 

@@ -212,6 +212,7 @@ simNumber = oscParams.(simNumberStr);
 %% Return as output
 oscParams = horzcat(oscParams, parsedParamsTable);
 oscData = parsedDataTable;
+oscData.Properties.RowNames = condStr;
 
 % Reorder according to simNumber
 [oscParams, origInd] = sortrows(oscParams, simNumberStr);

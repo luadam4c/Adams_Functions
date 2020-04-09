@@ -56,7 +56,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % 2019-08-22 Created by Adam Lu
 % 2019-10-12 Now allows colorMap to be a cell array
 % 2019-12-18 Now allows colorMap to be a function handle
-% 
+% TODO: 'ForceCellOutput'
 
 %% Hard-coded parameters
 nColorsDefault = 64;

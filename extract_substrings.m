@@ -46,6 +46,7 @@ function subStrs = extract_substrings (strs, varargin)
 %       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_figure07.m
 
 % File History:
 % 2019-11-25 Created by Adam Lu

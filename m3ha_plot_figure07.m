@@ -3,16 +3,21 @@
 %
 % Requires:
 %       cd/addvars_custom.m
+%       cd/all_files.m
 %       cd/all_subdirs.m
 %       cd/apply_over_cells.m
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
 %       cd/array_fun.m
+%       cd/compute_combined_trace.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
 %       cd/decide_on_colormap.m
 %       cd/extract_fileparts.m
+%       cd/extract_substrings.m
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
+%       cd/force_matrix.m
 %       cd/lower_first_char.m
 %       cd/m3ha_network_analyze_spikes_new.m
 %       cd/m3ha_network_plot_gabab.m
@@ -20,6 +25,7 @@
 %       cd/m3ha_plot_violin.m
 %       cd/match_positions.m
 %       cd/plot_scale_bar.m
+%       cd/plot_tuning_curve.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/sscanf_full.m
@@ -44,10 +50,11 @@ plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
-analyze200CellSpikes = true;
+analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
 combine200CellPopulation = false; %true;
+combineActivationProfiles = true;
 plot200CellViolins = false; %true;
 
 archiveScriptsFlag = false; %true;
@@ -224,7 +231,7 @@ end
 
 %% Combines quantification over all 2-cell networks
 if combine2CellPopulation
-    combine_osc_params_data(popIterDir2Cell, candCellSheetPath, ...
+    combine_osc_params(popIterDir2Cell, candCellSheetPath, ...
                             rankNumsToUse, popDataPath2Cell);
 end
 
@@ -236,8 +243,13 @@ end
 
 %% Combines quantification over all 200-cell networks
 if combine200CellPopulation
-    combine_osc_params_data(popIterDir200Cell, candCellSheetPath, ...
+    combine_osc_params(popIterDir200Cell, candCellSheetPath, ...
                             rankNumsToUse, popDataPath200Cell);
+end
+
+%% Combines activation profiles over seed numbers for each 200-cell network
+if combineActivationProfiles
+    combine_activation_profiles(popIterDir200Cell, figure08Dir);
 end
 
 %% Plots oscillation measures over pharm condition 
@@ -532,7 +544,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_osc_params_data (popIterDir, candCellSheetPath, ...
+function combine_osc_params (popIterDir, candCellSheetPath, ...
                                     rankNumsToUse, popDataPath)
 
 %% Hard-coded parameters
@@ -574,6 +586,136 @@ oscPopTable = join(oscPopTable, candCellTable, 'Keys', cellNameStr);
 
 % Save the table
 writetable(oscPopTable, popDataPath);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function combine_activation_profiles (popIterDir, outFolder)
+
+% TODO: Loop over this
+candidateLabel = 'candidateIDs_2,14,32,35';
+
+%% Hard-coded parameters
+oscDataSuffix = 'oscillation_data';
+seedNumStr = 'seedNumber';
+seedNumLabelRegExp = [seedNumStr, '_[0-9]*'];
+oscDataStr = 'oscData';
+oscParamsStr = 'oscParams';
+
+%% Do the job
+% Find all oscillation data matfiles with this candidate label
+[~, oscDataPaths] = ...
+    all_files('Directory', popIterDir, 'Recursive', true, ...
+                'Keyword', candidateLabel, 'Suffix', oscDataSuffix, ...
+                'Extension', 'mat');
+
+% Extract the seed number labels
+seedNumLabels = extract_substrings(oscDataPaths, 'RegExp', seedNumLabelRegExp);
+
+% Keep only oscillation data matfiles under a seed number directory
+toKeep = ~isemptycell(seedNumLabels);
+oscDataPaths = oscDataPaths(toKeep);
+seedNumLabels = seedNumLabels(toKeep);
+
+% Extract the seed numbers
+seedNums = cellfun(@(x) sscanf_full(x, '%d'), seedNumLabels);
+
+% Extract all data tables
+oscDataMatFiles = cellfun(@matfile, oscDataPaths, 'UniformOutput', false);
+oscDataTables = cellfun(@(m) m.(oscDataStr), ...
+                        oscDataMatFiles, 'UniformOutput', false);
+
+% Extract all condition strings from the first params table
+oscParamsTable = oscDataMatFiles{1}.(oscParamsStr);
+condStrs = oscParamsTable.Properties.RowNames;
+nCells = oscParamsTable{:, 'nCells'};
+
+% Create a figure path for each condition string
+figPathBases = fullfile(outFolder, strcat(candidateLabel, '_', condStrs));
+
+% TEMP: TODO
+condStrs = {1; 2; 3; 4};
+
+% Plot mean activation profiles
+cellfun(@(a, b, c) plot_mean_activation_profiles(a, b, c, ...
+                        seedNums, oscDataTables), ...
+        figPathBases, condStrs, num2cell(nCells));
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_mean_activation_profiles (figPathBase, condStr, nCells, ...
+                                        seedNums, oscDataTables)
+
+% Extract title base
+figTitleBase = replace(extract_fileparts(figPathBase, 'filebase'), '_', '\_');
+
+% Compute the corresponding TCepas value
+TCepasValues = -75 + mod(seedNums, 16);
+
+% Unique epas values
+uniqueEpas = unique(TCepasValues);
+uniqueEpasLabels = create_labels_from_numbers(uniqueEpas, 'Prefix', 'epas = ');
+
+% Count unique epas values
+nEpas = numel(uniqueEpas);
+
+% Extract the activation profiles for TC
+[timeBinsSeconds, percentActivatedTC] = ...
+    argfun(@(colStr) cellfun(@(x) x{condStr, colStr}{1}, ...
+                        oscDataTables, 'UniformOutput', false), ...
+            'timeBinsSeconds', 'percentActivatedTC');
+
+% Group activation profiles by TCepas value
+percentActivatedEachEpas = ...
+    arrayfun(@(epas) percentActivatedTC(TCepasValues == epas), ...
+            uniqueEpas, 'UniformOutput', false);
+
+% Compute the combined trace for each TCepas value
+[meanAct, lowerAct, upperAct] = ...
+    argfun(@(method) ...
+            cellfun(@(traces) compute_combined_trace(traces, method), ...
+                    percentActivatedEachEpas, 'UniformOutput', false), ...
+            'mean', 'lower95', 'upper95');
+
+% Force as matrices
+[meanAct, lowerAct, upperAct] = ...
+    argfun(@force_matrix, meanAct, lowerAct, upperAct);
+
+% Decide on colors
+% TODO: 'ForceCellOutput' for decide_on_colormap.m
+% colors = decide_on_colormap([], nEpas);
+% colorsCell = arrayfun(@(i) colors(i, :), transpose(1:nEpas), ...
+%                         'UniformOutput', false);
+
+% Create a figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Hold on
+hold on;
+
+% Plot the mean activation profiles
+handles = plot_tuning_curve(timeBinsSeconds{1}, meanAct, ...
+                            'LowerCI', lowerAct, 'UpperCI', upperAct, ...
+                            'ColumnLabels', uniqueEpasLabels, ...                            
+                            'LineWidth', 1);
+
+ylim([0, nCells]);
+xlabel('Time (s)');
+ylabel('Percent Activated (%)');
+title(['Activation profile for ', figTitleBase]);
+legend(handles.curves, 'location', 'northeast');
+
+% Save the figure
+save_all_figtypes(fig, [figPathBase, '_orig.png'], 'png');
+
+% Update for CorelDraw
+update_figure_for_corel(fig);
+
+% Save the figure
+save_all_figtypes(fig, [figPathBase, '.png'], {'png', 'epsc'});
 
 end
 
