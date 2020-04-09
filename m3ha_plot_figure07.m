@@ -50,7 +50,7 @@ plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
-analyze200CellSpikes = false; %true;
+analyze200CellSpikes = true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
 combine200CellPopulation = false; %true;
