@@ -38,10 +38,12 @@
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
+%       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
 %       cd/plot_violin.m
 %       cd/print_cellstr.m
@@ -64,6 +66,8 @@
 % 2020-03-10 Reordered measuresOfInterest
 % 2020-03-10 Updated pharm labels
 % 2020-03-11 Now plots violin plots for all gIncr
+% 2020-04-09 Now plots essential plots
+% 2020-04-09 Now finds special cases
 % 
 
 %% Hard-coded parameters
@@ -72,7 +76,9 @@ chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
-plotOpenProbabilityFlag = true;
+plotEssentialFlag = true;
+findSpecialCasesFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
@@ -160,6 +166,13 @@ measuresOfInterest = {'ltsProbability'; 'ltsOnsetTime'; ...
 openProbFigWidth = 5;       % (cm)
 openProbFigHeight = 3;      % (cm)
 
+% Compare with m3ha_plot_figure05.m
+overlappedXLimits = [2800, 4800]; %[2800, 4000];
+essentialYLimits = {[-110, -40]; [0, 10]; [-0.5, 0.1]; ...
+                            [-20, 5]; [1e-1, 1e2]};
+essentialYTickLocs = {-90:20:-50; 0:5:10; -0.4:0.2:0; ...
+                            -15:5:0; [1e0, 1e1]};
+
 % TODO: Make optional argument
 % outFolder = '20191227_population_rank1-10_useHH_true';
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
@@ -188,7 +201,8 @@ openProbFigHeight = 3;      % (cm)
 % rankNumsOpenProbability = [];   % same as rankNumsToUse
 % rankNumsOpenProbability = [6, 9];
 
-outFolder = '20200208_population_rank1-23_dataMode1_attemptNumber3';
+outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+                    '20200208_population_rank1-23_dataMode1_attemptNumber3');
 figTypes = {'png', 'epsc'};
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
@@ -197,6 +211,7 @@ ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
 prefix = '';
+opdThreshold = 1;
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -472,15 +487,15 @@ if computeOpenProbabilityFlag
     writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
 end
 
-%% Plot open probability discrepancy against LTS presence
-if plotOpenProbabilityFlag
+%% Read LTS and open probability discrepancy info
+if findSpecialCasesFlag || plotOpenProbabilityFlag
+    % Display message
+    fprintf('Reading LTS and open probability discrepancy info ... \n');
+
     % Make sure the simulated sweep info table exists
     if ~isfile(simSwpInfoPath)
         error('Save a simulated sweep info table first!');
     end
-
-    % Display message
-    fprintf('Plotting open probability discrepancies ... \n');
 
     % Create a rank string
     rankStrOP = ['rank', create_label_from_sequence(rankNumsOpenProbability)];
@@ -526,6 +541,62 @@ if plotOpenProbabilityFlag
 
     % Determine whether each sweep has an LTS
     noLts = isnan(ltsPeakTime);
+end
+
+%% Plot all essential plots
+if plotEssentialFlag
+    % Display message
+    fprintf('Plotting all essential plots ... \n');
+
+    % Locate all simulated .out files
+    [~, allSimOutPaths] = all_files('Directory', outFolder, ...
+                                    'Recursive', true, 'Extension', 'out');
+
+    % Plot simulated traces
+    cellfun(@(a) m3ha_plot_essential(a, overlappedXLimits, ...
+                                    essentialYLimits, essentialYTickLocs), ...
+            allSimOutPaths);
+end
+
+%% Find and copy special cases
+if findSpecialCasesFlag
+    % Display message
+    fprintf('Finding and copying special cases ... \n');
+
+    % Create special cases directories
+    specialDir = fullfile(outFolder, 'special_cases');
+    [falseNegDir, falsePosDir] = ...
+        argfun(@(s) fullfile(specialDir, s), ...
+                'highDiscrepancyNoLts', 'lowDiscrepancyHasLts');
+    check_dir({specialDir, falseNegDir, falsePosDir});
+
+    % Determine whether it is a special case
+    isFalseNeg = noLts & openProbabilityDiscrepancy >= opdThreshold;
+    isFalsePos = ~noLts & openProbabilityDiscrepancy < opdThreshold;
+
+    % Find corresponding file base
+    [fileBasesFalseNeg, fileBasesFalsePos] = ...
+        argfun(@(i) fileBasesOP(i), isFalseNeg, isFalsePos);
+
+    % Find corresponding essential plots
+    [~, essentialPathsFalseNeg] = ...
+        find_matching_files(fileBasesFalseNeg, 'Directory', outFolder, ...
+                                'Recursive', true, 'Suffix', 'essential', ...
+                                'Extension', 'png');
+    [~, essentialPathsFalsePos] = ...
+        find_matching_files(fileBasesFalsePos, 'Directory', outFolder, ...
+                                'Recursive', true, 'Suffix', 'essential', ...
+                                'Extension', 'png');
+
+    % Copy into special cases directories
+    copy_into(essentialPathsFalseNeg, falseNegDir);
+    copy_into(essentialPathsFalsePos, falsePosDir);
+end
+
+%% Plot open probability discrepancy against LTS presence
+if plotOpenProbabilityFlag
+    % Display message
+    fprintf('Plotting open probability discrepancies ... \n');
 
     % Find the indices for each cell with or without LTS
     [indEachCellWithLTS, indEachCellWithNoLTS] = ...
@@ -676,6 +747,34 @@ cellNames = m3ha_extract_cell_name(pngPaths, 'FromBaseName', true);
 
 % Extract the iteration numbers
 iterStrs = m3ha_extract_iteration_string(pngPaths, 'FromBaseName', true);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_plot_essential(simOutPath, xLimits, yLimits, yTickLocs)
+%% Plot an essential plot for a simulation
+
+% Extract the sweep name
+sweepName = m3ha_extract_sweep_name(simOutPath, 'FromBaseName', true);
+
+% Make the sweep the the figure title
+figTitle = replace(['Essential plots for ', sweepName], '_', '\_');
+
+% Create figure names
+figPathBase = replace(simOutPath, '.out', '_essential.png');
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot essential traces
+m3ha_plot_simulated_traces('PlotType', 'essential', 'FileNames', simOutPath, ...
+                            'XLimits', xLimits, 'YLimits', yLimits, ...
+                            'YTickLocs', yTickLocs, ...
+                            'FigHandle', fig, 'FigTitle', figTitle);
+
+% Save original figure
+save_all_figtypes(fig, figPathBase, 'png');
 
 end
 

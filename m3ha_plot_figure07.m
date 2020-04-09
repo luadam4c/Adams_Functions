@@ -35,6 +35,7 @@
 % 2020-01-30 Modified from m3ha_plot_figure05.m
 % 2020-02-06 Added plot200CellExamples and plot2CellM2h
 % 2020-03-10 Updated pharm labels
+% 2020-04-09 Added combineActivationProfiles
 
 %% Hard-coded parameters
 % Flags
@@ -51,10 +52,10 @@ plot2CellViolins = false; %true;
 plot200CellExamples = false; %true;
 
 analyze200CellSpikes = false; %true;
-plotAnalysis200Cell = false;
+plotAnalysis200Cell = true; %false;
 backupPrevious200Cell = false;
-combine200CellPopulation = false; %true;
 combineActivationProfiles = true;
+combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
 archiveScriptsFlag = false; %true;
@@ -78,12 +79,12 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName200Cell = exampleIterName200Cell;
 % popIterName200Cell = '20200309T1346_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 % popIterName2Cell = '20200309T0013_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
-% popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
+popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
+% popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -126,6 +127,9 @@ example200CellFigWidth = 8.5;
 example200CellFigHeight = 3;
 pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
                     '{\it s}GAT3', '{\it s}Dual'};
+
+% epasToPlot = [];
+epasToPlot = [-74; -70; -66; -62];
 
 figTypes = {'png', 'epsc'};
 
@@ -249,7 +253,7 @@ end
 
 %% Combines activation profiles over seed numbers for each 200-cell network
 if combineActivationProfiles
-    combine_activation_profiles(popIterDir200Cell, figure08Dir);
+    combine_activation_profiles(popIterDir200Cell, figure08Dir, epasToPlot);
 end
 
 %% Plots oscillation measures over pharm condition 
@@ -591,11 +595,35 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_activation_profiles (popIterDir, outFolder)
+function combine_activation_profiles (popIterDir, outFolder, epasToPlot)
 
-% TODO: Loop over this
-% candidateLabel = 'candidateIDs_2,14,32,35';
-candidateLabel = 'candidateIDs_32';
+%% Hard-coded parameters
+oscDataSuffix = 'oscillation_data';
+candLabelRegExp = 'candidateIDs_[,0-9]*';
+
+% candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_32'};
+
+% Find all oscillation data matfiles with this candidate label
+[~, oscDataPaths] = ...
+    all_files('Directory', popIterDir, 'Recursive', true, ...
+                'Suffix', oscDataSuffix, 'Extension', 'mat');
+
+% Extract all candidate label strings
+candidateStrs = extract_substrings(oscDataPaths, 'RegExp', candLabelRegExp);
+
+% Find all possible candidate labels
+candidateLabels = unique(candidateStrs);
+
+cellfun(@(c) combine_activation_profiles_helper(c, popIterDir, ...
+                                                outFolder, epasToPlot), ...
+        candidateLabels);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function combine_activation_profiles_helper (candidateLabel, popIterDir, ...
+                                                outFolder, epasToPlot)
 
 %% Hard-coded parameters
 oscDataSuffix = 'oscillation_data';
@@ -613,6 +641,9 @@ oscParamsStr = 'oscParams';
 
 % Extract the seed number labels
 seedNumLabels = extract_substrings(oscDataPaths, 'RegExp', seedNumLabelRegExp);
+
+% Extract the base name
+popIterDirName = extract_fileparts(popIterDir, 'base');
 
 % Keep only oscillation data matfiles under a seed number directory
 toKeep = ~isemptycell(seedNumLabels);
@@ -633,31 +664,38 @@ condStrs = oscParamsTable.Properties.RowNames;
 nCells = oscParamsTable{:, 'nCells'};
 
 % Create a figure path for each condition string
-figPathBases = fullfile(outFolder, strcat(candidateLabel, '_', condStrs));
+figPathBases = fullfile(outFolder, strcat(popIterDirName, '_', ...
+                    candidateLabel, '_', condStrs, '_activation_profile'));
+figTitleBases = replace(strcat(candidateLabel, '_', condStrs), '_', '\_');
 
 % TEMP: TODO
 condStrs = {1; 2; 3; 4};
 
 % Plot mean activation profiles
-cellfun(@(a, b, c) plot_mean_activation_profiles(a, b, c, ...
-                        seedNums, oscDataTables), ...
-        figPathBases, condStrs, num2cell(nCells));
+cellfun(@(a, b, c, d) plot_mean_activation_profiles(a, b, c, d, ...
+                        seedNums, oscDataTables, epasToPlot), ...
+        figPathBases, figTitleBases, condStrs, num2cell(nCells));
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_mean_activation_profiles (figPathBase, condStr, nCells, ...
-                                        seedNums, oscDataTables)
-
-% Extract title base
-figTitleBase = replace(extract_fileparts(figPathBase, 'filebase'), '_', '\_');
+function plot_mean_activation_profiles (figPathBase, figTitleBase, ...
+                                        condStr, nCells, seedNums, ...
+                                        oscDataTables, epasToPlot)
 
 % Compute the corresponding TCepas value
 TCepasValues = -75 + mod(seedNums, 16);
 
 % Unique epas values
 uniqueEpas = unique(TCepasValues);
+
+% Restrict unique epas values
+if ~isempty(epasToPlot)
+    uniqueEpas = intersect(uniqueEpas, epasToPlot);
+end
+
+% Create epas labels
 uniqueEpasLabels = create_labels_from_numbers(uniqueEpas, 'Prefix', 'epas = ');
 
 % Count unique epas values

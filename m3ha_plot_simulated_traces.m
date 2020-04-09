@@ -102,10 +102,12 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/plot_traces.m
 %       cd/read_lines_from_file.m
 %       cd/set_default_flag.m
+%       cd/sscanf_full.m
 %
 % Used by:
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure05.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-10-14 Created by Adam Lu
@@ -119,6 +121,8 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-02-08 Added m2h difference
 % 2020-02-09 Now plots m2h subplots in log scale
 % 2020-02-10 Added m2h ratio
+% 2020-04-09 The default expStr is just the base name of the common prefix
+% 2020-04-09 Now defaults outFolder to common directory of files provided
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -271,13 +275,8 @@ switch plotType
 end
 
 % Use the present working directory for both inputs and output by default
-if isempty(directory)
+if isempty(directory) && isempty(fileNames)
     directory = pwd;
-end
-
-% Set default output directory
-if isempty(outFolder)
-    outFolder = directory;
 end
 
 % Decide on input paths
@@ -286,8 +285,16 @@ if isempty(fileNames)
         all_files('Directory', directory, 'Extension', extension, ...
                     'Keyword', 'sim', 'ForceCellOutput', true);
 else
+    % Extract common directory
+    directory = extract_fileparts(fileNames, 'commondirectory');
+
     % Make sure they are full paths
     fileNames = construct_fullpath(fileNames, 'Directory', directory);
+end
+
+% Set default output directory
+if isempty(outFolder)
+    outFolder = directory;
 end
 
 % Reorder the input paths correctly
@@ -296,6 +303,7 @@ fileNames = reorder_simulation_output_files(fileNames);
 % Use the common expStr as the experiment string
 if isempty(expStr)
     expStr = extract_common_prefix(fileNames);
+    expStr = extract_fileparts(expStr, 'base');
 end
 
 % Decide on the build mode
@@ -379,13 +387,28 @@ end
 
 % Decide on the simulation parameters table
 if isempty(simParamsTable)
-    % Find the corresponding parameters file
-    [~, simParamsPath] = all_files('Directory', directory, 'Keyword', expStr, ...
-                            'Suffix', paramsSuffix, 'Extension', 'csv', ...
-                            'MaxNum', 1);
+    if contains(expStr, 'sim')
+        % Find the corresponding parameters file
+        [~, simParamsPath] = all_files('Directory', directory, 'MaxNum', 1, ...
+                                'Suffix', paramsSuffix, 'Extension', 'csv');
+    else
+        % Find the corresponding parameters file
+        [~, simParamsPath] = ...
+            all_files('Directory', directory, 'Keyword', expStr, ...
+                    'MaxNum', 1, 'Suffix', paramsSuffix, 'Extension', 'csv');
+    end
 
     % Load the simulation parameters table
     simParamsTable = readtable(simParamsPath);
+
+    % Restrict to the simulation numbers
+    if contains(expStr, 'sim')
+        simStr = extract_substrings(expStr, 'RegExp', 'sim[0-9]*');
+        simNumber = sscanf_full(simStr, '%d');
+        simParamsTable = simParamsTable(simNumber, :);
+    else
+        % TODO: Sort the rows by simulation number
+    end
 end
 
 %% Data
@@ -423,7 +446,8 @@ end
 %   interpolate simulated data to match the time points of recorded data
 % Note: This is necessary because CVODE (variable time step method) 
 %       is applied in NEURON
-simData = load_neuron_outputs('FileNames', fileNames, 'tVecs', tVecs);
+simData = load_neuron_outputs('FileNames', fileNames, 'tVecs', tVecs, ...
+                                'ForceCellOutput', true);
 
 % Extract vectors from simulated data
 [tVecs, vVecsSim] = extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM]);

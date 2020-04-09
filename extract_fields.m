@@ -41,6 +41,7 @@ function varargout = extract_fields (structs, varargin)
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_violin.m
 %       cd/parse_spike2_mat.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu

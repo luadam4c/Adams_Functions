@@ -92,6 +92,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
+%       cd/extract_fields.m
 %       cd/force_column_cell.m
 %       cd/is_field.m
 %       cd/match_positions.m
@@ -305,6 +306,9 @@ end
 %% Set axes properties
 % Find all subplots in the figure
 ax = findall(figHandle, 'type', 'axes');
+
+% Remove axes for suplabel or suptitle
+ax = remove_non_axes(ax);
 
 % Sort the subplots in the figure
 ax = sort_subplots(ax);
@@ -576,6 +580,21 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function ax = remove_non_axes(ax)
+
+% Hard-coded parameters
+tagsToRemove = {'suplabel', 'suptitle'};
+
+% Extract tags
+tags = extract_fields(ax, 'Tag');
+
+% Decide whether to remove axes
+toRemove = contains(tags, tagsToRemove);
+
+% Remove the axes containing tags
+ax = ax(~toRemove);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:

@@ -19,6 +19,7 @@
 % File History:
 % 2019-12-29 Modified from m3ha_plot_figure03.m
 % 2020-01-29 Separated outputs to figure05Dir and figure06Dir
+% 2020-04-09 Changed the y axis limits of m2h discrepancy plot to [1e-1, 1e3]
 
 %% Hard-coded parameters
 % Flags
@@ -34,11 +35,11 @@ plotSomaVoltage = false; %true;
 
 computeIpscVariation = false; %true;
 simulateIpscVariation = false; %true;
-plotEssential = false; %true;
+plotEssential = true;
 
 plotM2h = false; %true;
 
-simulateNoITSoma = true;
+simulateNoITSoma = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -106,18 +107,18 @@ colorMapVary = @jet;                % rainbow colors
 overlappedFigWidth = 4.7; %5.7;
 overlappedFigHeightPerRow = 1.5;
 overlappedXLimits = [2800, 4800]; %[2800, 4000];
-allVoltagesYLimits = {[-95, -30], [-95, -30], [-95, -30], [-95, -30], ...
+allVoltagesYLimits = {[-95, -20], [-95, -20], [-95, -20], [-95, -20], ...
                         [-4, 2], [-0.3, 0.3], [0, 10], [-4, 2]};
 allTotalCurrentsYLimits = {[-4, 2], [-4, 2], [-0.3, 0.3], [-15, 5], ...
                             [-0.3, 0.3], [-5, 15], [-0.3, 0.3], [-0.3, 0.3]};
 allComponentCurrentsYLimits = {[-15, 5], [-10, 5], [-10, 5], [-10, 5], ...
                             [-5, 15], [-5, 10], [-5, 10], [-5, 10]};
 dend2ITpropertiesYLimits = {[-10, 5], [0, 1], [0, 1], [0, 1], ...
-                            [0, 1], [1e-6, 1e0], [1e-7, 1e-1], ...
-                            [1e-8, 1e0], [1e-1, 1e6]};
+                            [0, 1], [1e-7, 1e0], [1e-7, 1e0], ...
+                            [1e-8, 1e0], [1e-1, 1e2]};
 somaVoltageYLimits = {[-95, -25], [1e-1, 1e7]};
 essentialYLimits = {[-110, -40], [0, 10], [-0.5, 0.1], ...
-                            [-20, 5], [1e-1, 1e6]};
+                            [-20, 5], [1e-1, 1e2]};
 
 allVoltagesYTickLocs = {-80:20:-40, -80:20:-40, -80:20:-40, -80:20:-40, ...
                         -3:2:1, -0.2:0.2:0.2, 0:5:10, -3:2:1};
@@ -126,11 +127,11 @@ allTotalCurrentsYTickLocs = {-3:2:1, -3:2:1, -0.2:0.2:0.2, -10:5:5, ...
 allComponentCurrentsYTickLocs = {-10:5:5, -5:5:5, -5:5:5, -5:5:5, ...
                             -5:5:10, -5:5:5, -5:5:5, -5:5:5};
 dend2ITpropertiesYTickLocs = {-5:5:5, 0:0.5:1, 0:0.5:1, 0:0.5:1, ...
-                            0:0.5:1, [1e-5, 1e-1], [1e-6, 1e-2], ...
-                            [1e-7, 1e-1], [1e0, 1e2, 1e4]};
+                            0:0.5:1, [1e-6, 1e-1], [1e-6, 1e-1], ...
+                            [1e-7, 1e-1], [1e0, 1e1]};
 somaVoltageYTickLocs = {-90:20:-50, [1e0, 1e2, 1e4, 1e6]};
 essentialYTickLocs = {-90:20:-50, 0:5:10, -0.4:0.2:0, ...
-                            -15:5:0, [1e0, 1e2, 1e4]};
+                            -15:5:0, [1e0, 1e1]};
 m2hFigWidth = 4.7; %5.7;
 m2hFigHeight = 3;
 m2hXLimits = [2800, 4800]; %[2800, 4000];
@@ -143,7 +144,7 @@ figTypes = {'png', 'epsc'};
 
 %% Make sure NEURON scripts are up to date in figure05Dir
 if updateScripts
-    update_neuron_scripts(fitDirectory, c);
+    update_neuron_scripts(fitDirectory, figure05Dir);
 end
 
 %% Load sweep info
@@ -410,6 +411,8 @@ m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'XLimits', xLimits, 'YLimits', yLimits, ...
                 'ColorMap', colorMap);
 
+update_figure_for_corel(fig, 'YTickLocs', yTickLocs);
+
 % Save original figure
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
@@ -422,8 +425,7 @@ plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                 'Width', figWidth, 'Height', figHeight, ...
                 'AlignSubplots', true, ...
-                'RemoveXTicks', true, 'RemoveXRulers', true, ...
-                'YTickLocs', yTickLocs);
+                'RemoveXTicks', true, 'RemoveXRulers', true);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);

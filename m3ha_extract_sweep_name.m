@@ -27,6 +27,7 @@ function sweepNames = m3ha_extract_sweep_name (strs, varargin)
 %       cd/extract_substrings.m
 %
 % Used by:
+%       cd/m3ha_simulate_population.m
 %       cd/m3ha_plot_simulated_traces.m
 
 % File History:

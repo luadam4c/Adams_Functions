@@ -123,6 +123,7 @@ loopMode = 'grid'; %cross;      % how to loop through parameters:
                                 %               while fixing others
                                 %   'grid'  - Loop through all possible 
                                 %               combinations of parameters
+analyzeSpikesPlotFlag = false;
 
 % Decide on what to save and plot
 if isempty(savePlotMode)
@@ -1230,7 +1231,8 @@ end
 
 % Analyze spikes for oscillations
 if analyzeSpikes
-    m3ha_network_analyze_spikes('InFolder', inFolder, 'OutFolder', outFolder);
+    m3ha_network_analyze_spikes('InFolder', inFolder, 'OutFolder', outFolder, ...
+                                'PlotFlag', analyzeSpikesPlotFlag);
 end
 
 %% Compute time taken
