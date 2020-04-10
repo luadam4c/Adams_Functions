@@ -28,8 +28,8 @@ function tableNew = transpose_table (tableOld, varargin)
 %       cd/create_labels_from_numbers.m
 %
 % Used by:
+%       cd/combine_param_tables.m
 %       cd/extract_param_values.m
-%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_neuron_create_sim_params.m
 
 % File History:

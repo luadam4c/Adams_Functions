@@ -36,6 +36,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/argfun.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/check_fullpath.m
+%       cd/combine_param_tables.m
 %       cd/compute_combined_trace.m
 %       cd/compute_rms_error.m
 %       cd/compute_weighted_average.m
@@ -52,7 +53,6 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_plot_figure07.m
 %       cd/vecfun.m
 

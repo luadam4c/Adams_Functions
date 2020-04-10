@@ -49,6 +49,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %
 % Used by:
 %       cd/atfwrite.m
+%       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_all_pulse_responses.m
 %       cd/create_default_grouping.m

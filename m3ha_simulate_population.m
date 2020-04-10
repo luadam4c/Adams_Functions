@@ -23,6 +23,7 @@
 %       cd/all_files.m
 %       cd/all_subdirs.m
 %       cd/argfun.m
+%       cd/combine_param_tables.m
 %       cd/compute_rms_error.m
 %       cd/compute_weighted_average.m
 %       cd/copy_into.m
@@ -76,8 +77,9 @@ chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
-plotEssentialFlag = true;
+plotEssentialFlag = false; %true;
 findSpecialCasesFlag = false; %true;
+computeSummaryTableFlag = true;
 plotOpenProbabilityFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
@@ -113,9 +115,11 @@ defaultOutFolderStr = 'population';
 
 % File names
 simStr = 'sim';
-ltsParamsSuffix = '_ltsParams';
-simLtsParamsSuffix = strcat(simStr, '_ltsParams');
+paramsSuffix = 'params';
+ltsParamsSuffix = 'ltsParams';
+simLtsParamsSuffix = strcat(simStr, '_', ltsParamsSuffix);
 simSwpInfoSuffix = strcat(simStr, '_swpInfo');
+simCellInfoSuffix = strcat(simStr, '_cellInfo');
 openProbSuffix = strcat(simStr, '_openProbabilityDiscrepancy_vs_hasLTS');
 simOutExtension = 'out';
 
@@ -318,18 +322,21 @@ if chooseBestNeuronsFlag
     copy_into(paramPaths, outFolder);
 end
 
-%% Simulate
-if simulateFlag
+%% Find candidate NEURON parameter files
+if simulateFlag || computeSummaryTableFlag
     % Decide on candidate parameters files
-    [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params', ...
-                                'Recursive', false);
+    [~, paramPaths] = all_files('Directory', outFolder, 'Recursive', false, ...
+                                'Suffix', paramsSuffix, 'Extension', 'csv');
 
     % Remove the ltsParams files
     paramPaths = paramPaths(~contains(paramPaths, 'ltsParams'));
 
     % Extract the cell names
     cellNames = m3ha_extract_cell_name(paramPaths);
+end
 
+%% Simulate
+if simulateFlag
     % Find all simulated LTS stats spreadsheets
     [~, simLtsParamPaths] = ...
         cellfun(@(x) find_matching_files(x, 'Directory', outFolder, ...
@@ -594,6 +601,40 @@ if findSpecialCasesFlag
     % Copy into special cases directories
     copy_into(essentialPathsFalseNeg, falseNegDir);
     copy_into(essentialPathsFalsePos, falsePosDir);
+end
+
+%% Compute cell info table
+if computeSummaryTableFlag
+    % Display message
+    fprintf('Computing summary cell info table ... \n');
+
+    % Make sure the simulated sweep info table exists
+    if ~isfile(simSwpInfoPath)
+        error('Save a simulated sweep info table first!');
+    end
+
+    % Create path to cell info table
+    simCellInfoPath = replace(simSwpInfoPath, simSwpInfoSuffix, ...
+                                simCellInfoSuffix);
+
+    % Find all parameter files
+    [~, paramPaths] = all_files('Directory', outFolder, 'Recursive', false, ...
+                                'Suffix', paramsSuffix, 'Extension', 'csv');
+
+    % Create the cell info table by combining the parameter tables
+    simCellInfoTable = ...
+        combine_param_tables(paramPaths, 'NewRowNames', cellNames);
+
+    % Read the simulated sweep info table
+    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
+
+    
+
+    % Add variables
+    addvars(simCellInfoTable, );
+
+    % Write to the table
+    writetable(simCellInfoTable, simCellInfoPath);
 end
 
 %% Plot open probability discrepancy against LTS presence

@@ -68,6 +68,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/atfwrite.m
 %       cd/combine_abf_data.m
 %       cd/combine_data_from_same_slice.m
+%       cd/combine_param_tables.m
 %       cd/combine_swd_sheets.m
 %       cd/combine_variables_across_tables.m
 %       cd/copy_into.m

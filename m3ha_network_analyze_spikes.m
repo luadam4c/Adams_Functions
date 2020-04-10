@@ -34,9 +34,8 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %
 % Requires:
 %       cd/all_files.m
-%       cd/apply_over_cells.m
 %       cd/argfun.m
-%       cd/array_fun.m
+%       cd/combine_param_tables.m
 %       cd/compute_autocorrelogram.m
 %       cd/compute_spike_histogram.m
 %       cd/create_subplots.m
@@ -45,9 +44,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %       cd/load_neuron_outputs.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_spike_histogram.m
-%       cd/renamevars.m
 %       cd/save_all_figtypes.m
-%       cd/transpose_table.m
 %
 % Used by:
 %       cd/m3ha_network_launch.m
@@ -167,23 +164,8 @@ if verbose
     fprintf('Analyzing Spikes for %s ... \n', dirBase);
 end
 
-% Load simulation parameters
-paramTables = array_fun(@(x) readtable(x, 'ReadRowNames', true), ...
-                        paramFilePaths, 'UniformOutput', false);
-
-% Keep just the Value column in all tables
-paramTables = array_fun(@(x) x(:, 'Value'), ...
-                        paramTables, 'UniformOutput', false);
-
-% Rename 'Value' by the condition string
-paramTables = array_fun(@(x, y) renamevars(x, 'Value', y), ...
-                        paramTables, condStr, 'UniformOutput', false);
-
-% Combine all tables
-allParamsTable = apply_over_cells(@horzcat, paramTables);
-
 % Initialize the oscillation table with simulation parameters
-oscParams = transpose_table(allParamsTable);
+oscParams = combine_param_tables(paramFilePaths, 'NewRowNames', condStr);
 
 % Extract fields
 stimStartMs = oscParams.(stimStartStr);

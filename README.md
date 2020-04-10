@@ -68,6 +68,7 @@ There are 2 MATLAB scripts in this directory:
 - [**combine_data_from_same_slice.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_data_from_same_slice.m): Combines data across multiple .abf files for each slice in the input folder (or for a particular slice)
 - [**combine_looped_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_looped_params.m): TODO
 - [**combine_multiunit_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_multiunit_data.m): Combines data across multiple .abf files (using multiunit data defaults) for each slice in the input folder (or for a particular slice)
+- [**combine_param_tables.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_param_tables.m): Combine parameter tables with a 'Value' column and row names as parameters
 - [**combine_phase_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_phase_numbers.m): Combines (possibly multiple) phase number vectors into a single vector
 - [**combine_strings.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_strings.m): Constructs a final string based on optional substrings and/or Name-Value pairs
 - [**combine_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_swd_sheets.m): Combines all files ending with '_SWDs.csv' under a directory
