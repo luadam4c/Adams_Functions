@@ -79,7 +79,7 @@ combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotEssentialFlag = false; %true;
 findSpecialCasesFlag = false; %true;
-computeSummaryTableFlag = true;
+computeCellInfoTableFlag = true;
 plotOpenProbabilityFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
@@ -161,14 +161,26 @@ stats3dSuffix = strcat(simStr, '_', conditionLabel3D, '_stats.mat');
 % Plot settings
 % Note: must be consistent with m3ha_compute_statistics.m
 measuresOfInterest = {'ltsProbability'; 'ltsOnsetTime'; ...
-                        'spikesPerLts'; 'ltsAmplitude'; 'ltsMaxSlope'; ...
-                        'burstProbability'; 'burstOnsetTime'; 'spikesPerBurst'; ...
-                        'ltsConcavity'; 'ltsProminence'; 'ltsWidth'; ...
-                        'spikeMaxAmp'; 'spikeMinAmp'; ...
-                        'spikeFrequency'; 'spikeAdaptation'; ...
-                        'ltsTimeJitter'; 'burstTimeJitter'};
+                    'spikesPerLts'; 'ltsAmplitude'; 'ltsMaxSlope'; ...
+                    'burstProbability'; 'burstOnsetTime'; 'spikesPerBurst'; ...
+                    'ltsConcavity'; 'ltsProminence'; 'ltsWidth'; ...
+                    'spikeMaxAmp'; 'spikeMinAmp'; ...
+                    'spikeFrequency'; 'spikeAdaptation'; ...
+                    'ltsTimeJitter'; 'burstTimeJitter'};
 openProbFigWidth = 5;       % (cm)
 openProbFigHeight = 3;      % (cm)
+
+% For summary cell info table
+measuresOfInterestOrig = {'ltsProbability'; 'ltsPeakTime'; ...
+                    'spikesPerPeak'; 'ltsPeakValue'; 'maxSlopeVal'; ...
+                    'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
+                    'maxSpikeAmp'; 'minSpikeAmp'; ...
+                    'spikeFrequency'; 'spikeAdaptation'};
+measuresOfInterestNew = {'ltsProbability'; 'ltsLatency'; ...
+                    'spikesPerLts'; 'ltsPeakValue'; 'ltsMaxSlope'; ...
+                    'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
+                    'spikeMaxAmp'; 'spikeMinAmp'; ...
+                    'spikeFrequency'; 'spikeAdaptation'};
 
 % Compare with m3ha_plot_figure05.m
 overlappedXLimits = [2800, 4800]; %[2800, 4000];
@@ -323,7 +335,7 @@ if chooseBestNeuronsFlag
 end
 
 %% Find candidate NEURON parameter files
-if simulateFlag || computeSummaryTableFlag
+if simulateFlag || computeCellInfoTableFlag
     % Decide on candidate parameters files
     [~, paramPaths] = all_files('Directory', outFolder, 'Recursive', false, ...
                                 'Suffix', paramsSuffix, 'Extension', 'csv');
@@ -604,7 +616,7 @@ if findSpecialCasesFlag
 end
 
 %% Compute cell info table
-if computeSummaryTableFlag
+if computeCellInfoTableFlag
     % Display message
     fprintf('Computing summary cell info table ... \n');
 
@@ -628,10 +640,43 @@ if computeSummaryTableFlag
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
-    
 
-    % Add variables
-    addvars(simCellInfoTable, );
+    % Extract the sweep names
+    swpNames = simSwpInfo.Properties.RowNames;
+    cellName = m3ha_extract_cell_name(swpNames);
+
+    % Determine whether each sweep has an LTS or burst
+    ltsProbability = ~isnan(simSwpInfo.ltsPeakTime);
+    burstProbability = ~isnan(simSwpInfo.burstTime);
+
+    % Add ltsProbability & burstProbability
+    simSwpInfoOfInterest = ...
+        addvars(simSwpInfoOfInterest, ltsProbability, burstProbability, ...
+                'Before', 1);
+
+    % Restrict to measures of interest
+    simSwpInfoOfInterest = simSwpInfo(:, measuresOfInterestOrig);
+
+    % Add cell names
+    simSwpInfoOfInterest = ...
+        addvars(simSwpInfoOfInterest, cellName, 'Before', 1);
+
+    % Average all columns, grouped by cellName
+    %   Note: groupsummary() is available since R2018a
+    cellMeasureTable = ...
+        groupsummary(simSwpInfoOfInterest, 'cellName', @nanmean);
+
+    % Create the variable names returned by groupsummary()
+    summaryVarNames = strcat('nanmean_', measuresOfInterestOrig);
+
+    % Rename variables
+    renamevars(cellMeasureTable, summaryVarNames, measuresOfInterestNew);
+
+    % Make cell names row names
+    cellMeasureTable.Properties.RowNames = cellMeasureTable.cellName;
+
+    % Join tables
+    simCellInfoTable = join(simCellInfoTable, cellMeasureTable, 'Keys', 'Row');
 
     % Write to the table
     writetable(simCellInfoTable, simCellInfoPath);
@@ -645,8 +690,8 @@ if plotOpenProbabilityFlag
     % Find the indices for each cell with or without LTS
     [indEachCellWithLTS, indEachCellWithNoLTS] = ...
         argfun(@(condition) ...
-                cellfun(@(cellName) condition & ...
-                                    strcmp(cellNamesEachFile, cellName), ...
+                cellfun(@(c) condition & ...
+                                    strcmp(cellNamesEachFile, c), ...
                         cellNamesOP, 'UniformOutput', false), ...
                 ~noLts, noLts);
 

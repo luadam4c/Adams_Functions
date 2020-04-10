@@ -83,8 +83,8 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
-% popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
+% popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
+popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -130,6 +130,9 @@ pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
 
 % epasToPlot = [];
 epasToPlot = [-74; -70; -66; -62];
+% candidateLabels = {};
+candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
+                'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35'};
 
 figTypes = {'png', 'epsc'};
 
@@ -253,7 +256,8 @@ end
 
 %% Combines activation profiles over seed numbers for each 200-cell network
 if combineActivationProfiles
-    combine_activation_profiles(popIterDir200Cell, figure08Dir, epasToPlot);
+    combine_activation_profiles(popIterDir200Cell, figure08Dir, ...
+                                epasToPlot, candidateLabels);
 end
 
 %% Plots oscillation measures over pharm condition 
@@ -595,13 +599,12 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_activation_profiles (popIterDir, outFolder, epasToPlot)
+function combine_activation_profiles (popIterDir, outFolder, epasToPlot, ...
+                                        candidateLabels)
 
 %% Hard-coded parameters
 oscDataSuffix = 'oscillation_data';
-candLabelRegExp = 'candidateIDs_[,0-9]*';
-
-% candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_32'};
+candLabelRegExp = 'candidateIDs_[0-9,-]*';
 
 % Find all oscillation data matfiles with this candidate label
 [~, oscDataPaths] = ...
@@ -612,7 +615,9 @@ candLabelRegExp = 'candidateIDs_[,0-9]*';
 candidateStrs = extract_substrings(oscDataPaths, 'RegExp', candLabelRegExp);
 
 % Find all possible candidate labels
-candidateLabels = unique(candidateStrs);
+if isempty(candidateLabels)
+    candidateLabels = unique(candidateStrs);
+end
 
 cellfun(@(c) combine_activation_profiles_helper(c, popIterDir, ...
                                                 outFolder, epasToPlot), ...

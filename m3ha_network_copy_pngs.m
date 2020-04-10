@@ -49,8 +49,10 @@ if isempty(copyFrom)
     return
 end
 
+candLabelRegExp = 'candidateIDs_[0-9,-]*';
+
 pngBase = extract_fileparts(copyFrom, 'base');
-cellStr = extract_substrings(copyFrom, 'RegExp', 'candidateIDs_[0-9,-]*');
+cellStr = extract_substrings(copyFrom, 'RegExp', candLabelRegExp);
 
 TCepas = -75 + mod(seedNum, 16);
 
