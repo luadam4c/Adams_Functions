@@ -552,6 +552,9 @@ if plotEssentialFlag
     [~, allSimOutPaths] = all_files('Directory', outFolder, ...
                                     'Recursive', true, 'Extension', 'out');
 
+    % TEMP: TODO: Remove after finishing
+    allSimOutPaths = allSimOutPaths(1423:end);
+
     % Plot simulated traces
     cellfun(@(a) m3ha_plot_essential(a, overlappedXLimits, ...
                                     essentialYLimits, essentialYTickLocs), ...
@@ -775,6 +778,9 @@ m3ha_plot_simulated_traces('PlotType', 'essential', 'FileNames', simOutPath, ...
 
 % Save original figure
 save_all_figtypes(fig, figPathBase, 'png');
+
+% Close figure
+close(fig);
 
 end
 
