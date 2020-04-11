@@ -11,6 +11,7 @@ function [h, g] = plot_grouped_scatter(figname, X, Y, grouping, grouping_labels,
 %
 % 2017-12-13 - Modified from plot_grouped_histogram.m
 % 2018-05-27 - Fixed the case when nGroups is NaN or 0
+% TODO: Merge with plot_correlation
 
 %% TODO: make the following optional arguments with given default
 ellipseNPoints = 1000;              % 1000 points
@@ -32,7 +33,7 @@ markerLineWidthDefault = 0.5;
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'plot_grouped_scatter';
+iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PlotEllipse', plotEllipseDefault, ...

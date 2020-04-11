@@ -31,6 +31,7 @@
 %       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
 %       cd/extract_columns.m
+%       cd/extract_vars.m
 %       cd/find_matching_files.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
@@ -69,7 +70,7 @@
 % 2020-03-11 Now plots violin plots for all gIncr
 % 2020-04-09 Now plots essential plots
 % 2020-04-09 Now finds special cases
-% 
+% 2020-04-10 Now computes summary cell info table
 
 %% Hard-coded parameters
 % Flags
@@ -79,7 +80,8 @@ combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotEssentialFlag = false; %true;
 findSpecialCasesFlag = false; %true;
-computeCellInfoTableFlag = true;
+computeCellInfoTableFlag = false; %true;
+plotCorrelationsFlag = true;
 plotOpenProbabilityFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
@@ -172,7 +174,7 @@ openProbFigHeight = 3;      % (cm)
 
 % For summary cell info table
 measuresOfInterestOrig = {'ltsProbability'; 'ltsPeakTime'; ...
-                    'spikesPerPeak'; 'ltsPeakValue'; 'maxSlopeVal'; ...
+                    'spikesPerPeak'; 'ltsPeakValue'; 'maxSlopeValue'; ...
                     'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
                     'maxSpikeAmp'; 'minSpikeAmp'; ...
                     'spikeFrequency'; 'spikeAdaptation'};
@@ -181,6 +183,12 @@ measuresOfInterestNew = {'ltsProbability'; 'ltsLatency'; ...
                     'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
                     'spikeMaxAmp'; 'spikeMinAmp'; ...
                     'spikeFrequency'; 'spikeAdaptation'};
+paramsOfInterest = {'diamSoma'; 'LDend'; 'diamDend'; 'gpas'; ...
+                    'pcabarITSoma'; 'pcabarITDend1'; 'pcabarITDend2'; ...
+                    'ghbarIhSoma'; 'ghbarIhDend1'; 'ghbarIhDend2'; ...
+                    'gkbarIKirSoma'; 'gkbarIKirDend1'; 'gkbarIKirDend2'; ...
+                    'gkbarIASoma'; 'gkbarIADend1'; 'gkbarIADend2'; ...
+                    'gnabarINaPSoma'; 'gnabarINaPDend1'; 'gnabarINaPDend2'};
 
 % Compare with m3ha_plot_figure05.m
 overlappedXLimits = [2800, 4800]; %[2800, 4000];
@@ -299,8 +307,11 @@ if isempty(outFolder)
     outFolder = fullfile(fitDirectory, outFolderName);
 end
 
-% Check if output folder exists
-check_dir(outFolder);
+% Create output folder for correlations
+outFolderCorr = fullfile(outFolder, 'correlations');
+
+% Check if output folders exists
+check_dir({outFolder, outFolderCorr});
 
 % Decide on output prefix
 if isempty(prefix)
@@ -312,6 +323,10 @@ end
 simSwpInfoPath = fullfile(outFolder, [prefix, '_', simSwpInfoSuffix, '.csv']);
 conditionLabels2D = strcat(prefix, '_', conditionLabels2D);
 stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
+
+% Create path to cell info table
+simCellInfoPath = replace(simSwpInfoPath, simSwpInfoSuffix, ...
+                            simCellInfoSuffix);
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
@@ -625,13 +640,7 @@ if computeCellInfoTableFlag
         error('Save a simulated sweep info table first!');
     end
 
-    % Create path to cell info table
-    simCellInfoPath = replace(simSwpInfoPath, simSwpInfoSuffix, ...
-                                simCellInfoSuffix);
 
-    % Find all parameter files
-    [~, paramPaths] = all_files('Directory', outFolder, 'Recursive', false, ...
-                                'Suffix', paramsSuffix, 'Extension', 'csv');
 
     % Create the cell info table by combining the parameter tables
     simCellInfoTable = ...
@@ -639,7 +648,6 @@ if computeCellInfoTableFlag
 
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
-
 
     % Extract the sweep names
     swpNames = simSwpInfo.Properties.RowNames;
@@ -651,11 +659,10 @@ if computeCellInfoTableFlag
 
     % Add ltsProbability & burstProbability
     simSwpInfoOfInterest = ...
-        addvars(simSwpInfoOfInterest, ltsProbability, burstProbability, ...
-                'Before', 1);
+        addvars(simSwpInfo, ltsProbability, burstProbability, 'Before', 1);
 
     % Restrict to measures of interest
-    simSwpInfoOfInterest = simSwpInfo(:, measuresOfInterestOrig);
+    simSwpInfoOfInterest = simSwpInfoOfInterest(:, measuresOfInterestOrig);
 
     % Add cell names
     simSwpInfoOfInterest = ...
@@ -667,10 +674,11 @@ if computeCellInfoTableFlag
         groupsummary(simSwpInfoOfInterest, 'cellName', @nanmean);
 
     % Create the variable names returned by groupsummary()
-    summaryVarNames = strcat('nanmean_', measuresOfInterestOrig);
+    summaryVarNames = strcat('fun1_', measuresOfInterestOrig);
 
     % Rename variables
-    renamevars(cellMeasureTable, summaryVarNames, measuresOfInterestNew);
+    cellMeasureTable = renamevars(cellMeasureTable, ...
+                            summaryVarNames, measuresOfInterestNew);
 
     % Make cell names row names
     cellMeasureTable.Properties.RowNames = cellMeasureTable.cellName;
@@ -679,7 +687,29 @@ if computeCellInfoTableFlag
     simCellInfoTable = join(simCellInfoTable, cellMeasureTable, 'Keys', 'Row');
 
     % Write to the table
-    writetable(simCellInfoTable, simCellInfoPath);
+    writetable(simCellInfoTable, simCellInfoPath, 'WriteRowNames', true);
+end
+
+%% Plot correlations
+if plotCorrelationsFlag
+    % Display message
+    fprintf('Plotting correlation plots ... \n');
+
+    % Make sure cell info table exists
+    if ~isfile(simCellInfoPath)
+        error('Save a simulated cell info table first!');
+    end
+
+    % Read the cell info table
+    simCellInfoTable = readtable(simCellInfoPath, 'ReadRowNames', true);
+
+    % Collect all x & y variables
+    xVarVecs = extract_vars(simCellInfoTable, paramsOfInterest);
+    yVarVecs = extract_vars(simCellInfoTable, measuresOfInterestNew);
+
+    % Plot all correlations
+    plot_all_correlations(xVarVecs, yVarVecs, ...
+                        paramsOfInterest, measuresOfInterestNew, outFolderCorr);
 end
 
 %% Plot open probability discrepancy against LTS presence
@@ -864,6 +894,85 @@ m3ha_plot_simulated_traces('PlotType', 'essential', 'FileNames', simOutPath, ...
 
 % Save original figure
 save_all_figtypes(fig, figPathBase, 'png');
+
+% Close figure
+close(fig);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_all_correlations (xVarVecs, yVarVecs, ...
+                                xVarNames, yVarNames, outFolder)
+%% Plots all correlations between two sets of vectors
+% TODO: Pull out as its own function
+% Requires:
+% TODO
+% force_column_cell
+% all_ordered_pairs
+% plot_correlation
+
+% Force as column cell arrays
+[xVarVecs, yVarVecs] = argfun(@force_column_cell, xVarVecs, yVarVecs);
+
+% Create all ordered pairs
+allVecPairs = all_ordered_pairs({xVarVecs, yVarVecs});
+allVarPairs = all_ordered_pairs({xVarNames, yVarNames});
+allFigPaths = cellfun(@(b) fullfile(outFolder, [b{2}, '_vs_', b{1}]), ...
+                    allVarPairs, 'UniformOutput', false);
+
+% Plot correlations
+% cellfun(@(a, b, c) plot_correlation(a{1}, a{2}, b{1}, b{2}, c), ...
+%         allVecPairs, allVarPairs, allFigPaths);
+% array_fun(@(a, b, c) plot_correlation(a{1}, a{2}, b{1}, b{2}, c), ...
+%         allVecPairs, allVarPairs, allFigPaths);
+parfor iPair = 1:numel(allVecPairs)
+    vecPair = allVecPairs{iPair};
+    varPair = allVarPairs{iPair};
+    figPath = allFigPaths{iPair};
+    plot_correlation(vecPair{1}, vecPair{2}, varPair{1}, varPair{2}, figPath);
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = plot_correlation (xVec, yVec, xVar, yVar, figPath)
+%% Plots correlation between two vectors
+
+% Remove the pairs of values with NaN
+neitherNaN = ~isnan(xVec) & ~isnan(yVec);
+xVecNoNaN = xVec(neitherNaN);
+yVecNoNaN = yVec(neitherNaN);
+
+% Compute the correlation coefficient
+correlation = corr2(xVecNoNaN, yVecNoNaN);
+
+% Decide on the text color
+if abs(correlation) > 0.6
+    textColor = 'r';
+else
+    textColor = 'k';
+end
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot scatter plot
+scatter(xVecNoNaN, yVecNoNaN, 'o', 'LineWidth', 2);
+
+% Show correlation coefficient
+text(0.1, 0.95, ...
+    ['Correlation coefficient: ', num2str(correlation, 3)], ...
+    'Units', 'normalized', 'Color', textColor); 
+
+% Titles and axis labels
+title(['Correlation of ', yVar, ' vs. ', xVar]);
+xlabel(xVar);
+ylabel(yVar);
+
+% Save original figure
+save_all_figtypes(fig, figPath, 'png');
 
 % Close figure
 close(fig);

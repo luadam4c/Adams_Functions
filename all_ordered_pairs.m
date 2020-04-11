@@ -7,6 +7,8 @@ function [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, v
 %
 % Example(s):
 %       all_ordered_pairs({1:3, 4:5})
+%       all_ordered_pairs({{1:2, 1:3}, {2:3, 2:4, 1:5}})
+%       all_ordered_pairs({{1:2; 1:3}; {2:3; 2:4; 1:5}})
 %
 % Outputs:
 %       orderedPairs    - a cell array of all ordered pairs of elements/indices,
