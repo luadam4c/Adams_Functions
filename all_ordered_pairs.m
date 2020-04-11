@@ -6,7 +6,14 @@ function [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, v
 %       cf. outer_product.m
 %
 % Example(s):
+%       all_ordered_pairs({1:3})
+%       all_ordered_pairs({(1:3)'})
 %       all_ordered_pairs({1:3, 4:5})
+%       all_ordered_pairs({1:3; 4:5})
+%       all_ordered_pairs({(1:3)', (4:5)'})
+%       all_ordered_pairs({(1:3)'; (4:5)'})
+%       all_ordered_pairs({[0; 1], [1; 0]})
+%       all_ordered_pairs({[true; false], [false; true]})
 %       all_ordered_pairs({{1:2, 1:3}, {2:3, 2:4, 1:5}})
 %       all_ordered_pairs({{1:2; 1:3}; {2:3; 2:4; 1:5}})
 %
@@ -32,6 +39,10 @@ function [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, v
 %                           'backward'  - change last vector first
 %                       default == 'forward'
 %
+% Requires:
+%       cd/create_empty_match.m
+%       cd/iscellvector.m
+%
 % Used by:    
 %       cd/create_looped_params.m
 %       cd/extract_looped_params.m
@@ -40,7 +51,7 @@ function [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, v
 % 2017-05-03 Created by Adam Lu
 % 2017-05-03 Added the parameter 'VectorChangeOrder', make 'LinearIndex' default
 % 2018-05-08 Changed tabs to spaces and limited width to 80
-% 
+% 2020-04-11 Now outputs rows or columns based on input format
 
 %% Hard-coded parameters
 possibleVectorChangeOrders = {'forward', 'backward'};
@@ -59,8 +70,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to an input Parser
 addRequired(iP, 'vectors', ...              % a cell array of vectors
-    @(x) assert(iscell(x) && min(cellfun(@isvector, x)), ...
-        'vectors must be a cell array of vectors!'));
+    @(x) assert(iscellvector(x), 'vectors must be a cell array of vectors!'));
 
 % Add parameter-value pairs to the input Parser
 addParameter(iP, 'OutIndices', false, ... 
@@ -74,6 +84,13 @@ outindices = iP.Results.OutIndices;
 vecorder = validatestring(iP.Results.VectorChangeOrder, ...
                             possibleVectorChangeOrders);
 
+%% Preparation
+% Determine if the ordered pairs should be rows
+pairIsRow = isrow(vectors);
+
+% Determine if the vector of ordered pairs should be rows
+outputIsRow = isrow(vectors{1});
+
 %% Do the job
 % Find numbers
 nVectors = numel(vectors);              % number of vectors
@@ -82,7 +99,7 @@ nOrderedPairs = prod(nElements);        % final number of ordered pairs
 
 % Construct partial products
 %   Note: the first/last partial product is always 1
-partialProducts = ones(1, nVectors);
+partialProducts = ones(nVectors, 1);
 if nVectors > 1             % only do this if there are at least two vectors
     switch vecorder         % order of vectors to change
     case 'forward'
@@ -105,21 +122,33 @@ if nVectors > 1             % only do this if there are at least two vectors
 end
 
 %% Construct ordered pairs
-orderedPairsIndices = cell(1, nOrderedPairs);
-                        % stores ordered pairs of indices, one from each vector
-if ~outindices
-    orderedPairsElements = cell(1, nOrderedPairs);
-                        % stores ordered pairs of elements, one from each vector
+% Initialize vector of ordered pairs of indices, one from each vector
+if outputIsRow
+    orderedPairsIndices = cell(1, nOrderedPairs);
+else
+    orderedPairsIndices = cell(nOrderedPairs, 1);
 end
+
+% Initialize vector of ordered pairs of elements, one from each vector
+if ~outindices
+    if outputIsRow
+        orderedPairsElements = cell(1, nOrderedPairs);
+    else
+        orderedPairsElements = cell(nOrderedPairs, 1);
+    end
+end
+
+% Construct ordered pairs
 for o = 1:nOrderedPairs    % for each ordered pair
     % Initialize indices and elements
-    orderedPairsIndices{o} = zeros(1, nVectors);
-    if isnumeric(vectors{1})
-        orderedPairsElements{o} = zeros(1, nVectors);
-    elseif iscell(vectors{1})
-        orderedPairsElements{o} = cell(1, nVectors);
-    elseif isstruct(vectors{1})
-        orderedPairsElements{o} = repmat(struct, 1, nVectors);
+    if pairIsRow
+        orderedPairsIndices{o} = zeros(1, nVectors);
+        orderedPairsElements{o} = ...
+            create_empty_match(vectors{1}, 'NRows', 1, 'NColumns', nVectors);
+    else
+        orderedPairsIndices{o} = zeros(nVectors, 1);
+        orderedPairsElements{o} = ...
+            create_empty_match(vectors{1}, 'NRows', nVectors, 'NColumns', 1);
     end
 
     % Find the index and element for each vector
@@ -130,18 +159,18 @@ for o = 1:nOrderedPairs    % for each ordered pair
 
         % Find the corresponding element from this vector
         if ~outindices
-            if isnumeric(vectors{1})
-                orderedPairsElements{o}(v) = ...
-                    vectors{v}(orderedPairsIndices{o}(v));
-            elseif iscell(vectors{1}) || isstruct(vectors{1})
+            if iscell(vectors{1}) || isstruct(vectors{1})
                 orderedPairsElements{o}{v} = ...
                     vectors{v}{orderedPairsIndices{o}(v)};
+            else
+                orderedPairsElements{o}(v) = ...
+                    vectors{v}(orderedPairsIndices{o}(v));
             end
         end
     end
 end
 
-%% Choose orderer pair for output
+%% Choose ordered pair for output
 if outindices
     orderedPairs = orderedPairsIndices;
 else
@@ -152,6 +181,18 @@ end
 
 %{
 OLD CODE:
+
+if isnumeric(vectors{1})
+    orderedPairsElements{o} = zeros(1, nVectors);
+elseif islogical(vectors{1})
+    orderedPairsElements{o} = false(1, nVectors);
+elseif iscell(vectors{1})
+    orderedPairsElements{o} = cell(1, nVectors);
+elseif isstruct(vectors{1})
+    orderedPairsElements{o} = repmat(struct, 1, nVectors);
+else
+    error('Not implemented yet!');
+end
 
 %}
 

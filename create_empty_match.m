@@ -23,6 +23,7 @@ function empty = create_empty_match (array, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/all_ordered_pairs.m
 %       cd/compute_combined_trace.m
 %       cd/extract_subvectors.m
 %       cd/force_matrix.m

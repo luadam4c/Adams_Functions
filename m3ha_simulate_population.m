@@ -71,6 +71,7 @@
 % 2020-04-09 Now plots essential plots
 % 2020-04-09 Now finds special cases
 % 2020-04-10 Now computes summary cell info table
+% 2020-04-11 Now plot correlations
 
 %% Hard-coded parameters
 % Flags
@@ -183,7 +184,7 @@ measuresOfInterestNew = {'ltsProbability'; 'ltsLatency'; ...
                     'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
                     'spikeMaxAmp'; 'spikeMinAmp'; ...
                     'spikeFrequency'; 'spikeAdaptation'};
-measuresIsLogNew = repmat({false}, 12, 1);
+measuresIsLogNew = repmat(false, 12, 1);
 paramsOfInterest = {'diamSoma'; 'LDend'; 'diamDend'; 'gpas'; ...
                     'pcabarITSoma'; 'pcabarITDend1'; 'pcabarITDend2'; ...
                     'ghbarIhSoma'; 'ghbarIhDend1'; 'ghbarIhDend2'; ...
@@ -711,13 +712,19 @@ if plotCorrelationsFlag
     simCellInfoTable = readtable(simCellInfoPath, 'ReadRowNames', true);
 
     % Collect all x & y variables
-    xVarVecs = extract_vars(simCellInfoTable, paramsOfInterest);
-    yVarVecs = extract_vars(simCellInfoTable, measuresOfInterestNew);
+    paramVecs = extract_vars(simCellInfoTable, paramsOfInterest);
+    measureVecs = extract_vars(simCellInfoTable, measuresOfInterestNew);
 
-    % Plot all correlations
-    plot_all_correlations(xVarVecs, yVarVecs, ...
+    % Plot all correlations between measures and params
+    plot_all_correlations(paramVecs, measureVecs, ...
                         paramsOfInterest, measuresOfInterestNew, ...
                         paramIslog, measuresIsLogNew, ...
+                        outFolderCorr);
+
+    % Plot all correlations between params and params
+    plot_all_correlations(paramVecs, paramVecs, ...
+                        paramsOfInterest, paramsOfInterest, ...
+                        paramIslog, paramIslog, ...
                         outFolderCorr);
 end
 
@@ -913,7 +920,7 @@ end
 
 function plot_all_correlations (xVarVecs, yVarVecs, ...
                                 xVarNames, yVarNames, ...
-                                xIsLog, yIsLog, outFolder)
+                                xVarIsLog, yVarIsLog, outFolder)
 %% Plots all correlations between two sets of vectors
 % TODO: Pull out as its own function
 % Requires:
@@ -928,7 +935,7 @@ function plot_all_correlations (xVarVecs, yVarVecs, ...
 % Create all ordered pairs
 allVecPairs = all_ordered_pairs({xVarVecs, yVarVecs});
 allVarPairs = all_ordered_pairs({xVarNames, yVarNames});
-allIsLogPairs = all_ordered_pairs({xIsLog, yIsLog});
+allIsLogPairs = all_ordered_pairs({xVarIsLog, yVarIsLog});
 allFigPaths = cellfun(@(b) fullfile(outFolder, [b{2}, '_vs_', b{1}]), ...
                     allVarPairs, 'UniformOutput', false);
 
@@ -956,6 +963,12 @@ function handles = plot_correlation (xVec, yVec, xVar, yVar, ...
                                         xIsLog, yIsLog, figPath)
 %% Plots correlation between two vectors
 
+% Find directory of figure path
+figDir = extract_fileparts(figPath, 'directory');
+if isempty(figDir)
+    figDir = pwd;
+end
+
 % Remove the pairs of values with NaN
 neitherNaN = ~isnan(xVec) & ~isnan(yVec);
 xVecNoNaN = xVec(neitherNaN);
@@ -978,8 +991,10 @@ correlation = corr2(xVecToCorr, yVecToCorr);
 
 % Decide on the text color
 if abs(correlation) > 0.6
+    isSignificant = true;
     textColor = 'r';
 else
+    isSignificant = false;
     textColor = 'k';
 end
 
@@ -1007,6 +1022,19 @@ ylabel(yVar);
 
 % Save original figure
 save_all_figtypes(fig, figPath, 'png');
+
+if isSignificant
+    % Create directory for significant
+    sigDir = fullfile(figDir, 'significant')
+    check_dir(sigDir);
+
+    % Create path to significant figure
+    figName = extract_fileparts(figPath, 'name');
+    figPathSig = fullfile(sigDir, figName);
+
+    % Save original figure
+    save_all_figtypes(fig, figPathSig, 'png');
+end
 
 % Close figure
 close(fig);
