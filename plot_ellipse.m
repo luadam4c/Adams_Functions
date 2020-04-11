@@ -4,13 +4,17 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 % Explanation:
 %       Plots an ellipse with a given center, half-axis lengths 
 %           and rotation angle (radians). 
+%
 % Example:
 %               plot_ellipse([2, 3], [3, 2], pi/6);
+%
 % Outputs:
 %       h           - the ellipse
 %                   specified as a chart line object
+%
 % Side Effects:
 %       Plots an ellipse
+%
 % Arguments:    
 %       center      - center of ellipse
 %                   must be a 2-element numeric vector
@@ -32,6 +36,7 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 %
 % Used by:
 %       cd/plot_grouped_scatter.m
+%       cd/ZG_plot_grouped_scatter.m
 
 % File History:
 % 2017-12-15 Created by Adam Lu

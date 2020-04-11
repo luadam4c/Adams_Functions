@@ -235,6 +235,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/argfun.m
 %       cd/cell2num.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
@@ -248,6 +249,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/hold_on.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
+%       cd/islog2scale.m
 %       cd/match_column_count.m
 %       cd/parse_phase_info.m
 %       cd/plot_horizontal_line.m
@@ -1224,12 +1226,9 @@ hold_off(wasHold);
 
 % Modify axes scale if requested
 %   Note: this must occur after holding off
-if pIsLog && readoutIsLog
-    set(gca, 'XScale', 'log', 'YScale', 'log');
-elseif pIsLog && ~readoutIsLog
-    set(gca, 'XScale', 'log');
-elseif ~pIsLog && readoutIsLog
-    set(gca, 'YScale', 'log');
+if pIsLog || readoutIsLog
+    [xScale, yScale] = argfun(@islog2scale, pIsLog, readoutIsLog);
+    set(gca, 'XScale', xScale, 'YScale', yScale);
 end
 
 %% Post-plotting
@@ -1520,6 +1519,14 @@ elseif ~pIsLog && readoutIsLog
 else
     p = plot(pValues, readout, lineSpec, ...
                     'LineWidth', lineWidth, otherArguments);
+end
+
+if pIsLog && readoutIsLog
+    set(gca, 'XScale', 'log', 'YScale', 'log');
+elseif pIsLog && ~readoutIsLog
+    set(gca, 'XScale', 'log');
+elseif ~pIsLog && readoutIsLog
+    set(gca, 'YScale', 'log');
 end
 
 %}

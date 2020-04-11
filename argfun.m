@@ -103,6 +103,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m
+%       cd/plot_tuning_curve.m
 %       cd/test_difference.m
 %       cd/transform_vectors.m
 %       cd/update_figure_for_corel.m

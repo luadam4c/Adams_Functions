@@ -183,12 +183,19 @@ measuresOfInterestNew = {'ltsProbability'; 'ltsLatency'; ...
                     'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
                     'spikeMaxAmp'; 'spikeMinAmp'; ...
                     'spikeFrequency'; 'spikeAdaptation'};
+measuresIsLogNew = repmat({false}, 12, 1);
 paramsOfInterest = {'diamSoma'; 'LDend'; 'diamDend'; 'gpas'; ...
                     'pcabarITSoma'; 'pcabarITDend1'; 'pcabarITDend2'; ...
                     'ghbarIhSoma'; 'ghbarIhDend1'; 'ghbarIhDend2'; ...
                     'gkbarIKirSoma'; 'gkbarIKirDend1'; 'gkbarIKirDend2'; ...
                     'gkbarIASoma'; 'gkbarIADend1'; 'gkbarIADend2'; ...
                     'gnabarINaPSoma'; 'gnabarINaPDend1'; 'gnabarINaPDend2'};
+paramIslog = [false; false; false; true; ...
+                true; true; true; ...
+                true; true; true; ...
+                true; true; true; ...
+                true; true; true; ...
+                true; true; true];
 
 % Compare with m3ha_plot_figure05.m
 overlappedXLimits = [2800, 4800]; %[2800, 4000];
@@ -709,7 +716,9 @@ if plotCorrelationsFlag
 
     % Plot all correlations
     plot_all_correlations(xVarVecs, yVarVecs, ...
-                        paramsOfInterest, measuresOfInterestNew, outFolderCorr);
+                        paramsOfInterest, measuresOfInterestNew, ...
+                        paramIslog, measuresIsLogNew, ...
+                        outFolderCorr);
 end
 
 %% Plot open probability discrepancy against LTS presence
@@ -903,7 +912,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_all_correlations (xVarVecs, yVarVecs, ...
-                                xVarNames, yVarNames, outFolder)
+                                xVarNames, yVarNames, ...
+                                xIsLog, yIsLog, outFolder)
 %% Plots all correlations between two sets of vectors
 % TODO: Pull out as its own function
 % Requires:
@@ -918,26 +928,32 @@ function plot_all_correlations (xVarVecs, yVarVecs, ...
 % Create all ordered pairs
 allVecPairs = all_ordered_pairs({xVarVecs, yVarVecs});
 allVarPairs = all_ordered_pairs({xVarNames, yVarNames});
+allIsLogPairs = all_ordered_pairs({xIsLog, yIsLog});
 allFigPaths = cellfun(@(b) fullfile(outFolder, [b{2}, '_vs_', b{1}]), ...
                     allVarPairs, 'UniformOutput', false);
 
 % Plot correlations
-% cellfun(@(a, b, c) plot_correlation(a{1}, a{2}, b{1}, b{2}, c), ...
-%         allVecPairs, allVarPairs, allFigPaths);
-% array_fun(@(a, b, c) plot_correlation(a{1}, a{2}, b{1}, b{2}, c), ...
-%         allVecPairs, allVarPairs, allFigPaths);
+% cellfun(@(a, b, c, d) plot_correlation(a{1}, a{2}, b{1}, b{2}, ...
+%                                           c(1), c(2), d), ...
+%         allVecPairs, allVarPairs, allIsLogPairs, allFigPaths);
+% array_fun(@(a, b, c, d) plot_correlation(a{1}, a{2}, b{1}, b{2}, ...
+%                                           c(1), c(2), d), ...
+%         allVecPairs, allVarPairs, allIsLogPairs, allFigPaths);
 parfor iPair = 1:numel(allVecPairs)
     vecPair = allVecPairs{iPair};
     varPair = allVarPairs{iPair};
     figPath = allFigPaths{iPair};
-    plot_correlation(vecPair{1}, vecPair{2}, varPair{1}, varPair{2}, figPath);
+    isLogPair = allIsLogPairs{iPair};
+    plot_correlation(vecPair{1}, vecPair{2}, varPair{1}, varPair{2}, ...
+                    isLogPair(1), isLogPair(2), figPath);
 end
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function handles = plot_correlation (xVec, yVec, xVar, yVar, figPath)
+function handles = plot_correlation (xVec, yVec, xVar, yVar, ...
+                                        xIsLog, yIsLog, figPath)
 %% Plots correlation between two vectors
 
 % Remove the pairs of values with NaN
@@ -945,8 +961,20 @@ neitherNaN = ~isnan(xVec) & ~isnan(yVec);
 xVecNoNaN = xVec(neitherNaN);
 yVecNoNaN = yVec(neitherNaN);
 
+% Convert to log scale if requested 
+if xIsLog
+    xVecToCorr = log10(xVecNoNaN);
+else
+    xVecToCorr = xVecNoNaN;
+end
+if yIsLog
+    yVecToCorr = log10(yVecNoNaN);
+else
+    yVecToCorr = yVecNoNaN;
+end
+
 % Compute the correlation coefficient
-correlation = corr2(xVecNoNaN, yVecNoNaN);
+correlation = corr2(xVecToCorr, yVecToCorr);
 
 % Decide on the text color
 if abs(correlation) > 0.6
@@ -960,6 +988,12 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot scatter plot
 scatter(xVecNoNaN, yVecNoNaN, 'o', 'LineWidth', 2);
+
+% Change axis scale if requested
+if xIsLog || yIsLog
+    [xScale, yScale] = argfun(@islog2scale, xIsLog, yIsLog);
+    set(gca, 'XScale', xScale, 'YScale', yScale);
+end
 
 % Show correlation coefficient
 text(0.1, 0.95, ...

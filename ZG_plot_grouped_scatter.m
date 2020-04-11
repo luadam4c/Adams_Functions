@@ -1,15 +1,16 @@
-function [h, g] = plot_grouped_scatter (figName, X, Y, grouping, groupingLabels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
+function [h, g] = ZG_plot_grouped_scatter (figName, X, Y, grouping, groupingLabels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
 %% Plot and save a grouped scatter plot with 95% confidence ellipses
-% Usage: [h, g] = plot_grouped_scatter (figName, X, Y, grouping, groupingLabels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
+% Usage: [h, g] = ZG_plot_grouped_scatter (figName, X, Y, grouping, groupingLabels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
 %
 % Requires:
 %       cd/plot_ellipse.m
 %
 % Used by:
+%       cd/ZG_fit_IEI_distributions.m
+%		/media/adamX/Paula_IEIs/paula_iei4.m
 %
 % 2017-12-13 - Modified from plot_grouped_histogram.m
 % 2018-05-27 - Fixed the case when nGroups is NaN or 0
-% TODO: Merge with plot_correlation
 
 %% TODO: make the following optional arguments with given default
 ellipseNPoints = 1000;              % 1000 points
