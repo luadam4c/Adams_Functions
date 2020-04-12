@@ -71,7 +71,7 @@
 % 2020-04-09 Now plots essential plots
 % 2020-04-09 Now finds special cases
 % 2020-04-10 Now computes summary cell info table
-% 2020-04-11 Now plot correlations
+% 2020-04-11 Now plots correlations
 
 %% Hard-coded parameters
 % Flags
@@ -316,10 +316,11 @@ if isempty(outFolder)
 end
 
 % Create output folder for correlations
-outFolderCorr = fullfile(outFolder, 'correlations');
+outFolderCorrMeas2Param = fullfile(outFolder, 'correlations-measures-to-params');
+outFolderCorrParam2Param = fullfile(outFolder, 'correlations-params-to-params');
 
 % Check if output folders exists
-check_dir({outFolder, outFolderCorr});
+check_dir({outFolder, outFolderCorrMeas2Param, outFolderCorrParam2Param});
 
 % Decide on output prefix
 if isempty(prefix)
@@ -719,13 +720,13 @@ if plotCorrelationsFlag
     plot_all_correlations(paramVecs, measureVecs, ...
                         paramsOfInterest, measuresOfInterestNew, ...
                         paramIslog, measuresIsLogNew, ...
-                        outFolderCorr);
+                        outFolderCorrMeas2Param);
 
     % Plot all correlations between params and params
     plot_all_correlations(paramVecs, paramVecs, ...
                         paramsOfInterest, paramsOfInterest, ...
                         paramIslog, paramIslog, ...
-                        outFolderCorr);
+                        outFolderCorrParam2Param);
 end
 
 %% Plot open probability discrepancy against LTS presence
@@ -936,7 +937,8 @@ function plot_all_correlations (xVarVecs, yVarVecs, ...
 allVecPairs = all_ordered_pairs({xVarVecs, yVarVecs});
 allVarPairs = all_ordered_pairs({xVarNames, yVarNames});
 allIsLogPairs = all_ordered_pairs({xVarIsLog, yVarIsLog});
-allFigPaths = cellfun(@(b) fullfile(outFolder, [b{2}, '_vs_', b{1}]), ...
+allFigPaths = cellfun(@(b) fullfile(outFolder, ...
+                                    [b{2}, '_vs_', b{1}, '.png']), ...
                     allVarPairs, 'UniformOutput', false);
 
 % Plot correlations
@@ -990,7 +992,7 @@ end
 correlation = corr2(xVecToCorr, yVecToCorr);
 
 % Decide on the text color
-if abs(correlation) > 0.6
+if abs(correlation) > 0.6 && abs(correlation) ~= 1
     isSignificant = true;
     textColor = 'r';
 else
@@ -1025,7 +1027,7 @@ save_all_figtypes(fig, figPath, 'png');
 
 if isSignificant
     % Create directory for significant
-    sigDir = fullfile(figDir, 'significant')
+    sigDir = fullfile(figDir, 'significant');
     check_dir(sigDir);
 
     % Create path to significant figure

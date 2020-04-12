@@ -51,10 +51,10 @@ plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
-analyze200CellSpikes = false; %true;
+analyze200CellSpikes = true;
 plotAnalysis200Cell = true; %false;
 backupPrevious200Cell = false;
-combineActivationProfiles = true;
+combineActivationProfiles = false; %true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
@@ -130,9 +130,9 @@ pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
 
 % epasToPlot = [];
 epasToPlot = [-74; -70; -66; -62];
-% candidateLabels = {};
-candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
-                'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35'};
+candidateLabels = {};
+% candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
+                % 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35'};
 
 figTypes = {'png', 'epsc'};
 
