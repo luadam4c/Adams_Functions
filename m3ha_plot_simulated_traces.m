@@ -125,13 +125,14 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-04-09 Now defaults outFolder to common directory of files provided
 % 2020-04-12 Removed absolute value from itm2hDiffDend2
 % 2020-04-12 Now plots IDX_M2HDIFF_DEND2 in essential
+% 2020-04-13 Added 'voltageVsOpd' as a valid plot type
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
                     'essential', 'somaVoltage', ...
                     'allVoltages', 'allTotalCurrents', ...
                     'allComponentCurrents', 'allITproperties', ...
-                    'dend2ITproperties', 'm2h'};
+                    'dend2ITproperties', 'm2h', 'voltageVsOpd'};
 validBuildModes = {'', 'active', 'passive'};
 validSimModes = {'', 'active', 'passive'};
 maxRowsWithOneOnly = 8;
@@ -272,7 +273,7 @@ switch plotType
         toImportRecorded = set_default_flag([], compareWithRecorded);
     case {'essential', 'somaVoltage',...
             'allTotalCurrents', 'allComponentCurrents', ...
-            'allITproperties', 'dend2ITproperties', 'm2h'}
+            'allITproperties', 'dend2ITproperties', 'm2h', 'voltageVsOpd'}
         toImportRecorded = false;
 end
 
@@ -356,7 +357,7 @@ if isempty(colorMap)
         case {'overlapped', 'essential', 'somaVoltage', ...
                 'allVoltages', 'allTotalCurrents', ...
                 'allComponentCurrents', 'allITproperties', ...
-                'dend2ITproperties', 'm2h'}
+                'dend2ITproperties', 'm2h', 'voltageVsOpd'}
             colorMap = decide_on_colormap([], 4);
             if nFiles > nRows
                 nColumns = ceil(nFiles / nRows);
@@ -380,7 +381,7 @@ if isempty(lineWidth)
         case {'overlapped', 'essential', 'somaVoltage', ...
                 'allVoltages', 'allTotalCurrents', ...
                 'allComponentCurrents', 'allITproperties', ...
-                'dend2ITproperties', 'm2h'}
+                'dend2ITproperties', 'm2h', 'voltageVsOpd'}
             lineWidth = lineWidthParallel;
         otherwise
             error('plotType unrecognized!');
@@ -474,6 +475,10 @@ switch plotType
                                     expStr, expStrForTitle, otherArguments);
     case 'm2h'
         handles = m3ha_plot_m2h(simData, buildMode, ...
+                                    xLimits, colorMap, lineWidth, ...
+                                    expStr, expStrForTitle, otherArguments);
+    case 'voltageVsOpd'
+        handles = m3ha_plot_voltage_vs_opd(simData, buildMode, ...
                                     xLimits, colorMap, lineWidth, ...
                                     expStr, expStrForTitle, otherArguments);
     otherwise
@@ -1123,6 +1128,73 @@ set(gca, 'YScale', 'log');
 
 handles.handlesInstantaneous = handlesInstantaneous;
 handles.handlesSteadyState = handlesSteadyState;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = m3ha_plot_voltage_vs_opd (simData, buildMode, ...
+                                    timeLimits, colorMap, lineWidth, ...
+                                    expStr, expStrForTitle, otherArguments)
+
+%% Hard-coded parameters
+% Column numbers for simulated data
+%   Note: Must be consistent with singleneuron4compgabab.hoc
+TIME_COL_SIM = 1;
+VOLT_COL_SIM = 2;
+IT_M_DEND2 = 47;
+IT_MINF_DEND2 = 48;
+IT_H_DEND2 = 49;
+IT_HINF_DEND2 = 50;
+itm2hDiffLowerLimit = 1e-8;
+
+% Only do this for active mode
+if strcmpi(buildMode, 'passive')
+    handles = struct;
+    return
+end
+
+%% Process data
+% Extract vectors from simulated data
+%   Note: these are arrays with 25 columns
+[tVecs, vVecsSim, itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim] = ...
+    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                    IT_M_DEND2, IT_MINF_DEND2, ...
+                    IT_H_DEND2, IT_HINF_DEND2]);
+
+% Find the indices of the x-axis limit endpoints
+endPointsForPlots = find_window_endpoints(timeLimits, tVecs);
+
+% Prepare vectors for plotting
+[tVecs, vVecsSim, itmVecsSim, ...
+        itminfVecsSim, ithVecsSim, ithinfVecsSim] = ...
+    argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
+            tVecs, vVecsSim, itmVecsSim, ...
+            itminfVecsSim, ithVecsSim, ithinfVecsSim);
+
+% Compute m2hDiff
+itm2h = (itmVecsSim .^ 2) .* ithVecsSim;
+itminf2hinf = (itminfVecsSim .^ 2) .* ithinfVecsSim;
+itm2hDiff = itm2h - itminf2hinf;
+itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
+
+% Decide on figure title and file name
+figTitle = sprintf('Voltage vs m2hdiff for %s', expStrForTitle);
+
+%% Plots
+% Print to standard output
+fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
+
+% Plot Voltage vs m2hdiff
+handles = ...
+    plot_traces(itm2hDiff, vVecsSim, ...
+                'LineStyle', '-', 'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
+                'YLabel', 'Voltage', ...
+                'FigTitle', figTitle, otherArguments);
+
+% Set the x axis to be log-scaled
+set(gca, 'XScale', 'log');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

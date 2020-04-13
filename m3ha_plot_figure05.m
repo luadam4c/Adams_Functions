@@ -28,16 +28,18 @@ simulateIpscr = false; %true;
 plotAllVoltages = false; %true;
 plotAllTotalCurrents = false; %true;
 plotAllComponentCurrents = false; %true;
-plotDend2ITproperties = true;
+plotDend2ITproperties = false; %true;
 
 simulateTauhModes = false; %true;
-plotSomaVoltage = true;
+plotSomaVoltage = false; %true;
 
 computeIpscVariation = false; %true;
 simulateIpscVariation = false; %true;
-plotEssential = true;
+plotEssential = false; %true;
 
 plotM2h = false; %true;
+
+plotVoltageVsOpd = true;
 
 simulateNoITSoma = false; %true;
 
@@ -156,7 +158,7 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 if simulateIpscr || simulateTauhModes || simulateIpscVariation || ...
         plotEssential || plotAllVoltages || plotAllTotalCurrents || ...
         plotAllComponentCurrents || plotDend2ITproperties || ...
-        plotSomaVoltage || plotM2h || simulateNoITSoma
+        plotSomaVoltage || plotM2h || plotVoltageVsOpd || simulateNoITSoma
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure05Dir, ...
@@ -342,6 +344,15 @@ if plotM2h
     end
 end
 
+%% Plot voltage in soma against m2hDiff in dendrite 2
+if plotVoltageVsOpd
+    cellfun(@(x, y) plot_voltage_vs_opd(x, y, figure05Dir, figTypes, ...
+                                        m2hFigWidth, m2hFigHeight, ...
+                                        m2hXLimits, m2hYLimits, ...
+                                        m2hYTickLocs, colorMapPharm), ...
+            exampleLabelsIpscr, outFoldersIpscr);
+end
+
 %% Simulate when there is no T current in the soma
 if simulateNoITSoma
     cd(figure05Dir);
@@ -466,18 +477,18 @@ function plot_m2h (expStr, directory, outFolder, figTypes, ...
                     yTickLocs, colorMap)
 
 % Create a figure name
-figPathBaseM2h = fullfile(outFolder, [expStr, '_m2h']);
-figPathBaseM2hOrig = [figPathBaseM2h, '_orig'];
+figPathBaseVoltVsOpd = fullfile(outFolder, [expStr, '_m2h']);
+figPathBaseM2hOrig = [figPathBaseVoltVsOpd, '_orig'];
 
 % Create the figure
 figM2h = set_figure_properties('AlwaysNew', true);
 
 % Plot traces
 m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
-                'PlotType', 'm2h', 'FigHandle', figM2h, ...
-                'FigTitle', 'suppress', ...
-                'XLimits', xLimits, 'YLimits', yLimits, ...
-                'ColorMap', colorMap);
+                            'PlotType', 'm2h', 'FigHandle', figM2h, ...
+                            'FigTitle', 'suppress', ...
+                            'XLimits', xLimits, 'YLimits', yLimits, ...
+                            'ColorMap', colorMap);
 
 % Save the figure
 save_all_figtypes(figM2h, figPathBaseM2hOrig, 'png');
@@ -494,7 +505,46 @@ update_figure_for_corel(figM2h, 'Units', 'centimeters', ...
                 'RemoveXTicks', true, 'RemoveXRulers', true);
 
 % Save the figure
-save_all_figtypes(figM2h, figPathBaseM2h, figTypes);
+save_all_figtypes(figM2h, figPathBaseVoltVsOpd, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_voltage_vs_opd (expStr, directory, outFolder, figTypes, ...
+                                figWidth, figHeight, xLimits, yLimits, ...
+                                yTickLocs, colorMap)
+
+% Create a figure name
+figPathBaseVoltVsOpd = fullfile(outFolder, [expStr, '_voltageVsOpd']);
+figPathBaseVoltVsOpdOrig = [figPathBaseVoltVsOpd, '_orig'];
+
+% Create the figure
+figVoltVsOpdOrig = set_figure_properties('AlwaysNew', true);
+
+% Plot traces
+m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
+                        'PlotType', 'voltageVsOpd', 'FigTitle', 'suppress', ...
+                        'FigHandle', figVoltVsOpdOrig, ...
+                        'XLimits', xLimits, 'YLimits', yLimits, ...
+                        'ColorMap', colorMap);
+
+% Save the figure
+save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpdOrig, 'png');
+
+% Plot a scale bar
+hold on
+plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
+                'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
+
+% Update figure for CorelDraw
+update_figure_for_corel(figVoltVsOpdOrig, 'Units', 'centimeters', ...
+                'Width', figWidth, 'Height', figHeight, ...
+                'AlignSubplots', true, 'YTickLocs', yTickLocs, ...
+                'RemoveXTicks', true, 'RemoveXRulers', true);
+
+% Save the figure
+save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpd, figTypes);
 
 end
 
