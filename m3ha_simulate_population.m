@@ -78,11 +78,11 @@
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
+computeOpenProbabilityFlag = true;
 plotEssentialFlag = false; %true;
 findSpecialCasesFlag = false; %true;
 computeCellInfoTableFlag = false; %true;
-plotCorrelationsFlag = true;
+plotCorrelationsFlag = false; %true;
 plotOpenProbabilityFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
@@ -500,9 +500,13 @@ if computeOpenProbabilityFlag
     m2hRmsError = compute_rms_error(m2h, minf2hinf, ...
                                             'ForceColumnOutput', true);
 
+    % Compute the maximum absolute error between m2h and minf2hinf
+    m2hMaxAbsError = ...
+        force_column_vector(max(abs(m2h - minf2hinf), [], 1));
+
     % Compute the maximum error between m2h and minf2hinf
     m2hMaxError = ...
-        force_column_vector(max(abs(m2h - minf2hinf), [], 1));
+        force_column_vector(max(m2h - minf2hinf, [], 1));
 
     % Compute the maximum ratio between m2h and minf2hinf
     m2hRatioRaw = m2h ./ minf2hinf;
@@ -517,14 +521,17 @@ if computeOpenProbabilityFlag
     % Compute the log10 of everything
     m2hLogRmsError = log10(m2hRmsError);
     m2hLogMaxError = log10(m2hMaxError);
+    m2hLogMaxAbsError = log10(m2hMaxAbsError);
 
-    % Add or replace variable
-    simSwpInfo = replacevars(simSwpInfo, m2hRmsError);
-    simSwpInfo = replacevars(simSwpInfo, m2hMaxError);
-    simSwpInfo = replacevars(simSwpInfo, m2hMaxRatio);
-    simSwpInfo = replacevars(simSwpInfo, m2hLogRmsError);
-    simSwpInfo = replacevars(simSwpInfo, m2hLogMaxError);
-    simSwpInfo = replacevars(simSwpInfo, m2hMaxLogRatio);
+    % Add or update variable
+    simSwpInfo = updatevars(simSwpInfo, m2hRmsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxAbsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxRatio);
+    simSwpInfo = updatevars(simSwpInfo, m2hLogRmsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hLogMaxError);
+    simSwpInfo = updatevars(simSwpInfo, m2hLogMaxAbsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxLogRatio);
 
     % Resave the simulated sweep info table
     writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
@@ -577,7 +584,7 @@ if findSpecialCasesFlag || plotOpenProbabilityFlag
         error('m2hMaxLogRatio does not exist yet!');
     else
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hRmsError;
-        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxError;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxAbsError;
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxRatio;
         openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxLogRatio;
     end
@@ -851,7 +858,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function myTable = replacevars (myTable, varValue)
+function myTable = updatevars (myTable, varValue)
 %% Replace a variable in a table or add it if it doesn't exist
 % TODO: Pull out as its own function
 
@@ -965,6 +972,10 @@ function handles = plot_correlation (xVec, yVec, xVar, yVar, ...
                                         xIsLog, yIsLog, figPath)
 %% Plots correlation between two vectors
 
+% Add correlation value to figure name
+addCorrValueToFigName = true;
+addCovValueToFigName = true;
+
 % Find directory of figure path
 figDir = extract_fileparts(figPath, 'directory');
 if isempty(figDir)
@@ -989,10 +1000,28 @@ else
 end
 
 % Compute the correlation coefficient
-correlation = corr2(xVecToCorr, yVecToCorr);
+corrValue = corr2(xVecToCorr, yVecToCorr);
+
+% Compute the covariance value
+covMatrix = cov(xVecToCorr, yVecToCorr);
+covValue = covMatrix(1, 2);
+
+% Add covariance value to figure name if requested
+if addCovValueToFigName
+    figNameOld = extract_fileparts(figPath, 'name');
+    figNameNew = sprintf(['cov_%.2f_%s'], covValue, figNameOld);
+    figPath = replace(figPath, figNameOld, figNameNew);
+end
+
+% Add covariance value to figure name if requested
+if addCorrValueToFigName
+    figNameOld = extract_fileparts(figPath, 'name');
+    figNameNew = sprintf(['corr_%.2f_%s'], corrValue, figNameOld);
+    figPath = replace(figPath, figNameOld, figNameNew);
+end
 
 % Decide on the text color
-if abs(correlation) > 0.6 && abs(correlation) ~= 1
+if abs(corrValue) > 0.6 && abs(corrValue) ~= 1
     isSignificant = true;
     textColor = 'r';
 else
@@ -1014,7 +1043,7 @@ end
 
 % Show correlation coefficient
 text(0.1, 0.95, ...
-    ['Correlation coefficient: ', num2str(correlation, 3)], ...
+    ['Correlation coefficient: ', num2str(corrValue, 3)], ...
     'Units', 'normalized', 'Color', textColor); 
 
 % Titles and axis labels
