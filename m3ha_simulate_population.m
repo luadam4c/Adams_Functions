@@ -78,8 +78,8 @@
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = true;
-plotEssentialFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
+plotEssentialFlag = true;
 findSpecialCasesFlag = false; %true;
 computeCellInfoTableFlag = false; %true;
 plotCorrelationsFlag = false; %true;
@@ -586,7 +586,8 @@ if findSpecialCasesFlag || plotOpenProbabilityFlag
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hRmsError;
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxAbsError;
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxRatio;
-        openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxLogRatio;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxLogRatio;
+        openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxError;
     end
 
     % Determine whether each sweep has an LTS
@@ -602,13 +603,15 @@ if plotEssentialFlag
     [~, allSimOutPaths] = all_files('Directory', outFolder, ...
                                     'Recursive', true, 'Extension', 'out');
 
-    % TEMP: TODO: Remove after finishing
-    allSimOutPaths = allSimOutPaths(1423:end);
-
     % Plot simulated traces
-    cellfun(@(a) m3ha_plot_essential(a, overlappedXLimits, ...
-                                    essentialYLimits, essentialYTickLocs), ...
-            allSimOutPaths);
+    % cellfun(@(a) m3ha_plot_essential(a, overlappedXLimits, ...
+    %                                 essentialYLimits, essentialYTickLocs), ...
+    %         allSimOutPaths);
+    parfor iPath = 1:numel(allSimOutPaths)
+        pathThis = allSimOutPaths{iPath};
+        m3ha_plot_essential(pathThis, overlappedXLimits, ...
+                            essentialYLimits, essentialYTickLocs);
+    end
 end
 
 %% Find and copy special cases

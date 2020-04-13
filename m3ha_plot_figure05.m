@@ -28,10 +28,10 @@ simulateIpscr = false; %true;
 plotAllVoltages = false; %true;
 plotAllTotalCurrents = false; %true;
 plotAllComponentCurrents = false; %true;
-plotDend2ITproperties = false; %true;
+plotDend2ITproperties = true;
 
 simulateTauhModes = false; %true;
-plotSomaVoltage = false; %true;
+plotSomaVoltage = true;
 
 computeIpscVariation = false; %true;
 simulateIpscVariation = false; %true;
@@ -96,7 +96,8 @@ attemptNumberIpscr = 7;             % attempt number for IPSC response
                                     %   8 - Same as 5 but prioritize least vHold
 % tauhModesAll = 4:5;
 % tauhModesAll = 1:5;
-tauhModesAll = 6:7;
+% tauhModesAll = 6:7;
+tauhModesAll = 1:7;
 
 newParamsNoITSoma = {'pcabarITSoma', 0};
 
@@ -115,10 +116,10 @@ allComponentCurrentsYLimits = {[-15, 5], [-10, 5], [-10, 5], [-10, 5], ...
                             [-5, 15], [-5, 10], [-5, 10], [-5, 10]};
 dend2ITpropertiesYLimits = {[-10, 5], [0, 1], [0, 1], [0, 1], ...
                             [0, 1], [1e-7, 1e0], [1e-7, 1e0], ...
-                            [1e-8, 1e0], [1e-1, 1e2]};
-somaVoltageYLimits = {[-95, -25], [1e-1, 1e7]};
+                            [1e-8, 1e0], [1e-8, 1e0], [1e-1, 1e2]};
+somaVoltageYLimits = {[-95, -25], [1e-8, 1e0]};
 essentialYLimits = {[-110, -40], [0, 10], [-0.5, 0.1], ...
-                            [-20, 5], [1e-1, 1e2]};
+                            [-20, 5], [1e-8, 1e0]};
 
 allVoltagesYTickLocs = {-80:20:-40, -80:20:-40, -80:20:-40, -80:20:-40, ...
                         -3:2:1, -0.2:0.2:0.2, 0:5:10, -3:2:1};
@@ -128,10 +129,10 @@ allComponentCurrentsYTickLocs = {-10:5:5, -5:5:5, -5:5:5, -5:5:5, ...
                             -5:5:10, -5:5:5, -5:5:5, -5:5:5};
 dend2ITpropertiesYTickLocs = {-5:5:5, 0:0.5:1, 0:0.5:1, 0:0.5:1, ...
                             0:0.5:1, [1e-6, 1e-1], [1e-6, 1e-1], ...
-                            [1e-7, 1e-1], [1e0, 1e1]};
-somaVoltageYTickLocs = {-90:20:-50, [1e0, 1e2, 1e4, 1e6]};
+                            [1e-7, 1e-1], [1e-7, 1e-1], [1e0, 1e1]};
+somaVoltageYTickLocs = {-90:20:-50, [1e-7, 1e-1]};
 essentialYTickLocs = {-90:20:-50, 0:5:10, -0.4:0.2:0, ...
-                            -15:5:0, [1e0, 1e1]};
+                            -15:5:0, [1e-7, 1e-1]};
 m2hFigWidth = 4.7; %5.7;
 m2hFigHeight = 3;
 m2hXLimits = [2800, 4800]; %[2800, 4000];

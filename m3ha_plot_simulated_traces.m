@@ -123,6 +123,8 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-02-10 Added m2h ratio
 % 2020-04-09 The default expStr is just the base name of the common prefix
 % 2020-04-09 Now defaults outFolder to common directory of files provided
+% 2020-04-12 Removed absolute value from itm2hDiffDend2
+% 2020-04-12 Now plots IDX_M2HDIFF_DEND2 in essential
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -696,6 +698,8 @@ INAP_DEND2 = 60;
 INAP_M_DEND2 = 61;
 INAP_H_DEND2 = 62;
 
+itm2hDiffLowerLimit = 1e-8;
+
 %% Preparation
 % Initialize handles
 handles = struct;
@@ -842,7 +846,9 @@ gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
 % Compute m2h, minf2hinf and m2h difference
 itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
 itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
-itm2hDiffDend2 = abs(itm2hDend2 - itminf2hinfDend2);
+itm2hDiffDend2 = itm2hDend2 - itminf2hinfDend2;
+itm2hDiffDend2(itm2hDiffDend2 < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
+itm2hAbsDiffDend2 = abs(itm2hDend2 - itminf2hinfDend2);
 itm2hRatioDend2 = itm2hDend2 ./ itminf2hinfDend2;
 
 % List all possible items to plot
@@ -860,7 +866,8 @@ else
                 itmSoma; itminfSoma; ithSoma; ithinfSoma; ...
                 itmDend1; itminfDend1; ithDend1; ithinfDend1; ...
                 itmDend2; itminfDend2; ithDend2; ithinfDend2; ...
-                itm2hDend2; itminf2hinfDend2; itm2hDiffDend2; itm2hRatioDend2};
+                itm2hDend2; itminf2hinfDend2; itm2hAbsDiffDend2; ...
+                itm2hDiffDend2; itm2hRatioDend2};
 end
 
 % List corresponding labels
@@ -885,6 +892,7 @@ else
                 'm_{T,dend2}^2h_{T,dend2}'; ...
                 'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'; ...
                 '|m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}|'; ...
+                'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}'; ...
                 'm_{T}^2h_{T} / m_{\infty,T}^2h_{\infty,T}'};
 end
 
@@ -892,7 +900,7 @@ end
 if strcmpi(buildMode, 'passive')
     yIsLogAll = zeros(9, 1);
 else
-    yIsLogAll = [zeros(33, 1); ones(4, 1)];
+    yIsLogAll = [zeros(33, 1); ones(5, 1)];
 end
 
 % List indices
@@ -931,8 +939,9 @@ IDX_HT_DEND2 = 32;
 IDX_HINFT_DEND2 = 33;
 IDX_M2H_DEND2 = 34;
 IDX_MINF2HINF_DEND2 = 35;
-IDX_M2HDIFF_DEND2 = 36;
-IDX_M2HRATIO_DEND2 = 37;
+IDX_M2HABSDIFF_DEND2 = 36;
+IDX_M2HDIFF_DEND2 = 37;
+IDX_M2HRATIO_DEND2 = 38;
 
 % Error check
 if numel(labelsAll) ~= IDX_M2HRATIO_DEND2
@@ -981,12 +990,12 @@ else
             end
         case 'essential'
             indToPlot = [IDX_VSOMA, IDX_GGABAB, IDX_ISTIM, IDX_IT, ...
-                            IDX_M2HRATIO_DEND2];
+                            IDX_M2HDIFF_DEND2];
             if ~isempty(vVecsRec)
                 indToPlot = [IDX_VREC, indToPlot];
             end
         case 'somaVoltage'
-            indToPlot = [IDX_VSOMA, IDX_M2HRATIO_DEND2];
+            indToPlot = [IDX_VSOMA, IDX_M2HDIFF_DEND2];
         case 'allVoltages'
             indToPlot = IDX_VSOMA:IDX_IINT;
             if ~isempty(vVecsRec)
@@ -1163,6 +1172,7 @@ handles.handlesM2h = handlesM2h;
 figHandle = set_figure_properties('Visible', visibleStatus, ...
                 'AlwaysNew', true, 'FigExpansion', figExpansion, ...
                 'Name', 'All traces');
+
 
 %}
 
