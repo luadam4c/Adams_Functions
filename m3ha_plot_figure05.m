@@ -406,13 +406,39 @@ figPathBaseOrig = [figPathBase, '_orig'];
 fig = set_figure_properties('AlwaysNew', true);
 
 % Plot traces
-m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
+handles = ...
+    m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'PlotType', plotType, 'FigHandle', fig, ...
                 'FigTitle', 'suppress', 'XLabel', 'suppress', ...
                 'XLimits', xLimits, 'YLimits', yLimits, ...
                 'ColorMap', colorMap);
 
 update_figure_for_corel(fig, 'YTickLocs', yTickLocs);
+
+% Add a threshold line
+switch plotType
+    case {'essential', 'somaVoltage', 'dend2ITproperties'}
+        % Must be consistent with m3ha_simulate_population.m
+        opdThreshold = 1e-2;
+
+        % Find the subplot of interest
+        subPlots = handles.subPlots;
+        switch plotType
+            case 'essential'
+                subplot(subPlots(5));
+            case 'somaVoltage'
+                subplot(subPlots(2));
+            case 'dend2ITproperties'
+                subplot(subPlots(9));
+        end
+        hold on;
+
+        % Add a threshold line
+        plot_horizontal_line(opdThreshold, 'ColorMap', 'DarkGreen', ...
+                                'LineStyle', ':', 'LineWidth', 1);
+    otherwise
+        % Do nothing
+end
 
 % Save original figure
 save_all_figtypes(fig, figPathBaseOrig, 'png');

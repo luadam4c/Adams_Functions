@@ -1,19 +1,19 @@
-function violins = plot_violin (data, varargin)
+function handles = plot_grouped_jitter (data, varargin)
 %% Plots a violin (unpaired comparison) plot from data
-% Usage: violins = plot_violin (data, varargin)
+% Usage: handles = plot_grouped_jitter (data, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
+%       TODO
 %       randVec1 = randi(10, 10, 1);
 %       randVec2 = randi(10, 10, 1) + 10;
 %       data = [randVec1, randVec2];
-%       plot_violin(data)
-%       plot_violin(data, 'MedianColorMap', 'GreenYellow')
+%       plot_grouped_jitter(data)
 %
 % Outputs:
-%       violins     - handles to plotted violins objects
-%                   specified as a Violin object array
+%       handles     - handles to TODO
+%                   specified as a structure
 %
 % Arguments:
 %       data        - data table or data vectors
@@ -27,7 +27,7 @@ function violins = plot_violin (data, varargin)
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == [0.5, nGroups + 0.5]
+%                   default == [0.5, nConditions + 0.5]
 %                   - 'XTickLabels': x tick labels in place of parameter values
 %                   must be a cell array of character vectors/strings
 %                   default == {}
@@ -40,32 +40,31 @@ function violins = plot_violin (data, varargin)
 %                   - 'ColorMap': a color map for each group
 %                   must be a numeric array with 3 columns
 %                   default == set in decide_on_colormap.m
-%                   - 'MedianColorMap': a color map for the median(s)
-%                   must be a numeric array with 3 columns
-%                   default == set in decide_on_colormap.m
 %                   - Any other parameter-value pair for violinplot()
 %
 % Requires:
 %       cd/addpath_custom.m
 %       cd/apply_iteratively.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
+%       cd/extract_columns.m
+%       cd/hold_on.m
+%       cd/hold_off.m
 %       cd/locate_functionsdir.m
 %       cd/struct2arglist.m
-%       cd/force_data_as_matrix.m
-%       ~/Downloaded_Functions/Violinplot/violinplot.m
+%       ~/Downloaded_Functions/Violinplot/plotSpread.m
 %
 % Used by:
-%       cd/m3ha_plot_violin.m
-%       cd/m3ha_simulate_population.m
+%       cd/m3ha_plot_jitter.m
 
 % File History:
-% 2019-12-30 Moved from m3ha_plot_violin.m
+% 2020-04-13 Modified from plot_violin.m
 % 
 
 %% Hard-coded parameters
-% Note: The following must be consistent with violinplot.m
-% violinplotMedianEdgeColor = [0.5, 0.5, 0.5];
+% TODO: Make optional argument
+groupingLabels = {};
 
 %% Default values for optional arguments
 relativeBandWidthDefault = 0.1;
@@ -74,7 +73,6 @@ xTickLabelsDefault = {};        % set later
 xTickAngleDefault = [];         % set later
 yLabelDefault = '';             % no y label by default
 colorMapDefault = [];           % set later
-medianColorMapDefault = [];     % st later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -85,7 +83,7 @@ if ~isdeployed
 
     % Add path for violinplot()
     addpath_custom(fullfile(functionsDirectory, ...
-                            'Downloaded_Functions', 'Violinplot'));
+                            'Downloaded_Functions', 'plotSpread'));
 end
 
 %% Deal with arguments
@@ -116,7 +114,6 @@ addParameter(iP, 'XTickAngle', xTickAngleDefault, ...
 addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ColorMap', colorMapDefault);
-addParameter(iP, 'MedianColorMap', medianColorMapDefault);
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
@@ -126,90 +123,74 @@ xTickLabels = iP.Results.XTickLabels;
 xTickAngle = iP.Results.XTickAngle;
 yLabel = iP.Results.YLabel;
 colorMap = iP.Results.ColorMap;
-medianColorMap = iP.Results.MedianColorMap;
 
 % Keep unmatched arguments for the violinplot() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Force data values as a numeric matrix 
-%   where each group is a column and each row is a sample
-[dataValues, groupLabelsAuto] = force_data_as_matrix(data);
+% Force data values as a cell array
+valuesEachCondition = force_column_cell(data);
+
+% Count the number of conditions
+nConditions = numel(valuesEachCondition);
 
 % Count the number of groups
-nGroups = size(dataValues, 2);
+nGroups = numel(valuesEachCondition{1});
+
+% Create group numbers
+groupNumbers = transpose(1:nGroups);
 
 % Decide on the x tick labels
 if isempty(xTickLabels)
-    xTickLabels = groupLabelsAuto;
+    xTickLabels = create_labels_from_numbers(1:nConditions, ...
+                                                'Prefix', 'Condition');
 end
 
-% If there is any column with all NaN values, remove it from the violin plot
-if any(all(isnan(dataValues), 1))
-    % Test whether each column has no values
-    noValues = all(isnan(dataValues), 1);
-
-    % Remove those columns
-    disp('Groups with all NaN values are removed!');
-    dataValues = dataValues(:, ~noValues);
-    xTickLabels = xTickLabels(~noValues);
-    nGroups = size(dataValues, 2);
+% Decide on the grouping labels
+if isempty(groupingLabels)
+    groupingLabels = create_labels_from_numbers(1:nGroups, 'Prefix', 'Group');
 end
 
 % Decide on x axis limits
 if isempty(xLimits)
-    xLimits = [0.5, nGroups + 0.5];
+    xLimits = [0.5, nConditions + 0.5];
 end
 
 % Decide on the color map
 colorMap = decide_on_colormap(colorMap, nGroups);
 
 % Compute range of all values
-rangeValues = apply_iteratively(@max, dataValues) - ...
-                apply_iteratively(@min, dataValues);
+rangeValues = apply_iteratively(@max, valuesEachCondition) - ...
+                apply_iteratively(@min, valuesEachCondition);
+
+% Reorganize cell array
+valuesEachGroup = extract_columns(valuesEachCondition, 'TreatCnvAsColumn', true, ...
+                                    'OutputMode', 'single');
 
 %% Do the job
 % Return if there is no data
-if isempty(dataValues)
-    violins = Violin.empty;
+if isempty(valuesEachCondition)
+    handles = struct;
     return
 end
 
-% Compute the bandwidth for the kernel density estimates
-bandWidth = relativeBandWidth * rangeValues;
+% Hold on
+wasHold = hold_on;
 
-% Make sure the bandwidth is nonzero
-if bandWidth == 0
-    bandWidth = 1e-9;
-end
-
-% Plot a violin plot
-% violinplot(dataValues, xTickLabels);
-violins = violinplot(dataValues, xTickLabels, 'BandWidth', bandWidth, ...
-                        otherArguments{:});
-%{
-while bandWidth > bandWidth * 10 ^ -2
-    try
-        violins = violinplot(dataValues, xTickLabels, 'BandWidth', bandWidth, ...
-                                otherArguments{:});
-        break
-    catch
-        relativeBandWidth = relativeBandWidth / 10;
-        fprintf('Warning: Relative bandwidth changed to %g!\n', relativeBandWidth);
-        bandWidth = bandWidth / 10;
-        clf;
-    end
-end
-%}
-                        
-% Apply the color map
-for iGroup = 1:nGroups
-    violins(iGroup).ViolinColor = colorMap(iGroup, :);
-end
+% Plot the data points for each cell
+handles = cellfun(@(a, b) plotSpread(a, ...
+                                'distributionColors', colorMap(b, :), ...
+                                otherArguments{:}), ...
+                valuesEachGroup, num2cell(groupNumbers), 'UniformOutput', false);
 
 % Modify x limits
 if ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
     xlim(xLimits);
+end
+
+% Update x tick labels
+if ~isempty(xTickLabels)
+    xticklabels(xTickLabels);
 end
 
 % Modify x tick angle
@@ -222,23 +203,8 @@ if ~isempty(yLabel)
     ylabel(yLabel);
 end
 
-% Set median color if requested
-if ~isempty(medianColorMap)
-    medianColorMap = decide_on_colormap(medianColorMap, nGroups);
-
-    % Find all median scatters using the edge color
-%    medianScatters = findobj(gca, 'Type', 'Scatter', ...
-%                            'MarkerEdgeColor', violinplotMedianEdgeColor);
-
-    % Updated median scatter face color
-    for iGroup = 1:nGroups
-        if ishandle(violins(iGroup).MedianPlot)
-            violins(iGroup).MedianColor = medianColorMap(iGroup, :);
-        end
-%        thisColor = medianColorMap(iGroup, :);
-%        set(medianScatters(iGroup), 'MarkerFaceColor', medianColorMap(iGroup, :));
-    end
-end
+% Hold off
+hold_off(wasHold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

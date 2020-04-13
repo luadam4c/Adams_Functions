@@ -170,6 +170,12 @@ oscPeriod1Ms = autoCorrParams.oscPeriod1Ms;
 oscDurationSec = autoCorrParams.oscDurationSec;
 nSpikesInOsc = autoCorrParams.nSpikesInOsc;
 
+% Return if nothing to plot
+if isempty(autoCorr)
+    handles = struct;
+    return;
+end
+
 % Decide on figure title base
 if isfield(autoCorrParams, 'figTitleBase')
     figTitleBase = autoCorrParams.figTitleBase;
@@ -233,7 +239,7 @@ if isempty(yLimits)
 end
 
 % Compute default oscillation duration bar y value
-if isempty(barYValue)
+if isempty(barYValue) && numel(yLimits) == 2
     barYValue = -(yLimits(2) * 0.025);
 end
 
@@ -277,7 +283,7 @@ switch plotType
         end
 
         % Plot oscillation duration if requested
-        if plotDuration
+        if plotDuration && ~isempty(barYValue)
             plot_horizontal_line(barYValue, 'XLimits', xLimitsOscDur, ...
                                 'Color', 'g', 'LineStyle', '-', 'LineWidth', 2);
         end
@@ -309,7 +315,9 @@ end
 xlim(xLimits);
 
 % Set y axis limits
-ylim(yLimits);
+if numel(yLimits) >= 2 && yLimits(1) < yLimits(2)
+    ylim(yLimits);
+end
 
 % Set x axis label
 xlabel('Lag (s)');

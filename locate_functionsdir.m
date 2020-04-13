@@ -17,6 +17,7 @@ function functionsDirectory = locate_functionsdir
 %       cd/find_passive_params.m
 %       cd/minEASE.m
 %       cd/parse_abf.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_violin.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond

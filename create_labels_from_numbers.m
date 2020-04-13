@@ -72,6 +72,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/parse_current_family.m
 %       cd/plot_chevron.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_histogram.m
 %       cd/plot_table_parallel.m
 %       cd/plot_raster.m

@@ -392,7 +392,8 @@ if ~strcmpi(xLimits, 'suppress')
 end
 
 % Set y axis limits
-if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
+if ~isempty(yLimits) && yLimits(1) ~= yLimits(2) && ...
+        ~strcmpi(yLimits, 'suppress')
     ylim(yLimits);
 end
 

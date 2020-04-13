@@ -40,6 +40,7 @@ function h = plot_horizontal_line (yValue, varargin)
 %       cd/plot_vertical_line.m
 %
 % Used by:
+%       cd/m3ha_simulate_population.m
 %       cd/parse_multiunit.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_bar.m

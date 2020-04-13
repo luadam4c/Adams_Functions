@@ -38,6 +38,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 %       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
 %       cd/identify_channels.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_raster.m
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m

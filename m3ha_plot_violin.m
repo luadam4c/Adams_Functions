@@ -246,7 +246,7 @@ diffStructConDual = ...
     test_difference(allValues([1, 4]), 'GroupNames', pharmNames([1, 4]), ...
                                 'IsPaired', true, 'DisplayAnova', false);
 
-% Create figure for conductance traces
+% Create figure
 fig = set_figure_properties('AlwaysNew', true);
 
 % Convert onset times from ms to seconds

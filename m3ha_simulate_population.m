@@ -47,6 +47,7 @@
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_violin.m
 %       cd/print_cellstr.m
 %       cd/print_structure.m
@@ -83,7 +84,7 @@ combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotEssentialFlag = false; %true;
 plotOpenProbabilityFlag = false; %true;
-findSpecialCasesFlag = true;
+findSpecialCasesFlag = false; %true;
 computeCellInfoTableFlag = false; %true;
 plotCorrelationsFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
@@ -245,7 +246,8 @@ ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
 prefix = '';
-logOpdThreshold = -2;
+opdThreshold = 1e-2;
+logOpdThreshold = log10(opdThreshold);
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -606,13 +608,14 @@ if plotEssentialFlag
                                     'Recursive', true, 'Extension', 'out');
 
     % Plot simulated traces
-    % cellfun(@(a) m3ha_plot_essential(a, overlappedXLimits, ...
-    %                                 essentialYLimits, essentialYTickLocs), ...
+    % cellfun(@(a) m3ha_plot_essential(a, overlappedXLimits, essentialYLimits, ...
+    %                                 essentialYTickLocs, opdThreshold), ...
     %         allSimOutPaths);
     parfor iPath = 1:numel(allSimOutPaths)
         pathThis = allSimOutPaths{iPath};
         m3ha_plot_essential(pathThis, overlappedXLimits, ...
-                            essentialYLimits, essentialYTickLocs);
+                            essentialYLimits, essentialYTickLocs, ...
+                            opdThreshold);
     end
 end
 
@@ -631,7 +634,7 @@ if plotOpenProbabilityFlag
 
     % % Compute the average (geometric mean) open probability discrepancy
     % %   for each cell with or without LTS
-    % [logOpdWithLTS, logOpdWithNoLTS] = ...
+    % [opdWithLTS, opdWithNoLTS] = ...
     %     argfun(@(indEachCell) ...
     %             cellfun(@(ind) compute_weighted_average(...
     %                     openProbabilityDiscrepancy(ind), ...
@@ -670,11 +673,13 @@ if plotOpenProbabilityFlag
     % Plot violin plots
     plot_open_probability_discrepancy(twoGroups, openProbPathBase, ...
                                         prefix, openProbFigWidth, ...
-                                        openProbFigHeight, figTypes);
+                                        openProbFigHeight, figTypes, ...
+                                        logOpdThreshold);
     plot_open_probability_discrepancy(twoGroupsAllTraces, ...
                                     openProbPathBaseAllTraces, ...
                                         prefix, openProbFigWidth, ...
-                                        openProbFigHeight, figTypes);
+                                        openProbFigHeight, figTypes, ...
+                                        logOpdThreshold);
 end 
 
 %% Find and copy special cases
@@ -904,7 +909,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function m3ha_plot_essential(simOutPath, xLimits, yLimits, yTickLocs)
+function m3ha_plot_essential(simOutPath, xLimits, ...
+                                yLimits, yTickLocs, opdThreshold)
 %% Plot an essential plot for a simulation
 
 % Extract the sweep name
@@ -920,10 +926,19 @@ figPathBase = replace(simOutPath, '.out', '_essential.png');
 fig = set_figure_properties('AlwaysNew', true);
 
 % Plot essential traces
-m3ha_plot_simulated_traces('PlotType', 'essential', 'FileNames', simOutPath, ...
+handles = ...
+    m3ha_plot_simulated_traces('PlotType', 'essential', 'FileNames', simOutPath, ...
                             'XLimits', xLimits, 'YLimits', yLimits, ...
                             'YTickLocs', yTickLocs, ...
                             'FigHandle', fig, 'FigTitle', figTitle);
+
+% Get all subplots
+subPlots = handles.subPlots;
+
+% Add a threshold line
+subplot(subPlots(5)); hold on;
+plot_horizontal_line(opdThreshold, 'ColorMap', 'DarkGreen', ...
+                        'LineStyle', ':', 'LineWidth', 1);
 
 % Save original figure
 save_all_figtypes(fig, figPathBase, 'png');
@@ -1085,7 +1100,8 @@ end
 
 function plot_open_probability_discrepancy (twoGroups, openProbPathBase, ...
                                         prefix, openProbFigWidth, ...
-                                        openProbFigHeight, figTypes)
+                                        openProbFigHeight, figTypes, ...
+                                        logOpdThreshold)
 
 % Create figure
 fig = set_figure_properties('AlwaysNew', true);
@@ -1099,14 +1115,17 @@ violins = plot_violin(twoGroups, 'ColorMap', {'Black', 'DarkGreen'}, ...
                         % 'YLabel', 'max(abs(m^2h - m_{inf}^2h_{inf}))');
                         % 'YLabel', 'rms(m^2h - m_{inf}^2h_{inf})');
 
+% Set y axis limits
+% TODO: Make this an optional argument
+ylim([-4.5, 0.5]);
+
+% Plot threshold
+hold on
+plot_horizontal_line(logOpdThreshold, 'ColorMap', 'r', 'LineWidth', 2);
+
 % Create a title
 title(sprintf('Open Probability Discrepancy for %s', ...
         replace(prefix, '_', '\_')));
-
-% Set y axis to be on a log scale
-% set(gca, 'YScale', 'log');
-
-ylim([-4.5, 0.5]);
 
 % Save the figure
 openProbPathBaseOrig = [openProbPathBase, '_orig'];

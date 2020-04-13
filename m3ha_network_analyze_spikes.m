@@ -59,6 +59,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 % 2020-04-08 Now removes spike times less than stimulation start
 % 2020-04-08 Added 'MatFileName' as an optional argument
 % 2020-04-08 Now computes and plots precent activated over time
+% 2020-04-13 Now computes half rise time
 
 %% Hard-coded parameters
 spiExtension = 'spi';
@@ -272,8 +273,24 @@ percentActivatedRT = compute_activation_profile(cellIdRT, spikeTimesMsRT, ...
 percentActivatedTC = compute_activation_profile(cellIdTC, spikeTimesMsTC, ...
                                 'TimeBins', timeBinsMs, 'NCells', nCells);
 
+% Compute the time of half activation
+%   Note: This must be after stimEndMs
+halfActiveTimeMsRT = ...
+    compute_half_rise_time(timeBinsMs, percentActivatedRT, percentActiveRT);
+halfActiveTimeMsTC = ...
+    compute_half_rise_time(timeBinsMs, percentActivatedTC, percentActiveTC);
+halfActiveTimeMsRT(halfActiveTimeMsRT < stimEndMs) = stimEndMs;
+halfActiveTimeMsTC(halfActiveTimeMsTC < stimEndMs) = stimEndMs;
+
+% Compute the latency to half activation
+halfActiveLatencyMsRT = halfActiveTimeMsRT - stimEndMs;
+halfActiveLatencyMsTC = halfActiveTimeMsTC - stimEndMs;
+
 % Store time bins in seconds
-timeBinsSeconds = timeBinsMs ./ MS_PER_S;
+[timeBinsSeconds, stimEndSeconds, ...
+        halfActiveTimeSecondsRT, halfActiveTimeSecondsTC] = ...
+    argfun(@(x) x ./ MS_PER_S, ...
+            timeBinsMs, stimEndMs, halfActiveTimeMsRT, halfActiveTimeMsTC);
 
 % Use all spikes to compute an oscillation duration
 %   TODO: Modify this for multi-cell layers
@@ -304,15 +321,21 @@ if plotFlag
 
     % Plot activation profile
     subplot(ax(1)); hold on
-    plot(timeBinsSeconds, percentActivatedRT, 'r', ...
+    p1 = plot(timeBinsSeconds, percentActivatedRT, 'r', ...
             'DisplayName', 'RT', 'LineWidth', 1);
-    plot(timeBinsSeconds, percentActivatedTC, 'g', ...
+    p2 = plot(timeBinsSeconds, percentActivatedTC, 'g', ...
             'DisplayName', 'TC', 'LineWidth', 1);
     ylim([0, nCells]);
+    v1 = plot_vertical_line(halfActiveTimeSecondsRT, ...
+                    'ColorMap', 'r', 'LineStyle', '--');
+    v2 = plot_vertical_line(halfActiveTimeSecondsTC, ...
+                    'ColorMap', 'g', 'LineStyle', '--');
+    v3 = plot_vertical_line(stimEndSeconds, ...
+                    'ColorMap', 'k', 'LineStyle', '--');
     xlabel('Time (s)');
     ylabel('Percent Activated (%)');
     title(['Activation profile for ', figTitleBase]);
-    legend('location', 'northeast');
+    legend([p1, p2], 'location', 'northeast');
 
     % Plot spike histogram with burst detection
     subplot(ax(2));
@@ -341,6 +364,10 @@ parsedParams.nActiveTC = nActiveTC;
 parsedParams.percentActive = percentActive;
 parsedParams.percentActiveRT = percentActiveRT;
 parsedParams.percentActiveTC = percentActiveTC;
+parsedParams.halfActiveTimeMsRT = halfActiveTimeMsRT;
+parsedParams.halfActiveTimeMsTC = halfActiveTimeMsTC;
+parsedParams.halfActiveLatencyMsRT = halfActiveLatencyMsRT;
+parsedParams.halfActiveLatencyMsTC = halfActiveLatencyMsTC;
 parsedParams = merge_structs(parsedParams, histParams);
 parsedParams = merge_structs(parsedParams, autoCorrParams);
 
@@ -353,6 +380,15 @@ parsedData.percentActivatedRT = percentActivatedRT;
 parsedData.percentActivatedTC = percentActivatedTC;
 parsedData = merge_structs(parsedData, histData);
 parsedData = merge_structs(parsedData, autoCorrData);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function halfRiseTime = compute_half_rise_time (tVec, yVec, yMax)
+% TODO: Pull out as its own function
+
+halfRiseTimeRight = tVec(find(yVec >= yMax / 2, 1));
+halfRiseTimeLeft = tVec(find(yVec < yMax / 2, 1, 'last'));
+halfRiseTime = mean([halfRiseTimeRight, halfRiseTimeLeft]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

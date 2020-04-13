@@ -52,13 +52,14 @@ plot2CellViolins = false; %true;
 plot200CellExamples = false; %true;
 
 analyze200CellSpikes = false; %true;
-plotAnalysis200Cell = true; %false;
+plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
-combineActivationProfiles = true;
+combineActivationProfiles = false; %true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
+plot200CellGroupedJitters = true;
 
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -105,10 +106,17 @@ pharmConditions = (1:4)';   % Pharmacological conditions
                             %   4 - Dual Block
 measuresOfInterest = {'oscillationProbability'; 'meanOscPeriod2Ms'; ...
                         'meanOscIndex4'; 'meanPercentActive'; ...
-                        'meanOscDurationSec'};
+                        'meanOscDurationSec'; 'meanPercentActiveTC'; ...
+                        'meanHalfActiveLatencyMsTC'};
 measureTitles = {'Oscillation Probability'; 'Oscillation Period (ms)'; ...
                     'Oscillatory Index'; 'Active Cells (%)'; ...
-                    'Oscillation Duration (sec)'};
+                    'Oscillation Duration (sec)'; 'Active TC Cells (%)'; ...
+                    'Half Activation Time (ms)'};
+measuresOfInterestJitter = {'oscPeriod2Ms'; ...
+                        'oscIndex4'; 'percentActive'; ...
+                        'oscDurationSec'; 'percentActiveTC'; ...
+                        'halfActiveLatencyMsTC'};
+measureTitlesJitter = measureTitles(2:end);
 
 % Plot settings
 ipscFigWidth = 8.5;
@@ -130,10 +138,10 @@ pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
 
 % epasToPlot = [];
 epasToPlot = [-74; -70; -66; -62];
-% candidateLabels = {};
+candidateLabels = {};
 % candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
                 % 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35'};
-candidateLabels = {'candidateIDs_2,14,20,29-30,32,35-36'};
+% candidateLabels = {'candidateIDs_2,14,20,29-30,32,35-36'};
 
 figTypes = {'png', 'epsc'};
 
@@ -289,7 +297,7 @@ if plot2CellViolins
                     'OutFolder', figure07Dir);
 end
 
-%% Plots oscillation measures over pharm condition 
+%% Plots mean oscillation measures over pharm condition 
 %       across all 200-cell networks
 if plot200CellViolins
     % Construct stats table path
@@ -301,7 +309,8 @@ if plot200CellViolins
         % Compute statistics for all features
         disp('Computing statistics for violin plots ...');
         statsTable = m3ha_network_compute_statistics(popDataPath200Cell, ...
-                                    gIncr, measuresOfInterest, measureTitles);
+                                gIncr, measuresOfInterest, measureTitles, ...
+                                'mean');
 
         % Generate labels
         conditionLabel = conditionLabel200Cell;
@@ -317,9 +326,40 @@ if plot200CellViolins
                     'OutFolder', figure08Dir);
 end
 
+%% Plots oscillation measures over pharm condition 
+if plot200CellGroupedJitters
+    % Construct stats table path
+    statsGroupedPath200Cell = ...
+        fullfile(figure08Dir, strcat(conditionLabel200Cell, ...
+                    '_grouped_stats.mat'));
+
+    % Compute statistics if not done already
+    if ~isfile(statsGroupedPath200Cell)
+        % Compute statistics for all features
+        disp('Computing statistics for grouped jitter plots ...');
+        statsTable = m3ha_network_compute_statistics(popDataPath200Cell, ...
+                            gIncr, measuresOfInterestJitter, ...
+                            measureTitlesJitter, 'grouped');
+
+        % Generate labels
+        conditionLabel = conditionLabel200Cell;
+        pharmLabels = pharmLabelsShort;
+
+        % Save stats table
+        save(statsGroupedPath200Cell, 'statsTable', 'pharmLabels', ...
+                            'conditionLabel', '-v7.3');
+    end
+
+    % Plot jitter plots
+    m3ha_plot_grouped_jitter(statsGroupedPath200Cell, figure08Dir, ...
+                                measuresOfInterestJitter);
+end
+
 %% Archive all scripts for this run
 if archiveScriptsFlag
-    if plot200CellViolins
+    if plot200CellExamples || analyze200CellSpikes || plotAnalysis200Cell || ...
+            backupPrevious200Cell || combineActivationProfiles || ...
+            combine200CellPopulation || plot200CellViolins
         archive_dependent_scripts(mfilename, 'OutFolder', figure08Dir);
     else
         archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
@@ -574,8 +614,11 @@ cellNamesAll = candCellTable.(cellNameStr);
 cellNamesToUse = match_positions(cellNamesAll, rankNumbersAll, rankNumsToUse);
 
 % Find all seed number subdirectories
-[~, seedNumDirs] = all_subdirs('Directory', popIterDir, 'Recursive', false, ...
-                                'Prefix', 'seedNumber');
+% [~, seedNumDirs] = all_subdirs('Directory', popIterDir, 'Recursive', false, ...
+%                                 'Prefix', 'seedNumber');
+% TODO: TEMP
+seedNumDirs = fullfile(popIterDir, create_labels_from_numbers(0:14, ...
+                                    'Prefix', 'seedNumber_'));
 
 % Extract all tables for each seed number
 oscParamTablesCell = ...
@@ -799,7 +842,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function statsTable = m3ha_network_compute_statistics (popDataPath, gIncr, ...
-                                                        measureStr, measureTitle)
+                                            measureStr, measureTitle, method)
 %% Computes all statistics for the 2-cell network
 
 %% Hard-coded parameters
@@ -817,9 +860,17 @@ popDataTable = readtable(popDataPath);
 rowsToUse = round(popDataTable.(gIncrStr) * dclamp2NetworkAmpRatio) == gIncr;
 
 % Change the measure strings the original non-averaged strings
-measureStrNoMean = replace(measureStr, {'mean', 'oscillationProbability'}, ...
-                                    {'', 'hasOscillation'});
-measureStrOrig = lower_first_char(measureStrNoMean);
+switch method
+    case 'mean'
+        measureStrNoMean = ...
+            replace(measureStr, {'mean', 'oscillationProbability'}, ...
+                                            {'', 'hasOscillation'});
+        measureStrOrig = lower_first_char(measureStrNoMean);
+    case 'grouped'
+        measureStrOrig = measureStr;
+    otherwise
+        error('Not implemented yet!');
+end
 
 % Locate the columns of interest
 colsOfInterest = [{cellNameStr}; {seedNumStr}; {pharmStr}; measureStrOrig];
@@ -830,7 +881,7 @@ popTableOfInterest = popDataTable(rowsToUse, colsOfInterest);
 % Compute statistics for each measure of interest
 [allValues, pharmCondition] = ...
     cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, seedNumStr, ...
-                                            pharmStr, cellNameStr, x), ...
+                                        pharmStr, cellNameStr, x, method), ...
                     measureStrOrig, 'UniformOutput', false);
 
 % Create the statistics table
@@ -843,7 +894,7 @@ end
 
 function [allValuesEachPharm, pharmCondition] = ...
                 m3ha_network_stats_helper (popDataTable, seedNumStr, ...
-                                            pharmStr, cellNameStr, measureStr)
+                                    pharmStr, cellNameStr, measureStr, method)
 %% Computes the statistics for one measure
 
 %% Do the job
@@ -866,9 +917,127 @@ rowsEachCellEachPharm = ...
 
 % Get mean values across iterations for all cells
 %    for each pharm condition, for this measure
-allValuesEachPharm = ...
-    cellfun(@(a) cellfun(@(b) nanmean(popDataTable{b, measureStr}), a), ... 
-            rowsEachCellEachPharm, 'UniformOutput', false);
+switch method
+    case 'mean'
+        allValuesEachPharm = ...
+            cellfun(@(a) ...
+                    cellfun(@(b) nanmean(popDataTable{b, measureStr}), a), ... 
+                rowsEachCellEachPharm, 'UniformOutput', false);
+    case 'grouped'
+        allValuesEachPharm = ...
+            cellfun(@(a) ...
+                    cellfun(@(b) popDataTable{b, measureStr}, ...
+                            a, 'UniformOutput', false), ... 
+                rowsEachCellEachPharm, 'UniformOutput', false);
+    otherwise
+        error('Not implemented yet!');
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_plot_grouped_jitter (statsPath, outFolder, rowsToPlot)
+% TODO: Pull out as its own function
+
+%% Hard-coded parameters
+figWidth = 3.4;
+figHeight = 3;
+figTypes = {'png', 'epsc'};
+otherArguments = struct;
+
+%% Preparation
+% Set default output directory
+if isempty(outFolder)
+    outFolder = extract_fileparts(statsPath, 'directory');
+end
+
+% Load stats table
+disp('Loading statistics for grouped jitter plots ...');
+if isfile(statsPath)
+    load(statsPath, 'statsTable', 'pharmLabels', 'conditionLabel');
+else
+    fprintf('%s does not exist!\n', statsPath);
+    return;
+end
+
+% Restrict to measures to plot
+if ~(ischar(rowsToPlot) && strcmp(rowsToPlot, 'all'))
+    statsTable = statsTable(rowsToPlot, :);
+end
+
+% Extract variables
+allMeasureTitles = statsTable.measureTitle;
+allMeasureStrs = statsTable.measureStr;
+allValues = statsTable.allValues;
+
+% Create figure bases
+allFigBases = combine_strings({allMeasureStrs, conditionLabel});
+
+% Create full path bases
+allFigPathBases = fullfile(outFolder, allFigBases);
+
+%% Do the job
+% Plot all grouped jitter plots
+disp('Plotting grouped jitter plots ...');
+handles = ...
+    cellfun(@(a, b, c) m3ha_plot_jitter_helper(...
+                            a, b, pharmLabels, c, ...
+                            figHeight, figWidth, ...
+                            figTypes, otherArguments), ...
+            allValues, allMeasureTitles, allFigPathBases);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = ...
+            m3ha_plot_jitter_helper (allValues, measureTitle, pharmLabels, ...
+                                        figPathBase, figHeight, figWidth, ...
+                                        figTypes, otherArguments)
+
+% Hard-coded parameters
+xTickAngle = 320;
+
+% Create figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot groups as a grouped jitter plot
+jitters = plot_grouped_jitter(allValues, 'XTickLabels', pharmLabels, ...
+                        'XTickAngle', xTickAngle, 'YLabel', measureTitle, ...
+                        otherArguments);
+
+% Save the figure
+save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
+
+% Set y axis limits based on measureTitle
+switch measureTitle
+    case 'LTS probability'
+        ylim([0, 1]);
+    case 'LTS onset time (ms)'
+        ylim([0, 2000]);
+    case 'Spikes Per LTS'
+        ylim([0, 6.5]);
+    case 'LTS maximum slope (V/s)'
+        ylim([0, 5]);
+    case 'LTS amplitude (mV)'
+        ylim([-75, -45]);
+        yticks(-75:10:-45);
+    otherwise
+        % Do nothing
+end
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth, ...
+                        'ScatterMarkerSize', 3);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, figTypes);
+
+% Save in handles
+handles.fig = fig;
+handles.jitters = jitters;
 
 end
 

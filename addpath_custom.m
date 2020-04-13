@@ -20,6 +20,7 @@ function varargout = addpath_custom (folder, varargin)
 %
 % Used by:
 %       cd/char2rgb.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_violin.m
 %       ~/FluoroSNNAP/FluroSNNAP.m
 
