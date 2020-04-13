@@ -69,6 +69,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/detect_spikes_multiunit.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_plot_figure05.m.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_time_info.m
 %       cd/parse_gas_trace.m

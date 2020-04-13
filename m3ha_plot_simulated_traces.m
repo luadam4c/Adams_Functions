@@ -53,10 +53,14 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                   - 'ColorMap': color map
 %                   must be TODO
 %                   default == TODO
-%                   - 'XLimits': limits of x axis
+%                   - 'TimeLimits': limits of time axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == no restrictions
+%                   - 'XLimits': limits of x axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == same as timeLimits
 %                   - 'OutFolder': the directory where outputs will be placed
 %                   must be a string scalar or a character vector
 %                   default == same as Directory
@@ -126,6 +130,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-04-12 Removed absolute value from itm2hDiffDend2
 % 2020-04-12 Now plots IDX_M2HDIFF_DEND2 in essential
 % 2020-04-13 Added 'voltageVsOpd' as a valid plot type
+% 2020-04-13 Added 'TimeLimits' as an optional argument
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -177,7 +182,8 @@ directoryDefault = '';          % set in all_files.m
 fileNamesDefault = {};
 extensionDefault = 'out';       % 
 colorMapDefault = [];
-xLimitsDefault = [];          % set later
+timeLimitsDefault = [];         % set later
+xLimitsDefault = [];            % set later
 outFolderDefault = '';          % set later
 expStrDefault = '';             % set later
 tVecsDefault = [];
@@ -185,7 +191,7 @@ vVecsRecDefault = [];
 iVecsRecDefault = [];
 gVecsRecDefault = [];
 residualsDefault = [];
-lineWidthDefault = [];      % set later
+lineWidthDefault = [];          % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -213,6 +219,9 @@ addParameter(iP, 'FileNames', fileNamesDefault, ...
 addParameter(iP, 'Extension', extensionDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'TimeLimits', timeLimitsDefault, ...
+    @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -253,6 +262,7 @@ directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
 extension = iP.Results.Extension;
 colorMap = iP.Results.ColorMap;
+timeLimits = iP.Results.TimeLimits;
 xLimits = iP.Results.XLimits;
 outFolder = iP.Results.OutFolder;
 expStr = iP.Results.ExpStr;
@@ -332,14 +342,19 @@ end
 % Create an experiment identifier for title
 expStrForTitle = replace(expStr, '_', '\_');
 
-% Decide on xLimits
-if isempty(xLimits)
+% Decide on timeLimits
+if isempty(timeLimits)
     if strcmp(simMode, 'active')
-%        xLimits = [2800, 4500]; 
-        xLimits = [2800, 4800];
+%        timeLimits = [2800, 4500]; 
+        timeLimits = [2800, 4800];
     else
-        xLimits = [timeToStabilize, Inf];
+        timeLimits = [timeToStabilize, Inf];
     end
+end
+
+% Decide on xLimits
+if isempty(xLimits) && ~strcmp(plotType, 'voltageVsOpd')
+    xLimits = timeLimits;
 end
 
 % Count the number of files
@@ -479,8 +494,8 @@ switch plotType
                                     expStr, expStrForTitle, otherArguments);
     case 'voltageVsOpd'
         handles = m3ha_plot_voltage_vs_opd(simData, buildMode, ...
-                                    xLimits, colorMap, lineWidth, ...
-                                    expStr, expStrForTitle, otherArguments);
+                                timeLimits, xLimits, colorMap, lineWidth, ...
+                                expStr, expStrForTitle, otherArguments);
     otherwise
         error('plotType unrecognized!');
 end
@@ -1132,8 +1147,8 @@ handles.handlesSteadyState = handlesSteadyState;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function handles = m3ha_plot_voltage_vs_opd (simData, buildMode, ...
-                                    timeLimits, colorMap, lineWidth, ...
-                                    expStr, expStrForTitle, otherArguments)
+                                timeLimits, xLimits, colorMap, lineWidth, ...
+                                expStr, expStrForTitle, otherArguments)
 
 %% Hard-coded parameters
 % Column numbers for simulated data
@@ -1160,7 +1175,7 @@ end
                     IT_M_DEND2, IT_MINF_DEND2, ...
                     IT_H_DEND2, IT_HINF_DEND2]);
 
-% Find the indices of the x-axis limit endpoints
+% Find the indices of the time-axis limit endpoints
 endPointsForPlots = find_window_endpoints(timeLimits, tVecs);
 
 % Prepare vectors for plotting
@@ -1190,7 +1205,7 @@ handles = ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
                 'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
-                'YLabel', 'Voltage', ...
+                'YLabel', 'Voltage', 'XLimits', xLimits, ...
                 'FigTitle', figTitle, otherArguments);
 
 % Set the x axis to be log-scaled
