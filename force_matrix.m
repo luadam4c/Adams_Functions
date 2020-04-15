@@ -66,6 +66,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/compute_activation_profile.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
+%       cd/compute_derivative_trace.m
 %       cd/compute_gabab_conductance.m
 %       cd/compute_relative_event_times.m
 %       cd/create_indices.m

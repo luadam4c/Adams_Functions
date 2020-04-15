@@ -13,6 +13,7 @@ function wasHold = hold_on
 %                   specified as a logical scalar
 %
 % Used by:
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_ball_stick.m
 %       cd/plot_chevron.m

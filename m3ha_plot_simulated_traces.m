@@ -90,13 +90,17 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % Requires:
 %       cd/all_files.m
 %       cd/argfun.m
+%       cd/compute_derivative_trace.m
 %       cd/compute_total_current.m
 %       cd/construct_fullpath.m
 %       cd/convert_units.m
 %       cd/count_vectors.m
 %       cd/decide_on_colormap.m
+%       cd/find_zeros.m
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
+%       cd/hold_on.m
+%       cd/hold_off.m
 %       cd/isemptycell.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_extract_sweep_name.m
@@ -1191,6 +1195,11 @@ itminf2hinf = (itminfVecsSim .^ 2) .* ithinfVecsSim;
 itm2hDiff = itm2h - itminf2hinf;
 itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
 
+% Find inflection points
+[vZeros, itM2hDiffZeros] = ...
+    find_inflection_points_voltage_vs_opd(tVecs, vVecsSim, itm2hDiff, ...
+                                            itm2hDiffLowerLimit);
+
 % Decide on figure title and file name
 figTitle = sprintf('Voltage vs m2hdiff for %s', expStrForTitle);
 
@@ -1199,17 +1208,50 @@ figTitle = sprintf('Voltage vs m2hdiff for %s', expStrForTitle);
 fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 
 % Plot Voltage vs m2hdiff
-handles = ...
-    plot_traces(itm2hDiff, vVecsSim, ...
-                'LineStyle', '-', 'LineWidth', lineWidth, ...
-                'Verbose', false, 'PlotMode', 'overlapped', ...
-                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
-                'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
-                'YLabel', 'Voltage', 'XLimits', xLimits, ...
-                'FigTitle', figTitle, otherArguments);
+handles = plot_traces(itm2hDiff, vVecsSim, ...
+                    'LineStyle', '-', 'LineWidth', lineWidth, ...
+                    'Verbose', false, 'PlotMode', 'overlapped', ...
+                    'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                    'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
+                    'YLabel', 'Voltage', 'XLimits', xLimits, ...
+                    'FigTitle', figTitle, otherArguments);
+
+% Hold on
+wasHold = hold_on;
+
+% Plot markers for inflection points
+plot(itM2hDiffZeros, vZeros, 'o', 'MarkserSize', 3, 'LineWidth', lineWidth);
+
+% Hold off
+hold_off(wasHold);
 
 % Set the x axis to be log-scaled
 set(gca, 'XScale', 'log');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [vZeros, itM2hDiffZeros] = ...
+                find_inflection_points_voltage_vs_opd (tVecs, vVecsSim, ...
+                                                itm2hDiff, itm2hDiffLowerLimit)
+
+% Compute d2v/dt2
+[t1Vecs, dvdtVecs] = compute_derivative_trace(tVecs, vVecsSim);
+[~, d2vdt2Vecs] = compute_derivative_trace(t1Vecs, dvdtVecs);
+
+% Find the indices with d2v/dt2 closest to zero
+ind2Zeros = find_zeros(d2vdt2Vecs);
+
+% Find the corresponding indices in the voltage vector
+indZeros = ind2Zeros + 1;
+
+% Extract the values from the voltage and m2hDiff vectors
+vZeros = vVecsSim(indZeros);
+itM2hDiffZeros = itm2hDiff(indZeros);
+
+% Remove values that are not in view
+toRemove = itM2hDiffZeros == itm2hDiffLowerLimit;
+vZeros(toRemove) = [];
+itM2hDiffZeros(toRemove) = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
