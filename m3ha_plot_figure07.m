@@ -60,6 +60,7 @@ combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = true;
+plot200CellGroupByEpasJitters = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -144,7 +145,11 @@ candidateLabels = {};
 % candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
                 % 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35'};
 % candidateLabels = {'candidateIDs_2,14,20,29-30,32,35-36'};
-networkNamesToUse = {'D101310', 'hetero4', 'hetero8'};
+% candidateLabels = {'D101310', 'hetero4', 'hetero8'};
+candidateLabels = {'candidateIDs_32'; 'candidateIDs_2,14,32,35'; ...
+                        'candidateIDs_2,14,20,29-30,32,35-36'};
+cellNameStr = 'cellName';
+epasStr = 'TCepas';
 
 figTypes = {'png', 'epsc'};
 
@@ -175,13 +180,19 @@ popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
 
 % Create a network data spreadsheet names
-networkSheetNames = strcat(popIterName200Cell, '_', networkNamesToUse, '_', ...
+networkSheetNames = strcat(popIterName200Cell, '_', candidateLabels, '_', ...
                             oscParamsSuffix, '.csv');
 
 % Contruct the full path to the population data spreadsheet
 popDataPath2Cell = fullfile(figure07Dir, popDataSheetName2Cell);
 popDataPath200Cell = fullfile(figure08Dir, popDataSheetName200Cell);
 networkDataPaths = fullfile(figure08Dir, networkSheetNames);
+
+% Construct stats table paths
+networkStatLabels = strcat(popIterName200Cell, '_', candidateLabels, ...
+                            '_gIncr', num2str(gIncr));
+statsGroupByEpasPaths = ...
+    fullfile(figure08Dir, strcat(networkStatLabels, '_groupByEpas_stats.mat'));
 
 % Create color maps
 colorMapPharm = decide_on_colormap([], 4);
@@ -290,7 +301,8 @@ if plot2CellViolins
         % Compute statistics for all features
         disp('Computing statistics for violin plots ...');
         statsTable = m3ha_network_compute_statistics(popDataPath2Cell, ...
-                                    gIncr, measuresOfInterest, measureTitles);
+                                gIncr, measuresOfInterest, measureTitles, ...
+                                'mean', cellNameStr);
 
         % Generate labels
         conditionLabel = conditionLabel2Cell;
@@ -319,7 +331,7 @@ if plot200CellViolins
         disp('Computing statistics for violin plots ...');
         statsTable = m3ha_network_compute_statistics(popDataPath200Cell, ...
                                 gIncr, measuresOfInterest, measureTitles, ...
-                                'mean');
+                                'mean', cellNameStr);
 
         % Generate labels
         conditionLabel = conditionLabel200Cell;
@@ -335,7 +347,7 @@ if plot200CellViolins
                     'OutFolder', figure08Dir);
 end
 
-%% Plots oscillation measures over pharm condition 
+%% Plots oscillation measures grouped by cells
 if plot200CellGroupByCellJitters
     % Construct stats table path
     statsGroupByCellPath200Cell = ...
@@ -348,7 +360,7 @@ if plot200CellGroupByCellJitters
         disp('Computing statistics for grouped jitter plots ...');
         statsTable = m3ha_network_compute_statistics(popDataPath200Cell, ...
                             gIncr, measuresOfInterestJitter, ...
-                            measureTitlesJitter, 'groupByCell');
+                            measureTitlesJitter, 'grouped', cellNameStr);
 
         % Generate labels
         conditionLabel = conditionLabel200Cell;
@@ -369,7 +381,22 @@ if combineEach200CellNetwork
     cellfun(@(dataPath, networkName) ...
                 combine_osc_params(popIterDir200Cell, candCellSheetPath, ...
                             rankNumsToUse, dataPath, networkName), ...
-            networkDataPaths, networkNamesToUse, 'UniformOutput', false);
+            networkDataPaths, candidateLabels, 'UniformOutput', false);
+end
+
+%% Plots oscillation measures grouped by TCepas
+if plot200CellGroupByEpasJitters
+    % Compute statistics if not done already
+    cellfun(@(a, b, c) ...
+            m3ha_network_compute_and_save_statistics(a, b, gIncr, ...
+                            measuresOfInterestJitter, measureTitlesJitter, ...
+                            'grouped', epasStr, c, pharmLabelsShort), ...
+            statsGroupByEpasPaths, networkDataPaths, networkStatLabels);
+
+    % Plot jitter plots
+    cellfun(@(a) m3ha_plot_grouped_jitter(a, figure08Dir, ...
+                            measuresOfInterestJitter), ...
+            statsGroupByEpasPaths);
 end
 
 %% Archive all scripts for this run
@@ -377,7 +404,8 @@ if archiveScriptsFlag
     if plot200CellExamples || analyze200CellSpikes || plotAnalysis200Cell || ...
             backupPrevious200Cell || combineActivationProfiles || ...
             combine200CellPopulation || plot200CellViolins || ...
-            plot200CellGroupByCellJitters || combineEach200CellNetwork
+            plot200CellGroupByCellJitters || combineEach200CellNetwork || ...
+            plot200CellGroupByEpasJitters
         archive_dependent_scripts(mfilename, 'OutFolder', figure08Dir);
     else
         archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
@@ -612,28 +640,40 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function combinedTable = combine_osc_params (popIterDir, candCellSheetPath, ...
-                                rankNumsToUse, combinedPath, networkNamesToUse)
+                                rankNumsToUse, combinedPath, candidateLabels)
 % TODO: Add candidate IDs
 
 %% Hard-coded parameters
 rankNumStr = 'rankNum';
-cellNameStr = 'cellName';
 seedNumStr = 'seedNumber';
+cellNameStr = 'cellName';
+candLabelStr = 'candidateLabel';
 oscParamsSuffix = 'oscillation_params';
+candIdStr = 'candidateId';
 
 %% Do the job
 % Read the candidate cell table
 candCellTable = readtable(candCellSheetPath, 'ReadRowNames', true);
 
 % Find the cell names to use from the table
-if isempty(networkNamesToUse)
+if isempty(candidateLabels)
     % TODO: table_lookup.m
-    % TODO: networkNamesToUse = table_lookup(candCellTable, cellNameStr, ...
+    % TODO: cellNamesToUse = table_lookup(candCellTable, cellNameStr, ...
     %                                       rankNumStr, rankNumsToUse)
     rankNumbersAll = candCellTable.(rankNumStr);
     cellNamesAll = candCellTable.(cellNameStr);
-    networkNamesToUse = match_positions(cellNamesAll, ...
+    cellNamesToUse = match_positions(cellNamesAll, ...
                                     rankNumbersAll, rankNumsToUse);
+else
+    % Force as a cell array
+    candidateLabels = force_column_cell(candidateLabels);
+
+    % Extract cell names to use
+    cellNamesToUse = ...
+        cellfun(@(x) candidateLabel2cellName(x, candCellTable, ...
+                                            candIdStr, cellNameStr), ...
+                candidateLabels, 'UniformOutput', false);
+
 end
 
 % Find all seed number subdirectories
@@ -643,8 +683,8 @@ end
 % Extract all tables for each seed number
 oscParamTablesCell = ...
     cellfun(@(seedNumDir) retrieve_osc_param_tables(seedNumDir, ...
-                                        networkNamesToUse, oscParamsSuffix, ...
-                                        seedNumStr, cellNameStr), ...
+                        candidateLabels, cellNamesToUse, oscParamsSuffix, ...
+                        seedNumStr, cellNameStr, candLabelStr), ...
             seedNumDirs, 'UniformOutput', false);
 
 % Vertically concatenate the cell arrays
@@ -654,10 +694,39 @@ oscParamTables = apply_over_cells(@vertcat, oscParamTablesCell);
 combinedTable = apply_over_cells(@vertcat, oscParamTables);
 
 % Join the candidate cell info to the table
-combinedTable = join(combinedTable, candCellTable, 'Keys', cellNameStr);
+if any(cellfun(@(x) regexp(x, '[A-Z][0-9]{6}'), cellNamesToUse))
+    combinedTable = join(combinedTable, candCellTable, 'Keys', cellNameStr);
+end
 
 % Save the table
 writetable(combinedTable, combinedPath);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function cellNameToUse = ...
+            candidateLabel2cellName (candidateLabel, candCellTable, candIdStr, cellNameStr)
+
+candIdToUse = sscanf_full(candidateLabel, '%d');
+
+if numel(candIdToUse) == 1
+    candIdsAll = candCellTable.(candIdStr);
+    cellNamesAll = candCellTable.(cellNameStr);
+    cellNameToUse = match_positions(cellNamesAll, candIdsAll, candIdToUse);
+else
+    indNeg = find(candIdToUse < 0);
+
+    if ~isempty(indNeg)
+        rangeStart = candIdToUse(indNeg - 1);
+        rangeEnd = -candIdToUse(indNeg);
+        candIdsToAdd = arrayfun(@(x, y) x:y, rangeStart, rangEnd, ...
+                                'UniformOutput', false);
+        candIdToUse = union(candIdToUse, union_over_cells(candIdsToAdd));
+    end
+
+    cellNameToUse = ['hetero', num2str(numel(candIdToUse))];
+end
 
 end
 
@@ -829,15 +898,16 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function oscParamTables = retrieve_osc_param_tables (seedNumDir, ...
-                                        networkNamesToUse, oscParamsSuffix, ...
-                                        seedNumStr, cellNameStr)
+function oscParamTables = ...
+                retrieve_osc_param_tables (seedNumDir, candidateLabelsToUse, ...
+                                        cellNamesToUse, oscParamsSuffix, ...
+                                        seedNumStr, cellNameStr, candLabelStr)
 
 % Hard-coded parameters
 TCepasStr = 'TCepas';
 
 % Force as a column cell array
-networkNamesToUse = force_column_cell(networkNamesToUse);
+cellNamesToUse = force_column_cell(cellNamesToUse);
 
 % Extract the seed number
 seedNumber = sscanf_full(extract_fileparts(seedNumDir, 'base'), '%d');
@@ -847,7 +917,7 @@ TCepas = -75 + mod(seedNumber, 16);
 
 % Locate corresponding oscillation parameter paths
 [~, oscParamPaths] = ...
-    find_matching_files(networkNamesToUse, 'Directory', seedNumDir, ...
+    find_matching_files(candidateLabelsToUse, 'Directory', seedNumDir, ...
                         'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
                         'Recursive', true, 'ForceCellOutput', true);
 
@@ -866,22 +936,50 @@ oscParamTables = ...
                             'NewVariableNames', seedNumStr, 'Before', 1), ...
             oscParamTables, 'UniformOutput', false);
 
+% Add the candidate label to the tables
+oscParamTables = ...
+    cellfun(@(x, y) addvars_custom(x, {y}, 'NewVariableNames', candLabelStr, ...
+                                    'Before', 1), ...
+            oscParamTables, candidateLabelsToUse, 'UniformOutput', false);
+
 % Add the cell name to the tables
 oscParamTables = ...
     cellfun(@(x, y) addvars_custom(x, {y}, 'NewVariableNames', cellNameStr, ...
                                     'Before', 1), ...
-            oscParamTables, networkNamesToUse, 'UniformOutput', false);
+            oscParamTables, cellNamesToUse, 'UniformOutput', false);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_network_compute_and_save_statistics(statsPath, dataPath, gIncr, ...
+                            measuresOfInterestJitter, measureTitlesJitter, ...
+                            method, groupNameStr, conditionLabel, pharmLabels)
+
+if ~isfile(statsPath)
+    % Compute statistics for all features
+    disp('Computing statistics for grouped jitter plots ...');
+    statsTable = m3ha_network_compute_statistics(dataPath, ...
+                        gIncr, measuresOfInterestJitter, ...
+                        measureTitlesJitter, method, groupNameStr);
+
+    % Save stats table
+    save(statsPath, 'statsTable', 'pharmLabels', ...
+                        'conditionLabel', '-v7.3');
+end
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function statsTable = m3ha_network_compute_statistics (popDataPath, gIncr, ...
-                                            measureStr, measureTitle, method)
+                                measureStr, measureTitle, method, groupNameStr)
 %% Computes all statistics for the 2-cell network
 
 %% Hard-coded parameters
-cellNameStr = 'cellName';
+if isempty(groupNameStr)
+    groupNameStr = 'cellName';
+end
 seedNumStr = 'seedNumber';
 gIncrStr = 'gIncr';
 pharmStr = 'pCond';
@@ -901,53 +999,52 @@ switch method
             replace(measureStr, {'mean', 'oscillationProbability'}, ...
                                             {'', 'hasOscillation'});
         measureStrOrig = lower_first_char(measureStrNoMean);
-    case 'groupByCell'
+    case 'grouped'
         measureStrOrig = measureStr;
     otherwise
         error('Not implemented yet!');
 end
 
 % Locate the columns of interest
-colsOfInterest = [{cellNameStr}; {seedNumStr}; {pharmStr}; measureStrOrig];
+colsOfInterest = [{groupNameStr}; {seedNumStr}; {pharmStr}; measureStrOrig];
 
 % Extract the table of interest
 popTableOfInterest = popDataTable(rowsToUse, colsOfInterest);
 
 % Compute statistics for each measure of interest
-[allValues, pharmCondition] = ...
+[allValues, pharmCondition, uniqueGroupNames] = ...
     cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, seedNumStr, ...
-                                        pharmStr, cellNameStr, x, method), ...
+                                        pharmStr, groupNameStr, x, method), ...
                     measureStrOrig, 'UniformOutput', false);
 
 % Create the statistics table
-statsTable = table(measureTitle, measureStr, pharmCondition, allValues, ...
-                    'RowNames', measureStr);
+statsTable = table(measureTitle, measureStr, pharmCondition, ...
+                    uniqueGroupNames, allValues, 'RowNames', measureStr);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [allValuesEachPharm, pharmCondition] = ...
+function [allValuesEachPharm, pharmCondition, uniqueGroupNames] = ...
                 m3ha_network_stats_helper (popDataTable, seedNumStr, ...
-                                    pharmStr, cellNameStr, measureStr, method)
+                                    pharmStr, groupNameStr, measureStr, method)
 %% Computes the statistics for one measure
 
 %% Do the job
 % Extract from table
 pharmAll = popDataTable.(pharmStr);
-cellNameAll = popDataTable.(cellNameStr);
-seedNumberAll = popDataTable.(seedNumStr);
+groupNameAll = popDataTable.(groupNameStr);
 
 % Get all possible pharmacological conditions
 pharmCondition = force_column_cell(num2cell(unique(pharmAll, 'sorted')));
 
-% Get all cell names
-uniqueCellNames = force_column_cell(unique(cellNameAll));
+% Get all group names
+uniqueGroupNames = force_column_cell(unique(groupNameAll));
 
 % Find corresponding row numbers
-rowsEachCellEachPharm = ...
-    cellfun(@(p) cellfun(@(c) pharmAll == p & strcmp(cellNameAll, c), ...
-                        uniqueCellNames, 'UniformOutput', false), ...
+rowsEachGroupEachPharm = ...
+    cellfun(@(p) cellfun(@(c) pharmAll == p & strcmp(groupNameAll, c), ...
+                        uniqueGroupNames, 'UniformOutput', false), ...
             pharmCondition, 'UniformOutput', false);
 
 % Get mean values across iterations for all cells
@@ -957,13 +1054,13 @@ switch method
         allValuesEachPharm = ...
             cellfun(@(a) ...
                     cellfun(@(b) nanmean(popDataTable{b, measureStr}), a), ... 
-                rowsEachCellEachPharm, 'UniformOutput', false);
-    case 'groupByCell'
+                rowsEachGroupEachPharm, 'UniformOutput', false);
+    case 'grouped'
         allValuesEachPharm = ...
             cellfun(@(a) ...
                     cellfun(@(b) popDataTable{b, measureStr}, ...
                             a, 'UniformOutput', false), ... 
-                rowsEachCellEachPharm, 'UniformOutput', false);
+                rowsEachGroupEachPharm, 'UniformOutput', false);
     otherwise
         error('Not implemented yet!');
 end
