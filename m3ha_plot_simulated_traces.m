@@ -97,6 +97,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/count_vectors.m
 %       cd/decide_on_colormap.m
 %       cd/find_zeros.m
+%       cd/force_column_cell.m
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
 %       cd/extract_elements.m
@@ -104,6 +105,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/force_matrix.m
 %       cd/isemptycell.m
 %       cd/load_neuron_outputs.m
+%       cd/movingaveragefilter.m
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_figure05.m
@@ -1202,42 +1204,76 @@ itm2hDiff = itm2h - itminf2hinf;
 itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
         
 % Find endpoint for just the LTS region
-ltsParams = parse_lts(vVecsSim, 'StimStartMs', stimStartMs, ...
-                        'tVec0s', tVecs, 'iVec0s', iVecsSim, ...
-                        'Verbose', false);
-idxPeakStart = ltsParams.idxPeakStart;
-idxPeakEnd = ltsParams.idxPeakEnd;
-endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
+methodNumber = 2;
+switch methodNumber
+    case 1
+        % Find all LTS regions
+        ltsParams = parse_lts(vVecsSim, 'StimStartMs', stimStartMs, ...
+                                'tVec0s', tVecs, 'iVec0s', iVecsSim, ...
+                                'Verbose', false);
+        idxPeakStart = ltsParams.idxPeakStart;
+        idxPeakEnd = ltsParams.idxPeakEnd;
+        endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
+    case 2
+        % Extract peak endpoints 
+        endPointsPeak = vecfun(@find_lts_endpoints, vVecsSim, ...
+                                'UniformOutput', false);
+end
 
 % Restrict to just the LTS region
-[tVecs, vVecsSim, itm2hDiff] = ...
+[tVecsLts, vVecsLts, itm2hDiffLts] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsPeak), ...
             tVecs, vVecsSim, itm2hDiff);
 
 % Find inflection points
 indInflection = ...
-    find_inflection_points_voltage_vs_opd(tVecs, vVecsSim, itm2hDiff, ...
+    find_inflection_points_voltage_vs_opd(tVecsLts, vVecsLts, itm2hDiffLts, ...
                                             itm2hDiffLowerLimit);
 
 % Decide on figure title and file name
-figTitle = sprintf('Voltage vs m2hdiff for %s', expStrForTitle);
+figTitle1 = sprintf('Voltage trace for %s', expStrForTitle);
+figTitle2 = sprintf('Voltage vs m2hdiff for %s', expStrForTitle);
 
 %% Plots
 % Print to standard output
 fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 
-% Plot Voltage vs m2hdiff
-handles = plot_traces(itm2hDiff, vVecsSim, ...
-                    'LineStyle', '-', 'LineWidth', lineWidth, ...
+% Create subplots
+[fig, ax] = create_subplots(2, 1);
+
+% Plot voltage traces
+subplot(ax(1))
+handles = plot_traces(tVecsLts, vVecsLts, ...
+                    'Marker', '.', 'LineStyle', 'none', ...
+                    'LineWidth', lineWidth, ...
                     'Verbose', false, 'PlotMode', 'overlapped', ...
                     'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
-                    'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
-                    'YLabel', 'Voltage', 'XLimits', xLimits, ...
-                    'FigTitle', figTitle, otherArguments);
+                    'XLabel', 'Time (ms)', ...
+                    'YLabel', 'Voltage (mV)', 'XLimits', timeLimits, ...
+                    'FigTitle', figTitle1);
 
 % Plot markers for inflection points
 handles.selected = ...
-    plot_selected(itm2hDiff, vVecsSim, indInflection, 'ColorMap', colorMap, ...
+    plot_selected(tVecsLts, vVecsLts, indInflection, ...
+                'ColorMap', colorMap, ...
+                'Marker', 'o', 'MarkerSize', selectedMarkerSize, ...
+                'LineWidth', lineWidth);
+
+% Plot voltage vs m2hdiff
+subplot(ax(2))
+handles = plot_traces(itm2hDiffLts, vVecsLts, ...
+                    'Marker', '.', 'LineStyle', 'none', ...
+                    'LineWidth', lineWidth, ...
+                    'Verbose', false, 'PlotMode', 'overlapped', ...
+                    'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                    'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
+                    'YLabel', 'Voltage (mV)', 'XLimits', xLimits, ...
+                    'FigTitle', figTitle2, otherArguments);
+
+% Plot markers for inflection points
+handles.selected = ...
+    plot_selected(itm2hDiffLts, vVecsLts, indInflection, ...
+                'ColorMap', colorMap, ...
                 'Marker', 'o', 'MarkerSize', selectedMarkerSize, ...
                 'LineWidth', lineWidth);
 
@@ -1252,6 +1288,10 @@ function indInflection = ...
 
 % Hard-coded parameters
 methodNumber = 4;
+filtWidthMs = 10;            % in ms
+
+% Compute sampling interval
+siMs = compute_sampling_interval(tVecs);
 
 % Compute dv/dt
 [dvdtVecs, t1Vecs] = compute_derivative_trace(vVecsSim, tVecs);
@@ -1286,6 +1326,9 @@ case 3
     indInflection = cellfun(@(x) x + 1, ind2Inflection, 'UniformOutput', false);
 case 4
     % Method 4
+    % Smooth dv/dt over filtWidthMs
+    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
+
     % Compute d2v/dt2
     d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
 
@@ -1300,8 +1343,8 @@ end
 itm2hDiff = force_column_cell(itm2hDiff);
 
 % Remove values that are not in view
-indInflection = cellfun(@(a, b) setdiff(a, find(b == itm2hDiffLowerLimit)), ...
-                        indInflection, itm2hDiff, 'UniformOutput', false);
+% indInflection = cellfun(@(a, b) setdiff(a, find(b == itm2hDiffLowerLimit)), ...
+%                         indInflection, itm2hDiff, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1313,6 +1356,47 @@ vecs = extract_subvectors(vecs, 'Endpoints', endPointsForPlots);
 
 % Combine vectors into matrices
 vecs = force_matrix(vecs, 'AlignMethod', 'leftAdjustPad');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function endPoints = find_lts_endpoints(vVec)
+% TODO: Merge with parse_lts.m?
+
+% Set a minimum peak prominence
+minPeakProminence = range(vVec) / 20;
+
+% Find all the troughs
+[negAmpTroughs, indTroughs] = ...
+    findpeaks(-vVec, 'MinPeakProminence', minPeakProminence);
+ampTroughs = -negAmpTroughs;
+
+% Find the index for peak start
+if ~isempty(ampTroughs)
+    % Find the trough with smallest amplitude
+    [~, iTrough1] = min(ampTroughs);
+
+    % Index peak start
+    idxPeakStart = indTroughs(iTrough1);
+
+    % Remove this trough
+    ampTroughs(iTrough1) = [];
+    indTroughs(iTrough1) = [];
+else
+    idxPeakStart = 1;
+end
+
+% Find the index for peak end
+if ~isempty(ampTroughs)
+    [~, iTrough2] = min(ampTroughs);
+
+    % Index peak end
+    idxPeakEnd = indTroughs(iTrough2);
+else
+    idxPeakEnd = numel(vVec);
+end
+
+% Return endpoints
+endPoints = [idxPeakStart; idxPeakEnd];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

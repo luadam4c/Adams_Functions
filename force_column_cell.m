@@ -84,7 +84,9 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/match_format_vector_sets.m
+%       cd/movingaveragefilter.m
 %       cd/parse_atf_swd.m
 %       cd/parse_current_family.m
 %       cd/parse_iox.m

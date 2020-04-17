@@ -95,7 +95,7 @@ filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 % Median filter vectors
 vecsFilt = vecfun(@(x) medianfilter_helper(x, filtWidthSamples, ...
                                                 otherArguments), ...
-                    vecs);
+                    vecs, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
