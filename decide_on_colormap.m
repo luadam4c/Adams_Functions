@@ -11,6 +11,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       decide_on_colormap({'Red', 'Green'}, 2)
 %       decide_on_colormap([], 4)
 %       decide_on_colormap(@hsv, 4)
+%       decide_on_colormap({'Red', 'Blue', 'Green'}, 'ForceCellOutput', true)
 %
 % Outputs:
 %       colorMap    - color map created
@@ -25,12 +26,14 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       nColors     - (opt) number of colors
 %                   must be a positive integer vector
 %                   default == 64
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'ForceCellOutput': whether to force output as 
+%                                           a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for the create_colormap() function
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/char2rgb.m
 %       cd/create_colormap.m
 %       cd/create_error_for_nargin.m
@@ -47,6 +50,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_jitter.m
 %       cd/plot_raster.m
+%       cd/plot_selected.m
 %       cd/plot_spectrogram.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces.m
@@ -57,13 +61,14 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % 2019-08-22 Created by Adam Lu
 % 2019-10-12 Now allows colorMap to be a cell array
 % 2019-12-18 Now allows colorMap to be a function handle
-% TODO: 'ForceCellOutput'
+% 2020-04-15 Added 'ForceCellOutput' as an optional argument
 
 %% Hard-coded parameters
-nColorsDefault = 64;
+defaultNColors = 64;
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+nColorsDefault = [];                % set later
+forceCellOutputDefault = false;     % don't force as cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,20 +91,21 @@ addOptional(iP, 'nColors', nColorsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'nonnegative', 'integer'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, colorMap, varargin{:});
 nColors = iP.Results.nColors;
-% param1 = iP.Results.param1;
+forceCellOutput = iP.Results.ForceCellOutput;
 
 % Keep unmatched arguments for the create_colormap() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
-% Make sure nColors is not zero
-if nColors == 0
-    nColors = nColorsDefault;
+% Set default nColors
+if (isempty(nColors) || nColors == 0) && ~forceCellOutput
+    nColors = defaultNColors;
 end
 
 %% Do the job
@@ -115,21 +121,22 @@ elseif ischar(colorMap)
     colorMap = char2rgb(colorMap);
 elseif isstring(colorMap) || iscellstr(colorMap)
     % Convert to a numeric vectors
-    % TODO: cellorarrayfun.m
-    if iscell(colorMap)
-        cellorarrayfun = @cellfun;
-    else
-        cellorarrayfun = @arrayfun;
-    end
-    colorMap = cellorarrayfun(@char2rgb, colorMap, 'UniformOutput', false);
+    colorMap = array_fun(@char2rgb, colorMap, 'UniformOutput', false);
     
     % Vertically concatenate them
     colorMap = vertcat(colorMap{:});
 end
 
+
 % Match the number of rows in the color map to nColors
 if isscalar(nColors)
     colorMap = match_row_count(colorMap, nColors, 'ExpansionMethod', 'repeat');
+end
+
+% Force as a cell array if requested
+if forceCellOutput
+    rowColors = transpose(1:size(colorMap, 1));
+    colorMap = arrayfun(@(i) colorMap(i, :), rowColors, 'UniformOutput', false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

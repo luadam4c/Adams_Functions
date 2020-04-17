@@ -344,6 +344,7 @@ if plot200CellGroupedJitters
         % Generate labels
         conditionLabel = conditionLabel200Cell;
         pharmLabels = pharmLabelsShort;
+        candidateLabels = candidateLabels200Cell;
 
         % Save stats table
         save(statsGroupedPath200Cell, 'statsTable', 'pharmLabels', ...
@@ -595,6 +596,7 @@ end
 
 function combine_osc_params (popIterDir, candCellSheetPath, ...
                                     rankNumsToUse, popDataPath)
+% TODO: Add candidate IDs
 
 %% Hard-coded parameters
 rankNumStr = 'rankNum';

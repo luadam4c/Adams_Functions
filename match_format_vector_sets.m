@@ -1,6 +1,6 @@
-function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
+function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %% Matches two sets of vectors so that they are both cell arrays of the same number of column vectors
-% Usage: [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
+% Usage: [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % Explanation:
 %       This function takes two sets of vectors as input arguments
 %       If one of the sets is a cell array of vectors, 
@@ -11,22 +11,22 @@ function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
 %       cf. match_array_counts.m
 %
 % Example(s):
-%       [a, b] = match_format_vector_sets_new((2:5)', 1:5)
-%       [a, b] = match_format_vector_sets_new((2:5)', 1:5, 'MatchVectors', true)
-%       [a, b] = match_format_vector_sets_new({1:5, 2:6}, 1:5)
-%       [a, b] = match_format_vector_sets_new({1:5, 2:6}, 1:5, 'MatchVectors', true)
-%       [a, b] = match_format_vector_sets_new({1:5, 2:6; [], 5:-1:1}, 1:5)
-%       [a, b] = match_format_vector_sets_new({1:5, [2:6]'}, 1:5)
-%       [a, b] = match_format_vector_sets_new([[1:5]', [2:6]'], [1:5]')
-%       [a, b] = match_format_vector_sets_new({'yes'}, 1:5)
-%       [a, b] = match_format_vector_sets_new({'yes'}, 1:5, 'TreatRowVecAsOne', false)
-%       [a, b] = match_format_vector_sets_new('yes', magic(3))
-%       [a, b] = match_format_vector_sets_new('apple', 1:5)
-%       [a, b] = match_format_vector_sets_new('apple', 1:5, 'TreatRowVecAsOne', false)
-%       [a, b] = match_format_vector_sets_new('apple', 'banana')
-%       [a, b] = match_format_vector_sets_new('apple', '')
-%       [a, b] = match_format_vector_sets_new(@lines, magic(3))
-%       [a, b] = match_format_vector_sets_new({'apple'}, '')
+%       [a, b] = match_format_vector_sets((2:5)', 1:5)
+%       [a, b] = match_format_vector_sets((2:5)', 1:5, 'MatchVectors', true)
+%       [a, b] = match_format_vector_sets({1:5, 2:6}, 1:5)
+%       [a, b] = match_format_vector_sets({1:5, 2:6}, 1:5, 'MatchVectors', true)
+%       [a, b] = match_format_vector_sets({1:5, 2:6; [], 5:-1:1}, 1:5)
+%       [a, b] = match_format_vector_sets({1:5, [2:6]'}, 1:5)
+%       [a, b] = match_format_vector_sets([[1:5]', [2:6]'], [1:5]')
+%       [a, b] = match_format_vector_sets({'yes'}, 1:5)
+%       [a, b] = match_format_vector_sets({'yes'}, 1:5, 'TreatRowVecAsOne', false)
+%       [a, b] = match_format_vector_sets('yes', magic(3))
+%       [a, b] = match_format_vector_sets('apple', 1:5)
+%       [a, b] = match_format_vector_sets('apple', 1:5, 'TreatRowVecAsOne', false)
+%       [a, b] = match_format_vector_sets('apple', 'banana')
+%       [a, b] = match_format_vector_sets('apple', '')
+%       [a, b] = match_format_vector_sets(@lines, magic(3))
+%       [a, b] = match_format_vector_sets({'apple'}, '')
 %
 % Outputs:
 %       vecs1       - new first set of vectors

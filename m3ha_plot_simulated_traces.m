@@ -99,14 +99,16 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/find_zeros.m
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
-%       cd/hold_on.m
-%       cd/hold_off.m
+%       cd/extract_elements.m
+%       cd/extract_subvectors.m
+%       cd/force_matrix.m
 %       cd/isemptycell.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_figure05.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_selected.m
 %       cd/plot_traces.m
 %       cd/read_lines_from_file.m
 %       cd/set_default_flag.m
@@ -1159,11 +1161,14 @@ function handles = m3ha_plot_voltage_vs_opd (simData, buildMode, ...
 %   Note: Must be consistent with singleneuron4compgabab.hoc
 TIME_COL_SIM = 1;
 VOLT_COL_SIM = 2;
+IDCLAMP_COL_SIM = 5;
 IT_M_DEND2 = 47;
 IT_MINF_DEND2 = 48;
 IT_H_DEND2 = 49;
 IT_HINF_DEND2 = 50;
 itm2hDiffLowerLimit = 1e-8;
+selectedMarkerSize = 6;
+stimStartMs = 3000;
 
 % Only do this for active mode
 if strcmpi(buildMode, 'passive')
@@ -1174,19 +1179,20 @@ end
 %% Process data
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
-[tVecs, vVecsSim, itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim] = ...
-    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+[tVecs, vVecsSim, iVecsSim, ...
+        itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim] = ...
+    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, IDCLAMP_COL_SIM, ...
                     IT_M_DEND2, IT_MINF_DEND2, ...
                     IT_H_DEND2, IT_HINF_DEND2]);
 
 % Find the indices of the time-axis limit endpoints
 endPointsForPlots = find_window_endpoints(timeLimits, tVecs);
 
-% Prepare vectors for plotting
-[tVecs, vVecsSim, itmVecsSim, ...
+% Restrict to those endpoints
+[tVecs, vVecsSim, iVecsSim, itmVecsSim, ...
         itminfVecsSim, ithVecsSim, ithinfVecsSim] = ...
     argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
-            tVecs, vVecsSim, itmVecsSim, ...
+            tVecs, vVecsSim, iVecsSim, itmVecsSim, ...
             itminfVecsSim, ithVecsSim, ithinfVecsSim);
 
 % Compute m2hDiff
@@ -1194,9 +1200,22 @@ itm2h = (itmVecsSim .^ 2) .* ithVecsSim;
 itminf2hinf = (itminfVecsSim .^ 2) .* ithinfVecsSim;
 itm2hDiff = itm2h - itminf2hinf;
 itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
+        
+% Find endpoint for just the LTS region
+ltsParams = parse_lts(vVecsSim, 'StimStartMs', stimStartMs, ...
+                        'tVec0s', tVecs, 'iVec0s', iVecsSim, ...
+                        'Verbose', false);
+idxPeakStart = ltsParams.idxPeakStart;
+idxPeakEnd = ltsParams.idxPeakEnd;
+endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
+
+% Restrict to just the LTS region
+[tVecs, vVecsSim, itm2hDiff] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsPeak), ...
+            tVecs, vVecsSim, itm2hDiff);
 
 % Find inflection points
-[vZeros, itM2hDiffZeros] = ...
+indInflection = ...
     find_inflection_points_voltage_vs_opd(tVecs, vVecsSim, itm2hDiff, ...
                                             itm2hDiffLowerLimit);
 
@@ -1216,42 +1235,73 @@ handles = plot_traces(itm2hDiff, vVecsSim, ...
                     'YLabel', 'Voltage', 'XLimits', xLimits, ...
                     'FigTitle', figTitle, otherArguments);
 
-% Hold on
-wasHold = hold_on;
-
 % Plot markers for inflection points
-plot(itM2hDiffZeros, vZeros, 'o', 'MarkserSize', 3, 'LineWidth', lineWidth);
-
-% Hold off
-hold_off(wasHold);
+handles.selected = ...
+    plot_selected(itm2hDiff, vVecsSim, indInflection, 'ColorMap', colorMap, ...
+                'Marker', 'o', 'MarkerSize', selectedMarkerSize, ...
+                'LineWidth', lineWidth);
 
 % Set the x axis to be log-scaled
 set(gca, 'XScale', 'log');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [vZeros, itM2hDiffZeros] = ...
+function indInflection = ...
                 find_inflection_points_voltage_vs_opd (tVecs, vVecsSim, ...
                                                 itm2hDiff, itm2hDiffLowerLimit)
 
-% Compute d2v/dt2
-[t1Vecs, dvdtVecs] = compute_derivative_trace(tVecs, vVecsSim);
-[~, d2vdt2Vecs] = compute_derivative_trace(t1Vecs, dvdtVecs);
+% Hard-coded parameters
+methodNumber = 4;
 
-% Find the indices with d2v/dt2 closest to zero
-ind2Zeros = find_zeros(d2vdt2Vecs);
+% Compute dv/dt
+[dvdtVecs, t1Vecs] = compute_derivative_trace(vVecsSim, tVecs);
 
-% Find the corresponding indices in the voltage vector
-indZeros = ind2Zeros + 1;
+switch methodNumber
+case 1
+    % Extract the point of maximum slope for each voltage vector
+    [~, ind1MaxSlope] = extract_elements(dvdtVecs, 'max');
 
-% Extract the values from the voltage and m2hDiff vectors
-vZeros = vVecsSim(indZeros);
-itM2hDiffZeros = itm2hDiff(indZeros);
+    % Find the inflection point in each voltage vector
+    indInflection = num2cell(ind1MaxSlope + 1);
+case 2
+    % TODO: find_peaks_and_troughs.m
+    % Find the peaks and troughs for each voltage vector
+    ind1PeakTroughs = find_peaks_and_troughs(dvdtVecs);
+
+    % Find the inflection points in each voltage vector
+    indInflection = cellfun(@(x) x + 1, ind1PeakTroughs, ...
+                            'UniformOutput', false);
+case 3
+    % Method 3
+    % Compute d2v/dt2
+    d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
+
+    % Find the indices with d2v/dt2 closest to zero
+    ind2Inflection = find_zeros(d2vdt2Vecs);
+
+    % Force as column cell arrays
+    ind2Inflection = force_column_cell(ind2Inflection);
+
+    % Find the corresponding indices in the voltage and m2hDiff vectors
+    indInflection = cellfun(@(x) x + 1, ind2Inflection, 'UniformOutput', false);
+case 4
+    % Method 4
+    % Compute d2v/dt2
+    d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
+
+    % Extract the point of maximum concavity for each voltage vector
+    [~, ind2MaxSlope] = extract_elements(d2vdt2Vecs, 'max');
+
+    % Find the inflection point in each voltage vector
+    indInflection = num2cell(ind2MaxSlope + 1);
+end
+
+% Force as column cell arrays
+itm2hDiff = force_column_cell(itm2hDiff);
 
 % Remove values that are not in view
-toRemove = itM2hDiffZeros == itm2hDiffLowerLimit;
-vZeros(toRemove) = [];
-itM2hDiffZeros(toRemove) = [];
+indInflection = cellfun(@(a, b) setdiff(a, find(b == itm2hDiffLowerLimit)), ...
+                        indInflection, itm2hDiff, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

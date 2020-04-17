@@ -53,6 +53,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/parse_ipsc.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_selected.m
 %       cd/plot_struct.m
 %       cd/xolotl_add_current_injection.m
 %       cd/xolotl_add_voltage_clamp.m

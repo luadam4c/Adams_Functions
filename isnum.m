@@ -22,6 +22,7 @@ function isNum = isnum (x, varargin)
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
 %       cd/compute_psth.m
+%       cd/compute_sampling_interval.m
 %       cd/create_default_grouping.m
 %       cd/create_grouping_by_vectors.m
 %       cd/force_column_cell.m

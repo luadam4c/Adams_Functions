@@ -426,6 +426,8 @@ averageDistance = mean(halfPeriodsToMultiple);
 
 function [ampTroughs, indTroughs] = find_troughs_from_peaks(vec, indPeaks)
 %% Finds troughs in between given peak indices
+% TODO: Pull out as its own function
+% TODO: Create find_peaks_and_troughs
 
 nPeaks = numel(indPeaks);
 

@@ -106,6 +106,9 @@ function varargout = parse_lts (vVec0s, varargin)
 %                   - 'vVec3s': moving-average-filtered vVec1s
 %                   must be a numeric array with same length as vVec0
 %                   default == movingaveragefilter(vVec1, smoothWindowMs, siMs)
+%                   - 'iVec0s': original current vector(s)
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == none provided
 %
 % Requires:
 %       cd/all_file_bases.m
@@ -122,6 +125,7 @@ function varargout = parse_lts (vVec0s, varargin)
 %       cd/match_time_info.m
 %       cd/medianfilter.m
 %       cd/movingaveragefilter.m
+%       cd/parse_ipsc.m
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
@@ -130,10 +134,11 @@ function varargout = parse_lts (vVec0s, varargin)
 % File History:
 % 2019-01-13 Adapted from m3ha_find_lts.m
 % 2019-02-19 Made siMs an optional argument
-% 2019-11-17 Added 'SaveMatFlag' as an optional parameter
-% 2019-11-17 Added 'SaveSheetFlag' as an optional parameter
-% 2019-11-18 Added 'Prefix' as an optional parameter
+% 2019-11-17 Added 'SaveMatFlag' as an optional argument
+% 2019-11-17 Added 'SaveSheetFlag' as an optional argument
+% 2019-11-18 Added 'Prefix' as an optional argument
 % 2019-11-18 Changed mean -> nanmean; std -> nanstd
+% 2020-04-16 Added 'iVec0s' as an optional argument
 
 %% Hard-coded parameters
 % Subdirectories in outFolder for placing figures
@@ -178,7 +183,7 @@ outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
 prefixDefault = '';             % set later
 stimStartMsDefault = [];        % set later
-minPeakDelayMsDefault = 0;
+minPeakDelayMsDefault = [];     % set later
 noiseWindowMsORmaxNoiseDefault = [];    % set later
 searchWindowMsDefault = [];       % set later
 tVec0sDefault = [];             % set later
@@ -186,6 +191,7 @@ tVec2sDefault = [];             % set later
 vVec1sDefault = [];             % set later
 vVec2sDefault = [];             % set later
 vVec3sDefault = [];             % set later
+iVec0sDefault = [];             % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -256,6 +262,10 @@ addParameter(iP, 'vVec3s', vVec3sDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['vVec3s must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'iVec0s', iVec0sDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['iVec0s must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
 parse(iP, vVec0s, varargin{:});
@@ -276,6 +286,7 @@ tVec2s = iP.Results.tVec2s;
 vVec1s = iP.Results.vVec1s;
 vVec2s = iP.Results.vVec2s;
 vVec3s = iP.Results.vVec3s;
+iVec0s = iP.Results.iVec0s;
 
 %% Preparation
 % Count the number of vectors
@@ -329,7 +340,7 @@ tBase = extract_elements(tVec0s, 'first') - siMs;
 
 % Detect stimulation start time if not provided
 % TODO: Not tested
-if isempty(stimStartMs)
+if isempty(stimStartMs)        
     % Force as a cell array
     vVec0sCell = force_column_cell(vVec0s);
     
@@ -364,6 +375,22 @@ else
     end
     maxNoise = NaN(nVectors, 1);
     computeMaxNoiseFlag = true;
+end
+
+% Decide on minPeakDelayMs
+if isempty(minPeakDelayMs)
+    if ~isempty(iVec0s)
+        % Parse the IPSC current
+        ipscTable = parse_ipsc(iVec0s, siMs, 'tVecs', tVec0s, ...
+                                'StimStartMs', stimStartMs, ...
+                                'Verbose', verbose);
+
+        % Extract peak delay
+        minPeakDelayMs = ipscTable.peakDelayMs;
+    else
+        % No peak delay
+        minPeakDelayMs = 0;
+    end
 end
 
 % Compute the minimum peak time in ms
@@ -1239,6 +1266,8 @@ parsedParams.spikeAdaptation = spikeAdaptation;
 parsedParams.isSpontaneous = isSpontaneous;
 parsedParams.isOverridden = isOverridden;
 parsedParams.couldHaveMissed = couldHaveMissed;
+parsedParams.idxPeakStart = idxPeakStart;
+parsedParams.idxPeakEnd = idxPeakEnd;
 
 % Store in parsedData structure
 parsedData.tVec0 = tVec0;

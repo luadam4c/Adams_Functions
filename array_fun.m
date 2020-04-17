@@ -41,6 +41,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/compute_rms_error.m
 %       cd/compute_weighted_average.m
 %       cd/count_samples.m
+%       cd/decide_on_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_elements.m
 %       cd/extract_fields.m

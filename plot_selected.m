@@ -1,6 +1,6 @@
-function handles = plot_selected (xValues, yValues, indSelected, varargin)
+function selected = plot_selected (xValues, yValues, indSelected, varargin)
 %% Plots selected values
-% Usage: handles = plot_selected (xValues, yValues, indSelected, varargin)
+% Usage: selected = plot_selected (xValues, yValues, indSelected, varargin)
 % Explanation:
 %       TODO
 %
@@ -13,7 +13,7 @@ function handles = plot_selected (xValues, yValues, indSelected, varargin)
 %       plot_selected(xValues, yValues, indSelected)
 %
 % Outputs:
-%       handles     - TODO: Description of handles
+%       selected  	- TODO: Description of handles
 %                   specified as a TODO
 %
 % Arguments:
@@ -44,14 +44,20 @@ function handles = plot_selected (xValues, yValues, indSelected, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/decide_on_colormap.m
+%       cd/force_column_cell.m
+%       cd/hold_on.m
+%       cd/hold_off.m
+%       cd/match_row_count.m
 %
 % Used by:
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_bar.m
 %       cd/plot_tuning_curve.m
 
 % File History:
 % 2019-11-24 Created by Adam Lu
-% 
+% TODO: Allow inputs to be cell arrays
 
 %% Hard-coded parameters
 
@@ -99,12 +105,48 @@ colorMap = iP.Results.ColorMap;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Force as column cell arrays
+[xValues, yValues, indSelected] = ...
+    argfun(@force_column_cell, xValues, yValues, indSelected);
+
+% Match row count 
+nRows = max([numel(xValues), numel(yValues), numel(indSelected)]);
+
+% Match row count 
+[xValues, yValues, indSelected] = ...
+    argfun(@(x) match_row_count(x, nRows), xValues, yValues, indSelected);
+
+% Convert color map to a cell array or row vectors
+colorMapCell = decide_on_colormap(colorMap, nRows, 'ForceCellOutput', true);
+
+%% Do the job
+% Hold on
+wasHold = hold_on;
+
+% Plot selected
+selected = cellfun(@(a, b, c, d) plot_selected_helper(a, b, c, d, ...
+                           	marker, lineStyle, lineWidth, otherArguments), ...
+                    xValues, yValues, indSelected, colorMapCell, ...
+                    'UniformOutput', false);
+
+% Hold off
+hold_off(wasHold);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function selected = plot_selected_helper(xValues, yValues, ...
+                                            indSelected, colorMap, ...
+                                            marker, lineStyle, lineWidth, ...
+                                            otherArguments)
+% Plots a set of selected values
+
+%% Preparation
 % Remove NaN values from indices
 indSelected = indSelected(~isnan(indSelected));
 
 % If no indices remaining, return
 if isempty(indSelected)
-    handles = gobjects;
+    selected = gobjects;
     return
 end
 
@@ -119,9 +161,6 @@ yLocsSelected = yValues(indSelected, :);
 selected = plot(xLocsSelected, yLocsSelected, ...
                 'LineStyle', lineStyle, 'Marker', marker, ...
                 'Color', colorMap, 'LineWidth', lineWidth, otherArguments);
-
-%% Output results
-handles = selected;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

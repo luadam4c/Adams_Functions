@@ -128,6 +128,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/remove_outliers.m
 %       cd/select_similar_values.m
 %       cd/unique_groups.m
+%       cd/vecfun.m
 %       cd/xolotl_set_simparams.m
 
 % File History:

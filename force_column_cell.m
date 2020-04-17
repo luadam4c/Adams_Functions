@@ -95,6 +95,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/plot_fitted_traces.m
 %       cd/plot_measures.m
 %       cd/plot_repetitive_protocols.m
+%       cd/plot_selected.m
 %       cd/plot_struct.m
 %       cd/plot_vertical_line.m
 %       cd/plot_vertical_shade.m
