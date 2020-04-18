@@ -70,6 +70,7 @@ function varargout = ismatch (list, cand, varargin)
 %       cd/find_in_strings.m
 %       cd/is_var_in_table.m
 %       cd/ismember_custom.m
+%       cd/m3ha_plot_figure07.m
 %       cd/plot_measures.m
 %       cd/unique_groups.m
 

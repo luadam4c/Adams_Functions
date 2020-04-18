@@ -10,6 +10,7 @@
 %       cd/argfun.m
 %       cd/array_fun.m
 %       cd/compute_combined_trace.m
+%       cd/convert_to_char.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
 %       cd/decide_on_colormap.m
@@ -18,6 +19,7 @@
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
+%       cd/ismatch.m
 %       cd/lower_first_char.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_plot_gabab.m
@@ -30,6 +32,7 @@
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/sscanf_full.m
+%       cd/unique_custom.m
 %       cd/update_figure_for_corel.m
 
 % File History:
@@ -59,8 +62,9 @@ combineActivationProfiles = false; %true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 plot200CellGroupByCellJitters = false; %true;
-combineEach200CellNetwork = true;
-plot200CellGroupByEpasJitters = false; %true;
+combineEach200CellNetwork = false; %true;
+plot200CellGroupByEpasJitters = true;
+plot200CellCumDist = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -141,13 +145,16 @@ pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
 
 % epasToPlot = [];
 epasToPlot = [-74; -70; -66; -62];
-candidateLabels = {};
-% candidateLabels = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
+candidateLabels200Cell = {};
+% candidateLabels200Cell = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
                 % 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35'};
-% candidateLabels = {'candidateIDs_2,14,20,29-30,32,35-36'};
-% candidateLabels = {'D101310', 'hetero4', 'hetero8'};
-candidateLabels = {'candidateIDs_32'; 'candidateIDs_2,14,32,35'; ...
-                        'candidateIDs_2,14,20,29-30,32,35-36'};
+% candidateLabels200Cell = {'candidateIDs_2,14,20,29-30,32,35-36'};
+% candidateLabels200Cell = {'D101310', 'hetero4', 'hetero8'};
+% candidateLabels200Cell = {'candidateIDs_32'; 'candidateIDs_2,14,32,35'; ...
+%                         'candidateIDs_2,14,20,29-30,32,35-36'};
+% candidateLabels200Cell = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
+%                 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35', ...
+%                 'candidateIDs_2,14,20,29-30,32,35-36'};
 cellNameStr = 'cellName';
 epasStr = 'TCepas';
 
@@ -161,6 +168,16 @@ exampleIterDir2Cell = fullfile(networkDirectory, exampleIterName2Cell);
 exampleIterDir200Cell = fullfile(networkDirectory, exampleIterName200Cell);
 popIterDir2Cell = fullfile(networkDirectory, popIterName2Cell);
 popIterDir200Cell = fullfile(networkDirectory, popIterName200Cell);
+
+% Find all possible candidate labels
+if isempty(candidateLabels200Cell)
+    candidateLabels200Cell = find_candidate_labels(popIterDir200Cell);
+
+    % TEMP: remove
+    toRemove = contains(candidateLabels200Cell, ...
+                            'candidateIDs_7,13-14,22,32,36');
+    candidateLabels200Cell = candidateLabels200Cell(~toRemove);
+end
 
 % Construct the full path to the candidate cell spreadsheet
 candCellSheetPath = fullfile(networkDirectory, candCellSheetName);
@@ -180,7 +197,7 @@ popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
 
 % Create a network data spreadsheet names
-networkSheetNames = strcat(popIterName200Cell, '_', candidateLabels, '_', ...
+networkSheetNames = strcat(popIterName200Cell, '_', candidateLabels200Cell, '_', ...
                             oscParamsSuffix, '.csv');
 
 % Contruct the full path to the population data spreadsheet
@@ -189,7 +206,7 @@ popDataPath200Cell = fullfile(figure08Dir, popDataSheetName200Cell);
 networkDataPaths = fullfile(figure08Dir, networkSheetNames);
 
 % Construct stats table paths
-networkStatLabels = strcat(popIterName200Cell, '_', candidateLabels, ...
+networkStatLabels = strcat(popIterName200Cell, '_', candidateLabels200Cell, ...
                             '_gIncr', num2str(gIncr));
 statsGroupByEpasPaths = ...
     fullfile(figure08Dir, strcat(networkStatLabels, '_groupByEpas_stats.mat'));
@@ -280,13 +297,13 @@ end
 %% Combines quantification over all homogeneous 200-cell networks
 if combine200CellPopulation
     combine_osc_params(popIterDir200Cell, candCellSheetPath, ...
-                            rankNumsToUse, popDataPath200Cell, []);
+                            rankNumsToUse, popDataPath200Cell, {});
 end
 
 %% Combines activation profiles over seed numbers for each 200-cell network
 if combineActivationProfiles
     combine_activation_profiles(popIterDir200Cell, figure08Dir, ...
-                                epasToPlot, candidateLabels);
+                                epasToPlot, candidateLabels200Cell);
 end
 
 %% Plots oscillation measures over pharm condition 
@@ -378,10 +395,10 @@ end
 
 %% Combines quantification over each 200-cell networks
 if combineEach200CellNetwork
-    cellfun(@(dataPath, networkName) ...
+    cellfun(@(dataPath, candidateLabel) ...
                 combine_osc_params(popIterDir200Cell, candCellSheetPath, ...
-                            rankNumsToUse, dataPath, networkName), ...
-            networkDataPaths, candidateLabels, 'UniformOutput', false);
+                            rankNumsToUse, dataPath, candidateLabel), ...
+            networkDataPaths, candidateLabels200Cell, 'UniformOutput', false);
 end
 
 %% Plots oscillation measures grouped by TCepas
@@ -399,13 +416,18 @@ if plot200CellGroupByEpasJitters
             statsGroupByEpasPaths);
 end
 
+%% Plots cumulative distribution plots
+if plot200CellCumDist
+
+end
+
 %% Archive all scripts for this run
 if archiveScriptsFlag
     if plot200CellExamples || analyze200CellSpikes || plotAnalysis200Cell || ...
             backupPrevious200Cell || combineActivationProfiles || ...
             combine200CellPopulation || plot200CellViolins || ...
             plot200CellGroupByCellJitters || combineEach200CellNetwork || ...
-            plot200CellGroupByEpasJitters
+            plot200CellGroupByEpasJitters || plot200CellCumDist
         archive_dependent_scripts(mfilename, 'OutFolder', figure08Dir);
     else
         archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
@@ -694,7 +716,7 @@ oscParamTables = apply_over_cells(@vertcat, oscParamTablesCell);
 combinedTable = apply_over_cells(@vertcat, oscParamTables);
 
 % Join the candidate cell info to the table
-if any(cellfun(@(x) regexp(x, '[A-Z][0-9]{6}'), cellNamesToUse))
+if any(ismatch(cellNamesToUse, '[A-Z][0-9]{6}', 'MatchMode', 'regexp'))
     combinedTable = join(combinedTable, candCellTable, 'Keys', cellNameStr);
 end
 
@@ -720,7 +742,7 @@ else
     if ~isempty(indNeg)
         rangeStart = candIdToUse(indNeg - 1);
         rangeEnd = -candIdToUse(indNeg);
-        candIdsToAdd = arrayfun(@(x, y) x:y, rangeStart, rangEnd, ...
+        candIdsToAdd = arrayfun(@(x, y) x:y, rangeStart, rangeEnd, ...
                                 'UniformOutput', false);
         candIdToUse = union(candIdToUse, union_over_cells(candIdsToAdd));
     end
@@ -732,8 +754,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_activation_profiles (popIterDir, outFolder, epasToPlot, ...
-                                        candidateLabels)
+function candidateLabels = find_candidate_labels (popIterDir)
 
 %% Hard-coded parameters
 oscDataSuffix = 'oscillation_data';
@@ -747,10 +768,15 @@ candLabelRegExp = 'candidateIDs_[0-9,-]*';
 % Extract all candidate label strings
 candidateStrs = extract_substrings(oscDataPaths, 'RegExp', candLabelRegExp);
 
-% Find all possible candidate labels
-if isempty(candidateLabels)
-    candidateLabels = unique(candidateStrs);
+% Find unique candidate labels
+candidateLabels = unique(candidateStrs);
+
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function combine_activation_profiles (popIterDir, outFolder, epasToPlot, ...
+                                        candidateLabels)
 
 cellfun(@(c) combine_activation_profiles_helper(c, popIterDir, ...
                                                 outFolder, epasToPlot), ...
@@ -904,7 +930,7 @@ function oscParamTables = ...
                                         seedNumStr, cellNameStr, candLabelStr)
 
 % Hard-coded parameters
-TCepasStr = 'TCepas';
+epasStr = 'TCepas';
 
 % Force as a column cell array
 cellNamesToUse = force_column_cell(cellNamesToUse);
@@ -927,7 +953,7 @@ oscParamTables = cellfun(@readtable, oscParamPaths, 'UniformOutput', false);
 % Add the TC epas to the tables
 oscParamTables = ...
     cellfun(@(x, y) addvars_custom(x, TCepas, ...
-                            'NewVariableNames', TCepasStr, 'Before', 1), ...
+                            'NewVariableNames', epasStr, 'Before', 1), ...
             oscParamTables, 'UniformOutput', false);
 
 % Add the seed number to the tables
@@ -1012,20 +1038,20 @@ colsOfInterest = [{groupNameStr}; {seedNumStr}; {pharmStr}; measureStrOrig];
 popTableOfInterest = popDataTable(rowsToUse, colsOfInterest);
 
 % Compute statistics for each measure of interest
-[allValues, pharmCondition, uniqueGroupNames] = ...
+[allValues, pharmCondition, uniqueGroupValues] = ...
     cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, seedNumStr, ...
                                         pharmStr, groupNameStr, x, method), ...
                     measureStrOrig, 'UniformOutput', false);
 
 % Create the statistics table
 statsTable = table(measureTitle, measureStr, pharmCondition, ...
-                    uniqueGroupNames, allValues, 'RowNames', measureStr);
+                    uniqueGroupValues, allValues, 'RowNames', measureStr);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [allValuesEachPharm, pharmCondition, uniqueGroupNames] = ...
+function [allValuesEachPharm, pharmCondition, uniqueGroupValues] = ...
                 m3ha_network_stats_helper (popDataTable, seedNumStr, ...
                                     pharmStr, groupNameStr, measureStr, method)
 %% Computes the statistics for one measure
@@ -1033,19 +1059,32 @@ function [allValuesEachPharm, pharmCondition, uniqueGroupNames] = ...
 %% Do the job
 % Extract from table
 pharmAll = popDataTable.(pharmStr);
-groupNameAll = popDataTable.(groupNameStr);
+groupValueAll = popDataTable.(groupNameStr);
 
 % Get all possible pharmacological conditions
 pharmCondition = force_column_cell(num2cell(unique(pharmAll, 'sorted')));
 
-% Get all group names
-uniqueGroupNames = force_column_cell(unique(groupNameAll));
+% Get all group values
+if iscell(groupValueAll)
+    uniqueGroupValues = ...
+        force_column_cell(unique_custom(groupValueAll, 'IgnoreNaN', true));
+else
+    uniqueGroupValues = ...
+        force_column_vector(unique_custom(groupValueAll, 'IgnoreNaN', true));
+end
 
 % Find corresponding row numbers
-rowsEachGroupEachPharm = ...
-    cellfun(@(p) cellfun(@(c) pharmAll == p & strcmp(groupNameAll, c), ...
-                        uniqueGroupNames, 'UniformOutput', false), ...
-            pharmCondition, 'UniformOutput', false);
+if iscell(uniqueGroupValues)
+    rowsEachGroupEachPharm = ...
+        cellfun(@(p) cellfun(@(c) pharmAll == p & strcmp(groupValueAll, c), ...
+                            uniqueGroupValues, 'UniformOutput', false), ...
+                pharmCondition, 'UniformOutput', false);
+else
+    rowsEachGroupEachPharm = ...
+        cellfun(@(p) arrayfun(@(c) pharmAll == p & ismatch(groupValueAll, c), ...
+                                uniqueGroupValues, 'UniformOutput', false), ...
+                pharmCondition, 'UniformOutput', false);
+end
 
 % Get mean values across iterations for all cells
 %    for each pharm condition, for this measure
@@ -1073,7 +1112,7 @@ function m3ha_plot_grouped_jitter (statsPath, outFolder, rowsToPlot)
 % TODO: Pull out as its own function
 
 %% Hard-coded parameters
-figWidth = 3.4;
+figWidth = 6;
 figHeight = 3;
 figTypes = {'png', 'epsc'};
 otherArguments = struct;
@@ -1102,6 +1141,7 @@ end
 allMeasureTitles = statsTable.measureTitle;
 allMeasureStrs = statsTable.measureStr;
 allValues = statsTable.allValues;
+uniqueGroupValues = statsTable.uniqueGroupValues;
 
 % Create figure bases
 allFigBases = combine_strings({allMeasureStrs, conditionLabel});
@@ -1109,23 +1149,30 @@ allFigBases = combine_strings({allMeasureStrs, conditionLabel});
 % Create full path bases
 allFigPathBases = fullfile(outFolder, allFigBases);
 
+% Create figure title
+conditionLabelShort = ...
+    strcat('candidate', extractAfter(conditionLabel, 'candidate'));
+figTitle = replace(conditionLabelShort, '_', '\_');
+
 %% Do the job
 % Plot all grouped jitter plots
 disp('Plotting grouped jitter plots ...');
 handles = ...
-    cellfun(@(a, b, c) m3ha_plot_jitter_helper(...
-                            a, b, pharmLabels, c, ...
+    cellfun(@(a, b, c, d) m3ha_plot_jitter_helper(...
+                            a, b, c, pharmLabels, d, figTitle, ...
                             figHeight, figWidth, ...
                             figTypes, otherArguments), ...
-            allValues, allMeasureTitles, allFigPathBases);
+            allValues, uniqueGroupValues, allMeasureTitles, allFigPathBases);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function handles = ...
-            m3ha_plot_jitter_helper (allValues, measureTitle, pharmLabels, ...
-                                        figPathBase, figHeight, figWidth, ...
+            m3ha_plot_jitter_helper (allValues, uniqueGroupValues, ...
+                                        measureTitle, pharmLabels, ...
+                                        figPathBase, figTitle, ...
+                                        figHeight, figWidth, ...
                                         figTypes, otherArguments)
 
 % Hard-coded parameters
@@ -1134,10 +1181,16 @@ xTickAngle = 320;
 % Create figure
 fig = set_figure_properties('AlwaysNew', true);
 
+% Convert to character array or a cell array of character arrays
+uniqueGroupLabels = convert_to_char(uniqueGroupValues);
+
 % Plot groups as a grouped jitter plot
 jitters = plot_grouped_jitter(allValues, 'XTickLabels', pharmLabels, ...
                         'XTickAngle', xTickAngle, 'YLabel', measureTitle, ...
-                        otherArguments);
+                        'GroupingLabels', uniqueGroupLabels, otherArguments);
+
+% Create title
+title(figTitle);
 
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
@@ -1162,6 +1215,7 @@ end
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth, ...
+                        'RemoveTitle', true, 'RemoveLegend', true, ...
                         'ScatterMarkerSize', 3);
 
 % Save the figure

@@ -1,16 +1,17 @@
 function varargout = create_default_grouping (varargin)
 %% Creates numeric grouping vectors and grouping labels from data, counts or original non-numeric grouping vectors
-% Usage: [grouping, uniqueGroupValues, groupingLabels] = create_default_grouping (varargin)
+% Usage: [grouping, uniqueGroupValues, groupingLabels, stats] = ...
+%                   create_default_grouping (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       [v, u, l] = create_default_grouping('Stats', magic(3))
-%       [v, u, l] = create_default_grouping('Stats', {1:5, 2:3, 6:10})
-%       [v, u, l] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
-%       [v, u, l] = create_default_grouping('Stats', {{1:5}, {1:3, 1:4}})
-%       [v, u, l] = create_default_grouping('Counts', magic(3))
-%       [v, u, l] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
+%       [v, u, l, s] = create_default_grouping('Stats', magic(3))
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10})
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
+%       [v, u, l, s] = create_default_grouping('Stats', {{1:5}, {1:3, 1:4}})
+%       [v, u, l, s] = create_default_grouping('Counts', magic(3))
+%       [v, u, l, s] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
 %
 % Outputs:
 %       grouping        - final numeric group assignment for each data entry
@@ -47,6 +48,9 @@ function varargout = create_default_grouping (varargin)
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ToLinearize': whether to linearize a non-vector array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   
 % Requires:
 %       cd/apply_iteratively.m
@@ -55,7 +59,10 @@ function varargout = create_default_grouping (varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_vectors.m
 %       cd/create_labels_from_numbers.m
+%       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/iscellnumeric.m
+%       cd/iscellnumericvector.m
 %       cd/isnum.m
 %       cd/struct2arglist.m
 %       cd/union_over_cells.m
@@ -65,6 +72,7 @@ function varargout = create_default_grouping (varargin)
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_psth.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_swd_histogram.m
 
 % File History:
@@ -73,11 +81,14 @@ function varargout = create_default_grouping (varargin)
 % 2019-10-04 Now uses vector numbers as grouping labels 
 %               if grouping is a set of vectors
 % 2019-10-04 Made uniqueGroupValues the second argument
+% 2020-04-18 Now accepts cell arrays of cell arrays or numeric arrays
+% 2020-04-18 Added 'ToLinearize' as an optional argument
 
 %% Hard-coded parameters
 % TODO: Make these optional arguments
-groupingLabelPrefix = '';
+groupingLabelPrefix = 'Group';
 ignoreEmpty = true;
+useVectorCounts = false;
 
 %% Default values for optional arguments
 groupingDefault = [];           % set later
@@ -88,6 +99,7 @@ treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellNumAsArrayDefault = false; 
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
+toLinearizeDefault = false;     % whether to linearize a nonvector array
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -117,6 +129,8 @@ addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -127,8 +141,29 @@ counts = iP.Results.Counts;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+toLinearize = iP.Results.ToLinearize;
 
 %% Preparation
+% If data and grouping is a cell array of cell arrays, reformat
+if iscell(stats) && iscell(stats{1})
+    if isempty(grouping)
+        [grouping, ~, ~, stats] = ...
+            cellfun(@(x) create_default_grouping('Stats', x, ...
+                                                'ToLinearize', true), ...
+                    stats, 'UniformOutput', false);
+    else
+        error('Not implemented yet!');
+    end
+end
+
+% Force as a matrix if a cell array of numeric vectors
+if iscellnumericvector(stats) || iscellnumericvector(grouping)
+    [stats, grouping] = ...
+        argfun(@(x) force_matrix(x, 'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray), ...
+                                stats, grouping);
+end
 
 %% Do the job
 if isempty(grouping)
@@ -163,9 +198,20 @@ else
     % Do nothing
 end
 
+% Linearize as column vector if requested
+%   Note: Must do this after default grouping vector creation
+if toLinearize
+    [stats, grouping] = ...
+        argfun(@(x) force_column_vector(x, 'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray, ...
+                                'ToLinearize', true), ...
+                                stats, grouping);
+end
+
 % Determine unique group values
 if nargout >= 2
-    if iscellnumeric(grouping) || isnumeric(grouping) && ~isvector(grouping)
+    if useVectorCounts
         % Count the number of vectors
         nVectors = count_vectors(grouping);
 
@@ -195,6 +241,9 @@ end
 if nargout >= 3
     varargout{3} = groupingLabels;
 end
+if nargout >= 4
+    varargout{4} = stats;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -211,6 +260,8 @@ counts = force_column_vector(counts, 'IgnoreNonVectors', true, ...
                         'TreatCellAsArray', treatCellAsArray, ...
                         'TreatCellNumAsArray', treatCellNumAsArray, ...
                         'TreatCellStrAsArray', treatCellStrAsArray);
+
+if iscellnumeric(grouping) || isnumeric(grouping) && ~isvector(grouping)
 
 %}
 

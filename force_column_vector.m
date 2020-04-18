@@ -77,6 +77,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/compute_activation_profile.m
 %       cd/compute_centers_from_edges.m
 %       cd/compute_combined_trace.m
+%       cd/create_default_grouping.m
 %       cd/compute_derivative_trace.m
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m

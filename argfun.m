@@ -46,6 +46,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/convert_units.m
 %       cd/copy_into.m
 %       cd/create_average_time_vector.m
+%       cd/create_default_grouping.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_looped_params.m
 %       cd/create_pleth_EEG_movies.m
@@ -97,6 +98,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_error_bar.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
 %       cd/plot_measures.m
 %       cd/plot_raw_multiunit.m

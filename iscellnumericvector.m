@@ -27,6 +27,7 @@ function isCellNumericVector = iscellnumericvector (x)
 %       cd/compute_sweep_errors.m
 %       cd/count_vectors.m
 %       cd/create_average_time_vector.m
+%       cd/create_default_grouping.m
 %       cd/extract_columns.m
 %       cd/extract_elements.m
 

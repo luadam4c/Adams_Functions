@@ -69,6 +69,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/compute_derivative_trace.m
 %       cd/compute_gabab_conductance.m
 %       cd/compute_relative_event_times.m
+%       cd/create_default_grouping.m
 %       cd/create_indices.m
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/detect_spikes_current_clamp.m
@@ -86,6 +87,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/m3ha_simulate_population.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
+%       cd/plot_grouped_histogram.m
 %       cd/plot_measures.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_swd_histogram.m

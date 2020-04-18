@@ -118,6 +118,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
+%       cd/argfun.m
 %       cd/compute_centers_from_edges.m
 %       cd/compute_grouped_histcounts.m
 %       cd/construct_fullpath.m
@@ -125,6 +126,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
+%       cd/force_matrix.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
 %       cd/struct2arglist.m
@@ -200,7 +202,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'stats', statsDefault, ...
-    @(x) validateattributes(x, {'numeric', 'logical', ...
+    @(x) validateattributes(x, {'cell', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
 addOptional(iP, 'grouping', groupingDefault, ...
     @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
@@ -299,6 +301,9 @@ end
 if ~isempty(stats) && ~isempty(counts)
     fprintf('Warning: Custom counts are provided, stats will be ignored!\n');
 end
+
+% Force as a matrix
+[stats, grouping] = argfun(@force_matrix, stats, grouping);
 
 % Decide on the grouping vector and possibly labels
 [grouping, groupValues, groupingLabels] = ...
