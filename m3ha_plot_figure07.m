@@ -1284,7 +1284,7 @@ figPathBases = fullfile(commonDir, strcat(measuresOfInterest, '_', ...
                                             iterStr, '_', ecdfsSuffix));
 
 % Plot for each measure of interest
-cellfun(@(a, b) plot_cumulative_distributions (dataTables, a, ...
+cellfun(@(a, b, c) plot_cumulative_distributions (dataTables, a, ...
                                             groupVarName, cellNamesToUse, ...
                                             b, yLabel, ...
                                             c, figTypes), ...
@@ -1366,10 +1366,10 @@ for iGroup = 1:nGroups
     ylim([0, 100]);
 
     % X axis Label
-    xlabel(measureOfInterest);
+    xlabel(measureLabel);
 
     % Y axis Label
-    ylabel('Cumulative %');
+    ylabel(yLabel);
 
     % Title
     title(sprintf('%s = %s', groupVarName, groupValueThisStr));
