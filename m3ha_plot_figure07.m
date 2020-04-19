@@ -16,6 +16,7 @@
 %       cd/decide_on_colormap.m
 %       cd/extract_fileparts.m
 %       cd/extract_substrings.m
+%       cd/extractFrom.m
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
@@ -50,8 +51,8 @@ plot2CellM2h = false; %true;
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPopulation = false; %true;
-plot2CellViolins = false; %true;
+combine2CellPopulation = true;
+plot2CellViolins = true;
 
 plot200CellExamples = false; %true;
 
@@ -87,11 +88,12 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName200Cell = exampleIterName200Cell;
 % popIterName200Cell = '20200309T1346_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 % popIterName2Cell = '20200309T0013_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
+% popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
+% popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
-popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
+popIterName2Cell = '20200418_using_bestparams_20200203_manual_singleneuronfitting0-102';
 exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-% popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
@@ -285,7 +287,7 @@ end
 %% Combines quantification over all 2-cell networks
 if combine2CellPopulation
     combine_osc_params(popIterDir2Cell, candCellSheetPath, ...
-                            rankNumsToUse, popDataPath2Cell, []);
+                            rankNumsToUse, popDataPath2Cell, {});
 end
 
 %% Analyzes spikes for all 200-cell networks
@@ -418,7 +420,7 @@ end
 
 %% Plots cumulative distribution plots
 if plot200CellCumDist
-
+   m3ha_plot_cumulative_distributions(networkDataPaths); 
 end
 
 %% Archive all scripts for this run
@@ -684,8 +686,13 @@ if isempty(candidateLabels)
     %                                       rankNumStr, rankNumsToUse)
     rankNumbersAll = candCellTable.(rankNumStr);
     cellNamesAll = candCellTable.(cellNameStr);
+    candIdsAll = candCellTable.(candIdStr);
     cellNamesToUse = match_positions(cellNamesAll, ...
                                     rankNumbersAll, rankNumsToUse);
+    candIdsToUse = match_positions(candIdsAll, ...
+                                    rankNumbersAll, rankNumsToUse);
+    candidateLabels = create_labels_from_numbers(candIdsToUse, ...
+                                                'Prefix', 'candidateIDs_');
 else
     % Force as a cell array
     candidateLabels = force_column_cell(candidateLabels);
@@ -1150,9 +1157,14 @@ allFigBases = combine_strings({allMeasureStrs, conditionLabel});
 allFigPathBases = fullfile(outFolder, allFigBases);
 
 % Create figure title
-conditionLabelShort = ...
-    strcat('candidate', extractAfter(conditionLabel, 'candidate'));
-figTitle = replace(conditionLabelShort, '_', '\_');
+if contains(conditionLabel, 'candidate')
+    figTitle = extractFrom(conditionLabel, 'candidate');
+elseif contains(conditionLabel, 'rank')
+    figTitle = extractFrom(conditionLabel, 'rank');
+else
+    figTitle = conditionLabel
+end
+figTitle = replace(figTitle, '_', '\_');
 
 %% Do the job
 % Plot all grouped jitter plots
