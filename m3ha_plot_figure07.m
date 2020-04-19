@@ -63,7 +63,7 @@ combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
-plot200CellGroupByEpasJitters = true;
+plot200CellGroupByEpasJitters = false; %true;
 plot200CellCumDist = false; %true;
 
 archiveScriptsFlag = true;
