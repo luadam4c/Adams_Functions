@@ -1,11 +1,10 @@
-function [fig, ax] = create_subplots (varargin)
+function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %% Creates subplots with maximal fit
-% Usage: [fig, ax] = create_subplots (nPlotsOrNRows (opt), nColumns (opt), gridPositions (opt), varargin)
+% Usage: [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       [fig, ax] = create_subplots(4);
 %       [fig, ax] = create_subplots(1, 4);
 %       [fig, ax] = create_subplots(1, 1, 'FigNumber', 3);
 %       [fig, ax] = create_subplots(1, 3, 'FigNumber', 4);
@@ -21,13 +20,10 @@ function [fig, ax] = create_subplots (varargin)
 %                   specified as an array of axes handles
 %
 % Arguments:
-%       nPlotsOrNRows   - (opt) number of plots 
-%                           or number of rows if nVolumns provided
-%                       must be a positive integer scalar
-%                       default == 1
-%       nColumns        - (opt) number of columns
-%                       must be a positive integer scalar
-%                       default == 1
+%       nRows       - number of rows
+%                   must be a positive integer scalar
+%       nColumns    - number of columns
+%                   must be a positive integer scalar
 %       gridPositions   - (opt) grid positions of subplots
 %                       must be a positive integer vector 
 %                           or a cell array of positive integer vectors
@@ -71,7 +67,6 @@ function [fig, ax] = create_subplots (varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/force_column_cell.m
-%       cd/isaninteger.m
 %       cd/set_figure_properties.m
 %       cd/struct2arglist.m
 %
@@ -98,8 +93,6 @@ function [fig, ax] = create_subplots (varargin)
 % 2019-09-06 Added gridPositions as an optional argument
 % 2019-09-11 Added more figure properties as optional arguments
 % 2020-02-06 Added 'ExpandFromDefault' as an optional argument
-% 2020-04-19 Made the first argument nPlotsOrNRows 
-% 2020-04-19 Made all arguments optional
 % TODO: Added 'TransposeOrder' as an optional argument
 
 %% Hard-coded parameters
@@ -107,8 +100,6 @@ horizontalDeadSpace = 0.25;     % relative dead space at the edges of figure
                                 %   but not in between subplots
 
 %% Default values for optional arguments
-nPlotOrNRowsDefault = 1;        % set later
-nColumnsDefault = [];           % set later
 gridPositionsDefault = [];      % set later
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
@@ -124,16 +115,23 @@ centerPositionDefault = [];     % set later
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
+% Check number of required arguments
+if nargin < 2
+    error(create_error_for_nargin(mfilename));
+end
+
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
+% Add required inputs to the Input Parser
+addRequired(iP, 'nRows', ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addRequired(iP, 'nColumns', ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+
 % Add optional inputs to the Input Parser
-addOptional(iP, 'nPlotsOrNRows', nPlotOrNRowsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addOptional(iP, 'nColumns', nColumnsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addOptional(iP, 'gridPositions', gridPositionsDefault, ...
     @(x) assert(isempty(x) || ispositiveintegervector(x) || ...
                     iscellnumeric(x), ...
@@ -169,9 +167,7 @@ addParameter(iP, 'CenterPosition', centerPositionDefault, ...
                 'Position must be a empty or a numeric vector!'));
 
 % Read from the Input Parser
-parse(iP, varargin{:});
-nPlotsOrNRows = iP.Results.nPlotsOrNRows;
-nColumns = iP.Results.nColumns;
+parse(iP, nRows, nColumns, varargin{:});
 gridPositions = iP.Results.gridPositions;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
@@ -188,27 +184,6 @@ centerPosition = iP.Results.CenterPosition;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Decide on number of rows and columns
-if isempty(nColumns)
-    % The number of total numbers of subplots is given
-    nPlots = nPlotsOrNRows;
-
-    % Compute the square root
-    sqrtNPlots = sqrt(nPlots);
-
-    % Decide on the number of rows and columns
-    if isaninteger(sqrtNPlots)
-        nRows = sqrtNPlots;
-        nColumns = sqrtNPlots;
-    else
-        nRows = nPlots;
-        nColumns = 1;
-    end
-else
-    % The number of rows is given
-    nRows = nPlotsOrNRows;
-end
-
 % Count the number of grid positions
 nGrids = nRows * nColumns;
 

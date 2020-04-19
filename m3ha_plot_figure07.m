@@ -13,7 +13,10 @@
 %       cd/convert_to_char.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
+%       cd/create_subplots.m
 %       cd/decide_on_colormap.m
+%       cd/extract_common_directory.m
+%       cd/extract_common_prefix.m
 %       cd/extract_fileparts.m
 %       cd/extract_substrings.m
 %       cd/extractFrom.m
@@ -22,11 +25,11 @@
 %       cd/force_matrix.m
 %       cd/ismatch.m
 %       cd/lower_first_char.m
+%       cd/m3ha_extract_candidate_label.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_plot_violin.m
-%       cd/match_positions.m
 %       cd/plot_grouped_jitter.m
 %       cd/plot_scale_bar.m
 %       cd/plot_tuning_curve.m
@@ -51,8 +54,8 @@ plot2CellM2h = false; %true;
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPopulation = true;
-plot2CellViolins = true;
+combine2CellPopulation = false; %true;
+plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
@@ -65,7 +68,7 @@ plot200CellViolins = false; %true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
 plot200CellGroupByEpasJitters = false; %true;
-plot200CellCumDist = false; %true;
+plot200CellCumDist = true;
 
 archiveScriptsFlag = true;
 
@@ -391,7 +394,7 @@ if plot200CellGroupByCellJitters
     end
 
     % Plot jitter plots
-    m3ha_plot_grouped_jitter(statsGroupByCellPath200Cell, figure08Dir, ...
+    m3ha_plot_all_jitters(statsGroupByCellPath200Cell, figure08Dir, ...
                                 measuresOfInterestJitter);
 end
 
@@ -413,14 +416,16 @@ if plot200CellGroupByEpasJitters
             statsGroupByEpasPaths, networkDataPaths, networkStatLabels);
 
     % Plot jitter plots
-    cellfun(@(a) m3ha_plot_grouped_jitter(a, figure08Dir, ...
+    cellfun(@(a) m3ha_plot_all_jitters(a, figure08Dir, ...
                             measuresOfInterestJitter), ...
             statsGroupByEpasPaths);
 end
 
 %% Plots cumulative distribution plots
 if plot200CellCumDist
-   m3ha_plot_cumulative_distributions(networkDataPaths); 
+   m3ha_plot_all_cumulative_distributions(networkDataPaths, ...
+                                        measuresOfInterestJitter, ...
+                                        measureTitlesJitter, candCellSheetPath); 
 end
 
 %% Archive all scripts for this run
@@ -671,9 +676,9 @@ function combinedTable = combine_osc_params (popIterDir, candCellSheetPath, ...
 rankNumStr = 'rankNum';
 seedNumStr = 'seedNumber';
 cellNameStr = 'cellName';
-candLabelStr = 'candidateLabel';
 oscParamsSuffix = 'oscillation_params';
 candIdStr = 'candidateId';
+candLabelStr = 'candidateLabel';
 
 %% Do the job
 % Read the candidate cell table
@@ -681,16 +686,14 @@ candCellTable = readtable(candCellSheetPath, 'ReadRowNames', true);
 
 % Find the cell names to use from the table
 if isempty(candidateLabels)
-    % TODO: table_lookup.m
-    % TODO: cellNamesToUse = table_lookup(candCellTable, cellNameStr, ...
-    %                                       rankNumStr, rankNumsToUse)
-    rankNumbersAll = candCellTable.(rankNumStr);
-    cellNamesAll = candCellTable.(cellNameStr);
-    candIdsAll = candCellTable.(candIdStr);
-    cellNamesToUse = match_positions(cellNamesAll, ...
-                                    rankNumbersAll, rankNumsToUse);
-    candIdsToUse = match_positions(candIdsAll, ...
-                                    rankNumbersAll, rankNumsToUse);
+    % Extract cell names and candidate IDs
+    rowConditions = {rankNumStr, rankNumsToUse};
+    [cellNamesToUse, candIdsToUse] = ...
+        argfun(@(x) extract_vars(candCellTable, x, ...
+                                'RowConditions', rowConditions), ...
+                cellNameStr, candIdStr);
+
+    % Create candidate labels
     candidateLabels = create_labels_from_numbers(candIdsToUse, ...
                                                 'Prefix', 'candidateIDs_');
 else
@@ -698,11 +701,7 @@ else
     candidateLabels = force_column_cell(candidateLabels);
 
     % Extract cell names to use
-    cellNamesToUse = ...
-        cellfun(@(x) candidateLabel2cellName(x, candCellTable, ...
-                                            candIdStr, cellNameStr), ...
-                candidateLabels, 'UniformOutput', false);
-
+    cellNamesToUse = candidateLabel2cellName(candidateLabels, candCellTable);
 end
 
 % Find all seed number subdirectories
@@ -734,15 +733,24 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function cellNameToUse = ...
-            candidateLabel2cellName (candidateLabel, candCellTable, candIdStr, cellNameStr)
+function cellNameToUse = candidateLabel2cellName (candidateLabel, candCellTable)
+
+% Hard-coded parameters
+candIdStr = 'candidateId';
+cellNameStr = 'cellName';
+
+if iscell(candidateLabel)
+    cellNameToUse = ...
+        cellfun(@(x) candidateLabel2cellName(x, candCellTable), ...
+                candidateLabel, 'UniformOutput', false);
+    return
+end
 
 candIdToUse = sscanf_full(candidateLabel, '%d');
 
 if numel(candIdToUse) == 1
-    candIdsAll = candCellTable.(candIdStr);
-    cellNamesAll = candCellTable.(cellNameStr);
-    cellNameToUse = match_positions(cellNamesAll, candIdsAll, candIdToUse);
+    cellNameToUse = extract_vars(candCellTable, cellNameStr, ...
+                                'RowConditions', {candIdStr, candIdToUse});
 else
     indNeg = find(candIdToUse < 0);
 
@@ -765,7 +773,6 @@ function candidateLabels = find_candidate_labels (popIterDir)
 
 %% Hard-coded parameters
 oscDataSuffix = 'oscillation_data';
-candLabelRegExp = 'candidateIDs_[0-9,-]*';
 
 % Find all oscillation data matfiles with this candidate label
 [~, oscDataPaths] = ...
@@ -773,7 +780,8 @@ candLabelRegExp = 'candidateIDs_[0-9,-]*';
                 'Suffix', oscDataSuffix, 'Extension', 'mat');
 
 % Extract all candidate label strings
-candidateStrs = extract_substrings(oscDataPaths, 'RegExp', candLabelRegExp);
+candidateStrs = ...
+    m3ha_extract_candidate_label(oscDataPaths, 'FromBaseName', true);
 
 % Find unique candidate labels
 candidateLabels = unique(candidateStrs);
@@ -1115,7 +1123,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function m3ha_plot_grouped_jitter (statsPath, outFolder, rowsToPlot)
+function m3ha_plot_all_jitters (statsPath, outFolder, rowsToPlot)
 % TODO: Pull out as its own function
 
 %% Hard-coded parameters
@@ -1170,7 +1178,7 @@ figTitle = replace(figTitle, '_', '\_');
 % Plot all grouped jitter plots
 disp('Plotting grouped jitter plots ...');
 handles = ...
-    cellfun(@(a, b, c, d) m3ha_plot_jitter_helper(...
+    cellfun(@(a, b, c, d) m3ha_plot_grouped_jitter(...
                             a, b, c, pharmLabels, d, figTitle, ...
                             figHeight, figWidth, ...
                             figTypes, otherArguments), ...
@@ -1180,12 +1188,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function handles = ...
-            m3ha_plot_jitter_helper (allValues, uniqueGroupValues, ...
-                                        measureTitle, pharmLabels, ...
-                                        figPathBase, figTitle, ...
-                                        figHeight, figWidth, ...
-                                        figTypes, otherArguments)
+function handles = m3ha_plot_grouped_jitter (allValues, uniqueGroupValues, ...
+                                                measureTitle, pharmLabels, ...
+                                                figPathBase, figTitle, ...
+                                                figHeight, figWidth, ...
+                                                figTypes, otherArguments)
 
 % Hard-coded parameters
 xTickAngle = 320;
@@ -1241,11 +1248,154 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function m3ha_plot_all_cumulative_distributions (networkDataPaths, ...
+                        measuresOfInterest, measureLabels, candCellSheetPath)
+
+% Hard-coded parameters
+groupVarName = 'pCond';
+% figWidth = 6;
+% figHeight = 3;
+figTypes = {'png', 'epsc'};
+ecdfsSuffix = 'ecdfs';
+yLabel = '% of simulations';
+
+% Read all tables
+dataTables = cellfun(@readtable, networkDataPaths, 'UniformOutput', false);
+
+% Extract all candidate label strings
+candidateLabels = ...
+    m3ha_extract_candidate_label(networkDataPaths, 'FromBaseName', true);
+
+% Read the candidate cell table
+candCellTable = readtable(candCellSheetPath, 'ReadRowNames', true);
+
+% Find corresponding cell names
+cellNamesToUse = candidateLabel2cellName(candidateLabels, candCellTable);
+
+% Extract common directory
+commonDir = extract_common_directory(networkDataPaths);
+
+% Extract iteration string
+beforeCandStr = extractBefore(networkDataPaths, '_candidateIDs');
+iterStr = extract_common_prefix(beforeCandStr);
+
+% Create figure path bases
+figPathBases = fullfile(commonDir, strcat(measuresOfInterest, '_', ...
+                                            iterStr, '_', ecdfsSuffix));
+
+% Plot for each measure of interest
+cellfun(@(a, b) plot_cumulative_distributions (dataTables, a, ...
+                                            groupVarName, cellNamesToUse, ...
+                                            b, yLabel, ...
+                                            c, figTypes), ...
+        measuresOfInterest, measureLabels, figPathBases, ...
+        'UniformOutput', false);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_cumulative_distributions (dataTables, measureOfInterest, ...
+                                            groupVarName, tableNames, ...
+                                            measureLabel, yLabel, ...
+                                            figPathBase, figTypes)
+% TODO: Pull out as its own function
+
+% Extract the grouping vectors
+groupingVecs = cellfun(@(T) T.(groupVarName), dataTables, ...
+                        'UniformOutput', false);
+
+% Find the unique group values and sort them
+uniqueGroupValues = unique_custom(union_over_cells(groupingVecs));
+
+% Count the number of groups
+nGroups = numel(uniqueGroupValues);
+
+% Count the number of tables
+nTables = numel(dataTables);
+
+% Decide on a color map
+colorMap = decide_on_colormap([], nTables, 'ForceCellOutput', true);
+
+% Extract the values from each table for each group
+dataEachGroup = ...
+    arrayfun(@(g) extract_vars(dataTables, measureOfInterest, ...
+                                    'RowConditions', {groupVarName, g}), ...
+            uniqueGroupValues, 'UniformOutput', false);
+
+% Compute ecdfs for each table and each group
+[ecdfValuesEachGroup, xValuesEachGroup] = ...
+    cellfun(@(x) cellfun(@(y) ecdf(y), ...
+                            x, 'UniformOutput', false), ...
+            dataEachGroup, 'UniformOutput', false);
+
+% Set default y axis label
+if isempty(yLabel)
+    yLabel = 'Cumulative %';
+end
+
+% Create figure
+[fig, ax] = create_subplots(nGroups, 'AlwaysNew', true);
+
+% Plot all cdfs for each group
+ecdfs = cell(nGroups, 1);
+for iGroup = 1:nGroups
+    % Make current axes
+    subplot(ax(iGroup));
+
+    % Extract all cdfs and x values for this gruop
+    ecdfValuesEachTable = ecdfValuesEachGroup{iGroup};
+    xValuesEachTable = xValuesEachGroup{iGroup};
+    groupValueThis = uniqueGroupValues(iGroup);
+    groupValueThisStr = convert_to_char(groupValueThis);
+
+    % Hold on
+    wasHold = hold_on;
+
+    % Plot stairs
+    ecdfs{iGroup} = cellfun(@(a, b, c) stairs(a, 100 * b, 'Color', c), ...
+                        xValuesEachTable, ecdfValuesEachTable, colorMap);
+
+    % Hold off
+    hold_off(wasHold);
+
+    % X axis limits
+    % TODO
+
+    % Y axis limits
+    ylim([0, 100]);
+
+    % X axis Label
+    xlabel(measureOfInterest);
+
+    % Y axis Label
+    ylabel('Cumulative %');
+
+    % Title
+    title(sprintf('%s = %s', groupVarName, groupValueThisStr));
+
+    % Legend
+    legend(tableNames, 'location', 'northeast');
+end
+
+% Link the x and y axes
+linkaxes(ax, 'xy');
+
+% Save the figure
+save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'RemoveLegend', true);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
-
-seedNumDirs = fullfile(popIterDir, create_labels_from_numbers(0:14, ...
-                                    'Prefix', 'seedNumber_'));
 
 %}
 
