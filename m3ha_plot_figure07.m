@@ -751,15 +751,21 @@ candIdToUse = sscanf_full(candidateLabel, '%d');
 if numel(candIdToUse) == 1
     cellNameToUse = extract_vars(candCellTable, cellNameStr, ...
                                 'RowConditions', {candIdStr, candIdToUse});
+    if iscell(cellNameToUse)
+        cellNameToUse = cellNameToUse{1};
+    end
 else
     indNeg = find(candIdToUse < 0);
 
     if ~isempty(indNeg)
         rangeStart = candIdToUse(indNeg - 1);
         rangeEnd = -candIdToUse(indNeg);
+        candIdsToRemove = candIdToUse(indNeg);
         candIdsToAdd = arrayfun(@(x, y) x:y, rangeStart, rangeEnd, ...
                                 'UniformOutput', false);
-        candIdToUse = union(candIdToUse, union_over_cells(candIdsToAdd));
+        candIdToUse = setdiff(union(candIdToUse, ...
+                                union_over_cells(candIdsToAdd)), ...
+                                candIdsToRemove);
     end
 
     cellNameToUse = ['hetero', num2str(numel(candIdToUse))];
@@ -924,7 +930,7 @@ ylim([0, nCells]);
 xlabel('Time (s)');
 ylabel('Percent Activated (%)');
 title(['Activation profile for ', figTitleBase]);
-legend(handles.curves, 'location', 'northeast');
+legend(handles.curves, 'location', 'southeast');
 
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig.png'], 'png');
@@ -1277,6 +1283,7 @@ commonDir = extract_common_directory(networkDataPaths);
 
 % Extract iteration string
 beforeCandStr = extractBefore(networkDataPaths, '_candidateIDs');
+beforeCandStr = extract_fileparts(beforeCandStr, 'base');
 iterStr = extract_common_prefix(beforeCandStr);
 
 % Create figure path bases
@@ -1353,7 +1360,7 @@ for iGroup = 1:nGroups
     wasHold = hold_on;
 
     % Plot stairs
-    ecdfs{iGroup} = cellfun(@(a, b, c) stairs(a, 100 * b, 'Color', c), ...
+    ecdfsThis = cellfun(@(a, b, c) stairs(a, 100 * b, 'Color', c), ...
                         xValuesEachTable, ecdfValuesEachTable, colorMap);
 
     % Hold off
@@ -1374,8 +1381,12 @@ for iGroup = 1:nGroups
     % Title
     title(sprintf('%s = %s', groupVarName, groupValueThisStr));
 
+    set(ecdfsThis(contains(tableNames, 'hetero')), 'LineWidth', 2);
+
     % Legend
     legend(tableNames, 'location', 'northeast');
+
+    ecdfs{iGroup} = ecdfsThis;
 end
 
 % Link the x and y axes
