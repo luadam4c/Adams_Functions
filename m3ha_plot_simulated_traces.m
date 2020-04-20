@@ -26,6 +26,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                       'allITproperties'
 %                       'dend2ITproperties'
 %                       'm2h'           - m2h plot
+%                       'voltageVsOpd'
 %                   default == 'individual'
 %                   - 'BuildMode': TC neuron build mode
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -46,6 +47,9 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                   default == set in all_files.m
 %                   - 'FileNames': paths to simulated data
 %                   must be a string array or a cell array of character vectors
+%                   default == detected from Directory
+%                   - 'SimParamsTable': simulation parameters table
+%                   must be a table
 %                   default == detected from Directory
 %                   - 'Extension': data file extension
 %                   must be a string scalar or a character vector
@@ -102,6 +106,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/extract_common_prefix.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
+%       cd/find_first_match.m
 %       cd/force_matrix.m
 %       cd/isemptycell.m
 %       cd/load_neuron_outputs.m
@@ -139,6 +144,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-04-12 Now plots IDX_M2HDIFF_DEND2 in essential
 % 2020-04-13 Added 'voltageVsOpd' as a valid plot type
 % 2020-04-13 Added 'TimeLimits' as an optional argument
+% 2020-04-20 Added 'SimParamsTable' as an optional argument
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -155,13 +161,12 @@ lineWidthIndividual = 0.5;
 % Note: The following must be consistent with m3ha_neuron_run_and_analyze.m
 importedSuffix = 'imported_files';
 paramsSuffix = 'simulation_parameters';
+simOutPathStr = 'outFilePath';
 
 % Note: The following must be consistent with singleneuron4compgabab.hoc
 timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
-% TODO: Make optional argument
-simParamsTable = [];
 
 %% Column numbers for recorded data
 %   Note: Must be consistent with m3ha_resave_sweeps.m
@@ -188,6 +193,7 @@ simModeDefault = '';            % set later
 compareWithRecordedDefault = true;
 directoryDefault = '';          % set in all_files.m
 fileNamesDefault = {};
+simParamsTableDefault = table.empty;
 extensionDefault = 'out';       % 
 colorMapDefault = [];
 timeLimitsDefault = [];         % set later
@@ -224,6 +230,8 @@ addParameter(iP, 'FileNames', fileNamesDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['fileNames must be a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'SimParamsTable', simParamsTableDefault, ...
+    @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'Extension', extensionDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ColorMap', colorMapDefault);
@@ -268,6 +276,7 @@ simMode = validatestring(iP.Results.SimMode, validSimModes);
 compareWithRecorded = iP.Results.CompareWithRecorded;
 directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
+simParamsTable = iP.Results.SimParamsTable;
 extension = iP.Results.Extension;
 colorMap = iP.Results.ColorMap;
 timeLimits = iP.Results.TimeLimits;
@@ -427,30 +436,38 @@ if isempty(simParamsTable)
     % Load the simulation parameters table
     simParamsTable = readtable(simParamsPath);
 
-    % Restrict to the simulation numbers
+    % Restrict table to match with file names
     if contains(expStr, 'sim')
-        simStr = extract_substrings(expStr, 'RegExp', 'sim[0-9]*');
-        simNumber = sscanf_full(simStr, '%d');
-        simParamsTable = simParamsTable(simNumber, :);
+        % Restrict to the simulation number
+        simStr = extract_substrings(expStr, 'RegExp', 'sim[\d]*');
+        rowsToUse = sscanf_full(simStr, '%d');
     else
-        % TODO: Sort the rows by simulation number
+        % Restrict to the output file names
+        simOutPaths = simParamsTable.(simOutPathStr);
+        rowsToUse = find_first_match(fileNames, simOutPaths);
     end
+    simParamsTable = simParamsTable(rowsToUse, :);
 end
 
 %% Data
 if toImportRecorded
-    % Look for the imported files log
-    [~, importedPath] = all_files('Directory', directory, 'Prefix', expStr, ...
-                                    'Suffix', importedSuffix, 'MaxNum', 1);
+    % Extract sweep names from simulated file names
+    sweepNames = m3ha_extract_sweep_name(fileNames);
 
     % Look for matching recorded sweep names
-    if ~isempty(importedPath)
-        % Extract sweep names
-        sweepNames = read_lines_from_file(importedPath);
+    if any(isemptycell(sweepNames))
+        % Look for the imported files log
+        [~, importedPath] = ...
+            all_files('Directory', directory, 'Prefix', expStr, ...
+                                        'Suffix', importedSuffix, 'MaxNum', 1);
 
-        % TODO: Reorder simulated fileNames to match recorded ones
-    else
-        sweepNames = m3ha_extract_sweep_name(fileNames);
+        % Read from the imported file log
+        if ~isempty(importedPath)
+            % Extract sweep names
+            sweepNames = read_lines_from_file(importedPath);
+        else
+            error('Recorded sweep names unrecognized!'); 
+        end
     end
 
     % Import and extract from recorded data
@@ -517,14 +534,14 @@ if ischar(fileNames) || numel(fileNames) == 1
     return
 end
 
+% Extract just the file base
+fileBases = extract_fileparts(fileNames, 'base');
+
 % Extract the simulation number strings with 'sim'
-simStrs = extract_substrings(fileNames, 'Regexp', 'sim[\d]*');
+simStrs = extract_substrings(fileBases, 'Regexp', 'sim[\d]*');
 
-% Extract the simulation numbers (still in string form)
-simNumStrs = extractAfter(simStrs, 'sim');
-
-% Convert numeric strings to numbers
-simNums = str2double(simNumStrs);
+% Extract the simulation numbers
+simNums = sscanf_full(simStrs, '%d');
 
 % Sort the numbers
 [~, origIndex] = sort(simNums);
@@ -1218,12 +1235,24 @@ switch methodNumber
         % Extract peak endpoints 
         endPointsPeak = vecfun(@find_lts_endpoints, vVecsSim, ...
                                 'UniformOutput', false);
+        idxPeakStart = transpose(endPointsPeak(1, :));
+        idxPeakEnd = transpose(endPointsPeak(2, :));
 end
 
 % Restrict to just the LTS region
 [tVecsLts, vVecsLts, itm2hDiffLts] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsPeak), ...
             tVecs, vVecsSim, itm2hDiff);
+
+% Restrict to just the pre-LTS region
+[tVecsPreLts, vVecsPreLts] = ...
+    argfun(@(x) extract_subvectors(x, 'IndexEnd', idxPeakStart - 1), ...
+            tVecs, vVecsSim);
+
+% Restrict to just the post-LTS region
+[tVecsPostLts, vVecsPostLts] = ...
+    argfun(@(x) extract_subvectors(x, 'IndexStart', idxPeakEnd + 1), ...
+            tVecs, vVecsSim);
 
 % Find inflection points
 indInflection = ...
@@ -1241,19 +1270,36 @@ fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 % Create subplots
 [fig, ax] = create_subplots(2, 1);
 
+% Create same color map but faded
+colorMapFaded = decide_on_colormap(colorMap, 'OriginalNColors', true, ...
+                                    'FadePercentage', 50);
+
 % Plot voltage traces
 subplot(ax(1))
-handles = plot_traces(tVecsLts, vVecsLts, ...
-                    'Marker', '.', 'LineStyle', 'none', ...
-                    'LineWidth', lineWidth, ...
-                    'Verbose', false, 'PlotMode', 'overlapped', ...
-                    'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
-                    'XLabel', 'Time (ms)', ...
-                    'YLabel', 'Voltage (mV)', 'XLimits', timeLimits, ...
-                    'FigTitle', figTitle1);
+handles.tracesPre1 = ...
+    plot_traces(tVecsPreLts, vVecsPreLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'PlotOnly', true, 'ColorMap', colorMapFaded);
+handles.traces1 = ...
+    plot_traces(tVecsLts, vVecsLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                'XLabel', 'Time (ms)', ...
+                'YLabel', 'Voltage (mV)', 'XLimits', timeLimits, ...
+                'FigTitle', figTitle1);
+handles.tracesPre1 = ...
+    plot_traces(tVecsPostLts, vVecsPostLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'PlotOnly', true, 'ColorMap', colorMapFaded);
 
 % Plot markers for inflection points
-handles.selected = ...
+handles.selected1 = ...
     plot_selected(tVecsLts, vVecsLts, indInflection, ...
                 'ColorMap', colorMap, ...
                 'Marker', 'o', 'MarkerSize', selectedMarkerSize, ...
@@ -1261,24 +1307,25 @@ handles.selected = ...
 
 % Plot voltage vs m2hdiff
 subplot(ax(2))
-handles = plot_traces(itm2hDiffLts, vVecsLts, ...
-                    'Marker', '.', 'LineStyle', 'none', ...
-                    'LineWidth', lineWidth, ...
-                    'Verbose', false, 'PlotMode', 'overlapped', ...
-                    'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
-                    'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
-                    'YLabel', 'Voltage (mV)', 'XLimits', xLimits, ...
-                    'FigTitle', figTitle2, otherArguments);
+handles.traces2 = ...
+    plot_traces(itm2hDiffLts, vVecsLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
+                'YLabel', 'Voltage (mV)', 'XLimits', xLimits, ...
+                'FigTitle', figTitle2, otherArguments);
 
 % Plot markers for inflection points
-handles.selected = ...
+handles.selected2 = ...
     plot_selected(itm2hDiffLts, vVecsLts, indInflection, ...
                 'ColorMap', colorMap, ...
                 'Marker', 'o', 'MarkerSize', selectedMarkerSize, ...
                 'LineWidth', lineWidth);
 
 % Set the x axis to be log-scaled
-set(gca, 'XScale', 'log');
+set(ax(2), 'XScale', 'log');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1306,7 +1353,10 @@ case 1
 case 2
     % TODO: find_peaks_and_troughs.m
     % Find the peaks and troughs for each voltage vector
-    ind1PeakTroughs = find_peaks_and_troughs(dvdtVecs);
+    [ind1Peaks, ind1Troughs] = find_peaks_and_troughs(dvdtVecs);
+    
+    % Combine peaks and troughs
+    ind1PeakTroughs = [ind1Peaks; ind1Troughs];
 
     % Find the inflection points in each voltage vector
     indInflection = cellfun(@(x) x + 1, ind1PeakTroughs, ...
@@ -1337,6 +1387,9 @@ case 4
 
     % Find the inflection point in each voltage vector
     indInflection = num2cell(ind2MaxSlope + 1);
+case 5
+    % Method 5
+
 end
 
 % Force as column cell arrays
@@ -1436,6 +1489,11 @@ figHandle = set_figure_properties('Visible', visibleStatus, ...
                 'AlwaysNew', true, 'FigExpansion', figExpansion, ...
                 'Name', 'All traces');
 
+% Extract the simulation numbers (still in string form)
+simNumStrs = extractAfter(simStrs, 'sim');
+
+% Convert numeric strings to numbers
+simNums = str2double(simNumStrs);
 
 %}
 

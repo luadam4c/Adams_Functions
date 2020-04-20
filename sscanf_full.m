@@ -4,6 +4,8 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 % Example(s):
 %       [matches, nMatches] = sscanf_full('test(-23.5 -> 230)', '%f')
 %       [matches, nMatches] = sscanf_full('test(-23.5 -> 230)', '%d')
+%       [matches, nMatches] = sscanf_full({'sim24', 'sim45'}, '%d')
+%       [matches, nMatches] = sscanf_full({'sim24-26', 'sim45'}, '%d')
 %
 % Outputs:
 %       matches     - matches of pattern from the input text
@@ -20,6 +22,7 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 %                   must be a numeric 2d array
 %
 % Requires:
+%       cd/array_fun.m
 %
 % Used by:
 %       cd/m3ha_plot_figure07.m
@@ -30,7 +33,7 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 
 % File History:
 % 2018-07-31 Created by Adam Lu
-% 
+% 2020-04-20 Now accepts cell arrays and string arrays as input
 
 %% Hard-coded parameters
 
@@ -51,13 +54,11 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'str', ...                  % input text to scan
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                % introduced after R2016b
-%    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['strs5 must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addRequired(iP, 'formatSpec', ...               % format of input fields
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                % introduced after R2016b
-%    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'sizeMatches', sizeMatchesDefault, ...
@@ -66,6 +67,19 @@ addOptional(iP, 'sizeMatches', sizeMatchesDefault, ...
 % Read from the Input Parser
 parse(iP, str, formatSpec, varargin{:});
 sizeMatches = iP.Results.sizeMatches;
+
+%% Recursively apply if input is a cell array or a string array
+if iscell(str) || isstring(str)
+    try
+        [matches, nMatches] = ...
+            array_fun(@(x) sscanf_full(x, formatSpec, varargin{:}), str);
+    catch
+        [matches, nMatches] = ...
+            array_fun(@(x) sscanf_full(x, formatSpec, varargin{:}), str, ...
+                        'UniformOutput', false);
+    end
+    return
+end
 
 %% Preparation
 % Get maximum number of matches

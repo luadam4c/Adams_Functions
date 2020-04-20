@@ -30,6 +30,13 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %                                           a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'OriginalNColors': whether to keep 
+%                                       original number of colors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == expands to nColors
+%                   - 'FadePercentage': fading percentage
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == none
 %                   - Any other parameter-value pair for the create_colormap() function
 %
 % Requires:
@@ -62,6 +69,8 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % 2019-10-12 Now allows colorMap to be a cell array
 % 2019-12-18 Now allows colorMap to be a function handle
 % 2020-04-15 Added 'ForceCellOutput' as an optional argument
+% 2020-04-20 Added 'OriginalNColors' as an optional argument
+% 2020-04-20 Added 'FadePercentage' as an optional argument
 
 %% Hard-coded parameters
 defaultNColors = 64;
@@ -69,6 +78,8 @@ defaultNColors = 64;
 %% Default values for optional arguments
 nColorsDefault = [];                % set later
 forceCellOutputDefault = false;     % don't force as cell array by default
+originalNColorsDefault = false;     % expand to nColors by default
+fadePercentageDefault = [];         % don't fade by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,11 +104,16 @@ addOptional(iP, 'nColors', nColorsDefault, ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OriginalNColors', originalNColorsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'FadePercentage', fadePercentageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 
 % Read from the Input Parser
 parse(iP, colorMap, varargin{:});
 nColors = iP.Results.nColors;
-forceCellOutput = iP.Results.ForceCellOutput;
+originalNColors = iP.Results.OriginalNColors;
+fadePercentage = iP.Results.FadePercentage;
 
 % Keep unmatched arguments for the create_colormap() function
 otherArguments = iP.Unmatched;
@@ -105,7 +121,17 @@ otherArguments = iP.Unmatched;
 %% Preparation
 % Set default nColors
 if (isempty(nColors) || nColors == 0) && ~forceCellOutput
-    nColors = defaultNColors;
+    if originalNColors && ~isempty(colorMap)
+        if isstring(colorMap) || iscellstr(colorMap)
+            nColors = numel(colorMap);
+        elseif ischar(colorMap)
+            nColors = 1;
+        else
+            nColors = size(colorMap, 1);
+        end
+    else
+        nColors = defaultNColors;
+    end
 end
 
 %% Do the job
@@ -127,6 +153,10 @@ elseif isstring(colorMap) || iscellstr(colorMap)
     colorMap = vertcat(colorMap{:});
 end
 
+% Fade out if requested
+if ~isempty(fadePercentage)
+    colorMap = colorMap .* (fadePercentage / 100);
+end
 
 % Match the number of rows in the color map to nColors
 if isscalar(nColors)
