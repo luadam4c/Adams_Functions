@@ -112,6 +112,7 @@ addParameter(iP, 'FadePercentage', fadePercentageDefault, ...
 % Read from the Input Parser
 parse(iP, colorMap, varargin{:});
 nColors = iP.Results.nColors;
+forceCellOutput = iP.Results.ForceCellOutput;
 originalNColors = iP.Results.OriginalNColors;
 fadePercentage = iP.Results.FadePercentage;
 

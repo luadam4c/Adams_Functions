@@ -144,7 +144,12 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-04-12 Now plots IDX_M2HDIFF_DEND2 in essential
 % 2020-04-13 Added 'voltageVsOpd' as a valid plot type
 % 2020-04-13 Added 'TimeLimits' as an optional argument
+% 2020-04-17 Now plots voltage traces in 'voltageVsOpd' plot
 % 2020-04-20 Added 'SimParamsTable' as an optional argument
+% 2020-04-20 Now makes sure that simParamsTable, sweepName and fileNames 
+%               match each other
+% 2020-04-20 Now highlights time limits for voltage traces 
+%               in 'voltageVsOpd' plot
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...

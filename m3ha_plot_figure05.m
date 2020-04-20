@@ -45,7 +45,7 @@ plotVoltageVsOpd = true;
 
 simulateNoITSoma = false; %true;
 
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
