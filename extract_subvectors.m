@@ -505,12 +505,12 @@ if ispositiveintegerarray(indices)
     subVec = vec(indices, :);
 else
     % Use interpolation
-    subVec = interp_indices (vec, indices);
+    subVec = interpolate_indices (vec, indices);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subVec = interp_indices (vec, indices)
+function subVec = interpolate_indices (vec, indices)
 % Extract subvector(s) from one set of indices using interpolation
 
 % Set up indices
@@ -714,6 +714,13 @@ for iCol = 1:nColumns
     % Replace the parts of this column that are not NaNs
     subVec(withoutNaNsThis, iCol) = ...
         extract_subvec(vecThis, indicesThis(withoutNaNsThis));
+end
+
+try
+catch
+    % Index out of bounds, return empty
+    fprintf('Warning: Indices out of bounds!\n');
+    subVec = [];
 end
 
 %}
