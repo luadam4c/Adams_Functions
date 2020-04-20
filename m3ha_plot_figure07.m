@@ -59,8 +59,8 @@ plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
-analyze200CellSpikes = false; %true;
-plotAnalysis200Cell = false;
+analyze200CellSpikes = true;
+plotAnalysis200Cell = true;
 backupPrevious200Cell = false;
 combineActivationProfiles = false; %true;
 combine200CellPopulation = false; %true;
@@ -68,7 +68,7 @@ plot200CellViolins = false; %true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
 plot200CellGroupByEpasJitters = false; %true;
-plot200CellCumDist = true;
+plot200CellCumDist = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -160,6 +160,7 @@ candidateLabels200Cell = {};
 % candidateLabels200Cell = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
 %                 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35', ...
 %                 'candidateIDs_2,14,20,29-30,32,35-36'};
+% candidateLabels200Cell = {'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'};
 cellNameStr = 'cellName';
 epasStr = 'TCepas';
 
