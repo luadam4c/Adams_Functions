@@ -328,9 +328,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 
-%% Hard-coded constants
-WHITE = [1, 1, 1];
-
 %% Hard-coded parameters
 validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
 validPBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
@@ -338,7 +335,7 @@ validRBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 
 % TODO: Make optional arguments
 sigLevel = 0.05;                    % significance level for tests
-confIntFadePercentage = 1;          % fade percentage for confidence interval colors
+confIntFadePercentage = 50;         % fade percentage for confidence interval colors
 confIntLineStyle = 'none';
 confIntFaceAlpha = 0.25;
 confIntEdgeAlpha = 0.25;
@@ -874,7 +871,8 @@ end
 % Decide on the confidence interval color map to use
 if isempty(confIntColorMap)
     % Color of the confidence interval
-    confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
+    confIntColorMap = decide_on_colormap(colorMap, 'OriginalNColors', true, ...
+                            'FadePercentage', confIntFadePercentage);
 end
 
 % Decide on the selected values color map to use
@@ -1528,6 +1526,10 @@ elseif pIsLog && ~readoutIsLog
 elseif ~pIsLog && readoutIsLog
     set(gca, 'YScale', 'log');
 end
+
+%% Hard-coded constants
+WHITE = [1, 1, 1];
+confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
 
 %}
 

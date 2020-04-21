@@ -1090,12 +1090,14 @@ case {'overlapped', 'staggered'}
         end
 
         % Store handles in array
-        if iscell(plotsData)
-            plotsData{iPlot} = p1;
-        else
-            plotsData(iPlot) = p1;
+        if ~isempty(p1)
+            if iscell(plotsData)
+                plotsData{iPlot} = p1;
+            else
+                plotsData(iPlot) = p1;
+            end
         end
-        if ~isempty(dataToCompareThis)
+        if ~isempty(dataToCompareThis) && ~isempty(p2)
             if iscell(plotsDataToCompare)
                 plotsDataToCompare{iPlot} = p2;
             else

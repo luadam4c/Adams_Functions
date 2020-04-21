@@ -117,6 +117,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/plot_fitted_traces.m
 %       cd/plot_selected.m
 %       cd/plot_traces.m
+%       cd/plot_window_boundaries.m
 %       cd/read_lines_from_file.m
 %       cd/set_default_flag.m
 %       cd/sscanf_full.m
@@ -1193,12 +1194,16 @@ IT_HINF_DEND2 = 50;
 itm2hDiffLowerLimit = 1e-8;
 selectedMarkerSize = 6;
 stimStartMs = 3000;
+barRelValue = 0.95;
 
 % Only do this for active mode
 if strcmpi(buildMode, 'passive')
     handles = struct;
     return
 end
+
+%% Preparation
+itm2hDiffLeftBound = xLimits(1);
 
 %% Process data
 % Extract vectors from simulated data
@@ -1226,8 +1231,10 @@ itm2hDiff = itm2h - itminf2hinf;
 itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
         
 % Find endpoint for just the LTS region
-methodNumber = 2;
+methodNumber = 3;
 switch methodNumber
+case {1, 3}
+    switch methodNumber
     case 1
         % Find all LTS regions
         ltsParams = parse_lts(vVecsSim, 'StimStartMs', stimStartMs, ...
@@ -1235,13 +1242,26 @@ switch methodNumber
                                 'Verbose', false);
         idxPeakStart = ltsParams.idxPeakStart;
         idxPeakEnd = ltsParams.idxPeakEnd;
-        endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
-    case 2
-        % Extract peak endpoints 
-        endPointsPeak = vecfun(@find_lts_endpoints, vVecsSim, ...
-                                'UniformOutput', false);
-        idxPeakStart = transpose(endPointsPeak(1, :));
-        idxPeakEnd = transpose(endPointsPeak(2, :));
+    case 3
+        % Parse maximum peak from itm2hDiff, 
+        %   
+        peakParams = ...
+            vecfun(@(x) parse_peaks(x, itm2hDiffLeftBound), ...
+                    itm2hDiff, 'UniformOutput', true);
+
+        % Extract index peak starts and ends
+        [idxPeakStart, idxPeakEnd] = ...
+            extract_fields(peakParams, 'idxPeakStart');
+         = extract_fields(peakParams, 'idxPeakEnd');
+    end
+
+    endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
+case 2
+    % Extract peak endpoints 
+    endPointsPeak = vecfun(@find_lts_endpoints, vVecsSim, ...
+                            'UniformOutput', false);
+    idxPeakStart = transpose(endPointsPeak(1, :));
+    idxPeakEnd = transpose(endPointsPeak(2, :));
 end
 
 % Restrict to just the LTS region
@@ -1258,6 +1278,22 @@ end
 [tVecsPostLts, vVecsPostLts] = ...
     argfun(@(x) extract_subvectors(x, 'IndexStart', idxPeakEnd + 1), ...
             tVecs, vVecsSim);
+
+% Extract the LTS start and end times
+[timePeakStart, timePeakEnd] = ...
+    argfun(@(x) extract_elements(tVecs, 'specific', 'Index', x), ...
+            idxPeakStart, idxPeakEnd);
+
+% Find the minimum and maximum times for the LTS regions
+minTimePeakStart = min(timePeakStart);
+maxTimePeakStart = max(timePeakStart);
+minTimePeakEnd = min(timePeakEnd);
+maxTimePeakEnd = max(timePeakEnd);
+
+% Find the LTS windows
+ltsWindowFlank1 = [minTimePeakStart, maxTimePeakStart];
+ltsWindow = [maxTimePeakStart, minTimePeakEnd];
+ltsWindowFlank2 = [minTimePeakEnd, maxTimePeakEnd];
 
 % Find inflection points
 indInflection = ...
@@ -1277,7 +1313,10 @@ fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 
 % Create same color map but faded
 colorMapFaded = decide_on_colormap(colorMap, 'OriginalNColors', true, ...
-                                    'FadePercentage', 50);
+                                    'FadePercentage', 30);
+barColorMap = decide_on_colormap('DarkGreen', 1);
+flankColorMap = decide_on_colormap(barColorMap, 'OriginalNColors', true, ...
+                                    'FadePercentage', 30);
 
 % Plot voltage traces
 subplot(ax(1))
@@ -1302,6 +1341,18 @@ handles.tracesPre1 = ...
                 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'PlotOnly', true, 'ColorMap', colorMapFaded);
+handles.bar1 = plot_window_boundaries(ltsWindowFlank1, ...
+                                        'BoundaryType', 'horizontalBars', ...
+                                        'ColorMap', flankColorMap, ...
+                                        'BarRelValue', barRelValue);
+handles.bar2 = plot_window_boundaries(ltsWindow, ...
+                                        'BoundaryType', 'horizontalBars', ...
+                                        'ColorMap', barColorMap, ...
+                                        'BarRelValue', barRelValue);
+handles.bar3 = plot_window_boundaries(ltsWindowFlank2, ...
+                                        'BoundaryType', 'horizontalBars', ...
+                                        'ColorMap', flankColorMap, ...
+                                        'BarRelValue', barRelValue);
 
 % Plot markers for inflection points
 handles.selected1 = ...
@@ -1339,7 +1390,7 @@ function indInflection = ...
                                                 itm2hDiff, itm2hDiffLowerLimit)
 
 % Hard-coded parameters
-methodNumber = 4;
+methodNumber = 2; %4;
 filtWidthMs = 10;            % in ms
 
 % Compute sampling interval
@@ -1356,12 +1407,14 @@ case 1
     % Find the inflection point in each voltage vector
     indInflection = num2cell(ind1MaxSlope + 1);
 case 2
-    % TODO: find_peaks_and_troughs.m
     % Find the peaks and troughs for each voltage vector
-    [ind1Peaks, ind1Troughs] = find_peaks_and_troughs(dvdtVecs);
-    
+    peakParams = parse_peaks(dvdtVecs);
+    ind1Peaks = peakParams.idxPeaks;
+    ind1PeakStarts = peakParams.idxPeakStarts;
+    ind1PeakEnds = peakParams.idxPeakEnds;
+
     % Combine peaks and troughs
-    ind1PeakTroughs = [ind1Peaks; ind1Troughs];
+    ind1PeakTroughs = union([ind1Peaks; ind1PeakStarts; ind1PeakEnds]);
 
     % Find the inflection points in each voltage vector
     indInflection = cellfun(@(x) x + 1, ind1PeakTroughs, ...

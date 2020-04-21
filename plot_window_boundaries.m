@@ -66,6 +66,7 @@ function h = plot_window_boundaries (win, varargin)
 % Used by:
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_network_raster_plot.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_fitted_traces.m
 %       cd/parse_current_family.m
 %       cd/plot_scale_bar.m
