@@ -1488,7 +1488,7 @@ function indInflection = ...
                                                 itm2hDiff, itm2hDiffLowerLimit)
 
 % Hard-coded parameters
-methodNumber = 9;
+methodNumber = 11;
 filtWidthMs = 10;            % in ms
 
 % Compute sampling interval
@@ -1497,9 +1497,18 @@ siMs = compute_sampling_interval(tVecs);
 % Compute dv/dt
 [dvdtVecs, t1Vecs] = compute_derivative_trace(vVecsSim, tVecs);
 
-% Compute log10(itm2hDiff)
-switch methodNumber
-case {6, 7, 8, 9}
+% Smooth dv/dt over filtWidthMs
+if ismember(methodNumber, [2, 3, 4, 5])
+    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
+end
+
+% Compute d2v/dt2
+if ismember(methodNumber, [3, 4, 5])
+    d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
+end
+
+% Compute log10(itm2hDiff) or x
+if ismember(methodNumber, [6, 7, 8, 9, 10, 11])
     % Force as column cell arrays
     itm2hDiffCell = force_column_cell(itm2hDiff);
 
@@ -1508,7 +1517,39 @@ case {6, 7, 8, 9}
 
     % Smooth logItm2hDiff over filtWidthMs
     % logItm2hDiffSmooth = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
-otherwise
+end
+
+% Compute dv/dx in the phase plot
+if ismember(methodNumber, [6, 7])
+    dvdxVecs = compute_derivative_trace(vVecsSim, logItm2hDiff);
+end
+
+% Compute dx/dt
+if ismember(methodNumber, [8, 9, 10, 11])
+    [dxdtVecs, t1Vecs] = compute_derivative_trace(logItm2hDiff, tVecs);
+end
+
+% Compute d2x/dt2
+if ismember(methodNumber, [9, 10, 11])
+    % Smooth dx/dt over filtWidthMs
+    dxdtVecs = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
+
+    % Compute d2x/dt2
+    d2xdt2Vecs = compute_derivative_trace(dxdtVecs, t1Vecs);
+end
+
+% Compute index of maximum concavity for logItm2hDiff 
+%   before the maximum of logItm2hDiff
+if ismember(methodNumber, [11, 12])
+    % Extract the index of maximum value for logItm2hDiff 
+    [~, ind2MaxValue] = extract_elements(logItm2hDiff, 'max');
+
+    % Restrict to the part of logItm2hDiff before the maximum is reached
+    d2xdt2VecsLeft = extract_subvectors(d2xdt2Vecs, 'IndexEnd', ind2MaxValue);
+
+    % Extract the index of maximum concavity for logItm2hDiff 
+    %   before the maximum of logItm2hDiff
+    [~, ind2MaxConcavityBeforeMax] = extract_elements(d2xdt2VecsLeft, 'max');
 end
 
 switch methodNumber
@@ -1521,9 +1562,6 @@ case 1
     indInflection = num2cell(ind1MaxSlope + 1);
 case 2
     % Method 2: local minima and maxima of dv/dt
-    % Smooth dv/dt over filtWidthMs
-    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
-
     % Force as a cell array of column vectors
     dvdtVecsCell = force_column_cell(dvdtVecs);
 
@@ -1553,12 +1591,6 @@ case 2
                             'UniformOutput', false);
 case 3
     % Method 3: zeros of d2v/dt2
-    % Smooth dv/dt over filtWidthMs
-    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
-
-    % Compute d2v/dt2
-    d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
-
     % Find the indices with d2v/dt2 closest to zero
     ind2Inflection = find_zeros(d2vdt2Vecs);
 
@@ -1569,12 +1601,6 @@ case 3
     indInflection = cellfun(@(x) x + 1, ind2Inflection, 'UniformOutput', false);
 case 4
     % Method 4: maximum of d2v/dt2
-    % Smooth dv/dt over filtWidthMs
-    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
-
-    % Compute d2v/dt2
-    d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
-
     % Extract the point of maximum concavity for each voltage vector
     [~, ind2MaxConcavity] = extract_elements(d2vdt2Vecs, 'max');
 
@@ -1582,21 +1608,15 @@ case 4
     indInflection = num2cell(ind2MaxConcavity + 1);
 case 5
     % Method 5: half-maximum of d2v/dt2
-    % Smooth dv/dt over filtWidthMs
-    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
-
-    % Compute d2v/dt2
-    d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
-
     % Extract the maximum concavity for each voltage vector
     valMaxSlope = extract_elements(d2vdt2Vecs, 'max');
 
     % Force as column cell arrays
-    d2vdt2Vecs = force_column_cell(d2vdt2Vecs);
+    d2vdt2VecsCell = force_column_cell(d2vdt2Vecs);
 
     % Find the indices with d2v/dt2 closest to half-maximum
     ind2Inflection = cellfun(@(x, y) find_zeros(x - y/2), ...
-                            d2vdt2Vecs, num2cell(valMaxSlope), ...
+                            d2vdt2VecsCell, num2cell(valMaxSlope), ...
                             'UniformOutput', false);
 
     % Force as column cell arrays
@@ -1606,9 +1626,6 @@ case 5
     indInflection = cellfun(@(x) x + 1, ind2Inflection, 'UniformOutput', false);
 case 6
     % Method 6: maximum of dv/dx
-    % Compute dv/dx in the phase plot
-    dvdxVecs = compute_derivative_trace(vVecsSim, logItm2hDiff);
-
     % Extract the point of maximum slope for the phase plot
     [~, ind1MaxSlope] = extract_elements(dvdxVecs, 'max');
 
@@ -1616,9 +1633,6 @@ case 6
     indInflection = num2cell(ind1MaxSlope + 1);
 case 7
     % Method 7: first local maximum of dv/dx
-    % Compute dv/dx in the phase plot
-    dvdxVecs = compute_derivative_trace(vVecsSim, logItm2hDiff);
-
     % Smooth dv/dx over 3 sample points
     dvdxVecs = movingaveragefilter(dvdxVecs, 3);
 
@@ -1640,9 +1654,6 @@ case 7
     indInflection = num2cell(ind1FirstMaxSlope + 1);
 case 8
     % Method 8: maximum of dx/dt
-    % Compute dx/dt
-    dxdtVecs = compute_derivative_trace(logItm2hDiff, tVecs);
-
     % Extract the point of maximum slope for logItm2hDiff
     [~, ind1MaxSlope] = extract_elements(dxdtVecs, 'max');
 
@@ -1650,20 +1661,33 @@ case 8
     indInflection = num2cell(ind1MaxSlope + 1);
 case 9
     % Method 9: maximum of d2x/dt2
-    % Compute dx/dt
-    [dxdtVecs, t1Vecs] = compute_derivative_trace(logItm2hDiff, tVecs);
-
-    % Smooth dx/dt over filtWidthMs
-    dxdtVecs = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
-
-    % Compute d2x/dt2
-    d2xdt2Vecs = compute_derivative_trace(dxdtVecs, t1Vecs);
-
     % Extract the point of maximum concavity for logItm2hDiff
     [~, ind2MaxConcavity] = extract_elements(d2xdt2Vecs, 'max');
 
     % Find the inflection point in each voltage vector
     indInflection = num2cell(ind2MaxConcavity + 1);
+case 10
+    % Method 10: last zero before the maximum of d2x/dt2
+    % Extract the point of maximum concavity for logItm2hDiff
+    [~, ind2MaxConcavity] = extract_elements(d2xdt2Vecs, 'max');
+
+    % Find the indices with d2x/dt2 closest to zero
+    ind2Zeros = find_zeros(d2xdt2Vecs);
+
+    % Find the index with d2x/dt2 closest to zero before the last maximum
+    ind2LastZeroBeforeMax = ...
+        cellfun(@(x, y) x(find(x < y, 1, 'last')), ...
+                ind2Zeros, num2cell(ind2MaxConcavity), 'UniformOutput', false);
+
+    % Find the corresponding indices in the voltage and m2hDiff vectors
+    indInflection = cellfun(@(x) x + 1, ind2LastZeroBeforeMax, ...
+                            'UniformOutput', false);
+case 11
+    % Method 11: maximum of d2x/dt2 before maximum of x
+    % Find the inflection point in each voltage vector
+    indInflection = num2cell(ind2MaxConcavityBeforeMax + 1);
+case 12
+    % Method 11: last zero before the maximum of d2x/dt2 before maximum of x
 end
 
 % Force as column cell arrays

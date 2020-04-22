@@ -94,11 +94,12 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 % popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
 % exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+% exampleSeedNumberDirName = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 popIterName2Cell = '20200418_using_bestparams_20200203_manual_singleneuronfitting0-102';
 exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
-exampleSeedNumberDirName = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
+exampleSeedNumberDirName = 'seedNumber_53';      % Use seed number 53 (TCepas = -70)
 popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';

@@ -14,26 +14,38 @@ function indZeros = find_zeros (vecs, varargin)
 % Arguments:
 %       vecs        -  TODO: Description of vecs
 %                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       n           - (opt) Number of zeros to find
+%                   must be a positive integer scalar
+%                   default == [] (find all)
+%       direction   - (opt) Search direction
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'first' - Search forward from the beginning
+%                       'last'  - Search backward from the end
+%                   default == 'first'
+%       varargin    - 'ReturnNan': Return NaN instead of empty if nothing found
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       /TODO:dir/TODO:file
+%       cd/set_default_flag.m
 %
 % Used by:
 %       cd/m3ha_plot_simulated_traces.m
 
 % File History:
 % 2020-04-15 Created by Adam Lu
-% 
+% 2020-04-22 Added n and direction as optional arguments
 
 %% Hard-coded parameters
+validDirections = {'first', 'last'};
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+nDefault = [];              % default number of nonzero elements to find
+directionDefault = 'first'; % default search direction
+returnNanDefault = [];      % whether to return NaN instead of empty 
+                            %   if nothing found by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,26 +64,45 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addRequired(iP, 'vecs');
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+% Add optional inputs to the Input Parser
+addOptional(iP, 'n', nDefault, ...
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['n must be either empty ', ...
+                    'or a positive integer scalar!']));
+addOptional(iP, 'direction', directionDefault, ...
+    @(x) any(validatestring(x, validDirections)));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ReturnNan', returnNanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
-% param1 = iP.Results.param1;
+n = iP.Results.n;
+direction = validatestring(iP.Results.direction, validDirections);
+returnNan = iP.Results.ReturnNan;
 
 %% Preparation
 % Force as column vectors
 vecs = force_column_vector(vecs);
 
+% Decide on uniformOutput
+uniformOutput = set_default_flag([], ~isempty(n) && n == 1);
+
+% Decide on returnNan
+returnNan = set_default_flag(returnNan, uniformOutput);
+
 %% Do the job
 if iscell(vecs)
-    indZeros = cellfun(@find_zeros_helper, vecs, 'UniformOutput', false);
+    indZeros = cellfun(@(x) find_zeros_helper(x, n, direction, returnNan), ...
+                        vecs, 'UniformOutput', uniformOutput);
 else
-    indZeros = find_zeros_helper(vecs);
+    indZeros = find_zeros_helper(vecs, n, direction, returnNan);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indZeros = find_zeros_helper(vec)
+function indZeros = find_zeros_helper(vec, n, direction, returnNan)
 
 % Find the left and right of each consecutive pair of sample points
 vecLeft = vec(1:end-1);
@@ -79,11 +110,35 @@ vecRight = vec(2:end);
 
 % Find the indices with vec values closest to zero
 indLeftZeros = find(vecLeft .* vecRight <= 0);
+
+% Return if empty
+if isempty(indLeftZeros)
+    if returnNan
+        indZeros = NaN;
+    else
+        indZeros = [];
+    end
+    return
+end
+
+% Get the next index
 indRightZeros = indLeftZeros + 1;
 
 % Choose the index closest to zero
 indZeros = arrayfun(@(a, b) choose_closest_to_value(vec, a, b, 0), ...
                     indLeftZeros, indRightZeros);
+
+% Restrict to the number of desired zeros
+if ~isempty(n) && n < numel(indZeros)
+    switch direction
+        case 'first'
+            indZeros = indZeros(1:n);
+        case 'last'
+            indZeros = indZeros((end-n+1):end);
+        otherwise
+            error('direction unrecognized!');
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

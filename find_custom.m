@@ -39,6 +39,9 @@ function varargout = find_custom (X, varargin)
 % File History:
 % 2017-06-01 Created by Adam Lu
 
+%% Hard-coded parameters
+validDirections = {'first', 'last'};
+
 %% Default values for optional arguments
 nDefault  = [];             % default number of nonzero elements to find
 directionDefault = 'first'; % default search direction
@@ -67,7 +70,7 @@ addOptional(iP, 'n', nDefault, ...
                 ['n must be either empty ', ...
                     'or a positive integer scalar!']));
 addOptional(iP, 'direction', directionDefault, ...
-    @(x) any(validatestring(x, {'first', 'last'})));
+    @(x) any(validatestring(x, validDirections)));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ReturnNan', returnNanDefault, ...
@@ -76,12 +79,11 @@ addParameter(iP, 'ReturnNan', returnNanDefault, ...
 % Read from the Input Parser
 parse(iP, X, varargin{:});
 n = iP.Results.n;
-direction = validatestring(iP.Results.direction, {'first', 'last'});
+direction = validatestring(iP.Results.direction, validDirections);
 returnNan = iP.Results.ReturnNan;
 
 %% Apply find() based on nargout
 if nargout == 1
-
     % Apply find() based on input
     if ~isempty(n)
         k = find(X, n, direction);
