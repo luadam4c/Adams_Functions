@@ -29,6 +29,8 @@ function vecsFilt = medianfilter (vecs, varargin)
 %       cd/apply_to_nonnan_part.m
 %       cd/create_error_for_nargin.m
 %       cd/find_nearest_odd.m
+%       cd/isnum.m
+%       cd/iscellnumericvector.m
 %       cd/struct2arglist.m
 %       cd/vecfun.m
 %
@@ -65,7 +67,9 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vec', ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+    @(x) assert(isnum(x) || iscellnumericvector(x), ...
+                ['Vectors must be a numeric array ', ...
+                    'or a cell array of numeric vectors!']));
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'filtWidth', filtWidthDefault, ...

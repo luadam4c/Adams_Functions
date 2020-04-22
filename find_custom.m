@@ -32,6 +32,7 @@ function varargout = find_custom (X, varargin)
 %       cd/ismatch.m
 %       cd/find_in_list.m
 %       cd/find_in_strings.m
+%       cd/parse_peaks.m
 %       /home/Matlab/Kojis_Functions/find_directional_events.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %

@@ -34,6 +34,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_violin.m
 %       cd/medianfilter.m
+%       cd/parse_peaks.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_ball_stick.m
 %       cd/plot_bar.m

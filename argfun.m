@@ -90,6 +90,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
+%       cd/parse_peaks.m
 %       cd/parse_phase_info.m
 %       cd/parse_pulse_response.m
 %       cd/parse_spike2_mat.m

@@ -78,10 +78,24 @@ samplingIntervals = ...
 function samplingInterval = compute_sampling_interval_helper (timeVec, isRegular)
 %% Computes the sampling interval from one vector
 
-if isRegular
-    samplingInterval = timeVec(2) - timeVec(1);
+if iscell(timeVec)
+    % Apply to each cell
+    samplingIntervalAll = ...
+        cellfun(@(x) compute_sampling_interval_helper (x, isRegular), timeVec);
+    
+    % Compute the man sampling interval
+    samplingInterval = nanmean(samplingIntervalAll);
+    return
+end
+
+if numel(timeVec) >= 2
+    if isRegular
+        samplingInterval = timeVec(2) - timeVec(1);
+    else
+        samplingInterval = nanmean(diff(timeVec));
+    end
 else
-    samplingInterval = mean(diff(timeVec));
+    samplingInterval = NaN;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

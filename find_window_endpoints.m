@@ -89,6 +89,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % 2019-09-10 Added 'WarnFlag' as an optional flag
 % 2019-11-14 Now allows time vectors to be decreasing
 % 2020-01-02 Now returns matrices if inputs are all matrices
+% 2020-04-21 Now returns empty if timeVec is empty
 
 %% Hard-coded parameters
 validBoundaryModes = {'inclusive', 'leftadjust', 'rightadjust', 'restrictive'};
@@ -189,6 +190,12 @@ end
 function endPoints = find_window_endpoints_helper (timeWindow, timeVec, ...
                                                     boundaryMode, warnFlag)
 %% Find the endPoints for time vector(s)
+
+% Return empty if timeVec is empty
+if isempty(timeVec)
+    endPoints = [];
+    return
+end
 
 % Compute the number of time points
 nTimePoints = size(timeVec, 1);

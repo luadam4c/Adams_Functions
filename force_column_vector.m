@@ -119,6 +119,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_simulate_population.m
 %       cd/movingaveragefilter.m
+%       cd/parse_peaks.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_bar.m
 %       cd/plot_cfit_pulse_response.m

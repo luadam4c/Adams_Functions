@@ -96,6 +96,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/force_column_cell.m
 %       cd/is_field.m
 %       cd/match_positions.m
+%       cd/remove_non_axes.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
 %
@@ -577,22 +578,6 @@ function convert_color_to_rgb(object)
 if is_field(object, 'Color')
     % object.Color
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function ax = remove_non_axes(ax)
-
-% Hard-coded parameters
-tagsToRemove = {'suplabel', 'suptitle'};
-
-% Extract tags
-tags = extract_fields(ax, 'Tag');
-
-% Decide whether to remove axes
-toRemove = contains(tags, tagsToRemove);
-
-% Remove the axes containing tags
-ax = ax(~toRemove);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

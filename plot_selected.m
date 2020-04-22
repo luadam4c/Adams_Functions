@@ -145,7 +145,7 @@ function selected = plot_selected_helper(xValues, yValues, ...
 indSelected = indSelected(~isnan(indSelected));
 
 % If no indices remaining, return
-if isempty(indSelected)
+if isempty(indSelected) || isempty(xValues) || isempty(yValues)
     selected = gobjects;
     return
 end

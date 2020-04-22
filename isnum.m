@@ -30,6 +30,8 @@ function isNum = isnum (x, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
+%       cd/medianfilter.m
+%       cd/movingaveragefilter.m
 %       cd/plot_psth.m
 
 % File History:

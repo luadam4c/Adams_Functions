@@ -95,6 +95,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/all_files.m
 %       cd/argfun.m
 %       cd/compute_derivative_trace.m
+%       cd/compute_stats.m
 %       cd/compute_total_current.m
 %       cd/construct_fullpath.m
 %       cd/convert_units.m
@@ -105,7 +106,9 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
 %       cd/extract_elements.m
+%       cd/extract_fields.m
 %       cd/extract_subvectors.m
+%       cd/extract_vars.m
 %       cd/find_first_match.m
 %       cd/force_matrix.m
 %       cd/isemptycell.m
@@ -114,6 +117,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_figure05.m
+%       cd/parse_peaks.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_selected.m
 %       cd/plot_traces.m
@@ -121,6 +125,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/read_lines_from_file.m
 %       cd/set_default_flag.m
 %       cd/sscanf_full.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/m3ha_plot_figure03.m
@@ -1191,10 +1196,22 @@ IT_M_DEND2 = 47;
 IT_MINF_DEND2 = 48;
 IT_H_DEND2 = 49;
 IT_HINF_DEND2 = 50;
+INAP_DEND2 = 60;
+
 itm2hDiffLowerLimit = 1e-8;
 selectedMarkerSize = 6;
 stimStartMs = 3000;
 barRelValue = 0.95;
+
+% Labels
+timeLabel = 'Time (ms)';
+voltageLabel = 'Voltage (mV)';
+itm2hDiffLabel = 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}';
+otherVecsLabel = 'I_{NaP} (nA)';
+figTitle1 = sprintf('Voltage vs time');
+figTitle2 = sprintf('Voltage vs m2hdiff');
+figTitle3 = sprintf('m2hdiff vs time');
+figTitle4 = sprintf('INaP in dendrite 2 vs time');
 
 % Only do this for active mode
 if strcmpi(buildMode, 'passive')
@@ -1205,24 +1222,28 @@ end
 %% Preparation
 itm2hDiffLeftBound = xLimits(1);
 
+% Count the number of traces
+nTraces = numel(simData);
+
 %% Process data
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
 [tVecs, vVecsSim, iVecsSim, ...
-        itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim] = ...
+        itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim, ...
+        otherVecs] = ...
     extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, IDCLAMP_COL_SIM, ...
-                    IT_M_DEND2, IT_MINF_DEND2, ...
-                    IT_H_DEND2, IT_HINF_DEND2]);
+                    IT_M_DEND2, IT_MINF_DEND2, IT_H_DEND2, IT_HINF_DEND2, ...
+                    INAP_DEND2]);
 
 % Find the indices of the time-axis limit endpoints
 endPointsForPlots = find_window_endpoints(timeLimits, tVecs);
 
 % Restrict to those endpoints
 [tVecs, vVecsSim, iVecsSim, itmVecsSim, ...
-        itminfVecsSim, ithVecsSim, ithinfVecsSim] = ...
+        itminfVecsSim, ithVecsSim, ithinfVecsSim, otherVecs] = ...
     argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
             tVecs, vVecsSim, iVecsSim, itmVecsSim, ...
-            itminfVecsSim, ithVecsSim, ithinfVecsSim);
+            itminfVecsSim, ithVecsSim, ithinfVecsSim, otherVecs);
 
 % Compute m2hDiff
 itm2h = (itmVecsSim .^ 2) .* ithVecsSim;
@@ -1231,9 +1252,9 @@ itm2hDiff = itm2h - itminf2hinf;
 itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
         
 % Find endpoint for just the LTS region
-methodNumber = 3;
+methodNumber = 4;
 switch methodNumber
-case {1, 3}
+case {1, 3, 4}
     switch methodNumber
     case 1
         % Find all LTS regions
@@ -1244,15 +1265,28 @@ case {1, 3}
         idxPeakEnd = ltsParams.idxPeakEnd;
     case 3
         % Parse maximum peak from itm2hDiff, 
-        %   
+        %   using itm2hDiffLeftBound as the peak lower bound
         peakParams = ...
-            vecfun(@(x) parse_peaks(x, itm2hDiffLeftBound), ...
+            vecfun(@(x) parse_peaks(x, 'ParseMode', 'max', ...
+                                    'PeakLowerBound', itm2hDiffLeftBound), ...
                     itm2hDiff, 'UniformOutput', true);
 
         % Extract index peak starts and ends
         [idxPeakStart, idxPeakEnd] = ...
-            extract_fields(peakParams, 'idxPeakStart');
-         = extract_fields(peakParams, 'idxPeakEnd');
+            argfun(@(x) extract_fields(peakParams, x), ...
+                    'idxPeakStart', 'idxPeakEnd');
+    case 4
+        % Parse maximum peak from itm2hDiff, 
+        %   using itm2hDiffLeftBound as the peak lower bound
+        peakParams = ...
+            vecfun(@(x) parse_peaks(x, 'ParseMode', 'maxOfAll', ...
+                                    'PeakLowerBound', itm2hDiffLeftBound), ...
+                    itm2hDiff, 'UniformOutput', true);
+
+        % Extract index peak starts and ends
+        [idxPeakStart, idxPeakEnd] = ...
+            argfun(@(x) extract_fields(peakParams, x), ...
+                    'idxPeakStart', 'idxPeakEnd');
     end
 
     endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
@@ -1265,19 +1299,19 @@ case 2
 end
 
 % Restrict to just the LTS region
-[tVecsLts, vVecsLts, itm2hDiffLts] = ...
+[tVecsLts, vVecsLts, itm2hDiffLts, otherVecsLts] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsPeak), ...
-            tVecs, vVecsSim, itm2hDiff);
+            tVecs, vVecsSim, itm2hDiff, otherVecs);
 
 % Restrict to just the pre-LTS region
-[tVecsPreLts, vVecsPreLts] = ...
+[tVecsPreLts, vVecsPreLts, itm2hDiffPreLts, otherVecsPreLts] = ...
     argfun(@(x) extract_subvectors(x, 'IndexEnd', idxPeakStart - 1), ...
-            tVecs, vVecsSim);
+            tVecs, vVecsSim, itm2hDiff, otherVecs);
 
 % Restrict to just the post-LTS region
-[tVecsPostLts, vVecsPostLts] = ...
+[tVecsPostLts, vVecsPostLts, itm2hDiffPostLts, otherVecsPostLts] = ...
     argfun(@(x) extract_subvectors(x, 'IndexStart', idxPeakEnd + 1), ...
-            tVecs, vVecsSim);
+            tVecs, vVecsSim, itm2hDiff, otherVecs);
 
 % Extract the LTS start and end times
 [timePeakStart, timePeakEnd] = ...
@@ -1300,25 +1334,26 @@ indInflection = ...
     find_inflection_points_voltage_vs_opd(tVecsLts, vVecsLts, itm2hDiffLts, ...
                                             itm2hDiffLowerLimit);
 
-% Decide on figure title and file name
-figTitle1 = sprintf('Voltage trace for %s', expStrForTitle);
-figTitle2 = sprintf('Voltage vs m2hdiff for %s', expStrForTitle);
-
 %% Plots
 % Print to standard output
 fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 
 % Create subplots
-[fig, ax] = create_subplots(2, 1);
+[fig, ax] = create_subplots(2, 2);
+
+% Link voltage axes
+linkaxes(ax([1, 2]), 'y');
+
+% Link time axes
+linkaxes(ax([1, 3, 4]), 'x');
 
 % Create same color map but faded
-colorMapFaded = decide_on_colormap(colorMap, 'OriginalNColors', true, ...
-                                    'FadePercentage', 30);
+colorMapFaded = decide_on_colormap(colorMap, nTraces, 'FadePercentage', 30);
 barColorMap = decide_on_colormap('DarkGreen', 1);
 flankColorMap = decide_on_colormap(barColorMap, 'OriginalNColors', true, ...
                                     'FadePercentage', 30);
 
-% Plot voltage traces
+% Plot voltage vs time
 subplot(ax(1))
 handles.tracesPre1 = ...
     plot_traces(tVecsPreLts, vVecsPreLts, ...
@@ -1326,21 +1361,22 @@ handles.tracesPre1 = ...
                 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'PlotOnly', true, 'ColorMap', colorMapFaded);
-handles.traces1 = ...
-    plot_traces(tVecsLts, vVecsLts, ...
-                'Marker', '.', 'LineStyle', 'none', ...
-                'LineWidth', lineWidth, ...
-                'Verbose', false, 'PlotMode', 'overlapped', ...
-                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
-                'XLabel', 'Time (ms)', ...
-                'YLabel', 'Voltage (mV)', 'XLimits', timeLimits, ...
-                'FigTitle', figTitle1);
-handles.tracesPre1 = ...
+handles.tracesPost1 = ...
     plot_traces(tVecsPostLts, vVecsPostLts, ...
                 'Marker', '.', 'LineStyle', 'none', ...
                 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'PlotOnly', true, 'ColorMap', colorMapFaded);
+handles.traces1 = ...
+    plot_traces(tVecsLts, vVecsLts, 'XLimits', timeLimits, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                'XLabel', timeLabel, 'YLabel', voltageLabel, ...
+                'FigTitle', figTitle1);
+
+% Plot horizontal bars
 handles.bar1 = plot_window_boundaries(ltsWindowFlank1, ...
                                         'BoundaryType', 'horizontalBars', ...
                                         'ColorMap', flankColorMap, ...
@@ -1357,31 +1393,93 @@ handles.bar3 = plot_window_boundaries(ltsWindowFlank2, ...
 % Plot markers for inflection points
 handles.selected1 = ...
     plot_selected(tVecsLts, vVecsLts, indInflection, ...
-                'ColorMap', colorMap, ...
-                'Marker', 'o', 'MarkerSize', selectedMarkerSize, ...
-                'LineWidth', lineWidth);
+                'ColorMap', colorMap, 'LineWidth', lineWidth, ...
+                'Marker', 'o', 'MarkerSize', selectedMarkerSize);
 
 % Plot voltage vs m2hdiff
 subplot(ax(2))
 handles.traces2 = ...
-    plot_traces(itm2hDiffLts, vVecsLts, ...
+    plot_traces(itm2hDiffLts, vVecsLts, 'XLimits', xLimits, ...
                 'Marker', '.', 'LineStyle', 'none', ...
                 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
-                'XLabel', 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}', ...
-                'YLabel', 'Voltage (mV)', 'XLimits', xLimits, ...
+                'XLabel', itm2hDiffLabel, 'YLabel', voltageLabel, ...
                 'FigTitle', figTitle2, otherArguments);
 
 % Plot markers for inflection points
 handles.selected2 = ...
     plot_selected(itm2hDiffLts, vVecsLts, indInflection, ...
-                'ColorMap', colorMap, ...
-                'Marker', 'o', 'MarkerSize', selectedMarkerSize, ...
-                'LineWidth', lineWidth);
+                'ColorMap', colorMap, 'LineWidth', lineWidth, ...
+                'Marker', 'o', 'MarkerSize', selectedMarkerSize);
 
 % Set the x axis to be log-scaled
 set(ax(2), 'XScale', 'log');
+
+% Plot m2hdiff vs time
+subplot(ax(3))
+handles.tracesPre3 = ...
+    plot_traces(tVecsPreLts, itm2hDiffPreLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'PlotOnly', true, 'ColorMap', colorMapFaded);
+handles.tracesPost3 = ...
+    plot_traces(tVecsPostLts, itm2hDiffPostLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'PlotOnly', true, 'ColorMap', colorMapFaded);
+handles.traces3 = ...
+    plot_traces(tVecsLts, itm2hDiffLts, 'XLimits', timeLimits, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                'XLabel', timeLabel, 'YLabel', itm2hDiffLabel, ...
+                'FigTitle', figTitle3);
+
+% Plot markers for inflection points
+handles.selected3 = ...
+    plot_selected(tVecsLts, itm2hDiffLts, indInflection, ...
+                'ColorMap', colorMap, 'LineWidth', lineWidth, ...
+                'Marker', 'o', 'MarkerSize', selectedMarkerSize);
+
+% Set the y axis to be log-scaled
+set(ax(3), 'YScale', 'log');
+set(ax(3), 'YLim', get(ax(2), 'XLim'));
+
+% Plot otherVecs vs time
+subplot(ax(4))
+handles.tracesPre4 = ...
+    plot_traces(tVecsPreLts, otherVecsPreLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'PlotOnly', true, 'ColorMap', colorMapFaded);
+handles.tracesPost4 = ...
+    plot_traces(tVecsPostLts, otherVecsPostLts, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'PlotOnly', true, 'ColorMap', colorMapFaded);
+handles.traces4 = ...
+    plot_traces(tVecsLts, otherVecsLts, 'XLimits', timeLimits, ...
+                'Marker', '.', 'LineStyle', 'none', ...
+                'LineWidth', lineWidth, ...
+                'Verbose', false, 'PlotMode', 'overlapped', ...
+                'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
+                'XLabel', timeLabel, 'YLabel', otherVecsLabel, ...
+                'FigTitle', figTitle4);
+
+% Plot markers for inflection points
+handles.selected4 = ...
+    plot_selected(tVecsLts, otherVecsLts, indInflection, ...
+                'ColorMap', colorMap, 'LineWidth', lineWidth, ...
+                'Marker', 'o', 'MarkerSize', selectedMarkerSize);
+
+% Create overarching title
+suptitle(expStrForTitle);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1390,7 +1488,7 @@ function indInflection = ...
                                                 itm2hDiff, itm2hDiffLowerLimit)
 
 % Hard-coded parameters
-methodNumber = 2; %4;
+methodNumber = 9;
 filtWidthMs = 10;            % in ms
 
 % Compute sampling interval
@@ -1399,28 +1497,65 @@ siMs = compute_sampling_interval(tVecs);
 % Compute dv/dt
 [dvdtVecs, t1Vecs] = compute_derivative_trace(vVecsSim, tVecs);
 
+% Compute log10(itm2hDiff)
+switch methodNumber
+case {6, 7, 8, 9}
+    % Force as column cell arrays
+    itm2hDiffCell = force_column_cell(itm2hDiff);
+
+    % Compute the logarithm
+    logItm2hDiff = cellfun(@log10, itm2hDiffCell, 'UniformOutput', false);
+
+    % Smooth logItm2hDiff over filtWidthMs
+    % logItm2hDiffSmooth = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
+otherwise
+end
+
 switch methodNumber
 case 1
+    % Method 1: maximum of dv/dt
     % Extract the point of maximum slope for each voltage vector
     [~, ind1MaxSlope] = extract_elements(dvdtVecs, 'max');
 
     % Find the inflection point in each voltage vector
     indInflection = num2cell(ind1MaxSlope + 1);
 case 2
-    % Find the peaks and troughs for each voltage vector
-    peakParams = parse_peaks(dvdtVecs);
-    ind1Peaks = peakParams.idxPeaks;
-    ind1PeakStarts = peakParams.idxPeakStarts;
-    ind1PeakEnds = peakParams.idxPeakEnds;
+    % Method 2: local minima and maxima of dv/dt
+    % Smooth dv/dt over filtWidthMs
+    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
+
+    % Force as a cell array of column vectors
+    dvdtVecsCell = force_column_cell(dvdtVecs);
+
+    % Prominence must be at least 1/10th of the range
+    minPeakProminence = compute_stats(dvdtVecsCell, 'range') / 10;
+
+    % Find the peaks and troughs for each slope vector
+    peakParams = cellfun(@(x, y) parse_peaks(x, 'ParseMode', 'all', ...
+                                'MinPeakProminence', y), ...
+                        dvdtVecsCell, num2cell(minPeakProminence), ...
+                        'UniformOutput', false);
+
+    % Extract the indices
+    %   Note: must be consistent with parse_peaks.m
+    [ind1Peaks, ind1PeakStarts, ind1PeakEnds] = ...
+        argfun(@(x) extract_vars(peakParams, x), ...
+                'idxPeak', 'idxPeakStart', 'idxPeakEnd');
 
     % Combine peaks and troughs
-    ind1PeakTroughs = union([ind1Peaks; ind1PeakStarts; ind1PeakEnds]);
+    ind1PeakTroughs = cellfun(@(a, b, c) unique_custom([a; b; c], 'sorted', ...
+                                                        'IgnoreNan', true), ...
+                                ind1Peaks, ind1PeakStarts, ind1PeakEnds, ...
+                                'UniformOutput', false);
 
     % Find the inflection points in each voltage vector
     indInflection = cellfun(@(x) x + 1, ind1PeakTroughs, ...
                             'UniformOutput', false);
 case 3
-    % Method 3
+    % Method 3: zeros of d2v/dt2
+    % Smooth dv/dt over filtWidthMs
+    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
+
     % Compute d2v/dt2
     d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
 
@@ -1433,7 +1568,7 @@ case 3
     % Find the corresponding indices in the voltage and m2hDiff vectors
     indInflection = cellfun(@(x) x + 1, ind2Inflection, 'UniformOutput', false);
 case 4
-    % Method 4
+    % Method 4: maximum of d2v/dt2
     % Smooth dv/dt over filtWidthMs
     dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
 
@@ -1441,17 +1576,98 @@ case 4
     d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
 
     % Extract the point of maximum concavity for each voltage vector
-    [~, ind2MaxSlope] = extract_elements(d2vdt2Vecs, 'max');
+    [~, ind2MaxConcavity] = extract_elements(d2vdt2Vecs, 'max');
 
     % Find the inflection point in each voltage vector
-    indInflection = num2cell(ind2MaxSlope + 1);
+    indInflection = num2cell(ind2MaxConcavity + 1);
 case 5
-    % Method 5
+    % Method 5: half-maximum of d2v/dt2
+    % Smooth dv/dt over filtWidthMs
+    dvdtVecs = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
 
+    % Compute d2v/dt2
+    d2vdt2Vecs = compute_derivative_trace(dvdtVecs, t1Vecs);
+
+    % Extract the maximum concavity for each voltage vector
+    valMaxSlope = extract_elements(d2vdt2Vecs, 'max');
+
+    % Force as column cell arrays
+    d2vdt2Vecs = force_column_cell(d2vdt2Vecs);
+
+    % Find the indices with d2v/dt2 closest to half-maximum
+    ind2Inflection = cellfun(@(x, y) find_zeros(x - y/2), ...
+                            d2vdt2Vecs, num2cell(valMaxSlope), ...
+                            'UniformOutput', false);
+
+    % Force as column cell arrays
+    ind2Inflection = force_column_cell(ind2Inflection);
+
+    % Find the corresponding indices in the voltage and m2hDiff vectors
+    indInflection = cellfun(@(x) x + 1, ind2Inflection, 'UniformOutput', false);
+case 6
+    % Method 6: maximum of dv/dx
+    % Compute dv/dx in the phase plot
+    dvdxVecs = compute_derivative_trace(vVecsSim, logItm2hDiff);
+
+    % Extract the point of maximum slope for the phase plot
+    [~, ind1MaxSlope] = extract_elements(dvdxVecs, 'max');
+
+    % Find the inflection point in each voltage vector
+    indInflection = num2cell(ind1MaxSlope + 1);
+case 7
+    % Method 7: first local maximum of dv/dx
+    % Compute dv/dx in the phase plot
+    dvdxVecs = compute_derivative_trace(vVecsSim, logItm2hDiff);
+
+    % Smooth dv/dx over 3 sample points
+    dvdxVecs = movingaveragefilter(dvdxVecs, 3);
+
+    % Force as a column cell array
+    dvdxVecsCell = force_column_cell(dvdxVecs);
+
+    % Prominence must be at least 1/10th of the range
+    minPeakProminence = compute_stats(dvdxVecsCell, 'range') / 50;
+
+    % Find the peaks and troughs for each slope vector
+    peakParams = cellfun(@(x, y) parse_peaks(x, 'ParseMode', 'first', ...
+                                'MinPeakProminence', y), ...
+                        dvdxVecsCell, num2cell(minPeakProminence));
+
+    % Extract the first local maximum of the phase plot
+    ind1FirstMaxSlope = extract_fields(peakParams, 'idxPeak');
+
+    % Find the inflection point in each voltage vector
+    indInflection = num2cell(ind1FirstMaxSlope + 1);
+case 8
+    % Method 8: maximum of dx/dt
+    % Compute dx/dt
+    dxdtVecs = compute_derivative_trace(logItm2hDiff, tVecs);
+
+    % Extract the point of maximum slope for logItm2hDiff
+    [~, ind1MaxSlope] = extract_elements(dxdtVecs, 'max');
+
+    % Find the inflection point in each voltage vector
+    indInflection = num2cell(ind1MaxSlope + 1);
+case 9
+    % Method 9: maximum of d2x/dt2
+    % Compute dx/dt
+    [dxdtVecs, t1Vecs] = compute_derivative_trace(logItm2hDiff, tVecs);
+
+    % Smooth dx/dt over filtWidthMs
+    dxdtVecs = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
+
+    % Compute d2x/dt2
+    d2xdt2Vecs = compute_derivative_trace(dxdtVecs, t1Vecs);
+
+    % Extract the point of maximum concavity for logItm2hDiff
+    [~, ind2MaxConcavity] = extract_elements(d2xdt2Vecs, 'max');
+
+    % Find the inflection point in each voltage vector
+    indInflection = num2cell(ind2MaxConcavity + 1);
 end
 
 % Force as column cell arrays
-itm2hDiff = force_column_cell(itm2hDiff);
+% itm2hDiff = force_column_cell(itm2hDiff);
 
 % Remove values that are not in view
 % indInflection = cellfun(@(a, b) setdiff(a, find(b == itm2hDiffLowerLimit)), ...

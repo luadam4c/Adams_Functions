@@ -30,6 +30,8 @@ function isCellNumericVector = iscellnumericvector (x)
 %       cd/create_default_grouping.m
 %       cd/extract_columns.m
 %       cd/extract_elements.m
+%       cd/medianfilter.m
+%       cd/movingaveragefilter.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu

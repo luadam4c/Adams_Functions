@@ -238,7 +238,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/find_window_endpoints.m
 %       cd/hold_off.m
 %       cd/hold_on.m
-%       cd/isemptycell.mplot_traces
+%       cd/isemptycell.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/islinestyle.m
@@ -1056,6 +1056,11 @@ case {'overlapped', 'staggered'}
         tVecsThis = tVecs{iPlot};
         dataThis = data{iPlot};
         dataToCompareThis = dataToCompare{iPlot};
+
+        % If nothing to plot, continue
+        if isempty(tVecsThis) && isempty(dataThis)
+            continue
+        end
 
         % Decide on the color for this plot
         colorThis = decide_on_this_color(colorMode, colorMap, ...

@@ -196,8 +196,8 @@ while ct < nSims                  % while not trials are completed yet
         % Recreate a parallel pool object using fewer workers to prevent running out of memory
         poolObj = parpool('local', numWorkers);    
     end
-    parfor i = first:last
-    %for i = first:last
+    %parfor i = first:last
+    for i = first:last
         % Construct current parameter string
         pstring = '';               % initialize for parfor
         if iscell(pchvalues)

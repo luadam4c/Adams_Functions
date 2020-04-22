@@ -57,7 +57,7 @@ backupPrevious2Cell = false; %true;
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 
-plot200CellExamples = false; %true;
+plot200CellExamples = true;
 
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
@@ -93,10 +93,12 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName2Cell = '20200309T0013_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 % popIterName2Cell = '20200311T2144_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_TCepas_varied';
 % popIterName200Cell = '20200312T0130_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_TCepas_varied';
+% exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 popIterName2Cell = '20200418_using_bestparams_20200203_manual_singleneuronfitting0-102';
-exampleIterName200Cell = '20200208T1429_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
+exampleSeedNumberDirName = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
@@ -108,7 +110,7 @@ rankNumsToUse = [2:4, 6, 8:11, 14, 18, 19, 21, 23];
 
 % Analysis settings
 % Should be consistent with m3ha_plot_figure03.m & m3ha_plot_figure07.m
-exampleCellNames = {'D101310'; 'G101310'};
+exampleCellNames = {'D101310'; 'G101310'; 'hetero4'; 'hetero8'; 'hetero12'};
 
 gIncr = 200;                % Original dynamic clamp gIncr value
 pharmConditions = (1:4)';   % Pharmacological conditions
@@ -232,10 +234,13 @@ if plotIpscComparison || plot2CellEssential || plot2CellM2h
                 exampleCellNames, 'UniformOutput', false);
 end
 if plot200CellExamples
+    % Select seed number directory
+    seedNumberDir = fullfile(exampleIterDir200Cell, exampleSeedNumberDirName);
+
     % Find example network directories
     [~, exampleDirs200Cell] = ...
-        cellfun(@(x) all_subdirs('Directory', exampleIterDir200Cell, ...
-                                'Keyword', x), ...
+        cellfun(@(x) all_subdirs('Directory', seedNumberDir, ...
+                                'Keyword', x, 'Recursive', true), ...
                 exampleCellNames, 'UniformOutput', false);
 end
 
