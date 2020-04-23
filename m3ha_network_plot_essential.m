@@ -14,7 +14,7 @@ function handles = m3ha_network_plot_essential (varargin)
 % Arguments:
 %       varargin    - 'PlotType': type of plot
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'essential'
+%                       'essential'     - essential plots
 %                       'm2h'           - m2h plot
 %                   default == 'essential'
 %                   - 'InFolder': directory containing the .singsp files
@@ -107,6 +107,7 @@ pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
 
 tcParamsPrefix = 'TCparams';
 simParamsPrefix = 'sim_params';
+itm2hDiffLowerLimit = 1e-9;
 
 % TODO: Make optional arguments
 figTypes = 'png';
@@ -290,10 +291,12 @@ clear simDataRT simDataTC
 % Downsample by 10;
 switch plotType
 case 'essential'
-    [tVecsMs, vVecRT, vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
+    [tVecsMs, vVecRT, vVecTC, gCmdTCUs, ...
+            itSomaTC, itDend1TC, itDend2TC, ...
             itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
         argfun(@(x) downsample(x, 10), ...
-                tVecsMs, vVecRT, vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
+                tVecsMs, vVecRT, vVecTC, gCmdTCUs, ...
+                itSomaTC, itDend1TC, itDend2TC, ...
                 itmDend2, itminfDend2, ithDend2, ithinfDend2);
 case 'm2h'
     [tVecsMs, itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
@@ -302,8 +305,10 @@ case 'm2h'
 end
 
 % Compute m2h and its steady state
-itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
-itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
+itm2h = (itmDend2 .^ 2) .* ithDend2;
+itminf2hinf = (itminfDend2 .^ 2) .* ithinfDend2;
+itm2hDiff = itm2h - itminf2hinf;
+itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
 
 switch plotType
 case 'essential'
@@ -314,15 +319,17 @@ case 'essential'
     itTotalTC = compute_total_current([itSomaTC, itDend1TC, itDend2TC], ...
                                         'GeomParams', tcParamsStructArray);
     % List all possible items to plot
-    vecsAll = {vVecRT; vVecTC; gCmdTCNs; itTotalTC; itm2hDend2; itminf2hinfDend2};
+    vecsAll = {vVecRT; vVecTC; gCmdTCNs; itTotalTC; ...
+                itm2h; itminf2hinf; itm2hDiff};
 
     % List corresponding labels
     labelsAll = {'V_{RT} (mV)'; 'V_{TC,soma} (mV)'; 'g_{GABA_B} (nS)'; ...
                 'I_{T} (nA)'; 'm_{T,dend2}^2h_{T,dend2}'; ...
-                'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'};
+                'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'; ...
+                'm2hDiff'};
 case 'm2h'
     % List all possible items to plot
-    vecsAll = {itm2hDend2; itminf2hinfDend2};
+    vecsAll = {itm2h; itminf2hinf};
 
     % List corresponding labels
     labelsAll = {'m_{T,dend2}^2h_{T,dend2}'; ...
@@ -347,8 +354,8 @@ case 'essential'
     % Extract the axes handles for the subplots
     subPlots = handles.subPlots;
 
-    % Make the 5th and 6th subplot log-scaled
-    arrayfun(@(x) set(subPlots(x), 'YScale', 'log'), 5:6);
+    % Make the 5-7th subplots log-scaled
+    arrayfun(@(x) set(subPlots(x), 'YScale', 'log'), 5:7);
 
     % Plot stimulation boundaries
     for i = 1:numel(subPlots)
@@ -358,7 +365,7 @@ case 'essential'
     end
 case 'm2h'
     handlesInstantaneous = ...
-        plot_traces(tVecsMs, itm2hDend2, ...
+        plot_traces(tVecsMs, itm2h, ...
                     'LineStyle', '-', 'PlotMode', 'overlapped', ...
                     'LegendLocation', 'suppress', ...
                     'XLimits', xLimits, ...
@@ -366,7 +373,7 @@ case 'm2h'
                     'YLabel', 'm^2h', 'FigTitle', figTitle, otherArguments);
     hold on;
     handlesSteadyState = ...
-        plot_traces(tVecsMs, itminf2hinfDend2, 'PlotOnly', true, ...
+        plot_traces(tVecsMs, itminf2hinf, 'PlotOnly', true, ...
                     'LineStyle', ':', 'PlotMode', 'overlapped', ...
                     'XLimits', xLimits, otherArguments);
 

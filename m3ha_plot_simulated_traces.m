@@ -1266,37 +1266,56 @@ dxdtVecsSmoothed = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
 [d2xdt2Vecs, t2Vecs] = compute_derivative_trace(dxdtVecsSmoothed, t1Vecs);
 
 % Smooth d2x/dt2 over filtWidthMs
-d2xdt2Vecs = movingaveragefilter(d2xdt2Vecs, filtWidthMs, siMs);
+d2xdt2VecsSmoothed = movingaveragefilter(d2xdt2Vecs, filtWidthMs, siMs);
 
-%% Decide vectors for 4th subplot
+%% Decide on y axis vectors for 4th subplot
 
 % % Plot other recorded channels as the 4th subplot
-% OTHER_VECS_COL = 60;    % INAP_DEND2
-% otherVecsLabel = 'I_{NaP} (nA)';
-% figTitleOtherVsT = sprintf('INaP in dendrite 2 vs time');
-% OTHER_VECS_COL = 58;    % IKIR_DEND2
-% otherVecsLabel = 'I_{Kir} (nA)';
-% figTitleOtherVsT = sprintf('IKir in dendrite 2 vs time');
-% otherVecs = extract_columns(simData, OTHER_VECS_COL);
-% otherVecs = prepare_for_plotting(otherVecs, endPointsForPlots);
-% otherVecsYLimits = [];
+% figTitle4 = sprintf('INaP in dendrite 2 vs time');
+% figTitle4 = sprintf('IKir in dendrite 2 vs time');
 % plotPrePostForOtherVecs = true;
+% otherXVecsLabel = timeLabel;
+% otherXVecs = tVecs;
+% otherXLimits = timeLimits;
+% OTHER_VECS_COL = 60;    % INAP_DEND2
+% otherYVecsLabel = 'I_{NaP} (nA)';
+% OTHER_VECS_COL = 58;    % IKIR_DEND2
+% otherYVecsLabel = 'I_{Kir} (nA)';
+% otherYVecs = extract_columns(simData, OTHER_VECS_COL);
+% otherYVecs = prepare_for_plotting(otherYVecs, endPointsForPlots);
+% otherYLimits = [];
 
-% Plot dxdtVecs as the 4th subplot
-otherVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
-figTitleOtherVsT = sprintf('d(log(m2hdiff))/dt vs time');
-otherVecs = [nan(1, size(dxdtVecs, 2)); dxdtVecs];
-% otherVecsYLimits = [-0.1, 0.1];
-otherVecsYLimits = [-0.05, 0.05];
-plotPrePostForOtherVecs = false;
+% % Plot dxdtVecs as the 4th subplot
+% figTitle4 = sprintf('d(log(m2hdiff))/dt vs time');
+% plotPrePostForOtherVecs = false;
+% otherXVecsLabel = timeLabel;
+% otherXVecs = tVecs;
+% otherXLimits = timeLimits;
+% otherYVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
+% otherYVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
+% otherYLimits = [-0.1, 0.1];
+% otherYLimits = [-0.05, 0.05];
 
 % % Plot d2xdt2Vecs as the 4th subplot
-% otherVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
-% figTitleOtherVsT = sprintf('d2(log(m2hdiff))/dt2 vs time');
-% otherVecs = [nan(1, size(d2xdt2Vecs, 2)); d2xdt2Vecs; ...
-%                 nan(1, size(d2xdt2Vecs, 2))];
-% otherVecsYLimits = [-0.001, 0.001];
+% figTitle4 = sprintf('d2(log(m2hdiff))/dt2 vs time');
 % plotPrePostForOtherVecs = false;
+% otherXVecsLabel = timeLabel;
+% otherXVecs = tVecs;
+% otherXLimits = timeLimits;
+% otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
+% otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
+%                 nan(1, size(d2xdt2VecsSmoothed, 2))];
+% otherYLimits = [-0.001, 0.001];
+
+figTitle4 = sprintf('d2(log(m2hdiff))/dt2 vs d(log(m2hdiff))/dt');
+plotPrePostForOtherVecs = false;
+otherXVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
+otherXVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
+otherXLimits = [-0.05, 0.05];
+otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
+otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
+                nan(1, size(d2xdt2VecsSmoothed, 2))];
+otherYLimits = [-0.001, 0.001];
 
 %% Restrict to LTS region
 % Find endpoint for just the LTS region
@@ -1347,19 +1366,22 @@ case 2
 end
 
 % Restrict to just the LTS region
-[tVecsLts, vVecsLts, itm2hDiffLts, otherVecsLts] = ...
+[tVecsLts, vVecsLts, itm2hDiffLts, ...
+        otherXVecsLts, otherYVecsLts] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsPeak), ...
-            tVecs, vVecsSim, itm2hDiff, otherVecs);
+            tVecs, vVecsSim, itm2hDiff, otherXVecs, otherYVecs);
 
 % Restrict to just the pre-LTS region
-[tVecsPreLts, vVecsPreLts, itm2hDiffPreLts, otherVecsPreLts] = ...
+[tVecsPreLts, vVecsPreLts, itm2hDiffPreLts, ...
+        otherXVecsPreLts, otherYVecsPreLts] = ...
     argfun(@(x) extract_subvectors(x, 'IndexEnd', idxPeakStart - 1), ...
-            tVecs, vVecsSim, itm2hDiff, otherVecs);
+            tVecs, vVecsSim, itm2hDiff, otherXVecs, otherYVecs);
 
 % Restrict to just the post-LTS region
-[tVecsPostLts, vVecsPostLts, itm2hDiffPostLts, otherVecsPostLts] = ...
+[tVecsPostLts, vVecsPostLts, itm2hDiffPostLts, ...
+        otherXVecsPostLts, otherYVecsPostLts] = ...
     argfun(@(x) extract_subvectors(x, 'IndexStart', idxPeakEnd + 1), ...
-            tVecs, vVecsSim, itm2hDiff, otherVecs);
+            tVecs, vVecsSim, itm2hDiff, otherXVecs, otherYVecs);
 
 % Extract the LTS start and end times
 [timePeakStart, timePeakEnd] = ...
@@ -1393,7 +1415,7 @@ fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 linkaxes(ax([1, 2]), 'y');
 
 % Link time axes
-linkaxes(ax([1, 3, 4]), 'x');
+linkaxes(ax([1, 3]), 'x');
 
 % Create same color map but faded
 colorMapFaded = decide_on_colormap(colorMap, nTraces, 'FadePercentage', 30);
@@ -1497,44 +1519,52 @@ handles.selected3 = ...
 set(ax(3), 'YScale', 'log');
 set(ax(3), 'YLim', get(ax(2), 'XLim'));
 
-% Plot otherVecs vs time
+% Plot otherYVecs vs time
 subplot(ax(4))
 if plotPrePostForOtherVecs
     handles.tracesPre4 = ...
-        plot_traces(tVecsPreLts, otherVecsPreLts, ...
+        plot_traces(otherXVecsPreLts, otherYVecsPreLts, ...
                     'Marker', '.', 'LineStyle', 'none', ...
                     'LineWidth', lineWidth, ...
                     'Verbose', false, 'PlotMode', 'overlapped', ...
                     'PlotOnly', true, 'ColorMap', colorMapFaded);
     handles.tracesPost4 = ...
-        plot_traces(tVecsPostLts, otherVecsPostLts, ...
+        plot_traces(otherXVecsPostLts, otherYVecsPostLts, ...
                     'Marker', '.', 'LineStyle', 'none', ...
                     'LineWidth', lineWidth, ...
                     'Verbose', false, 'PlotMode', 'overlapped', ...
                     'PlotOnly', true, 'ColorMap', colorMapFaded);
 end
 handles.traces4 = ...
-    plot_traces(tVecsLts, otherVecsLts, 'XLimits', timeLimits, ...
+    plot_traces(otherXVecsLts, otherYVecsLts, ...
                 'Marker', '.', 'LineStyle', 'none', ...
                 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'LegendLocation', 'suppress', 'ColorMap', colorMap, ...
-                'XLabel', timeLabel, 'YLabel', otherVecsLabel, ...
-                'FigTitle', figTitleOtherVsT);
+                'XLabel', otherXVecsLabel, 'YLabel', otherYVecsLabel, ...
+                'FigTitle', figTitle4);
 
 % Plot markers for inflection points
 handles.selected4 = ...
-    plot_selected(tVecsLts, otherVecsLts, indInflection, ...
+    plot_selected(otherXVecsLts, otherYVecsLts, indInflection, ...
                 'ColorMap', colorMap, 'LineWidth', lineWidth, ...
                 'Marker', 'o', 'MarkerSize', selectedMarkerSize);
 
+% Set x axis limits
+if ~isempty(otherXLimits)
+    xlim(otherXLimits);
+end
+
 % Set y axis limits
-if ~isempty(otherVecsYLimits)
-    ylim(otherVecsYLimits);
+if ~isempty(otherYLimits)
+    ylim(otherYLimits);
 end
 
 % Create overarching title
 suptitle(expStrForTitle);
+
+handles.ax = ax;
+handles.fig = fig;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

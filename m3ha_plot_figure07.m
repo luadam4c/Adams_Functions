@@ -49,7 +49,7 @@
 %% Hard-coded parameters
 % Flags
 plotIpscComparison = false; %true;
-plot2CellEssential = false; %true;
+plot2CellEssential = true;
 plot2CellM2h = false; %true;
 
 analyze2CellSpikes = false; %true;
@@ -63,13 +63,13 @@ plot200CellExamples = false; %true;
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
-combineActivationProfiles = true;
+combineActivationProfiles = false; %true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
 plot200CellGroupByEpasJitters = false; %true;
-plot200CellCumDist = true;
+plot200CellCumDist = false; %true;
 
 archiveScriptsFlag = true;
 
@@ -141,12 +141,12 @@ ipscFigWidth = 8.5;
 ipscFigHeight = 6;
 xLimits2Cell = [2800, 4800];
 yLimitsGabab = [-1, 15];
-% yLimitsEssential = {[], [], [], [], [], []};
+% yLimitsEssential = {[], [], [], [], [], [], []};
 yLimitsEssential = {[-100, 100], [-100, 100], [-1, 12], [-15, 5], ...
-                    [1e-10, 1], [1e-10, 1]};
+                    [1e-10, 1], [1e-10, 1], [1e-8, 1e0]};
 yLimitsM2h = [1e-10, 1];
 essential2CellFigWidth = 8.5;
-essential2CellFigHeight = 1 * 6;
+essential2CellFigHeight = 1 * 7;
 m2h2CellFigWidth = 8.5;
 m2h2CellFigHeight = 1;
 example200CellFigWidth = 8.5;
@@ -281,7 +281,7 @@ if plot2CellEssential
                             essential2CellFigWidth, essential2CellFigHeight, ...
                             xLimits2Cell, yLimitsEssential, ...
                             'essential', b), ...
-                exampleCellName2Cell, exampleDirs2Cell), ...
+                exampleCellNames2Cell, exampleDirs2Cell), ...
         num2cell(pharmConditions), colorMapPharmCell);
 end
 
@@ -1296,6 +1296,8 @@ figHeight = 4.3 * 2;
 figTypes = {'png', 'epsc'};
 ecdfsSuffix = 'ecdfs';
 yLabel = '% of simulations';
+% linkAxesOption = 'xy';
+linkAxesOption = 'y';
 
 % Read all tables
 dataTables = cellfun(@readtable, networkDataPaths, 'UniformOutput', false);
@@ -1326,6 +1328,7 @@ figPathBases = fullfile(commonDir, strcat(measuresOfInterest, '_', ...
 cellfun(@(a, b, c) plot_cumulative_distributions (dataTables, a, ...
                                             groupVarName, cellNamesToUse, ...
                                             b, yLabel, ...
+                                            linkAxesOption, ...
                                             c, figTypes, ...
                                             figWidth, figHeight), ...
         measuresOfInterest, measureLabels, figPathBases, ...
@@ -1338,6 +1341,7 @@ end
 function plot_cumulative_distributions (dataTables, measureOfInterest, ...
                                             groupVarName, tableNames, ...
                                             measureLabel, yLabel, ...
+                                            linkAxesOption, ...
                                             figPathBase, figTypes, ...
                                             figWidth, figHeight)
 % TODO: Pull out as its own function
@@ -1428,7 +1432,7 @@ for iGroup = 1:nGroups
 end
 
 % Link the x and y axes
-linkaxes(ax, 'xy');
+linkaxes(ax, linkAxesOption);
 
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');

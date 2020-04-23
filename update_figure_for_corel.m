@@ -56,6 +56,9 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'RemoveTexts': whether to remove all texts
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveCircles': whether to remove plots that are circles
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'XTickLocs': locations of X ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == 'suppress'
@@ -128,6 +131,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-12-04 Added 'RemoveTexts' as an optional argument
 % 2019-12-29 Added 'AlignSubplots' as an optional argument
 % 2020-02-06 Added 'BoxOn' as an optional argument
+% 2019-04-22 Added 'RemoveCircles' as an optional argument
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -157,6 +161,7 @@ removeYLabelsDefault = false;   % don't remove by default
 removeTitlesDefault = false;    % don't remove by default
 removeLegendsDefault = false;   % don't remove by default
 removeTextsDefault = false;     % don't remove by default
+removeCirclesDefault = false;   % don't remove by default
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
 labelsFontSizeDefault = 8;
@@ -212,6 +217,8 @@ addParameter(iP, 'RemoveLegends', removeLegendsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveTexts', removeTextsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveCircles', removeCirclesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
                     isnumericvector(x) || iscellnumericvector(x), ...
@@ -254,6 +261,7 @@ removeYLabels = iP.Results.RemoveYLabels;
 removeTitles = iP.Results.RemoveTitles;
 removeLegends = iP.Results.RemoveLegends;
 removeTexts = iP.Results.RemoveTexts;
+removeCircles = iP.Results.RemoveCircles;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
 labelsFontSize = iP.Results.LabelsFontSize;
@@ -429,6 +437,15 @@ if ~isempty(plotLineWidth)
     lines = findobj(figHandle, 'Type', 'Line');
     plots = lines(arrayfun(@(x) is_plot(x), lines));
     set(plots, 'LineWidth', plotLineWidth);
+end
+
+% Remove markers
+if removeCircles
+    lines = findobj(figHandle, 'Type', 'Line');
+    markers = extract_fields(lines, 'Marker', 'UniformOutput', false);
+    lineStyles = extract_fields(lines, 'LineStyle', 'UniformOutput', false);
+    toRemove = strcmp(markers, 'o') & strcmp(lineStyles, 'none');
+    delete(lines(toRemove))
 end
 
 % Update marker sizes
