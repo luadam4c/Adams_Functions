@@ -36,6 +36,7 @@ function flag = set_default_flag (flag, varargin)
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_optimizer_4compgabab.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/movingaveragefilter.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
 %       cd/plot_measures.m

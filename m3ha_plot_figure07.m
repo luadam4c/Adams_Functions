@@ -5,6 +5,7 @@
 %       cd/addvars_custom.m
 %       cd/all_files.m
 %       cd/all_subdirs.m
+%       cd/apply_iteratively.m
 %       cd/apply_over_cells.m
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
@@ -57,18 +58,18 @@ backupPrevious2Cell = false; %true;
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 
-plot200CellExamples = true;
+plot200CellExamples = false; %true;
 
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
-combineActivationProfiles = false; %true;
+combineActivationProfiles = true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
 plot200CellGroupByEpasJitters = false; %true;
-plot200CellCumDist = false; %true;
+plot200CellCumDist = true;
 
 archiveScriptsFlag = true;
 
@@ -99,7 +100,7 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 popIterName2Cell = '20200418_using_bestparams_20200203_manual_singleneuronfitting0-102';
 exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
-exampleSeedNumberDirName = 'seedNumber_53';      % Use seed number 53 (TCepas = -70)
+exampleSeedNumberDirName = 'seedNumber_21';      % Use seed number 21 (TCepas = -70)
 popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
@@ -111,7 +112,9 @@ rankNumsToUse = [2:4, 6, 8:11, 14, 18, 19, 21, 23];
 
 % Analysis settings
 % Should be consistent with m3ha_plot_figure03.m & m3ha_plot_figure07.m
-exampleCellNames = {'D101310'; 'G101310'; 'hetero4'; 'hetero8'; 'hetero12'};
+exampleCellNames2Cell = {'D101310'; 'G101310'};
+% exampleCellNames200Cell = {'D101310'; 'G101310'; 'hetero4'; 'hetero8'; 'hetero12'};
+exampleCellNames200Cell = {'D101310'; 'hetero12'};
 
 gIncr = 200;                % Original dynamic clamp gIncr value
 pharmConditions = (1:4)';   % Pharmacological conditions
@@ -153,17 +156,27 @@ pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
 
 % epasToPlot = [];
 epasToPlot = [-74; -70; -66; -62];
-candidateLabels200Cell = {};
-% candidateLabels200Cell = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
-                % 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35'};
-% candidateLabels200Cell = {'candidateIDs_2,14,20,29-30,32,35-36'};
-% candidateLabels200Cell = {'D101310', 'hetero4', 'hetero8'};
+
 % candidateLabels200Cell = {'candidateIDs_32'; 'candidateIDs_2,14,32,35'; ...
-%                         'candidateIDs_2,14,20,29-30,32,35-36'};
-% candidateLabels200Cell = {'candidateIDs_2,14,32,35', 'candidateIDs_2', ...
-%                 'candidateIDs_14', 'candidateIDs_32', 'candidateIDs_35', ...
-%                 'candidateIDs_2,14,20,29-30,32,35-36'};
-% candidateLabels200Cell = {'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'};
+%                                   'candidateIDs_2,14,20,29-30,32,35-36'};
+candidateLabels200Cell = {};
+
+% candidateLabels200CellEcdfs = {'candidateIDs_2,14,32,35'; 'candidateIDs_2'; ...
+%                 'candidateIDs_14'; 'candidateIDs_32'; 'candidateIDs_35'};
+% candidateLabels200CellEcdfs = {'candidateIDs_2,14,20,29-30,32,35-36'; ...
+%                     'candidateIDs_2'; 'candidateIDs_14'; 'candidateIDs_20'; ...
+%                     'candidateIDs_29'; 'candidateIDs_30'; 'candidateIDs_32'; ...
+%                     'candidateIDs_35'; 'candidateIDs_36'};
+candidateLabels200CellEcdfs = {'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'; ...
+                    'candidateIDs_2'; 'candidateIDs_7'; 'candidateIDs_11'; ...
+                    'candidateIDs_13'; 'candidateIDs_14'; 'candidateIDs_20'; ...
+                    'candidateIDs_27'; 'candidateIDs_29'; 'candidateIDs_30'; ...
+                    'candidateIDs_32'; 'candidateIDs_35'; 'candidateIDs_36'};
+
+% candidateLabels200CellActivationProfiles = {};
+candidateLabels200CellActivationProfiles = {'candidateIDs_32'; ...
+                    'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'};
+
 cellNameStr = 'cellName';
 epasStr = 'TCepas';
 
@@ -206,13 +219,19 @@ popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
 
 % Create a network data spreadsheet names
-networkSheetNames = strcat(popIterName200Cell, '_', candidateLabels200Cell, '_', ...
+networkSheetNames = strcat(popIterName200Cell, '_', ...
+                            candidateLabels200Cell, '_', ...
                             oscParamsSuffix, '.csv');
+
+networkSheetNamesEcdfs = strcat(popIterName200Cell, '_', ...
+                                candidateLabels200CellEcdfs, '_', ...
+                                oscParamsSuffix, '.csv');
 
 % Contruct the full path to the population data spreadsheet
 popDataPath2Cell = fullfile(figure07Dir, popDataSheetName2Cell);
 popDataPath200Cell = fullfile(figure08Dir, popDataSheetName200Cell);
 networkDataPaths = fullfile(figure08Dir, networkSheetNames);
+networkDataPathsEcdfs = fullfile(figure08Dir, networkSheetNamesEcdfs);
 
 % Construct stats table paths
 networkStatLabels = strcat(popIterName200Cell, '_', candidateLabels200Cell, ...
@@ -232,7 +251,7 @@ if plotIpscComparison || plot2CellEssential || plot2CellM2h
     [~, exampleDirs2Cell] = ...
         cellfun(@(x) all_subdirs('Directory', exampleIterDir2Cell, ...
                                 'Keyword', x), ...
-                exampleCellNames, 'UniformOutput', false);
+                exampleCellNames2Cell, 'UniformOutput', false);
 end
 if plot200CellExamples
     % Select seed number directory
@@ -242,7 +261,7 @@ if plot200CellExamples
     [~, exampleDirs200Cell] = ...
         cellfun(@(x) all_subdirs('Directory', seedNumberDir, ...
                                 'Keyword', x, 'Recursive', true), ...
-                exampleCellNames, 'UniformOutput', false);
+                exampleCellNames200Cell, 'UniformOutput', false);
 end
 
 %% Plots figures for comparing dynamic clamp ipsc
@@ -251,7 +270,7 @@ if plotIpscComparison
                                         figure07Dir, figTypes, ...
                                         ipscFigWidth, ipscFigHeight, ...
                                         xLimits2Cell, yLimitsGabab), ...
-            exampleCellNames, exampleDirs2Cell);
+            exampleCellNames2Cell, exampleDirs2Cell);
 end
 
 %% Plots example 2-cell networks
@@ -262,7 +281,7 @@ if plot2CellEssential
                             essential2CellFigWidth, essential2CellFigHeight, ...
                             xLimits2Cell, yLimitsEssential, ...
                             'essential', b), ...
-                exampleCellNames, exampleDirs2Cell), ...
+                exampleCellName2Cell, exampleDirs2Cell), ...
         num2cell(pharmConditions), colorMapPharmCell);
 end
 
@@ -274,7 +293,7 @@ if plot2CellM2h
                             m2h2CellFigWidth, m2h2CellFigHeight, ...
                             xLimits2Cell, yLimitsM2h, ...
                             'm2h', b), ...
-                exampleCellNames, exampleDirs2Cell), ...
+                exampleCellNames2Cell, exampleDirs2Cell), ...
         num2cell(pharmConditions), colorMapPharmCell);
 end
 
@@ -284,7 +303,7 @@ if plot200CellExamples
         cellfun(@(x, y) plot_200cell_examples(x, exampleIterName200Cell, ...
                             gIncr, z, y, figure08Dir, figTypes, ...
                         example200CellFigWidth, example200CellFigHeight), ...
-                exampleCellNames, exampleDirs200Cell), ...
+                exampleCellNames200Cell, exampleDirs200Cell), ...
         pharmConditions);
 end
 
@@ -314,8 +333,8 @@ end
 
 %% Combines activation profiles over seed numbers for each 200-cell network
 if combineActivationProfiles
-    combine_activation_profiles(popIterDir200Cell, figure08Dir, ...
-                                epasToPlot, candidateLabels200Cell);
+    combine_activation_profiles(popIterDir200Cell, figure08Dir, epasToPlot, ...
+                                candidateLabels200CellActivationProfiles);
 end
 
 %% Plots oscillation measures over pharm condition 
@@ -430,7 +449,7 @@ end
 
 %% Plots cumulative distribution plots
 if plot200CellCumDist
-   m3ha_plot_all_cumulative_distributions(networkDataPaths, ...
+   m3ha_plot_all_cumulative_distributions(networkDataPathsEcdfs, ...
                                         measuresOfInterestJitter, ...
                                         measureTitlesJitter, candCellSheetPath); 
 end
@@ -824,6 +843,9 @@ seedNumLabelRegExp = [seedNumStr, '_[0-9]*'];
 oscDataStr = 'oscData';
 oscParamsStr = 'oscParams';
 
+figHeight = 4.3;
+figWidth = 4.3;
+
 %% Do the job
 % Find all oscillation data matfiles with this candidate label
 [~, oscDataPaths] = ...
@@ -865,7 +887,8 @@ condStrs = {1; 2; 3; 4};
 
 % Plot mean activation profiles
 cellfun(@(a, b, c, d) plot_mean_activation_profiles(a, b, c, d, ...
-                        seedNums, oscDataTables, epasToPlot), ...
+                        seedNums, oscDataTables, epasToPlot, ...
+                        figHeight, figWidth), ...
         figPathBases, figTitleBases, condStrs, num2cell(nCells));
 
 end
@@ -874,7 +897,8 @@ end
 
 function plot_mean_activation_profiles (figPathBase, figTitleBase, ...
                                         condStr, nCells, seedNums, ...
-                                        oscDataTables, epasToPlot)
+                                        oscDataTables, epasToPlot, ...
+                                        figHeight, figWidth)
 
 % Compute the corresponding TCepas value
 TCepasValues = -75 + mod(seedNums, 16);
@@ -943,7 +967,8 @@ legend(handles.curves, 'location', 'southeast');
 save_all_figtypes(fig, [figPathBase, '_orig.png'], 'png');
 
 % Update for CorelDraw
-update_figure_for_corel(fig);
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth);
 
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '.png'], {'png', 'epsc'});
@@ -1266,8 +1291,8 @@ function m3ha_plot_all_cumulative_distributions (networkDataPaths, ...
 
 % Hard-coded parameters
 groupVarName = 'pCond';
-% figWidth = 6;
-% figHeight = 3;
+figWidth = 4.3 * 2;
+figHeight = 4.3 * 2;
 figTypes = {'png', 'epsc'};
 ecdfsSuffix = 'ecdfs';
 yLabel = '% of simulations';
@@ -1301,7 +1326,8 @@ figPathBases = fullfile(commonDir, strcat(measuresOfInterest, '_', ...
 cellfun(@(a, b, c) plot_cumulative_distributions (dataTables, a, ...
                                             groupVarName, cellNamesToUse, ...
                                             b, yLabel, ...
-                                            c, figTypes), ...
+                                            c, figTypes, ...
+                                            figWidth, figHeight), ...
         measuresOfInterest, measureLabels, figPathBases, ...
         'UniformOutput', false);
 
@@ -1312,8 +1338,12 @@ end
 function plot_cumulative_distributions (dataTables, measureOfInterest, ...
                                             groupVarName, tableNames, ...
                                             measureLabel, yLabel, ...
-                                            figPathBase, figTypes)
+                                            figPathBase, figTypes, ...
+                                            figWidth, figHeight)
 % TODO: Pull out as its own function
+
+% Force as a column cell array
+dataTables = force_column_cell(dataTables);
 
 % Extract the grouping vectors
 groupingVecs = cellfun(@(T) T.(groupVarName), dataTables, ...
@@ -1339,8 +1369,7 @@ dataEachGroup = ...
 
 % Compute ecdfs for each table and each group
 [ecdfValuesEachGroup, xValuesEachGroup] = ...
-    cellfun(@(x) cellfun(@(y) ecdf(y), ...
-                            x, 'UniformOutput', false), ...
+    cellfun(@(x) compute_ecdfs(x), ...
             dataEachGroup, 'UniformOutput', false);
 
 % Set default y axis label
@@ -1367,7 +1396,8 @@ for iGroup = 1:nGroups
     wasHold = hold_on;
 
     % Plot stairs
-    ecdfsThis = cellfun(@(a, b, c) stairs(a, 100 * b, 'Color', c), ...
+    ecdfsThis = cellfun(@(a, b, c) stairs(a, 100 * b, 'Color', c, ...
+                                            'LineWidth', 0.5), ...
                         xValuesEachTable, ecdfValuesEachTable, colorMap);
 
     % Hold off
@@ -1388,6 +1418,7 @@ for iGroup = 1:nGroups
     % Title
     title(sprintf('%s = %s', groupVarName, groupValueThisStr));
 
+    % Modify line widths
     set(ecdfsThis(contains(tableNames, 'hetero')), 'LineWidth', 2);
 
     % Legend
@@ -1403,10 +1434,59 @@ linkaxes(ax, 'xy');
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Update figure for CorelDraw
-update_figure_for_corel(fig, 'RemoveLegend', true);
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [ecdfValues, xValues] = compute_ecdfs(data)
+%% Computes ecdfs for a group of vectors and aligns the x limits
+% TODO: Pull out as its own function
+
+%% Preparation
+% Force as volumn vectors
+data = force_column_vector(data, 'IgnoreNonVectors', true);
+
+%% Do the job
+if iscell(data)
+    % Compute ecdf values for each vector
+    [ecdfValues, xValues] = ...
+        cellfun(@(y) ecdf(y), data, 'UniformOutput', false);
+
+    % Compute the minimum and maximum x values
+    minXValue = apply_iteratively(@min, xValues);
+    maxXValue = apply_iteratively(@max, xValues);
+
+    % Make sure the vectors include the boundary values
+    [ecdfValues, xValues] = ...
+        cellfun(@(x, y) add_boundary_values(x, y, minXValue, maxXValue), ...
+                ecdfValues, xValues, 'UniformOutput', false);
+else
+    [ecdfValues, xValues] = ecdf(data);
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [ecdfValues, xValues] = add_boundary_values (ecdfValues, xValues, ...
+                                                        minXValue, maxXValue)
+% Add left boundary if necessary
+if ecdfValues(1) ~= 0 || xValues(1) ~= minXValue
+    xValues = [minXValue; xValues];
+    ecdfValues = [0; ecdfValues];
+end
+
+% Add right boundary if necessary
+if ecdfValues(end) ~= 1 || xValues(end) ~= maxXValue
+    xValues = [xValues; maxXValue];
+    ecdfValues = [ecdfValues; 1];
+end
 
 end
 

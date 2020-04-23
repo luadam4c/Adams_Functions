@@ -32,6 +32,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                       'center'- center element of each vector
 %                       'min'   - minimum-valued element of each vector
 %                       'max'   - maximum-valued element of each vector
+%                       'maxabs'- maximum-absolute-valued element
 %                       'firstdiff' - first difference of each vector
 %                       'specific'  - at a a specific index
 %       varargin    - 'Index': index of the element from each vector
@@ -87,6 +88,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2019-10-04 Fixed bug
 % 2019-12-01 Now allows vecs to be a matrix cell array
 % 2020-02-26 Added 'ReturnNan' as a an optional arguement
+% 2020-04-22 Added 'maxabs' as a possible extract mode
 % TODO: Add 'TreatCellAsArray' as a parameter
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
@@ -94,7 +96,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 
 
 %% Hard-coded parameters
-validExtractModes = {'first', 'last', 'center', 'min', 'max', ...
+validExtractModes = {'first', 'last', 'center', 'min', 'max', 'maxabs', ...
                         'firstdiff', 'specific'};
 
 % TODO: Add as optional argument
@@ -138,7 +140,7 @@ extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
 switch extractMode
-case {'first', 'last', 'center', 'min', 'max', 'firstdiff'}
+case {'first', 'last', 'center', 'min', 'max', 'maxabs', 'firstdiff'}
     % Extract from a position
     if iscellnumericvector(vecs) && ~treatCellAsArray
         [elements, idxElement] = ...
@@ -242,6 +244,8 @@ switch extractMode
         [element, idxElement] = min(x);
     case 'max'
         [element, idxElement] = max(x);
+    case 'maxabs'
+        [element, idxElement] = max(abs(x));
     case 'firstdiff'
         element = x(2) - x(1);
         idxElement = NaN;

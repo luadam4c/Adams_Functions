@@ -85,6 +85,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_simulate_population.m
+%       cd/movingaveragefilter.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
 %       cd/plot_grouped_histogram.m

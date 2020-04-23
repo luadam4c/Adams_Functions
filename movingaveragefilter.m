@@ -32,8 +32,10 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %       cd/find_nearest_odd.m
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/isnum.m
 %       cd/iscellnumericvector.m
+%       cd/set_default_flag.m
 %       cd/struct2arglist.m
 %       cd/vecfun.m
 %
@@ -106,6 +108,9 @@ if isscalar(filtWidthSamples)
                                                     otherArguments), ...
                         vecs, 'UniformOutput', false);
 else
+    % Save whether was a non-cell matrix
+    wasMatrix = set_default_flag([], ~iscell(vecs));
+    
     % Match formats
     vecs = force_column_cell(vecs);
     filtWidthSamples = force_column_vector(filtWidthSamples);
@@ -115,6 +120,11 @@ else
                                                     otherArguments), ...
                         vecs, num2cell(filtWidthSamples), ...
                         'UniformOutput', false);
+    
+    % Reform a non-cell matrix
+    if wasMatrix
+        vecsFilt = force_matrix(vecsFilt);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
