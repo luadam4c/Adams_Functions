@@ -154,7 +154,8 @@ end
 
 %% Load files
 % Load the data saved by NEURON to a .out file into a cell array
-outputs = array_fun(@load, fullPaths, 'UniformOutput', false);
+% outputs = array_fun(@load, fullPaths, 'UniformOutput', false);
+outputs = cellfun(@load, fullPaths, 'UniformOutput', false);
 
 % If tVecs not empty, interpolate simulated data to match the time points
 if ~isempty(tVecs)
