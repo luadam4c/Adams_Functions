@@ -81,14 +81,14 @@
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
-plotEssentialFlag = false; %true;
-plotOpenProbabilityFlag = false; %true;
-findSpecialCasesFlag = false; %true;
-computeCellInfoTableFlag = false; %true;
-plotCorrelationsFlag = false; %true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;
+computeOpenProbabilityFlag = true;
+plotEssentialFlag = true;
+plotOpenProbabilityFlag = true;
+findSpecialCasesFlag = true;
+computeCellInfoTableFlag = true;
+plotCorrelationsFlag = true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;
 archiveScriptsFlag = true;
 
 % Simulation parameters
@@ -236,12 +236,15 @@ essentialYTickLocs = {-90:20:-50; 0:5:20; []; ...
 % rankNumsOpenProbability = [];   % same as rankNumsToUse
 % rankNumsOpenProbability = [6, 9];
 
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%                     '20200208_population_rank1-23_dataMode1_attemptNumber3');
+
 outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-                    '20200208_population_rank1-23_dataMode1_attemptNumber3');
+                    '20200423_population_rank1-31_dataMode1_attemptNumber3');
 figTypes = {'png', 'epsc'};
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = 1:23;
-rankNumsOpenProbability = 1:23;
+rankNumsToUse = 1:31;
+rankNumsOpenProbability = 1:31;
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie

@@ -108,6 +108,7 @@ pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
 tcParamsPrefix = 'TCparams';
 simParamsPrefix = 'sim_params';
 itm2hDiffLowerLimit = 1e-9;
+itm2hDiffThreshold = 1e-2;
 
 % TODO: Make optional arguments
 figTypes = 'png';
@@ -356,6 +357,11 @@ case 'essential'
 
     % Make the 5-7th subplots log-scaled
     arrayfun(@(x) set(subPlots(x), 'YScale', 'log'), 5:7);
+
+    % Add a threshold line
+    subplot(subPlots(7));
+    plot_horizontal_line(itm2hDiffThreshold, 'ColorMap', 'DarkGreen', ...
+                            'LineStyle', ':', 'LineWidth', 1);
 
     % Plot stimulation boundaries
     for i = 1:numel(subPlots)
