@@ -81,14 +81,14 @@
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = true;
-plotEssentialFlag = true;
-plotOpenProbabilityFlag = true;
-findSpecialCasesFlag = true;
-computeCellInfoTableFlag = true;
-plotCorrelationsFlag = true;
-plotViolinPlotsFlag = true;
-plotBarPlotsFlag = true;
+computeOpenProbabilityFlag = false; %true;
+plotEssentialFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+findSpecialCasesFlag = false; %true;
+computeCellInfoTableFlag = false; %true;
+plotCorrelationsFlag = false; %true;
+plotViolinPlotsFlag = false; %true;
+plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
 % Simulation parameters
@@ -733,8 +733,6 @@ if computeCellInfoTableFlag
     if ~isfile(simSwpInfoPath)
         error('Save a simulated sweep info table first!');
     end
-
-
 
     % Create the cell info table by combining the parameter tables
     simCellInfoTable = ...

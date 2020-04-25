@@ -145,7 +145,7 @@ if isempty(originalNColors)
 end
 
 % Set default nColors
-if isempty(nColors) || nColors == 0
+if isempty(nColors)
     if originalNColors && ~isempty(colorMap)
         if isstring(colorMap) || iscellstr(colorMap)
             nColors = numel(colorMap);

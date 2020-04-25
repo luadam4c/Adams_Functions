@@ -63,7 +63,6 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % 2020-01-01 Now uses array_fun.m
 % 2020-01-31 Added 'ForceCellOutput' as an optional argument
 % 2020-02-18 Added 'TimeWindows' as an optional argument
-% 2020-04-24 Now loads and processes output within array_fun
 
 %% Hard-coded parameters
 outputExtension = '.out';
@@ -153,16 +152,34 @@ if ~all(pathExists)
     return
 end
 
-% Match the number of time vectors and simulated outputs
-[tVecs, fullPaths] = match_format_vector_sets(tVecs, fullPaths);
-
-% Match the number of time windows and simulated outputs
-[timeWindows, fullPaths] = match_format_vector_sets(timeWindows, fullPaths);
-
 %% Load files
 % Load the data saved by NEURON to a .out file into a cell array
-outputs = array_fun(@(x, y, z) load_one_neuron_output(x, y, z), ...
-                    fullPaths, tVecs, timeWindows, 'UniformOutput', false);
+% outputs = array_fun(@load, fullPaths, 'UniformOutput', false);
+outputs = cellfun(@load, fullPaths, 'UniformOutput', false);
+
+% If tVecs not empty, interpolate simulated data to match the time points
+if ~isempty(tVecs)
+    % Match the number of time vectors and simulated outputs
+    [tVecs, outputs] = match_format_vector_sets(tVecs, outputs);
+
+    % Interpolated simulated data
+    outputs = array_fun(@(x, y) match_time_points(x, y), ...
+                        outputs, tVecs, 'UniformOutput', false);
+end
+
+%% Restrict outputs
+if ~isempty(timeWindows)
+    % Extract time vectors if needed
+    if isempty(tVecs)
+        tVecs = extract_columns(outputs, 1);
+    end
+
+    % Find window endpoints
+    endPoints = find_window_endpoints(timeWindows, tVecs);
+
+    % Restrict to those endpoints
+    outputs = extract_subvectors(outputs, 'EndPoints', endPoints);
+end
 
 %% Outputs
 % Don't output as cell if not necessary
@@ -175,34 +192,6 @@ end
 %   Note: Never use parfor here, so don't use array_fun 
 if removeAfterLoad
     cellfun(@delete, fullPaths, 'UniformOutput', false);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function output = load_one_neuron_output (fullPath, tVec, timeWindow)
-%% Loads NEURON outputs from one file
-
-% Load output
-output = load(fullPath);
-
-% If tVecs not empty, interpolate simulated data to match the time points
-if ~isempty(tVec)
-    % Interpolated simulated data
-    output = match_time_points(output, tVec);
-end
-
-% Restrict output
-if ~isempty(timeWindow)
-    % Extract time vectors if needed
-    if isempty(tVec)
-        tVec = output(:, 1);
-    end
-
-    % Find window endpoints
-    endPoints = find_window_endpoints(timeWindow, tVec);
-
-    % Restrict to those endpoints
-    output = extract_subvectors(output, 'EndPoints', endPoints);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

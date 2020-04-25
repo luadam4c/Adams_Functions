@@ -24,7 +24,7 @@
 %% Hard-coded parameters
 % Flags
 plotViolinPlotsFlag = true;
-plotBarPlotsFlag = false; %true;
+plotBarPlotsFlag = true;
 archiveScriptsFlag = true;
 
 % Directories
@@ -48,8 +48,11 @@ fitDirName = 'optimizer4gabab';
 % rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
 
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = 1:23;
+rankNumsToUse = 1:31;
 
 % Files
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');

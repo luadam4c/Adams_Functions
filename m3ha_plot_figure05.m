@@ -133,10 +133,10 @@ allComponentCurrentsYTickLocs = {-10:5:5, -5:5:5, -5:5:5, -5:5:5, ...
                             -5:5:10, -5:5:5, -5:5:5, -5:5:5};
 dend2ITpropertiesYTickLocs = {-5:5:5, 0:0.5:1, 0:0.5:1, 0:0.5:1, ...
                             0:0.5:1, [1e-6, 1e-1], [1e-6, 1e-1], ...
-                            [1e-7, 1e-1], [1e-7, 1e-1], [1e0, 1e1]};
-somaVoltageYTickLocs = {-90:20:-50, [1e-7, 1e-1]};
+                            [1e-6, 1e-2], [1e-6, 1e-2], [1e0, 1e1]};
+somaVoltageYTickLocs = {-90:20:-50, [1e-6, 1e-2]};
 essentialYTickLocs = {-90:20:-50, 0:5:10, -0.4:0.2:0, ...
-                            -15:5:0, [1e-7, 1e-1]};
+                            -15:5:0, [1e-6, 1e-2]};
 m2hFigWidth = 4.7; %5.7;
 m2hFigHeight = 3;
 m2hXLimits = [2800, 4800]; %[2800, 4000];

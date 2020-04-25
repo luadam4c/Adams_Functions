@@ -754,7 +754,7 @@ INAP_DEND2 = 60;
 INAP_M_DEND2 = 61;
 INAP_H_DEND2 = 62;
 
-itm2hDiffLowerLimit = 1e-8;
+itm2hDiffLowerLimit = 1e-9;
 
 %% Preparation
 % Initialize handles
@@ -1197,7 +1197,7 @@ IT_MINF_DEND2 = 48;
 IT_H_DEND2 = 49;
 IT_HINF_DEND2 = 50;
 
-itm2hDiffLowerLimit = 1e-8;
+itm2hDiffLowerLimit = 1e-9;
 selectedMarkerSize = 6;
 stimStartMs = 3000;
 barRelValue = 0.95;
@@ -1268,6 +1268,12 @@ dxdtVecsSmoothed = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
 % Smooth d2x/dt2 over filtWidthMs
 d2xdt2VecsSmoothed = movingaveragefilter(d2xdt2Vecs, filtWidthMs, siMs);
 
+% Compute dv/dt
+[dvdtVecs, t1Vecs] = compute_derivative_trace(vVecsSim, tVecs);
+
+% Smooth dx/dt over filtWidthMs
+dvdtVecsSmoothed = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
+
 %% Decide on y axis vectors for 4th subplot
 
 % % Plot other recorded channels as the 4th subplot
@@ -1307,11 +1313,22 @@ d2xdt2VecsSmoothed = movingaveragefilter(d2xdt2Vecs, filtWidthMs, siMs);
 %                 nan(1, size(d2xdt2VecsSmoothed, 2))];
 % otherYLimits = [-0.001, 0.001];
 
-figTitle4 = sprintf('d2(log(m2hdiff))/dt2 vs d(log(m2hdiff))/dt');
+% figTitle4 = sprintf('d2(log(m2hdiff))/dt2 vs d(log(m2hdiff))/dt');
+% plotPrePostForOtherVecs = false;
+% otherXVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
+% otherXVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
+% otherXLimits = [-0.05, 0.05];
+% otherXLimits = [-0.01, 0.05];
+% otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
+% otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
+%                 nan(1, size(d2xdt2VecsSmoothed, 2))];
+% otherYLimits = [-0.001, 0.001];
+
+figTitle4 = sprintf('d2(log(m2hdiff))/dt2 vs dV/dt');
 plotPrePostForOtherVecs = false;
-otherXVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
-otherXVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
-otherXLimits = [-0.05, 0.05];
+otherXVecsLabel = 'dV/dt';
+otherXVecs = [nan(1, size(dvdtVecsSmoothed, 2)); dvdtVecsSmoothed];
+otherXLimits = [0, 0.2];
 otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
 otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
                 nan(1, size(d2xdt2VecsSmoothed, 2))];
@@ -1319,17 +1336,16 @@ otherYLimits = [-0.001, 0.001];
 
 %% Restrict to LTS region
 % Find endpoint for just the LTS region
-methodNumber = 4;
+methodNumber = 5;
 switch methodNumber
-case {1, 3, 4}
+case {1, 3, 4, 5}
+    % Find LTS region
     switch methodNumber
     case 1
         % Find all LTS regions
         ltsParams = parse_lts(vVecsSim, 'StimStartMs', stimStartMs, ...
                                 'tVec0s', tVecs, 'iVec0s', iVecsSim, ...
                                 'Verbose', false);
-        idxPeakStart = ltsParams.idxPeakStart;
-        idxPeakEnd = ltsParams.idxPeakEnd;
     case 3
         % Parse maximum peak from itm2hDiff, 
         %   using itm2hDiffLeftBound as the peak lower bound
@@ -1338,24 +1354,37 @@ case {1, 3, 4}
                                     'PeakLowerBound', itm2hDiffLeftBound), ...
                     itm2hDiff, 'UniformOutput', true);
 
-        % Extract index peak starts and ends
-        [idxPeakStart, idxPeakEnd] = ...
-            argfun(@(x) extract_fields(peakParams, x), ...
-                    'idxPeakStart', 'idxPeakEnd');
-    case 4
-        % Parse maximum peak from itm2hDiff, 
+    case {4, 5}
+        % Parse maximum peak (considering all peaks) from itm2hDiff, 
         %   using itm2hDiffLeftBound as the peak lower bound
         peakParams = ...
             vecfun(@(x) parse_peaks(x, 'ParseMode', 'maxOfAll', ...
                                     'PeakLowerBound', itm2hDiffLeftBound), ...
                     itm2hDiff, 'UniformOutput', true);
+    otherwise
+        error('methodNumber unrecognized!');
+    end
 
+    % Extract endpoints
+    switch methodNumber
+    case 1
+        idxPeakStart = ltsParams.idxPeakStart;
+        idxPeakEnd = ltsParams.idxPeakEnd;
+    case {3, 4}
         % Extract index peak starts and ends
         [idxPeakStart, idxPeakEnd] = ...
             argfun(@(x) extract_fields(peakParams, x), ...
                     'idxPeakStart', 'idxPeakEnd');
+    case 5
+        % Extract index peak starts and ends
+        [idxPeakStart, idxPeakEnd] = ...
+            argfun(@(x) extract_fields(peakParams, x), ...
+                    'idxPeakStart', 'idxPeak');
+    otherwise
+        error('methodNumber unrecognized!');
     end
 
+    % Place endpoints together
     endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
 case 2
     % Extract peak endpoints 
@@ -1363,6 +1392,8 @@ case 2
                             'UniformOutput', false);
     idxPeakStart = transpose(endPointsPeak(1, :));
     idxPeakEnd = transpose(endPointsPeak(2, :));
+otherwise
+    error('methodNumber unrecognized!');
 end
 
 % Restrict to just the LTS region
