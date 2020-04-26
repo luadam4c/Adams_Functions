@@ -1074,7 +1074,7 @@ if strcmpi(simMode, 'passive')
 
         % Import data
         [realDataCpr, sweepInfoCpr] = ...
-            m3ha_import_raw_traces(fileNames, 'ImportMode', 'passive', ...
+            m3ha_import_raw_traces(fileNames, 'ImportMode', simMode, ...
                         'Verbose', verbose, 'OutFolder', outFolder, ...
                         'ResponseWindow', cprWindow - timeToStabilize);
 
@@ -1129,7 +1129,7 @@ elseif strcmpi(simMode, 'active')
 
         % Import data
         [realDataIpscr, sweepInfoIpscr] = ...
-            m3ha_import_raw_traces(fileNames, 'ImportMode', 'active', ...
+            m3ha_import_raw_traces(fileNames, 'ImportMode', simMode, ...
                         'Verbose', verbose, 'OutFolder', outFolder, ...
                         'ResponseWindow', ipscrWindow - timeToStabilize);
 
@@ -1314,13 +1314,13 @@ if verbose
 end
 
 % Run NEURON with the hocfile and attached simulation commands
-output = run_neuron(hocFile, 'SimCommands', simCommands, ...
+runOutput = run_neuron(hocFile, 'SimCommands', simCommands, ...
                     'Prefix', expStr, 'OutFolder', outFolder, ...
                     'DebugFlag', debugFlag, 'OnHpcFlag', onHpcFlag, ...
                     'SaveStdOutFlag', saveStdOutFlag);
 
 % Check if there are errors
-if any(output.hasError)
+if any(runOutput.hasError)
     fprintf('Simulations ran into error!\n');
     return
 end
@@ -1334,7 +1334,7 @@ if verbose
 end
 
 % Create an experiment identifier for title
-expStrForTitle = strrep(expStr, '_', '\_');
+expStrForTitle = replace(expStr, '_', '\_');
 
 % Load .out files created by NEURON
 % If recorded data provided (tVecs not empty at this point),

@@ -56,6 +56,7 @@
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/test_difference.m
+%       cd/update_neuron_scripts.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -78,8 +79,9 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = false; %true;
-simulateFlag = false; %true;
+updateScriptsFlag = true;
+chooseBestNeuronsFlag = true;
+simulateFlag = true;
 combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotEssentialFlag = false; %true;
@@ -187,7 +189,7 @@ measuresOfInterestNew = {'ltsProbability'; 'ltsLatency'; ...
                     'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
                     'spikeMaxAmp'; 'spikeMinAmp'; ...
                     'spikeFrequency'; 'spikeAdaptation'};
-measuresIsLogNew = repmat(false, 12, 1);
+measuresIsLogNew = false(12, 1);
 paramsOfInterest = {'diamSoma'; 'LDend'; 'diamDend'; 'gpas'; ...
                     'pcabarITSoma'; 'pcabarITDend1'; 'pcabarITDend2'; ...
                     'ghbarIhSoma'; 'ghbarIhDend1'; 'ghbarIhDend2'; ...
@@ -238,19 +240,40 @@ essentialYTickLocs = {-90:20:-50; 0:5:20; []; ...
 
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
 %                     '20200208_population_rank1-23_dataMode1_attemptNumber3');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%       '20200423_population_rank1-31_dataMode1_attemptNumber3_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:31;
+% rankNumsOpenProbability = 1:31;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%       '20200425_population_rank1-23_dataMode1_attemptNumber3_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200426_population_rank1-23_dataMode1_attemptNumber3_cvode_on_same_as_20200208');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
 
 outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-                    '20200423_population_rank1-31_dataMode1_attemptNumber3');
-figTypes = {'png', 'epsc'};
+        '20200426_population_rank1-23_dataMode1_attemptNumber3');
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = 1:31;
-rankNumsOpenProbability = 1:31;
+rankNumsToUse = 1:23;
+rankNumsOpenProbability = 1:23;
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
 prefix = '';
 opdThreshold = 1e-2;
 logOpdThreshold = log10(opdThreshold);
+figTypes = {'png', 'epsc'};
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -344,6 +367,11 @@ stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
 simCellInfoPath = replace(simSwpInfoPath, simSwpInfoSuffix, ...
                             simCellInfoSuffix);
 
+%% Make sure NEURON scripts are up to date in outFolder
+if updateScriptsFlag
+    update_neuron_scripts(fitDirectory, outFolder);
+end
+
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
     % Extract the corresponding cell names and iteration strings from 
@@ -380,6 +408,9 @@ end
 
 %% Simulate
 if simulateFlag
+    % Change to the output directory
+    cd(outFolder);
+
     % Find all simulated LTS stats spreadsheets
     [~, simLtsParamPaths] = ...
         cellfun(@(x) find_matching_files(x, 'Directory', outFolder, ...
@@ -488,7 +519,8 @@ if computeOpenProbabilityFlag
     %   interpolate simulated data to match the time points of recorded data
     % Note: This is necessary because CVODE (variable time step method) 
     %       is applied in NEURON
-    simData = load_neuron_outputs('FileNames', simOutPaths, 'tVecs', tVecsRec, ...
+    simData = load_neuron_outputs('FileNames', simOutPaths, ...
+                                    'tVecs', tVecsRec, ...
                                     'TimeWindow', fitWindowIpscr);
 
     % Extract vectors from simulated data
@@ -505,7 +537,7 @@ if computeOpenProbabilityFlag
 
     % Compute the rms error between m2h and minf2hinf
     m2hRmsError = compute_rms_error(m2h, minf2hinf, ...
-                                            'ForceColumnOutput', true);
+                                    'ForceColumnOutput', true);
 
     % Compute the maximum absolute error between m2h and minf2hinf
     m2hMaxAbsError = ...
