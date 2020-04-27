@@ -54,6 +54,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure07.m
 %       cd/sscanf_full.m
 %       cd/vecfun.m

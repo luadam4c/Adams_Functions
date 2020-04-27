@@ -76,26 +76,27 @@
 % 2020-04-11 Now plots correlations
 % 2020-04-12 Added m2hMaxError and m2hLogMaxError for open probability
 % 2020-04-13 Fixed bugs in plotEssential and findSpecialCases
+% 2020-04-27 Added plotIndividualFlag
 
 %% Hard-coded parameters
 % Flags
-updateScriptsFlag = false; %true;
-chooseBestNeuronsFlag = false; %true;
-simulateFlag = false; %true;
-combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
+updateScriptsFlag = true;
+chooseBestNeuronsFlag = true;
+simulateFlag = true;
+combineFeatureTablesFlag = true;
+computeOpenProbabilityFlag = true;
 plotIndividualFlag = true;
-plotEssentialFlag = false; %true;
-plotOpenProbabilityFlag = false; %true;
-findSpecialCasesFlag = false; %true;
-computeCellInfoTableFlag = false; %true;
-plotCorrelationsFlag = false; %true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;
+plotEssentialFlag = true;
+plotOpenProbabilityFlag = true;
+findSpecialCasesFlag = true;
+computeCellInfoTableFlag = true;
+plotCorrelationsFlag = true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;
 archiveScriptsFlag = true;
 
 % Simulation parameters
-useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
+useHH = false;           % whether to use Hudgin-Huxley Na+ and K+ channels
 buildMode = 'active';
 simMode = 'active';
 dataMode = 1; %0;           % data mode:
@@ -267,11 +268,18 @@ individualYTickLocs = [];
 % rankNumsToUse = 1:23;
 % rankNumsOpenProbability = 1:23;
 
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200426_population_rank1-23_dataMode1_attemptNumber3_vtraub-52');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
 outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-        '20200426_population_rank1-23_dataMode1_attemptNumber3');
+        '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_on');
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
 rankNumsOpenProbability = 1:23;
+
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie

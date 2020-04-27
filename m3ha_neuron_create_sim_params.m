@@ -51,6 +51,9 @@ function [simParamsTable, simParamsPath] = ...
 %                   - 'UseHH': whether to use HH channels
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'UseCvode': whether to use CVODE
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false if useHH is true; true otherwise
 %                   - 'TauhMode': mode for simulating tauh
 %                   must be one of:
 %                       0 - original curve
@@ -138,6 +141,7 @@ function [simParamsTable, simParamsPath] = ...
 % 2020-01-02 Added 'tauhMode'
 % 2020-01-05 Fixe nSimsDefault
 % 2020-01-22 Now uses m3ha_load_gabab_ipsc_params.m
+% 2020-04-27 Added 'UseCvode' as an optional argument
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -145,7 +149,7 @@ function [simParamsTable, simParamsPath] = ...
 validBuildModes = {'active', 'passive'};
 validSimModes = {'active', 'passive'};
 simParamsFileName = 'simulation_parameters.csv';
-simParamsFromArguments = {'useHH', 'tauhMode', 'buildMode', 'simMode', ...
+simParamsFromArguments = {'useHH', 'useCvode', 'tauhMode', 'buildMode', 'simMode', ...
                             'outFilePath', 'tstop' ...
                             'holdPotential', 'currentPulseAmplitude', ...
                             'gababAmp', 'gababTrise', ...
@@ -174,6 +178,7 @@ nSimsDefault = [];              % set later
 
 %% Default values for simulation parameters
 useHHDefault = false;           % don't use HH channels by default
+useCvodeDefault = [];           % set later
 tauhModeDefault = 0;            % regular tauh by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate a IPSC response by default
@@ -230,6 +235,8 @@ addParameter(iP, 'NSims', nSimsDefault, ...
                 'NSims must be empty or a positive integer scalar!'));
 addParameter(iP, 'UseHH', useHHDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'UseCvode', useCvodeDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TauhMode', tauhModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'BuildMode', buildModeDefault, ...
@@ -271,6 +278,7 @@ cprWindow = iP.Results.CprWindow;
 ipscrWindow = iP.Results.IpscrWindow;
 nSims = iP.Results.NSims;
 useHH = iP.Results.UseHH;
+useCvode = iP.Results.UseCvode;
 tauhMode = iP.Results.TauhMode;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
@@ -308,6 +316,9 @@ end
 % Make buildMode and simMode cell arrays
 buildMode = {buildMode};
 simMode = {simMode};
+
+% Decide whether to use CVODE
+useCvode = set_default_flag(useCvode, ~useHH);
 
 % Decide on the end time of simulations
 if isempty(tstop)

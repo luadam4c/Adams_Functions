@@ -4,9 +4,7 @@
 % Requires:
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
-%       cd/array_fun.m
 %       cd/check_dir.m
-%       cd/copy_into.m
 %       cd/create_subplots.m
 %       cd/extract_fileparts.m
 %       cd/extract_param_values.m
@@ -32,35 +30,26 @@
 % 2019-12-20 Added plotCurveFit
 % 2019-12-21 Added simulateCpr and simulateIpscr
 % 2019-12-28 Added updateScripts
-% 2020-04-27 Added useHH and useCvode
 
 %% Hard-coded parameters
 % Flags
-updateScripts = true;
-simulateCpr = true;
-plotCpr = true;
-simulateIpscr = true;
-plotIpscr = true;
-plotOverlapped = true;
-archiveScriptsFlag = true;
+updateScripts = false; %true;
+simulateCpr = false; %true;
+plotCpr = false; %true;
+simulateIpscr = false; %true;
+plotIpscr = false; %true;
+plotOverlapped = false; %true;
+archiveScriptsFlag = false; %true;
 
 % Flags (ALREADY DONE!)
 estimatePassiveParams = false; %true;
-plotCurveFit = false; %true;
+plotCurveFit = true;
 plotGeometry = false; %true;
 
-% Flags (TEMP)
-useHH = false;
-useCvode = false;
-
-% Other Directories
+% Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
-% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
-% paramsDir = figure03Dir;
-figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-                        'backup-20200427-useCvode-false-useHH-false');
-paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
 fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 
@@ -81,10 +70,6 @@ paramFileSuffix = 'params';
 exampleCellNames = {'D101310'; 'G101310'};
 
 % Simulation settings
-columnMode = 1;
-plotAllFlag = false;
-plotIndividualFlag = true;
-saveSimOutFlag = true;
 dataModeCpr = 1;                    % data mode for current pulse response
 dataModeIpscr = 2;                  % data mode for IPSC response
                                     %   0 - all data
@@ -183,11 +168,9 @@ if plotGeometry || simulateCpr || simulateIpscr || ...
         plotCpr || plotIpscr || plotOverlapped
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
-        find_matching_files(exampleCellNames, 'Directory', paramsDir, ...
+        find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
                             'Suffix', paramFileSuffix, 'Extension', 'csv', ...
                             'Recursive', false);
-    % Back up parameter files
-    copy_into(exampleParamPaths, figure03Dir);
 
     % Extract file bases
     exampleParamFileBases = extract_fileparts(exampleParamPaths, 'base');
@@ -225,48 +208,31 @@ end
 
 %% Simulate current pulse responses
 if simulateCpr
-    array_fun(@(x, y, z) m3ha_neuron_run_and_analyze(x, ...
-                        'OutFolder', y, 'Prefix', z, ...
-                        'BuildMode', 'passive', 'SimMode', 'passive', ...
-                        'DataMode', dataModeCpr, 'ColumnMode', columnMode, ...
-                        'Rowmode', rowmodeCpr, 'UseCvode', useCvode, ...
-                        'AttemptNumber', attemptNumberCpr, ...
-                        'PlotAllFlag', plotAllFlag, ...
-                        'PlotIndividualFlag', plotIndividualFlag, ...
-                        'SaveSimOutFlag', saveSimOutFlag), ...
-            exampleParamPaths, outFoldersCpr, exampleLabelsCpr);
+    cellfun(@(x, y, z) simulate_cpr(x, y, z, dataModeCpr, rowmodeCpr, ...
+                                attemptNumberCpr), ...
+            exampleLabelsCpr, exampleParamPaths, outFoldersCpr);
 end
 
 %% Plot current pulse responses
 if plotCpr
     cellfun(@(x, y) plot_cpr(x, y, figure03Dir, figTypes, ...
                                 cprFigWidth, cprFigHeight, ...
-                                cprXLimits, cprYLimits, ...
-                                'ToMedianFilter', ~useHH), ...
+                                cprXLimits, cprYLimits), ...
             exampleLabelsCpr, outFoldersCpr);
 end
 
 %% Simulate IPSC responses
 if simulateIpscr
-    array_fun(@(x, y, z) m3ha_neuron_run_and_analyze(x, ...
-                        'OutFolder', y, 'Prefix', z, ...
-                        'BuildMode', 'active', 'SimMode', 'active', ...
-                        'DataMode', dataModeIpscr, 'ColumnMode', columnMode, ...
-                        'Rowmode', rowmodeIpscr, 'UseCvode', useCvode, ...
-                        'AttemptNumber', attemptNumberIpscr, ...
-                        'PlotAllFlag', plotAllFlag, ...
-                        'PlotIndividualFlag', plotIndividualFlag, ...
-                        'SaveSimOutFlag', saveSimOutFlag), ...
-            exampleParamPaths, outFoldersIpscr, exampleLabelsIpscr);
-
+    cellfun(@(x, y, z) simulate_ipscr(x, y, z, dataModeIpscr, rowmodeIpscr, ...
+                                attemptNumberIpscr), ...
+            exampleLabelsIpscr, exampleParamPaths, outFoldersIpscr);
 end
 
 %% Plot IPSC responses
 if plotIpscr
     cellfun(@(x, y) plot_ipscr(x, y, figure03Dir, figTypes, ...
                                 ipscrFigWidth, ipscrFigHeight, ...
-                                ipscrXLimits, ipscrYLimits, ipscrYTicks, ...
-                                'ToMedianFilter', ~useHH), ...
+                                ipscrXLimits, ipscrYLimits, ipscrYTicks), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -501,8 +467,40 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function simulate_cpr(label, neuronParamsFile, outFolder, ...
+                        dataMode, rowmode, attemptNumber)
+
+% Simulate
+m3ha_neuron_run_and_analyze(neuronParamsFile, ...
+                        'OutFolder', outFolder, 'Prefix', label, ...
+                        'BuildMode', 'passive', 'SimMode', 'passive', ...
+                        'DataMode', dataMode, 'ColumnMode', 1, ...
+                        'Rowmode', rowmode, 'AttemptNumber', attemptNumber, ...
+                        'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
+                        'SaveSimOutFlag', true);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function simulate_ipscr(label, neuronParamsFile, outFolder, ...
+                        dataMode, rowmode, attemptNumber)
+
+% Simulate
+m3ha_neuron_run_and_analyze(neuronParamsFile, ...
+                        'OutFolder', outFolder, 'Prefix', label, ...
+                        'BuildMode', 'active', 'SimMode', 'active', ...
+                        'DataMode', dataMode, 'ColumnMode', 1, ...
+                        'Rowmode', rowmode, 'AttemptNumber', attemptNumber, ...
+                        'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
+                        'SaveSimOutFlag', true);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function plot_cpr(expStr, directory, outFolder, figTypes, ...
-                    figWidth, figHeight, xLimits, yLimits, varargin)
+                    figWidth, figHeight, xLimits, yLimits)
 
 % Create a figure name
 figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
@@ -513,7 +511,7 @@ figIndividual = set_figure_properties('AlwaysNew', true);
 % Plot traces
 m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                     'PlotType', 'individual', 'FigHandle', figIndividual, ...
-                    'XLimits', xLimits, 'YLimits', yLimits, varargin{:});
+                    'XLimits', xLimits, 'YLimits', yLimits);
 
 % Plot a scale bar
 plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 10, ...
@@ -532,7 +530,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_ipscr(expStr, directory, outFolder, figTypes, ...
-                    figWidth, figHeight, xLimits, yLimits, yTicks, varargin)
+                    figWidth, figHeight, xLimits, yLimits, yTicks)
 
 % Create a figure name
 figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
@@ -544,7 +542,7 @@ figIndividual = set_figure_properties('AlwaysNew', true);
 handles = ...
     m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'PlotType', 'individual', 'FigHandle', figIndividual, ...
-                'XLimits', xLimits, 'YLimits', yLimits, varargin{:});
+                'XLimits', xLimits, 'YLimits', yLimits);
 
 % Plot a scale bar
 hold on
