@@ -54,6 +54,15 @@ function [simParamsTable, simParamsPath] = ...
 %                   - 'UseCvode': whether to use CVODE
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false if useHH is true; true otherwise
+%                   - 'SecondOrder': whether to use the Crank-Nicholson method
+%                               (otherwise the Backward-Euler method is default)
+%                       see https://neuron.yale.edu/neuron/static/new_doc/
+%                               simctrl/programmatic.html?#secondorder
+%                   must be one of the following:
+%                           0 - Implicit Backward Euler
+%                           1 - Crank-Nicholson 
+%                           2 - Crank-Nicholson with ion current correction
+%                   default == 0
 %                   - 'TauhMode': mode for simulating tauh
 %                   must be one of:
 %                       0 - original curve
@@ -142,6 +151,7 @@ function [simParamsTable, simParamsPath] = ...
 % 2020-01-05 Fixe nSimsDefault
 % 2020-01-22 Now uses m3ha_load_gabab_ipsc_params.m
 % 2020-04-27 Added 'UseCvode' as an optional argument
+% 2020-04-27 Added 'SecondOrder' as an optional argument
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -149,7 +159,8 @@ function [simParamsTable, simParamsPath] = ...
 validBuildModes = {'active', 'passive'};
 validSimModes = {'active', 'passive'};
 simParamsFileName = 'simulation_parameters.csv';
-simParamsFromArguments = {'useHH', 'useCvode', 'tauhMode', 'buildMode', 'simMode', ...
+simParamsFromArguments = {'useHH', 'useCvode', 'secondOrder', ...
+                            'tauhMode', 'buildMode', 'simMode', ...
                             'outFilePath', 'tstop' ...
                             'holdPotential', 'currentPulseAmplitude', ...
                             'gababAmp', 'gababTrise', ...
@@ -179,6 +190,7 @@ nSimsDefault = [];              % set later
 %% Default values for simulation parameters
 useHHDefault = false;           % don't use HH channels by default
 useCvodeDefault = [];           % set later
+secondOrderDefault = 0;         % use Backward Euler by default
 tauhModeDefault = 0;            % regular tauh by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate a IPSC response by default
@@ -237,6 +249,8 @@ addParameter(iP, 'UseHH', useHHDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseCvode', useCvodeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SecondOrder', secondOrderDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'TauhMode', tauhModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'BuildMode', buildModeDefault, ...
@@ -279,6 +293,7 @@ ipscrWindow = iP.Results.IpscrWindow;
 nSims = iP.Results.NSims;
 useHH = iP.Results.UseHH;
 useCvode = iP.Results.UseCvode;
+secondOrder = iP.Results.SecondOrder;
 tauhMode = iP.Results.TauhMode;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);

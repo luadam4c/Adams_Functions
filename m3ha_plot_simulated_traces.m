@@ -398,6 +398,13 @@ end
 % Count the number of files
 nFiles = numel(fileNames);
 
+% If no files to plot, return
+if nFiles == 0
+    fprintf('No .%s files exist; nothing is plotted!\n', extension);
+    handles = struct;
+    return
+end
+
 % Decide on nRows
 nRows = decide_on_nrows(nFiles, simMode, maxRowsWithOneOnly);
 

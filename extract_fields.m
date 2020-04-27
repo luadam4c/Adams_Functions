@@ -121,7 +121,8 @@ if isempty(uniformOutput)
     return
 else
     % Extract field values from each structure
-    fieldValues = array_fun(@(x) get_field(x, fieldName, uniformOutput), ...
+    %   Note: Don't use array_fun.m here
+    fieldValues = arrayfun(@(x) get_field(x, fieldName, uniformOutput), ...
                             structs, 'UniformOutput', uniformOutput);
 end
 

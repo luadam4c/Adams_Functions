@@ -24,6 +24,7 @@ function ax = remove_non_axes (ax)
 
 % File History:
 % 2020-04-22 Moved from update_figure_for_corel.m
+% 2020-04-27 Now checks ~istext(tags)
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,7 +40,7 @@ end
 tags = extract_fields(ax, 'Tag');
 
 % If there are no tags, return
-if isempty(tags) 
+if isempty(tags) || ~istext(tags)
     return
 end
 

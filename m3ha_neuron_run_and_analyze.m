@@ -39,6 +39,15 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'UseCvode': whether to use CVODE
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false if useHH is true; true otherwise
+%                   - 'SecondOrder': whether to use the Crank-Nicholson method
+%                               (otherwise the Backward-Euler method is default)
+%                       see https://neuron.yale.edu/neuron/static/new_doc/
+%                               simctrl/programmatic.html?#secondorder
+%                   must be one of the following:
+%                           0 - Implicit Backward Euler
+%                           1 - Crank-Nicholson 
+%                           2 - Crank-Nicholson with ion current correction
+%                   default == 0
 %                   - 'TauhMode': mode for simulating tauh
 %                   must be one of:
 %                       0 - original curve
@@ -504,6 +513,7 @@ function [errorStruct, hFig, simData] = ...
 %               number of rows and columns
 % 2020-03-12 - Added 'NewParams' as an optional argument
 % 2020-04-27 - Added 'UseCvode' as an optional argument
+% 2020-04-27 - Added 'SecondOrder' as an optional argument
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -587,6 +597,7 @@ INAPH_COL_SIM = 28;
 hFigDefault = '';               % no prior hFig structure by default
 useHHDefault = false;           % don't use HH channels by default
 useCvodeDefault = [];           % set later
+secondOrderDefault = 0;         % use Backward Euler by default
 tauhModeDefault = 0;            % regular tauh by default
 newParamsDefault = struct.empty;% don't update parameters by default
 buildModeDefault = 'active';    % insert active channels by default
@@ -695,6 +706,8 @@ addParameter(iP, 'UseHH', useHHDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseCvode', useCvodeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SecondOrder', secondOrderDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'TauhMode', tauhModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'NewParams', newParamsDefault, ...
@@ -876,6 +889,7 @@ parse(iP, neuronParamsTableOrFile, varargin{:});
 hFig = iP.Results.HFig;
 useHH = iP.Results.UseHH;
 useCvode = iP.Results.UseCvode;
+secondOrder = iP.Results.SecondOrder;
 tauhMode = iP.Results.TauhMode;
 newParams = iP.Results.NewParams;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
@@ -1285,7 +1299,7 @@ simParamsTable = m3ha_neuron_create_sim_params(neuronParamsTable, ...
                         'JitterFlag', jitterFlag, 'NSims', nSweeps, ...
                         'CprWindow', cprWindow, 'IpscrWindow', ipscrWindow, ...
                         'UseHH', useHH, 'UseCvode', useCvode, ...
-                        'TauhMode', tauhMode, ...
+                        'SecondOrder', secondOrder, 'TauhMode', tauhMode, ...
                         'BuildMode', buildMode, 'SimMode', simMode, ...
                         'OutFilePath', outFilePath, ...
                         'Tstop', tstop, 'HoldPotential', holdPotential, ...
