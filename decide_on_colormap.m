@@ -79,6 +79,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % 2020-04-20 Added 'OriginalNColors' as an optional argument
 % 2020-04-20 Added 'DarkPercentage' as an optional argument
 % 2020-04-20 Added 'FadePercentage' as an optional argument
+% 2020-04-26 Fixed the case when nColors is zero
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
@@ -157,6 +158,8 @@ if isempty(nColors)
     else
         nColors = defaultNColors;
     end
+elseif any(nColors == 0)
+    nColors(nColors == 0) = 64;
 end
 
 %% Do the job

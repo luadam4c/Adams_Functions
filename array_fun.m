@@ -62,6 +62,7 @@ function varargout = array_fun (myFunc, varargin)
 % 2020-01-01 Created by Adam Lu
 % 2020-01-02 Fixed to work with 2D arrays
 % 2020-03-09 Added RenewParpool as an optional argument
+% 2020-04-26 Fixed bug when nArgOut is 0
 % TODO: Convert all arguments to a cell array (with num2cell) 
 %       if any argument is a cell array
 
@@ -173,7 +174,9 @@ else
             outputsThis = apply_func(myFunc, inputsThis, nArgOut);
 
             % Save in output
-            outputMatrix(iItem, :) = outputsThis;        
+            if ~isempty(outputsThis)
+                outputMatrix(iItem, :) = outputsThis;
+            end
         end
 
         % Renew parallel pool object to clear memory
@@ -232,7 +235,12 @@ array = force_column_cell(array, 'ToLinearize', true);
 function outputList = apply_func(myFunc, argList, nArgOut)
 %% Applies a function to inputs from a cell array and returns outputs in a cell array
 
-[outputList{1:nArgOut}] = myFunc(argList{:});
+if nArgOut >= 1
+    [outputList{1:nArgOut}] = myFunc(argList{:});
+else
+    myFunc(argList{:});
+    outputList = {};
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -1418,8 +1418,12 @@ case 'parallel'
 
     % Create an overarching title
     if ~strcmpi(figTitle, 'suppress')
-        suptitle(figTitle);
-        % suplabel(figTitle, 't');
+        if nPlots > 1
+            suptitle(figTitle);
+            % suplabel(figTitle, 't');
+        else
+            title(figTitle);
+        end
     end
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);

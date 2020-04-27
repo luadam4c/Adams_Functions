@@ -42,6 +42,9 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                                               data when available
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ToMedianFilter': whether to median filter data
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == set based on simMode
 %                   - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
 %                   default == set in all_files.m
@@ -202,6 +205,7 @@ plotTypeDefault = 'individual';
 buildModeDefault = '';          % set later
 simModeDefault = '';            % set later
 compareWithRecordedDefault = true;
+toMedianFilterDefault = [];     % set later
 directoryDefault = '';          % set in all_files.m
 fileNamesDefault = {};
 simParamsTableDefault = table.empty;
@@ -233,6 +237,8 @@ addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
+addParameter(iP, 'ToMedianFilter', toMedianFilterDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CompareWithRecorded', compareWithRecordedDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
@@ -285,6 +291,7 @@ plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 compareWithRecorded = iP.Results.CompareWithRecorded;
+toMedianFilter = iP.Results.ToMedianFilter;
 directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
 simParamsTable = iP.Results.SimParamsTable;
@@ -326,6 +333,9 @@ if isempty(fileNames)
         all_files('Directory', directory, 'Extension', extension, ...
                     'Keyword', 'sim', 'ForceCellOutput', true);
 else
+    % Force as a cell array
+    fileNames = force_column_cell(fileNames);
+
     % Extract common directory
     directory = extract_fileparts(fileNames, 'commondirectory');
 
@@ -485,6 +495,7 @@ if toImportRecorded
     if ~all(isemptycell(sweepNames))
         % Import recorded traces
         realData = m3ha_import_raw_traces(sweepNames, 'ImportMode', simMode, ...
+                                    'ToMedianFilter', toMedianFilter, ...
                                     'Verbose', true, 'OutFolder', outFolder);
 
         % Extract vectors from recorded data
@@ -566,7 +577,7 @@ function nRows = decide_on_nrows(nFiles, simMode, maxRowsWithOneOnly)
 %% Decide on the number of rows
 
 % Decide on the number of rows
-if nFiles > 1 && strcmp(simMode, 'active')
+if nFiles >= 4 && strcmp(simMode, 'active')
     nRows = 4;
 elseif nFiles <= 3 && strcmp(simMode, 'passive')
     nRows = 3;
@@ -609,10 +620,17 @@ endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 % Print to standard output
 fprintf('Plotting figure of individual voltage traces for %s ...\n', expStr);
 
-% Decide on the figure width and height
+% Decide on the number of subplot columns and rows
 nSweeps = count_vectors(vVecsSim);
-nRows = 4;
-nColumns = ceil(nSweeps / nRows);
+if nSweeps >= 4
+    nRows = 4;
+    nColumns = ceil(nSweeps / nRows);
+else
+    nRows = nSweeps;
+    nColumns = 1;
+end
+
+% Decide on the figure width and height
 figExpansion = [nColumns / 3, nRows / 4];
 
 % Plot the individual traces

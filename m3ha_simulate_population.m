@@ -79,11 +79,12 @@
 
 %% Hard-coded parameters
 % Flags
-updateScriptsFlag = true;
-chooseBestNeuronsFlag = true;
-simulateFlag = true;
+updateScriptsFlag = false; %true;
+chooseBestNeuronsFlag = false; %true;
+simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
+plotIndividualFlag = true;
 plotEssentialFlag = false; %true;
 plotOpenProbabilityFlag = false; %true;
 findSpecialCasesFlag = false; %true;
@@ -209,6 +210,10 @@ essentialYLimits = {[-110, -40]; [0, 20]; []; ...
                             [-20, 5]; [1e-8, 1e0]};
 essentialYTickLocs = {-90:20:-50; 0:5:20; []; ...
                             -15:5:0; [1e-7, 1e-1]};
+
+individualXLimits = [2800, 4800];
+individualYLimits = [];
+individualYTickLocs = [];
 
 % TODO: Make optional argument
 % outFolder = '20191227_population_rank1-10_useHH_true';
@@ -633,6 +638,25 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     noLts = isnan(ltsPeakTime);
 end
 
+%% Plot all individual plots
+if plotIndividualFlag
+    % Display message
+    fprintf('Plotting all individual fits ... \n');
+
+    % Locate all simulated .out files
+    [~, allSimOutPaths] = all_files('Directory', outFolder, ...
+                                    'Recursive', true, 'Extension', 'out');
+
+    % Median filter recorded trace only if not using HH2.mod
+    toMedianFilter = ~useHH;
+
+    % Plot simulated traces
+    array_fun(@(a) m3ha_plot_individual(a, individualXLimits, ...
+                            individualYLimits, individualYTickLocs, ...
+                            toMedianFilter), ...
+            allSimOutPaths);
+end
+
 %% Plot all essential plots
 if plotEssentialFlag
     % Display message
@@ -643,15 +667,10 @@ if plotEssentialFlag
                                     'Recursive', true, 'Extension', 'out');
 
     % Plot simulated traces
-    % cellfun(@(a) m3ha_plot_essential(a, overlappedXLimits, essentialYLimits, ...
-    %                                 essentialYTickLocs, opdThreshold), ...
-    %         allSimOutPaths);
-    parfor iPath = 1:numel(allSimOutPaths)
-        pathThis = allSimOutPaths{iPath};
-        m3ha_plot_essential(pathThis, overlappedXLimits, ...
+    array_fun(@(a) m3ha_plot_essential(a, overlappedXLimits, ...
                             essentialYLimits, essentialYTickLocs, ...
-                            opdThreshold);
-    end
+                            opdThreshold), ...
+            allSimOutPaths);
 end
 
 %% Plot open probability discrepancy against LTS presence
@@ -942,6 +961,41 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function m3ha_plot_individual(simOutPath, xLimits, yLimits, yTickLocs, ...
+                                toMedianFilter)
+%% Plot an essential plot for a simulation
+
+% Extract the sweep name
+sweepName = m3ha_extract_sweep_name(simOutPath, 'FromBaseName', true);
+
+% Make the sweep the the figure title
+figTitle = replace(['Fits for ', sweepName], '_', '\_');
+
+% Create figure names
+figPathBase = replace(simOutPath, '.out', '_individual.png');
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot essential traces
+handles = ...
+    m3ha_plot_simulated_traces('PlotType', 'individual', ...
+                            'ToMedianFilter', toMedianFilter, ...
+                            'FileNames', simOutPath, ...
+                            'XLimits', xLimits, 'YLimits', yLimits, ...
+                            'YTickLocs', yTickLocs, ...
+                            'FigHandle', fig, 'FigTitle', figTitle);
+
+% Save original figure
+save_all_figtypes(fig, figPathBase, 'png');
+
+% Close figure
+close(fig);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function m3ha_plot_essential(simOutPath, xLimits, ...
                                 yLimits, yTickLocs, opdThreshold)
 %% Plot an essential plot for a simulation
@@ -960,7 +1014,8 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot essential traces
 handles = ...
-    m3ha_plot_simulated_traces('PlotType', 'essential', 'FileNames', simOutPath, ...
+    m3ha_plot_simulated_traces('PlotType', 'essential', ...
+                            'FileNames', simOutPath, ...
                             'XLimits', xLimits, 'YLimits', yLimits, ...
                             'YTickLocs', yTickLocs, ...
                             'FigHandle', fig, 'FigTitle', figTitle);

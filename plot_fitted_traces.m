@@ -542,7 +542,11 @@ for iSwp = 1:nSweeps
 end
 
 % Create a title above all subplots
-suptitle(figTitle);
+if nSweeps > 1
+    suptitle(figTitle);
+else
+    title(figTitle);
+end
 
 %% Output results
 % Save figure
