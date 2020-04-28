@@ -33,6 +33,7 @@
 % 2019-12-21 Added simulateCpr and simulateIpscr
 % 2019-12-28 Added updateScripts
 % 2020-04-27 Added useHH, useCvode and secondOrder
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags

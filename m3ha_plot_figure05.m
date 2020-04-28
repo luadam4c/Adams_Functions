@@ -22,6 +22,7 @@
 % 2020-01-29 Separated outputs to figure05Dir and figure06Dir
 % 2020-04-09 Changed the y axis limits of m2h discrepancy plot to [1e-1, 1e3]
 % 2020-04-13 Added plotVoltageVsOpd
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags

@@ -54,6 +54,7 @@
 % 2020-01-24 Now uses m3ha_decide_on_sweep_weights.m
 % 2020-04-28 Added useCvode
 % 2020-04-28 Added updateScriptsFlag
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags

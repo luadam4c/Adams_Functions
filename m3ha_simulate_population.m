@@ -77,6 +77,7 @@
 % 2020-04-12 Added m2hMaxError and m2hLogMaxError for open probability
 % 2020-04-13 Fixed bugs in plotEssential and findSpecialCases
 % 2020-04-27 Added plotIndividualFlag
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags

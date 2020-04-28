@@ -45,6 +45,7 @@
 % 2020-02-06 Added plot200CellExamples and plot2CellM2h
 % 2020-03-10 Updated pharm labels
 % 2020-04-09 Added combineActivationProfiles
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags

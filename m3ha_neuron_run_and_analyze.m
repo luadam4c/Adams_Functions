@@ -514,7 +514,7 @@ function [errorStruct, hFig, simData] = ...
 % 2020-03-12 - Added 'NewParams' as an optional argument
 % 2020-04-27 - Added 'UseCvode' as an optional argument
 % 2020-04-27 - Added 'SecondOrder' as an optional argument
-% 2019-04-28 Changed timeToStabilize from 2000 to 3000
+% 2019-04-28 - Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
