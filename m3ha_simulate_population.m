@@ -96,7 +96,8 @@ plotBarPlotsFlag = true;
 archiveScriptsFlag = true;
 
 % Simulation parameters
-useHH = false;           % whether to use Hudgin-Huxley Na+ and K+ channels
+useHH = false;          % whether to use Hudgin-Huxley Na+ and K+ channels
+useCvode = false;       % whether to use variable integration time steps
 buildMode = 'active';
 simMode = 'active';
 dataMode = 1; %0;           % data mode:
@@ -274,8 +275,14 @@ individualYTickLocs = [];
 % rankNumsToUse = 1:23;
 % rankNumsOpenProbability = 1:23;
 
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_on');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
 outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-        '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_on');
+        '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
 rankNumsOpenProbability = 1:23;
@@ -445,7 +452,8 @@ if simulateFlag
                     'IpscrWindow', ipscrWindow, ...
                     'FitWindowIpscr', fitWindowIpscr, ...
                     'BuildMode', buildMode, 'SimMode', simMode, ...
-                    'UseHH', useHH, 'AttemptNumber', attemptNumber, ...
+                    'UseHH', useHH, 'UseHH', useCvode, ...
+                    'AttemptNumber', attemptNumber, ...
                     'SaveSimOutFlag', true, 'SaveLtsInfoFlag', true), ...
             paramPaths);
 

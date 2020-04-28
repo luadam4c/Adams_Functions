@@ -37,11 +37,11 @@
 %% Hard-coded parameters
 % Flags
 updateScripts = true;
-simulateCpr = true;
-plotCpr = true;
+simulateCpr = false; %true;
+plotCpr = false; %true;
 simulateIpscr = true;
 plotIpscr = true;
-plotOverlapped = true;
+plotOverlapped = false; %true;
 archiveScriptsFlag = true;
 
 % Flags (ALREADY DONE!)
@@ -49,23 +49,42 @@ estimatePassiveParams = false; %true;
 plotCurveFit = false; %true;
 plotGeometry = false; %true;
 
-% Flags (TEMP)
-useHH = false;
-useCvode = true;
-secondOrder = 0;
-
 % Other Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 % paramsDir = figure03Dir;
-% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                         'backup-20200427-useCvode-false-useHH-false');
-figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-                    'backup-20200427-secondOrder-0-useCvode-true-useHH-false');
-paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
 fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
+
+% Working versions:
+useHH = true;
+useCvode = true;
+secondOrder = 0;
+figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+                    'backup-20200428-secondOrder-0-useCvode-true-useHH-true');
+paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = true;
+% useCvode = true;
+% secondOrder = 2;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-2-useCvode-true-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = true;
+% useCvode = false;
+% secondOrder = 0;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-0-useCvode-false-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = true;
+% useCvode = false;
+% secondOrder = 2;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-2-useCvode-false-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % Files
 sweepInfoFile = 'dclampdatalog_take4.csv';
@@ -84,6 +103,9 @@ paramFileSuffix = 'params';
 exampleCellNames = {'D101310'; 'G101310'};
 
 % Simulation settings
+% useHH = false;
+% useCvode = true;
+% secondOrder = 0;
 columnMode = 1;
 plotAllFlag = false;
 plotIndividualFlag = true;
@@ -541,6 +563,7 @@ function plot_ipscr(expStr, directory, outFolder, figTypes, ...
 
 % Create a figure name
 figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
+figPathBaseOrig = [figPathBaseIndividual, '_orig'];
 
 % Create the figure
 figIndividual = set_figure_properties('AlwaysNew', true);
@@ -549,7 +572,13 @@ figIndividual = set_figure_properties('AlwaysNew', true);
 handles = ...
     m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'PlotType', 'individual', 'FigHandle', figIndividual, ...
-                'XLimits', xLimits, 'YLimits', yLimits, varargin{:});
+                'XLimits', xLimits, varargin{:});
+
+% Save the figure
+save_all_figtypes(figIndividual, figPathBaseOrig, 'png');
+
+% Update y axis limits
+ylim(yLimits);
 
 % Plot a scale bar
 hold on
