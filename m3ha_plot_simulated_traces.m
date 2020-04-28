@@ -159,6 +159,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %               match each other
 % 2020-04-20 Now highlights time limits for voltage traces 
 %               in 'voltageVsOpd' plot
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -178,7 +179,7 @@ paramsSuffix = 'simulation_parameters';
 simOutPathStr = 'outFilePath';
 
 % Note: The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 
@@ -383,8 +384,8 @@ expStrForTitle = replace(expStr, '_', '\_');
 % Decide on timeLimits
 if isempty(timeLimits)
     if strcmp(simMode, 'active')
-%        timeLimits = [2800, 4500]; 
-        timeLimits = [2800, 4800];
+%        timeLimits = timeToStabilize + [800, 2500];
+        timeLimits = timeToStabilize + [800, 2800];
     else
         timeLimits = [timeToStabilize, Inf];
     end

@@ -514,6 +514,7 @@ function [errorStruct, hFig, simData] = ...
 % 2020-03-12 - Added 'NewParams' as an optional argument
 % 2020-04-27 - Added 'UseCvode' as an optional argument
 % 2020-04-27 - Added 'SecondOrder' as an optional argument
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -536,7 +537,7 @@ ipscpWinOrig = [1000, 1300];    % window (ms) in which IPSC reaches peak
                                 %   not influenced by LTSs before 1300 ms
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 % Default time windows to fit
@@ -1252,7 +1253,8 @@ end
 
 % Decide on x-axis limits for plotting
 if plotFlag
-    xLimits = decide_on_xlimits(fitWindow, baseWindow, simMode, plotMarkFlag);
+    xLimits = decide_on_xlimits(fitWindow, baseWindow, simMode, ...
+                                plotMarkFlag, timeToStabilize);
 end
 
 % Set figure visibility status
@@ -1950,7 +1952,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function xLimits = decide_on_xlimits (fitWindow, baseWindow, ...
-                                        simMode, plotMarkFlag)
+                                        simMode, plotMarkFlag, timeToStabilize)
 %% Decide on x-axis limits
 
 % Put all window endpoints together
@@ -1958,8 +1960,8 @@ allEndpoints = [baseWindow, fitWindow];
 allEndpoints = allEndpoints(:);
 
 if plotMarkFlag && strcmpi(simMode, 'active')
-%    xLimits = [2800, 4500];
-    xLimits = [2800, 4800];
+%    xLimits = timeToStabilize + [800, 2500];
+    xLimits = timeToStabilize + [800, 2800];
 else
     xLimits = [min(allEndpoints), max(allEndpoints)];
 end

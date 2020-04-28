@@ -58,12 +58,19 @@ matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
 fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 
 % Working versions:
-useHH = true;
-useCvode = true;
+useHH = false;
+useCvode = false;
 secondOrder = 0;
 figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-                    'backup-20200428-secondOrder-0-useCvode-true-useHH-true');
+                    'backup-20200428-secondOrder-0-useCvode-false-useHH-false');
 paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = true;
+% useCvode = true;
+% secondOrder = 0;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-0-useCvode-true-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % useHH = true;
 % useCvode = true;
@@ -136,6 +143,10 @@ attemptNumberIpscr = 6;             % attempt number for IPSC response
                                     %   7 - Same as 1 but prioritize least vHold
                                     %   8 - Same as 5 but prioritize least vHold
 
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+
 % Plot settings
 somaColor = rgb('DarkGreen');
 dendriteColor = rgb('DarkOrange');
@@ -153,11 +164,11 @@ geomXLimits = [-250, 250];
 geomYLimits = [-250, 250];
 cprFigWidth = 8.5;
 cprFigHeight = 6;
-cprXLimits = [2070, 2250];
+cprXLimits = timeToStabilize + [70, 250];
 cprYLimits = [];
 ipscrFigWidth = 7.5;
 ipscrFigHeight = 7;
-ipscrXLimits = [2800, 4500];
+ipscrXLimits = timeToStabilize + [800, 2500];
 ipscrYLimits = [-100, -40];
 ipscrYTicks = [-80, -60];
 overlappedFigWidth = [];

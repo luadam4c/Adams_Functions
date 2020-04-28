@@ -25,6 +25,7 @@ function update_neuron_scripts (dirFrom, dirTo, varargin)
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure05.m
 %       cd/m3ha_simulate_population.m
+%       /media/adamX/optimizer4compgabab/singleneuronfitting103.m
 
 % File History:
 % 2019-12-29 Created by Adam Lu

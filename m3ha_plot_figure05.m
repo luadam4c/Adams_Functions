@@ -105,13 +105,17 @@ tauhModesAll = 1:7;
 
 newParamsNoITSoma = {'pcabarITSoma', 0};
 
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+
 % Plot settings
 colorMapPharm = [];                 % use m3ha default
 colorMapVary = @jet;                % rainbow colors
 
 overlappedFigWidth = 4.7; %5.7;
 overlappedFigHeightPerRow = 1.5;
-overlappedXLimits = [2800, 4800]; %[2800, 4000];
+overlappedXLimits = timeToStabilize + [800, 2800]; %[800, 2000];
 allVoltagesYLimits = {[-95, -20], [-95, -20], [-95, -20], [-95, -20], ...
                         [-4, 2], [-0.3, 0.3], [0, 10], [-4, 2]};
 allTotalCurrentsYLimits = {[-4, 2], [-4, 2], [-0.3, 0.3], [-15, 5], ...
@@ -139,11 +143,11 @@ essentialYTickLocs = {-90:20:-50, 0:5:10, -0.4:0.2:0, ...
                             -15:5:0, [1e-6, 1e-2]};
 m2hFigWidth = 4.7; %5.7;
 m2hFigHeight = 3;
-m2hXLimits = [2800, 4800]; %[2800, 4000];
+m2hXLimits = timeToStabilize + [800, 2800]; %[800, 2000];
 m2hYLimits = [1e-7, 1e0];
 m2hYTickLocs = [1e-5, 1e-3, 1e-1];
 
-voltageVsOpdTimeLimits = [2800, 4800];
+voltageVsOpdTimeLimits = timeToStabilize + [800, 2800];
 voltageVsOpdSiMs = 1;
 voltageVsOpdFig5FigWidth = 5.5 * 2;
 voltageVsOpdFig5FigHeight = 5 * 2;

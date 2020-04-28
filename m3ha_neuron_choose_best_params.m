@@ -97,6 +97,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %               of parameters
 % 2019-12-19 Added 'PlotErrorHistoryFlag' as an optional argument
 % 2019-12-27 Updated bounds
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -114,7 +115,7 @@ idxSlope = 5;
 ipscrWinOrig = [0, 8000];       % IPSC response window (ms), original
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 % Spreadsheet settings

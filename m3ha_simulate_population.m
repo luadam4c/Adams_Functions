@@ -169,6 +169,14 @@ pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 stats3dSuffix = strcat(simStr, '_', conditionLabel3D, '_stats.mat');
 
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+ipscrWindow = timeToStabilize + [0, 2800];     % only simulate up to that time
+fitWindowIpscr = timeToStabilize + [1000, 2800];  
+                                % the time window (ms) where all 
+                                %   recorded LTS would lie
+
 % Plot settings
 % Note: must be consistent with m3ha_compute_statistics.m
 measuresOfInterest = {'ltsProbability'; 'ltsOnsetTime'; ...
@@ -207,13 +215,13 @@ paramIslog = [false; false; false; true; ...
                 true; true; true];
 
 % Compare with m3ha_plot_figure05.m
-overlappedXLimits = [2800, 4800]; %[2800, 4000];
+overlappedXLimits = timeToStabilize + [800, 2800]; %[800, 2000];
 essentialYLimits = {[-110, -40]; [0, 20]; []; ...
                             [-20, 5]; [1e-8, 1e0]};
 essentialYTickLocs = {-90:20:-50; 0:5:20; []; ...
                             -15:5:0; [1e-7, 1e-1]};
 
-individualXLimits = [2800, 4800];
+individualXLimits = timeToStabilize + [800, 2800];
 individualYLimits = [];
 individualYTickLocs = [];
 
@@ -287,9 +295,6 @@ rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
 rankNumsOpenProbability = 1:23;
 
-ipscrWindow = [2000, 4800];     % only simulate up to that time
-fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
-                                %   recorded LTS would lie
 prefix = '';
 opdThreshold = 1e-2;
 logOpdThreshold = log10(opdThreshold);

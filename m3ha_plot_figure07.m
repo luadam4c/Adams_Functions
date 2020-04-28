@@ -136,11 +136,15 @@ measuresOfInterestJitter = {'oscPeriod2Ms'; ...
                         'halfActiveLatencyMsTC'};
 measureTitlesJitter = measureTitles(2:end);
 
+% The following must be consistent with m3ha_net.hoc
+timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+
 % Plot settings
 ipscFigWidth = 8.5;
 ipscFigHeight = 6;
-xLimits2CellGabab = [2800, 4800];
-xLimits2CellEssential = [2800, 5100];
+xLimits2CellGabab = timeToStabilize + [800, 2800];
+xLimits2CellEssential = timeToStabilize + [800, 3100];
 yLimitsGabab = [-1, 15];
 % yLimitsEssential = {[], [], [], [], [], [], []};
 yLimitsEssential = {[-100, 100], [-100, 100], [-1, 12], [-15, 5], ...

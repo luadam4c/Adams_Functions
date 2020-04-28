@@ -123,9 +123,14 @@ lts2SweepErrorRatio = sum(errorWeights(2:5)) / errorWeights(1);
                                 % ratio of LTS error to sweep error
 normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
 
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+
 % Fitting window
-ipscrWindow = [2000, 4800];     % only simulate up to that time
-fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
+ipscrWindow = timeToStabilize + [0, 2800];     % only simulate up to that time
+fitWindowIpscr = timeToStabilize + [1000, 2800];  
+                                % the time window (ms) where all 
                                 %   recorded LTS would lie
 
 %   Note: The following must be consistent with compute_single_neuron_errors.m

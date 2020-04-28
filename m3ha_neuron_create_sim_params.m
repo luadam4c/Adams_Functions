@@ -152,6 +152,7 @@ function [simParamsTable, simParamsPath] = ...
 % 2020-01-22 Now uses m3ha_load_gabab_ipsc_params.m
 % 2020-04-27 Added 'UseCvode' as an optional argument
 % 2020-04-27 Added 'SecondOrder' as an optional argument
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -174,7 +175,7 @@ cprWinOrig = [0, 360];          % current pulse response window (ms), original
 ipscrWinOrig = [0, 8000];       % IPSC response window (ms), original
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 %% Default values for optional arguments
