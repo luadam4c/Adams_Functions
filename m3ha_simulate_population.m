@@ -290,8 +290,14 @@ individualYTickLocs = [];
 % rankNumsToUse = 1:23;
 % rankNumsOpenProbability = 1:23;
 
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
 outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-        '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
+        '20200428_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:23;
 rankNumsOpenProbability = 1:23;
