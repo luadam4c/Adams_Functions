@@ -35,7 +35,7 @@ function iterStrs = m3ha_extract_iteration_string (strs, varargin)
 % 
 
 %% Hard-coded parameters
-iterStrPattern = 'singleneuronfitting[\d]*';
+iterStrPattern = 'singleneuronfitting[\d-]*';
 
 %% Default values for optional arguments
 fromBaseNameDefault = false;

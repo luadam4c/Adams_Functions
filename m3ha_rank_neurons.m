@@ -52,17 +52,20 @@
 % 2019-12-30 Added error param comparison across cells
 % 2020-01-03 Restricted fitting window
 % 2020-01-24 Now uses m3ha_decide_on_sweep_weights.m
+% 2020-04-28 Added useCvode
+% 2020-04-28 Added updateScriptsFlag
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
-plotIndividualFlag = false; %true;
-rankNeuronsFlag = false; %true;
-plotHistogramsFlag = false; %true;
-plotBarPlotFlag = false; %true;
-plotErrorParamComparisonAllFlag = false; %true;
+updateScriptsFlag = true;
+chooseBestParamsFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
+plotBarPlotFlag = true;
+plotErrorParamComparisonAllFlag = true;
 plotErrorParamComparisonSelectedFlag = true;
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 plotErrorHistoryFlag = false; %true;
 plotErrorComparisonFlag = false; %true;
@@ -74,6 +77,7 @@ plotParamViolinsFlag = false; %true;
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
 useHH = false;
+useCvode = false;
 buildMode = 'active';
 simMode = 'active';
 columnMode = 1;                     % optimization mode:
@@ -246,9 +250,15 @@ cellNameStr = 'cellName';
 % rankYTickLocs = [1, 8, 15, 22, 29, 36];
 % selectedXTicks = [1, 25];
 
-outFolder = '20200207_ranked_manual_singleneuronfitting0-102';
-rankNumsToPlot = 1:23;                  % new well-fitted
+% outFolder = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToPlot = 1:23;                  % new well-fitted
 % rankNumsToPlot = [1:3, 6, 9];               % best-fitted
+% iterSetStr = 'manual_singleneuronfitting0-102';
+% dataMode = 2;
+% attemptNumberAcrossTrials = 3;
+
+outFolder = '20200428_ranked_manual_singleneuronfitting0-102';
+rankNumsToPlot = 1:23;                  % new well-fitted
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2;                       % data mode:
                                     %   0 - all data
@@ -390,6 +400,13 @@ rankPathBaseOrig = [rankPathBase, '_orig'];
 paramViolinPathBase = [rankPathBase, '_params_violin'];
 paramViolinPathBaseOrig = [paramViolinPathBase, '_orig'];
 
+%% Make sure NEURON scripts are up to date in outFolder
+if updateScriptsFlag
+    % Display message
+    fprintf('Updating NEURON scripts ... \n');
+    update_neuron_scripts(fitDirectory, outFolder);
+end
+
 %% Choose the best parameters for each cell
 if chooseBestParamsFlag
     %% Preparation
@@ -404,18 +421,15 @@ if chooseBestParamsFlag
     % Decide on candidate parameters directory(ies)
     paramDirs = fullfile(fitDirectory, paramDirNames);
 
+    % Change to outFolder
+    cd(outFolder);
+
     %% Backup and compile
     % Display message
     fprintf('Backing up parameters ... \n');
 
     % Copy the candidate params directory(ies) over for backup
     copy_into(paramDirs, outFolder);
-
-    % Display message
-    fprintf('Compiling all .mod files ... \n');
-
-    % Compile or re-compile .mod files in the fitting directory
-    compile_mod_files(fitDirectory);
 
     %% Select recorded data
     % Display message
@@ -469,7 +483,8 @@ if chooseBestParamsFlag
                 'PlotIndividualFlag', plotIndividualFlag, ...
                 'OutFolder', outFolder, 'FileNames', fileNamesThis, ...
                 'BuildMode', buildMode, 'SimMode', simMode, ...
-                'UseHH', useHH, 'RowConditionsIpscr', rowConditionsThis, ...
+                'UseHH', useHH, 'UseCvode', useCvode, ...
+                'RowConditionsIpscr', rowConditionsThis, ...
                 'IpscrWindow', ipscrWindow, ...
                 'FitWindowIpscr', fitWindowIpscr, ...
                 'SweepWeightsIpscr', sweepWeights, ...
