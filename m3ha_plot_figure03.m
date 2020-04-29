@@ -63,42 +63,42 @@ fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 % useCvode = true;
 % secondOrder = 0;
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200428-secondOrder-0-useCvode-true-useHH-false');
+%                     'backup-20200429-secondOrder-0-useCvode-true-useHH-false');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % useHH = false;
 % useCvode = false;
 % secondOrder = 0;
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200428-secondOrder-0-useCvode-false-useHH-false');
+%                     'backup-20200429-secondOrder-0-useCvode-false-useHH-false');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
-useHH = true;
-useCvode = true;
-secondOrder = 0;
-figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-                    'backup-20200428-secondOrder-0-useCvode-true-useHH-true');
-paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+% useHH = true;
+% useCvode = true;
+% secondOrder = 0;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200429-secondOrder-0-useCvode-true-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % useHH = true;
 % useCvode = true;
 % secondOrder = 2;
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200428-secondOrder-2-useCvode-true-useHH-true');
+%                     'backup-20200429-secondOrder-2-useCvode-true-useHH-true');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
-% useHH = true;
-% useCvode = false;
-% secondOrder = 0;
-% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200428-secondOrder-0-useCvode-false-useHH-true');
-% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+useHH = true;
+useCvode = false;
+secondOrder = 0;
+figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+                    'backup-20200429-secondOrder-0-useCvode-false-useHH-true');
+paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % useHH = true;
 % useCvode = false;
 % secondOrder = 2;
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200428-secondOrder-2-useCvode-false-useHH-true');
+%                     'backup-20200429-secondOrder-2-useCvode-false-useHH-true');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % Files
