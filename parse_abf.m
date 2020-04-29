@@ -14,8 +14,8 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %               correctly in the abf files, set 'UseOriginal' to be true.
 %   
 % Examples:
-%       [parsedParams, data, tVec, vVecs, iVecs, gVecs] = ...
-%           parse_abf('20180914C_0001');
+%       [parsedParams, parsedData] = parse_abf('20180914C_0001');
+%
 % Outputs:
 %       parsedParams    - a structure containing the following fields:
 %                           abfFullFileName

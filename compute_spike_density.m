@@ -28,7 +28,7 @@ function spikeDensityHz = compute_spike_density (spikeTimes, varargin)
 %                       's'     - seconds
 %                       'ms'    - milliseconds
 %                       'us'    - microseconds
-%                   default == 's'
+%                   default == 'ms'
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -97,7 +97,11 @@ end
 
 % Set default resolution
 if isempty(resolution)
-    resolution = range(timeWindow) / nBinsDefault;
+    if ~isempty(binWidth)
+        resolution = binWidth / binWidth2ResolutionDefault;
+    else
+        resolution = range(timeWindow) / nBinsDefault;
+    end
 end
 
 % Set default bin width
