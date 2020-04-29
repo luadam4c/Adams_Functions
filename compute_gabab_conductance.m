@@ -43,7 +43,7 @@ function gGababNs = compute_gabab_conductance (tVec, timeStart, amplitudeNs, ...
 %
 % Used by:
 %       cd/m3ha_compute_gabab_ipsc.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_resave_sweeps.m
 %       cd/m3ha_trace_comparison.m
 

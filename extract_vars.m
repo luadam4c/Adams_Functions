@@ -43,12 +43,15 @@ function varExtracted = extract_vars (tableOrPath, varNames, varargin)
 %
 % Used by:
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_simulate_population.m
 %       cd/plot_table_parallel.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting75.m
 
 % File History:
 % 2019-12-03 Moved from singleneuronfitting.m
 % 2019-12-23 Now outputs a cell array if extracting more than one variable
+% 2020-04-19 Now allows the first argument to be a cell array
 % TODO: Allow other strings for rowsToExtract, such as 'first', 'last', etc.
 % TODO: Add 'OutputMode' to optionally extract as many outputs
 
@@ -73,7 +76,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'tableOrPath', ...
-    @(x) assert(ischar(x) || isstring(x) || istable(x), ...
+    @(x) assert(iscell(x) || ischar(x) || isstring(x) || istable(x), ...
         ['tableOrPath must be a character array or a string array ', ...
             'or a table!']));
 addRequired(iP, 'varNames', ...
@@ -99,7 +102,13 @@ forceCellOutput = iP.Results.ForceCellOutput;
 
 %% Do the job
 % Parse the first argument
-if istable(tableOrPath)
+if iscell(tableOrPath)
+    % Recursively apply to each table
+    varExtracted = ...
+        cellfun(@(x) extract_vars(x, varNames, varargin{:}), ...
+                tableOrPath, 'UniformOutput', false);
+    return;
+elseif istable(tableOrPath)
     % First argument already a table
     tableOfVars = tableOrPath;
 elseif isfile(tableOrPath)
@@ -110,6 +119,12 @@ elseif ischar(tableOrPath) || isstring(tableOrPath)
 else
     error('Wrong first argument!');
 end      
+
+% Make sure the table is not empty
+if isempty(tableOfVars)
+    varExtracted = [];
+    return
+end
 
 % Restrict to the rows of interest
 if isnumeric(rowsToExtract)
@@ -136,6 +151,12 @@ elseif ~isempty(rowConditions)
     
     % Extract those rows
     tableOfVars = tableOfVars(rowsToExtract, :);
+end
+
+% Make sure the table is not empty
+if isempty(tableOfVars)
+    varExtracted = [];
+    return
 end
 
 % Extract variable

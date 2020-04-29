@@ -68,7 +68,7 @@ nZooms = 4;                 % number of different time intervals to plot for eac
 nPlotsPerFile = nZooms + 1; % number of plots per file
 
 % Set property labels
-%   Note: must be consistent with m3ha_net1.hoc
+%   Note: must be consistent with m3ha_net.hoc
 propLabelsRT = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
                 'ica (mA/cm2)', 'iAMPA (nA)', 'iGABA (nA)', ...
                 'cai (mM)', 'cli (mM)', 'Gicl (nA)', 'Gihco3 (nA)', ...
@@ -76,7 +76,12 @@ propLabelsRT = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
                 'ecl (mV)', 'eGABA (mV)'};
 propLabelsTC = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
-                'cai (mM)', 'gGABAB (uS)'};
+                'cai (mM)', 'gGABAB (uS)', ...
+                'm_{T,dend2}', 'm_{\infty,T,dend2}', ...
+                'h_{T,dend2}', 'h_{\infty,T,dend2}'};
+% propLabelsTC = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
+%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
+%                 'cai (mM)', 'gGABAB (uS)'};
 % propLabelsTC = {'v (mV)', 'inRefractory', 'ik (mA/cm2)', ...
 %                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
 %                 'cai (mM)', 'gGABAB (uS)'};
@@ -111,7 +116,13 @@ addParameter(iP, 'RenewParpool', true, ...              % whether to renew parpo
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CellsToPlot', [], ...                 % the ID #s for cells to be plotted
     @(x) validateattributes(x, {'numeric'}, {'vector', 'nonnegative', 'integer', '>=', 0}));
-addParameter(iP, 'PropertiesToPlot', 1:1:12, ...        % property #s of special neuron to record to be plotted
+addParameter(iP, 'PropertiesToPlot', 1:1:12, ...        % property #s of special neurons to be plotted
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive', 'integer', ...
+                            '>', 0, '<', 13}));
+addParameter(iP, 'PropertiesToPlotRT', [], ...          % property #s of special RT neurons to be plotted
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive', 'integer', ...
+                            '>', 0, '<', 15}));
+addParameter(iP, 'PropertiesToPlotTC', [], ...          % property #s of special TC neurons to be plotted
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive', 'integer', ...
                             '>', 0, '<', 13}));
 
@@ -123,11 +134,21 @@ maxNumWorkers    = iP.Results.MaxNumWorkers;
 renewParpool     = iP.Results.RenewParpool;
 cellsToPlot      = iP.Results.CellsToPlot;
 propertiesToPlot = iP.Results.PropertiesToPlot;
-renewParpool = false;
+propertiesToPlotRT = iP.Results.PropertiesToPlotRT;
+propertiesToPlotTC = iP.Results.PropertiesToPlotTC;
 
 % Change default arguments if necessary
 if strcmp(outFolder, '@inFolder')
     outFolder = inFolder;
+end
+
+%% Preparation
+% Set default properties to plot
+if isempty(propertiesToPlotRT)
+    propertiesToPlotRT = propertiesToPlot;
+end
+if isempty(propertiesToPlotTC)
+    propertiesToPlotTC = propertiesToPlot;
 end
 
 %% Find all .singv, .singcli or .singsp files
@@ -154,7 +175,8 @@ actLeft1 = zeros(nPlots, 1);   % stores actLeft1 for each plot
 actLeft2 = zeros(nPlots, 1);   % stores actLeft2 for each plot
 far = zeros(nPlots, 1);         % stores far for each plot
 cellIDsToPlot = cell(nPlots, 1);     % stores default neuron ID #s to plot for each plot
-propLabels = cell(nPlots, 1);   % stores property labels for each plot
+propLabels = cell(nFiles, 1);   % stores property labels for each plot
+propertiesToPlotAll = cell(nFiles, 1);
 nPlotsSet = 0;
 for iFile = 1:nFiles
     % Get the current file path
@@ -188,8 +210,10 @@ for iFile = 1:nFiles
     switch fileBase(1:2)
     case 'RE'
         propLabels{iFile} = propLabelsRT;
+        propertiesToPlotAll{iFile} = propertiesToPlotRT;
     case 'TC'
         propLabels{iFile} = propLabelsTC;
+        propertiesToPlotAll{iFile} = propertiesToPlotTC;
     otherwise
         error('File name must include ''RE'' or ''TC''!');
     end
@@ -297,6 +321,7 @@ while ct < nPlots           % while not trials are completed yet
         poolObj = parpool('local', numWorkers); % recreate a parallel pool object 
                             % using fewer workers to prevent running out of memory
     end
+
     parfor k = first:last
         iFile = ceil(k/nPlotsPerFile);
         if strcmp(fileTypes{k}, 'v') || strcmp(fileTypes{k}, 'cli')
@@ -324,12 +349,12 @@ while ct < nPlots           % while not trials are completed yet
                 % data{k} = ...
                     plot_single_neuron_data(fileTypes{k}, nCells(k), useHH(k), ...
                         tStarts(k), tStops(k), fileNames{k}, fullFigNames{k}, ...
-                        propertiesToPlot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
+                        propertiesToPlotAll{iFile}, stimStarts(k), stimDurs(k), stimFreqs(k), ...
                         inFolder, figtypes, propLabels{iFile});
             else
                 plot_single_neuron_data(fileTypes{k}, nCells(k), useHH(k), ...
                     tStarts(k), tStops(k), fileNames{k}, fullFigNames{k}, ...
-                    propertiesToPlot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
+                    propertiesToPlotAll{iFile}, stimStarts(k), stimDurs(k), stimFreqs(k), ...
                     inFolder, figtypes, propLabels{iFile});
             end
         end

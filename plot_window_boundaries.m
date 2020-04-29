@@ -17,6 +17,7 @@ function h = plot_window_boundaries (win, varargin)
 %       h           - handles to each line object (left, right)
 %                   specified as a 2-element column array 
 %                       of primitive line object handles
+%
 % Arguments:
 %       win         - window(s) to plot boundaries for
 %                   must be a numeric vector
@@ -62,7 +63,10 @@ function h = plot_window_boundaries (win, varargin)
 %       cd/plot_horizontal_shade.m
 %       cd/plot_vertical_shade.m
 %
-% Used by:    
+% Used by:
+%       cd/m3ha_network_plot_essential.m
+%       cd/m3ha_network_raster_plot.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_fitted_traces.m
 %       cd/parse_current_family.m
 %       cd/plot_scale_bar.m

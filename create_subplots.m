@@ -1,10 +1,11 @@
-function [fig, ax] = create_subplots (nRows, nColumns, varargin)
+function [fig, ax] = create_subplots (varargin)
 %% Creates subplots with maximal fit
-% Usage: [fig, ax] = create_subplots (nRows, nColumns, varargin)
+% Usage: [fig, ax] = create_subplots (nPlotsOrNRows (opt), nColumns (opt), gridPositions (opt), varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
+%       [fig, ax] = create_subplots(4);
 %       [fig, ax] = create_subplots(1, 4);
 %       [fig, ax] = create_subplots(1, 1, 'FigNumber', 3);
 %       [fig, ax] = create_subplots(1, 3, 'FigNumber', 4);
@@ -18,11 +19,15 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                   specified as a figure handle
 %       ax          - axes handle(s)
 %                   specified as an array of axes handles
+%
 % Arguments:
-%       nRows       - number of rows
-%                   must be a positive integer scalar
-%       nColumns    - number of columns
-%                   must be a positive integer scalar
+%       nPlotsOrNRows   - (opt) number of plots 
+%                           or number of rows if nVolumns provided
+%                       must be a positive integer scalar
+%                       default == 1
+%       nColumns        - (opt) number of columns
+%                       must be a positive integer scalar
+%                       default == 1
 %       gridPositions   - (opt) grid positions of subplots
 %                       must be a positive integer vector 
 %                           or a cell array of positive integer vectors
@@ -37,6 +42,11 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                       Note: This occurs AFTER position is set
 %                   must be a must be a positive scalar or 2-element vector
 %                   default == []
+%                   - 'ExpandFromDefault': whether to expand from figure 
+%                                           position default
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true except when 'Position', 'Width' or 'Height'
+%                               are set
 %                   - 'FigPosition': figure position
 %                   must be a 4-element positive integer vector
 %                   default == same as CenterPosition
@@ -61,15 +71,19 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/force_column_cell.m
+%       cd/isaninteger.m
 %       cd/set_figure_properties.m
 %       cd/struct2arglist.m
 %
 % Used by:
 %       cd/align_subplots.m
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/m3ha_network_analyze_spikes.m
+%       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure07.m
 %       cd/parse_current_family.m
 %       cd/parse_multiunit.m
 %       cd/plot_table_parallel.m
@@ -83,6 +97,9 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % 2019-09-06 Added 'FigPosition' and 'CenterPosition' as optional arguments
 % 2019-09-06 Added gridPositions as an optional argument
 % 2019-09-11 Added more figure properties as optional arguments
+% 2020-02-06 Added 'ExpandFromDefault' as an optional argument
+% 2020-04-19 Made the first argument nPlotsOrNRows 
+% 2020-04-19 Made all arguments optional
 % TODO: Added 'TransposeOrder' as an optional argument
 
 %% Hard-coded parameters
@@ -90,10 +107,13 @@ horizontalDeadSpace = 0.25;     % relative dead space at the edges of figure
                                 %   but not in between subplots
 
 %% Default values for optional arguments
+nPlotOrNRowsDefault = 1;        % set later
+nColumnsDefault = [];           % set later
 gridPositionsDefault = [];      % set later
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % set later
+expandFromDefaultDefault = [];  % set later
 figPositionDefault = [];        % set later
 figWidthDefault = [];           % set later
 figHeightDefault = [];          % set later
@@ -104,23 +124,16 @@ centerPositionDefault = [];     % set later
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 2
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'nRows', ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addRequired(iP, 'nColumns', ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-
 % Add optional inputs to the Input Parser
+addOptional(iP, 'nPlotsOrNRows', nPlotOrNRowsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addOptional(iP, 'nColumns', nColumnsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addOptional(iP, 'gridPositions', gridPositionsDefault, ...
     @(x) assert(isempty(x) || ispositiveintegervector(x) || ...
                     iscellnumeric(x), ...
@@ -136,6 +149,8 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'FigExpansion must be a empty or a numeric vector!'));
+addParameter(iP, 'ExpandFromDefault', expandFromDefaultDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigPosition', figPositionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'FigPosition must be a empty or a numeric vector!'));
@@ -154,11 +169,14 @@ addParameter(iP, 'CenterPosition', centerPositionDefault, ...
                 'Position must be a empty or a numeric vector!'));
 
 % Read from the Input Parser
-parse(iP, nRows, nColumns, varargin{:});
+parse(iP, varargin{:});
+nPlotsOrNRows = iP.Results.nPlotsOrNRows;
+nColumns = iP.Results.nColumns;
 gridPositions = iP.Results.gridPositions;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
+expandFromDefault = iP.Results.ExpandFromDefault;
 figPosition = iP.Results.FigPosition;
 figWidth = iP.Results.FigWidth;
 figHeight = iP.Results.FigHeight;
@@ -170,6 +188,27 @@ centerPosition = iP.Results.CenterPosition;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Decide on number of rows and columns
+if isempty(nColumns)
+    % The number of total numbers of subplots is given
+    nPlots = nPlotsOrNRows;
+
+    % Compute the square root
+    sqrtNPlots = sqrt(nPlots);
+
+    % Decide on the number of rows and columns
+    if isaninteger(sqrtNPlots)
+        nRows = sqrtNPlots;
+        nColumns = sqrtNPlots;
+    else
+        nRows = nPlots;
+        nColumns = 1;
+    end
+else
+    % The number of rows is given
+    nRows = nPlotsOrNRows;
+end
+
 % Count the number of grid positions
 nGrids = nRows * nColumns;
 
@@ -202,7 +241,9 @@ end
 
 % Decide on the figure to plot on and set figure position
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                    'FigExpansion', figExpansion, 'Position', figPosition, ...
+                    'FigExpansion', figExpansion, ...
+                    'ExpandFromDefault', expandFromDefault, ...
+                    'Position', figPosition, ...
                     'Width', figWidth, 'Height', figHeight, ...
                     'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
                     'AdjustPosition', true);

@@ -53,6 +53,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/compute_activation_profile.m
 %       cd/compute_psth.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m

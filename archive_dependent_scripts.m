@@ -49,11 +49,13 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 % Used by:
 %       cd/clc2_analyze.m
 %       cd/m3ha_oscillations_analyze.m
-%       cd/m3ha_plot_figure02.m.m
-%       cd/m3ha_plot_figure03.m.m
-%       cd/m3ha_plot_figure04.m.m
-%       cd/m3ha_plot_figure05.m.m
+%       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure04.m
+%       cd/m3ha_plot_figure05.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_rank_neurons.m
+%       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting103.m
 
 % File History:
 % 2019-08-11 Created by Adam Lu

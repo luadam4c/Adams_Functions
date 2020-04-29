@@ -176,7 +176,6 @@ if ltsOnly
     end
 end
 
-%{
 %% Plot correlations
 % Extract needed vectors and information
 peakclass = allVecs{find_in_strings('peakclass', varNames)};
@@ -248,7 +247,6 @@ end
 %% Save correlation matrix to a mat file
 corrMat_file = fullfile(outfolder, ['correlation_matrix', suffix, '.mat']);
 save(corrMat_file, 'varLabels', 'varNames', 'corrMat', '-v7.3');
-%}
 
 %% Perform multi-linear regression with an interaction term 
 %   on maxslopval and maxslopetime

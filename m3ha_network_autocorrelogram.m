@@ -3,7 +3,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (i
 % Usage: [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (infolder, varargin)
 %
 % Arguments:
-%    infolder   - the name of the directory containing the .syn files, e.g. '20170317T1127_Ggaba_0.01'
+%    infolder   - the name of the directory containing the .spi files, e.g. '20170317T1127_Ggaba_0.01'
 %               must be a directory
 %    varargin   - 'FigTypes': figure type(s) for saving; e.g., 'png', 'fig', or {'png', 'fig'}, etc.
 %               could be anything recognised by the built-in saveas() function
@@ -40,7 +40,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (i
 %       /home/Matlab/Adams_Functions/save_all_figtypes.m
 %       /home/Matlab/Adams_Functions/plot_tuning_curve.m (through tuning_curves.m)
 %       /home/Matlab/Adams_Functions/plot_tuning_map.m (through tuning_maps.m)
-%       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%       /home/Matlab/Adams_Functions/find_in_strings.m
 %       /home/Matlab/Adams_Functions/extract_looped_params.m
 %
 % Used by:
@@ -73,7 +73,7 @@ end
 addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));
                                     % for dirr.m & subaxis.m
 addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));
-                                    % for isfigtype.m, find_ind_str_in_cell.m 
+                                    % for isfigtype.m, find_in_strings.m 
                                     %   extract_looped_params.m
 
 %% Deal with arguments
@@ -92,11 +92,11 @@ addParameter(iP, 'FigTypes', 'png', ...         % figure type(s) for saving; e.g
 addParameter(iP, 'OutFolder', '@infolder', @isdir); % the name of the directory that the plots will be placed
 addParameter(iP, 'MaxNumWorkers', 20, ...       % maximum number of workers for running NEURON
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'RenewParpool', true, ...      % whether to renew parpool every batch to release memory
+addParameter(iP, 'RenewParpool', false, ...     % whether to renew parpool every batch to release memory
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SingleTrialNum', 0, ...       % number of single trial ran
     @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
-addParameter(iP, 'PlotCorrelogram', true, ...        % whether to plot raster plots
+addParameter(iP, 'PlotCorrelogram', true, ...   % whether to plot raster plots
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
@@ -169,8 +169,8 @@ while ct < ntrials                  % while not trials are completed yet
         % Recreate a parallel pool object using fewer workers to prevent running out of memory
         poolobj = parpool('local', numworkers);    
     end
-    parfor i = first:last
-    %for i = first:last
+    %parfor i = first:last
+    for i = first:last
         % Construct current parameter string
         pstring = '';               % initialize for parfor
         if iscell(pchvalues)
@@ -208,11 +208,11 @@ while ct < ntrials                  % while not trials are completed yet
             simfilecontent = textscan(fid, '%s %f %s', 'Delimiter', ',');
             paramnames = simfilecontent{1};
             params_val = simfilecontent{2};
-            tstart = params_val(find_ind_str_in_cell('tstart', paramnames, 'SearchMode', 'exact'));
-            tstop = params_val(find_ind_str_in_cell('tstop', paramnames, 'SearchMode', 'exact'));
-            stim_start = params_val(find_ind_str_in_cell('stim_start', paramnames, 'SearchMode', 'exact'));
-            stim_dur = params_val(find_ind_str_in_cell('stim_dur', paramnames, 'SearchMode', 'exact'));
-            stim_freq = params_val(find_ind_str_in_cell('stim_freq', paramnames, 'SearchMode', 'exact'));
+            tstart = params_val(find_in_strings('tstart', paramnames, 'SearchMode', 'exact'));
+            tstop = params_val(find_in_strings('tstop', paramnames, 'SearchMode', 'exact'));
+            stim_start = params_val(find_in_strings('stim_start', paramnames, 'SearchMode', 'exact'));
+            stim_dur = params_val(find_in_strings('stim_dur', paramnames, 'SearchMode', 'exact'));
+            stim_freq = params_val(find_in_strings('stim_freq', paramnames, 'SearchMode', 'exact'));
             fclose(fid);
 
             % Extract info
@@ -558,9 +558,9 @@ end
                 end
             end
 
-                        RERErad = params_val(find_ind_str_in_cell('RERErad', paramnames, 'SearchMode', 'exact'));
-            RETCrad = params_val(find_ind_str_in_cell('RETCrad', paramnames, 'SearchMode', 'exact'));
-            actcellID = params_val(find_ind_str_in_cell('actcellID', paramnames, 'SearchMode', 'exact'));
+                        RERErad = params_val(find_in_strings('RERErad', paramnames, 'SearchMode', 'exact'));
+            RETCrad = params_val(find_in_strings('RETCrad', paramnames, 'SearchMode', 'exact'));
+            actcellID = params_val(find_in_strings('actcellID', paramnames, 'SearchMode', 'exact'));
             figbaseWext = strrep(TCfiles(jnowTC).name, 'TC_', '');
            %pos_weight = cellfun(@(x,y) (x.^.7).*((length(edges)-y).^2.5), pks, lcs, 'UniformOutput', false);
                 %[~, prom_ind] = max(pos_weight{j});

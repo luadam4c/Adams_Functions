@@ -9,6 +9,8 @@ function varargout = extract_fields (structs, varargin)
 % Example(s):
 %       load_examples;
 %       isMarried = extract_fields({blab, blab}, 'isMarried')
+%       [students, isMarried] = extract_fields({blab, blab}, {'students', 'isMarried'})
+%       [a, b] = extract_fields(myStructArray)
 %       [myLogicalScalars, myNumericScalars] = extract_fields(myStructArray, {'myLogicalScalar', 'myNumericScalar'})
 %       [myLogicalScalars, myNumericScalars] = extract_fields(myStructArray, {'myLogicalScalar', 'myNumericScalar'}, 'UniformOutput', false)
 %
@@ -39,8 +41,10 @@ function varargout = extract_fields (structs, varargin)
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
 %       cd/parse_spike2_mat.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu
@@ -48,6 +52,7 @@ function varargout = extract_fields (structs, varargin)
 %               if UniformOutput is false
 % 2019-12-30 Now allows the first argument to be objects or tables
 % 2020-01-02 Changed the default UniformOutput to true whenever possible
+% 2020-04-20 Now applies default UniformOutput to each field separately
 % TODO: accept substrings
 % TODO: OutputMode
 % 
@@ -100,29 +105,36 @@ else
 end
 
 %% Do the job
+varargout = cellfun(@(f) extract_one_field(structs, f, uniformOutput), ...
+                    fieldNames, 'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function fieldValues = extract_one_field (structs, fieldName, uniformOutput)
+
 if isempty(uniformOutput)
     try
-        [varargout{1:nargout}] = ...
-            extract_fields(structs, fieldNames, 'UniformOutput', true);
+        fieldValues = extract_one_field(structs, fieldName, true);
     catch
-        [varargout{1:nargout}] = ...
-            extract_fields(structs, fieldNames, 'UniformOutput', false);
+        fieldValues = extract_one_field(structs, fieldName, false);
     end
+    return
 else
-    varargout = cellfun(@(y) array_fun(@(x) get_field(x, y, uniformOutput), ...
-                                structs, 'UniformOutput', uniformOutput), ...
-                        fieldNames, 'UniformOutput', false);
+    % Extract field values from each structure
+    %   Note: Don't use array_fun.m here
+    fieldValues = arrayfun(@(x) get_field(x, fieldName, uniformOutput), ...
+                            structs, 'UniformOutput', uniformOutput);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function field = get_field (myStruct, fieldName, uniformOutput)
+function field = get_field (myStruct, fieldName, returnNan)
 
 % Get the field or return NaN
 if is_field(myStruct, fieldName)
     field = myStruct.(fieldName);
 else
-    if uniformOutput
+    if returnNan
         field = NaN;
     else
         field = [];

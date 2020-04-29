@@ -34,6 +34,9 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %                       'active'  - insert both passive and active channels
 %                       or a cell array of them TODO
 %                   default == 'active'
+%                   - 'PlotIndividualFlag': whether to plot fits
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'PlotErrorHistoryFlag': whether to plot error history
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -94,6 +97,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %               of parameters
 % 2019-12-19 Added 'PlotErrorHistoryFlag' as an optional argument
 % 2019-12-27 Updated bounds
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -111,7 +115,7 @@ idxSlope = 5;
 ipscrWinOrig = [0, 8000];       % IPSC response window (ms), original
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 % Spreadsheet settings
@@ -149,6 +153,7 @@ figTypes = {'png'};
 useHHDefault = false;           % don't use HH channels by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate active responses by default
+plotIndividualFlagDefault = true;
 plotErrorHistoryFlagDefault = false;
 plotErrorComparisonFlagDefault = false;
 plotParamHistoryFlagDefault = false;
@@ -182,6 +187,8 @@ addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
+addParameter(iP, 'PlotIndividualFlag', plotIndividualFlagDefault, ...   
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotErrorHistoryFlag', plotErrorHistoryFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotErrorComparisonFlag', plotErrorComparisonFlagDefault, ...   
@@ -204,6 +211,7 @@ parse(iP, candParamsTablesOrFiles, varargin{:});
 useHH = iP.Results.UseHH;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
+plotIndividualFlag = iP.Results.PlotIndividualFlag;
 plotErrorHistoryFlag = iP.Results.PlotErrorHistoryFlag;
 plotErrorComparisonFlag = iP.Results.PlotErrorComparisonFlag;
 plotParamHistoryFlag = iP.Results.PlotParamHistoryFlag;
@@ -357,7 +365,7 @@ if ~isfile(sheetPath)
                                 'FileNames', fileNames, ...
                                 'IpscrWindow', ipscrWindow, ...
                                 'SaveImportLogFlag', false, ...
-                                'PlotIndividualFlag', true, ...
+                                'PlotIndividualFlag', plotIndividualFlag, ...
                                 'BuildMode', buildMode, 'SimMode', simMode, ...
                                 'UseHH', useHH, 'OutFolder', outFolder, ...
                                 'Prefix', y, otherArguments), ...

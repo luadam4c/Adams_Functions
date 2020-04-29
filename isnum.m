@@ -22,6 +22,7 @@ function isNum = isnum (x, varargin)
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
 %       cd/compute_psth.m
+%       cd/compute_sampling_interval.m
 %       cd/create_default_grouping.m
 %       cd/create_grouping_by_vectors.m
 %       cd/force_column_cell.m
@@ -29,7 +30,10 @@ function isNum = isnum (x, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
+%       cd/medianfilter.m
+%       cd/movingaveragefilter.m
 %       cd/plot_psth.m
+%       cd/plot_raster.m
 
 % File History:
 % 2018-12-28 Created by Adam Lu

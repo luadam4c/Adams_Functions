@@ -3,8 +3,10 @@ function nearestOdd = find_nearest_odd (realNumber, varargin)
 % Usage: nearestOdd = find_nearest_odd (realNumber, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       find_nearest_odd([2; 3])
+%
 % Outputs:
 %       nearestOdd  - the nearest odd integer returned
 %                   specified as an odd integer vector
@@ -68,7 +70,7 @@ absValue = abs(realNumber);
 absOdd = arrayfun(@(x) find_nearest_positive_odd(x, direction), absValue);
 
 % Restore the sign
-nearestOdd = sgn * absOdd;
+nearestOdd = sgn .* absOdd;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

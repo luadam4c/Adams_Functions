@@ -29,9 +29,9 @@ function vectors = force_row_vector (vectors, varargin)
 %       cd/compute_gabab_conductance.m
 %       cd/compute_relative_event_times.m
 %       cd/extract_columns.m
-%       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/piecelinspace.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/plot_histogram.m
 %       cd/plot_tuning_curve.m
 %       cd/run_neuron.m

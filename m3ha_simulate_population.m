@@ -23,30 +23,40 @@
 %       cd/all_files.m
 %       cd/all_subdirs.m
 %       cd/argfun.m
-%       cd/copy_into.m
+%       cd/combine_param_tables.m
 %       cd/compute_rms_error.m
+%       cd/compute_weighted_average.m
+%       cd/copy_into.m
 %       cd/create_time_stamp.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
 %       cd/extract_columns.m
+%       cd/extract_vars.m
 %       cd/find_matching_files.m
+%       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/is_field.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
+%       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_violin.m
 %       cd/print_cellstr.m
+%       cd/print_structure.m
 %       cd/renamevars.m
 %       cd/vertcat_spreadsheets.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
+%       cd/test_difference.m
+%       cd/update_neuron_scripts.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -55,34 +65,60 @@
 % 2019-12-11 Created by Adam Lu
 % 2019-12-26 Completed
 % 2019-12-27 Added HH channels
-% 
+% 2020-02-18 Now computes open probability discrepancies over fit window only
+% 2020-02-23 Now saves open probability stats
+% 2020-03-10 Reordered measuresOfInterest
+% 2020-03-10 Updated pharm labels
+% 2020-03-11 Now plots violin plots for all gIncr
+% 2020-04-09 Now plots essential plots
+% 2020-04-09 Now finds special cases
+% 2020-04-10 Now computes summary cell info table
+% 2020-04-11 Now plots correlations
+% 2020-04-12 Added m2hMaxError and m2hLogMaxError for open probability
+% 2020-04-13 Fixed bugs in plotEssential and findSpecialCases
+% 2020-04-27 Added plotIndividualFlag
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = false; %true;
+updateScriptsFlag = true;
+chooseBestNeuronsFlag = true;
 simulateFlag = true;
 combineFeatureTablesFlag = true;
 computeOpenProbabilityFlag = true;
+plotIndividualFlag = true;
+plotEssentialFlag = true;
 plotOpenProbabilityFlag = true;
+findSpecialCasesFlag = true;
+computeCellInfoTableFlag = true;
+plotCorrelationsFlag = true;
 plotViolinPlotsFlag = true;
 plotBarPlotsFlag = true;
+archiveScriptsFlag = true;
 
 % Simulation parameters
-useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
+useHH = false;          % whether to use Hudgin-Huxley Na+ and K+ channels
+useCvode = false;       % whether to use variable integration time steps
 buildMode = 'active';
 simMode = 'active';
-dataMode = 0;           % data mode:
+dataMode = 1; %0;           % data mode:
                         %   0 - all data
                         %   1 - all of g incr = 100%, 200%, 400% 
                         %   2 - same g incr but exclude 
                         %       cell-pharm-g_incr sets 
                         %       containing problematic sweeps
-attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
-                        %   2 - Use all traces @ 200% gIncr for this data mode
+attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr 
+                        %           for this data mode
+                        %   2 - Use all traces @ 200% gIncr 
+                        %           for this data mode
                         %   3 - Use all traces for this data mode
                         %   4 - Use 1 trace for each pharm x gIncr 
                         %           for this data mode
-                        %   5 - Use 4 traces @ 400% gIncr for this data mode         
+                        %   5 - Use 4 traces @ 400% gIncr 
+                        %       for this data mode
+                        %   6 - Same as 4 but prioritize least vHold
+                        %   7 - Same as 1 but prioritize least vHold
+                        %   8 - Same as 5 but prioritize least vHold
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
@@ -91,9 +127,11 @@ defaultOutFolderStr = 'population';
 
 % File names
 simStr = 'sim';
-ltsParamsSuffix = '_ltsParams';
-simLtsParamsSuffix = strcat(simStr, '_ltsParams');
+paramsSuffix = 'params';
+ltsParamsSuffix = 'ltsParams';
+simLtsParamsSuffix = strcat(simStr, '_', ltsParamsSuffix);
 simSwpInfoSuffix = strcat(simStr, '_swpInfo');
+simCellInfoSuffix = strcat(simStr, '_cellInfo');
 openProbSuffix = strcat(simStr, '_openProbabilityDiscrepancy_vs_hasLTS');
 simOutExtension = 'out';
 
@@ -111,10 +149,10 @@ condVarStrs = {'cellidrow', 'prow', 'vrow', 'grow', 'swpnrow', ...
                 'gabab_amp', 'gabab_Trise', 'gabab_TfallFast', ...
                 'gabab_TfallSlow', 'gabab_w'};
 pharmAll = [1; 2; 3; 4];          
-pharmLabelsLong = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
-                    '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
-pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
-                    '{\it s}-GAT3', '{\it s}-Dual'};
+pharmLabelsLong = {'{\it s}Control', '{\it s}GAT1-Block', ...
+                    '{\it s}GAT3-Block', '{\it s}Dual-Block'};
+pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
+                    '{\it s}GAT3', '{\it s}Dual'};
 if dataMode == 0 || dataMode == 3
     gIncrAll = [25; 50; 100; 200; 400; 800];
     gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
@@ -122,30 +160,73 @@ elseif dataMode == 1 || dataMode == 2
     gIncrAll = [100; 200; 400];
     gIncrLabels = {'100%', '200%', '400%'};
 end
-conditionLabel2D = 'pharm_1-4_gincr_200_sim';
-pCond2D = num2cell(pharmAll);
-gCond2D = 200;
-stats2dSuffix = strcat(simStr, '_', conditionLabel2D, '_stats.mat');
+conditionLabels2D = [create_labels_from_numbers(gIncrAll, ...
+                    'Prefix', 'pharm_1-4_gincr_', 'Suffix', ['_', simStr]); ...
+                    'pharm_1-4_gincr_pooled'];
+pConds2D = repmat({num2cell(pharmAll)}, numel(gIncrAll) + 1, 1);
+gConds2D = [num2cell(gIncrAll); {gIncrAll}];
 conditionLabel3D = 'pharm_1-4_gincr_all_sim';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 stats3dSuffix = strcat(simStr, '_', conditionLabel3D, '_stats.mat');
 
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+ipscrWindow = timeToStabilize + [0, 2800];     % only simulate up to that time
+fitWindowIpscr = timeToStabilize + [1000, 2800];  
+                                % the time window (ms) where all 
+                                %   recorded LTS would lie
+
 % Plot settings
 % Note: must be consistent with m3ha_compute_statistics.m
-measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
-                    'ltsConcavity'; 'ltsProminence'; ...
-                    'ltsWidth'; 'ltsOnsetTime'; 'ltsTimeJitter'; ...
-                    'ltsProbability'; 'spikesPerLts'; ...
+measuresOfInterest = {'ltsProbability'; 'ltsOnsetTime'; ...
+                    'spikesPerLts'; 'ltsAmplitude'; 'ltsMaxSlope'; ...
+                    'burstProbability'; 'burstOnsetTime'; 'spikesPerBurst'; ...
+                    'ltsConcavity'; 'ltsProminence'; 'ltsWidth'; ...
                     'spikeMaxAmp'; 'spikeMinAmp'; ...
-                    'spikeFrequency'; 'spikeAdaptation'
-                    'burstOnsetTime'; 'burstTimeJitter'; ...
-                    'burstProbability'; 'spikesPerBurst'};
+                    'spikeFrequency'; 'spikeAdaptation'; ...
+                    'ltsTimeJitter'; 'burstTimeJitter'};
+openProbFigWidth = 5;       % (cm)
+openProbFigHeight = 3;      % (cm)
+
+% For summary cell info table
+measuresOfInterestOrig = {'ltsProbability'; 'ltsPeakTime'; ...
+                    'spikesPerPeak'; 'ltsPeakValue'; 'maxSlopeValue'; ...
+                    'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
+                    'maxSpikeAmp'; 'minSpikeAmp'; ...
+                    'spikeFrequency'; 'spikeAdaptation'};
+measuresOfInterestNew = {'ltsProbability'; 'ltsLatency'; ...
+                    'spikesPerLts'; 'ltsPeakValue'; 'ltsMaxSlope'; ...
+                    'burstProbability'; 'burstTime'; 'spikesPerBurst'; ...
+                    'spikeMaxAmp'; 'spikeMinAmp'; ...
+                    'spikeFrequency'; 'spikeAdaptation'};
+measuresIsLogNew = false(12, 1);
+paramsOfInterest = {'diamSoma'; 'LDend'; 'diamDend'; 'gpas'; ...
+                    'pcabarITSoma'; 'pcabarITDend1'; 'pcabarITDend2'; ...
+                    'ghbarIhSoma'; 'ghbarIhDend1'; 'ghbarIhDend2'; ...
+                    'gkbarIKirSoma'; 'gkbarIKirDend1'; 'gkbarIKirDend2'; ...
+                    'gkbarIASoma'; 'gkbarIADend1'; 'gkbarIADend2'; ...
+                    'gnabarINaPSoma'; 'gnabarINaPDend1'; 'gnabarINaPDend2'};
+paramIslog = [false; false; false; true; ...
+                true; true; true; ...
+                true; true; true; ...
+                true; true; true; ...
+                true; true; true; ...
+                true; true; true];
+
+% Compare with m3ha_plot_figure05.m
+overlappedXLimits = timeToStabilize + [800, 2800]; %[800, 2000];
+essentialYLimits = {[-110, -40]; [0, 20]; []; ...
+                            [-20, 5]; [1e-8, 1e0]};
+essentialYTickLocs = {-90:20:-50; 0:5:20; []; ...
+                            -15:5:0; [1e-7, 1e-1]};
+
+individualXLimits = timeToStabilize + [800, 2800];
+individualYLimits = [];
+individualYTickLocs = [];
 
 % TODO: Make optional argument
-outFolder = '';
-prefix = '';
-figTypes = {'png', 'epsc2'};
 % outFolder = '20191227_population_rank1-10_useHH_true';
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
 %         '20191230_population_singleneuronfitting0-91_rank1-2,5,7-10,13,17,34');
@@ -157,11 +238,74 @@ figTypes = {'png', 'epsc2'};
 % rankDirName = '20191229_ranked_singleneuronfitting0-91';
 % rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 % rankDirName = '20200103_ranked_singleneuronfitting0-94';
-rankDirName = '20200108_ranked_singleneuronfitting0-95';
-rankNumsToUse = 1:11;
-ipscrWindow = [2000, 4800];     % only simulate up to that time
-fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
-                                %   recorded LTS would lie
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
+%                     '20200106_population_rank1-11_dataMode1_attemptNumber3');
+% rankNumsToUse = 1:11;
+% rankDirName = '20200103_ranked_singleneuronfitting0-94';
+% outFolder = '20200203_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3';
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
+% outFolder = '20200204_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
+% outFolder = '20200204_population_rank1-2,4-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
+% rankNumsOpenProbability = [];   % same as rankNumsToUse
+% rankNumsOpenProbability = [6, 9];
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%                     '20200208_population_rank1-23_dataMode1_attemptNumber3');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%       '20200423_population_rank1-31_dataMode1_attemptNumber3_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:31;
+% rankNumsOpenProbability = 1:31;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%       '20200425_population_rank1-23_dataMode1_attemptNumber3_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200426_population_rank1-23_dataMode1_attemptNumber3_cvode_on_same_as_20200208');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200426_population_rank1-23_dataMode1_attemptNumber3_vtraub-52');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_on');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200427_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+        '20200428_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
+rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+rankNumsToUse = 1:23;
+rankNumsOpenProbability = 1:23;
+
+prefix = '';
+opdThreshold = 1e-2;
+logOpdThreshold = log10(opdThreshold);
+figTypes = {'png', 'epsc'};
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -210,6 +354,11 @@ if isempty(rankNumsToUse)
     rankNumsToUse = 1:maxRankToSim;
 end
 
+% Decide on the ranking numbers of cells to compute open probability
+if isempty(rankNumsOpenProbability)
+    rankNumsOpenProbability = rankNumsToUse;
+end
+
 % Decide on output folder
 if isempty(outFolder)
     % Create a rank string
@@ -228,8 +377,12 @@ if isempty(outFolder)
     outFolder = fullfile(fitDirectory, outFolderName);
 end
 
-% Check if output folder exists
-check_dir(outFolder);
+% Create output folder for correlations
+outFolderCorrMeas2Param = fullfile(outFolder, 'correlations-measures-to-params');
+outFolderCorrParam2Param = fullfile(outFolder, 'correlations-params-to-params');
+
+% Check if output folders exists
+check_dir({outFolder, outFolderCorrMeas2Param, outFolderCorrParam2Param});
 
 % Decide on output prefix
 if isempty(prefix)
@@ -239,26 +392,24 @@ end
 
 % Construct full paths
 simSwpInfoPath = fullfile(outFolder, [prefix, '_', simSwpInfoSuffix, '.csv']);
-stats2dPath = fullfile(outFolder, [prefix, '_', stats2dSuffix, '.mat']);
+conditionLabels2D = strcat(prefix, '_', conditionLabels2D);
 stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
-openProbPathBase = fullfile(outFolder, [prefix, '_', openProbSuffix]);
+
+% Create path to cell info table
+simCellInfoPath = replace(simSwpInfoPath, simSwpInfoSuffix, ...
+                            simCellInfoSuffix);
+
+%% Make sure NEURON scripts are up to date in outFolder
+if updateScriptsFlag
+    update_neuron_scripts(fitDirectory, outFolder);
+end
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
-    % Create rank number prefixes
-    rankPrefixes = create_labels_from_numbers(rankNumsToUse, ...
-                                        'Prefix', 'rank_', 'Suffix', '_');
-
-    % Find png files matching the rank prefixes
-    [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'prefix', ...
-                            'Directory', rankDirectory, 'Extension', 'png', ...
-                            'ExtractDistinct', false);
-
-    % Extract the cell names
-    cellNames = m3ha_extract_cell_name(pngPaths, 'FromBaseName', true);
-
-    % Extract the iteration numbers
-    iterStrs = m3ha_extract_iteration_string(pngPaths, 'FromBaseName', true);
+    % Extract the corresponding cell names and iteration strings from 
+    %   given rank numbers
+    [cellNames, iterStrs] = ...
+        extract_from_rank_numbers(rankNumsToUse, rankDirectory);
 
     % Find the parameter file directories
     [~, paramDirs] = cellfun(@(x) all_subdirs('Directory', rankDirectory, ...
@@ -274,13 +425,35 @@ if chooseBestNeuronsFlag
     copy_into(paramPaths, outFolder);
 end
 
-%% Simulate
-if simulateFlag
+%% Find candidate NEURON parameter files
+if simulateFlag || computeCellInfoTableFlag
     % Decide on candidate parameters files
-    [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params');
+    [~, paramPaths] = all_files('Directory', outFolder, 'Recursive', false, ...
+                                'Suffix', paramsSuffix, 'Extension', 'csv');
+
+    % Remove the ltsParams files
+    paramPaths = paramPaths(~contains(paramPaths, 'ltsParams'));
 
     % Extract the cell names
     cellNames = m3ha_extract_cell_name(paramPaths);
+end
+
+%% Simulate
+if simulateFlag
+    % Change to the output directory
+    cd(outFolder);
+
+    % Find all simulated LTS stats spreadsheets
+    [~, simLtsParamPaths] = ...
+        cellfun(@(x) find_matching_files(x, 'Directory', outFolder, ...
+                        'Suffix', simLtsParamsSuffix, 'Extension', 'csv', ...
+                        'Recursive', false, 'ReturnEmpty', true), ...
+                cellNames, 'UniformOutput', false);
+
+    % Don't simulate again if LTS stats spreadsheets already exist
+    alreadyDone = cellfun(@isfile, simLtsParamPaths);
+    paramPaths = paramPaths(~alreadyDone);
+    cellNames = cellNames(~alreadyDone);
 
     % Display message
     fprintf('All sweeps from the following cells will be simulated: \n');
@@ -291,7 +464,8 @@ if simulateFlag
                     'IpscrWindow', ipscrWindow, ...
                     'FitWindowIpscr', fitWindowIpscr, ...
                     'BuildMode', buildMode, 'SimMode', simMode, ...
-                    'UseHH', useHH, 'AttemptNumber', attemptNumber, ...
+                    'UseHH', useHH, 'UseCvode', useCvode, ...
+                    'AttemptNumber', attemptNumber, ...
                     'SaveSimOutFlag', true, 'SaveLtsInfoFlag', true), ...
             paramPaths);
 
@@ -310,9 +484,10 @@ if combineFeatureTablesFlag
     fprintf('Combining LTS & burst statistics ... \n');
 
     % Find all simulated LTS stats spreadsheets
+    %   Note: Ignore stuff in backup folders
     [~, simLtsParamPaths] = ...
         all_files('Directory', outFolder, 'Suffix', simLtsParamsSuffix, ...
-                    'Extension', 'csv');
+                    'Extension', 'csv', 'Recursive', false);
 
     % Combine the spreadsheets
     simSwpInfo = vertcat_spreadsheets(simLtsParamPaths);
@@ -377,7 +552,9 @@ if computeOpenProbabilityFlag
     %   interpolate simulated data to match the time points of recorded data
     % Note: This is necessary because CVODE (variable time step method) 
     %       is applied in NEURON
-    simData = load_neuron_outputs('FileNames', simOutPaths, 'tVecs', tVecsRec);
+    simData = load_neuron_outputs('FileNames', simOutPaths, ...
+                                    'tVecs', tVecsRec, ...
+                                    'TimeWindow', fitWindowIpscr);
 
     % Extract vectors from simulated data
     [m, minf, h, hinf] = ...
@@ -392,67 +569,327 @@ if computeOpenProbabilityFlag
     minf2hinf = (minf .^ 2) .* hinf;
 
     % Compute the rms error between m2h and minf2hinf
-    openProbabilityDiscrepancy = compute_rms_error(m2h, minf2hinf, ...
-                                                    'ForceColumnOutput', true);
-    
-    % Add variable
-    simSwpInfo = addvars(simSwpInfo, openProbabilityDiscrepancy);
+    m2hRmsError = compute_rms_error(m2h, minf2hinf, ...
+                                    'ForceColumnOutput', true);
+
+    % Compute the maximum absolute error between m2h and minf2hinf
+    m2hMaxAbsError = ...
+        force_column_vector(max(abs(m2h - minf2hinf), [], 1));
+
+    % Compute the maximum error between m2h and minf2hinf
+    m2hMaxError = ...
+        force_column_vector(max(m2h - minf2hinf, [], 1));
+
+    % Compute the maximum ratio between m2h and minf2hinf
+    m2hRatioRaw = m2h ./ minf2hinf;
+    m2hRatioRaw(isinf(m2hRatioRaw)) = NaN;
+    m2hMaxRatio = force_column_vector(max(m2hRatioRaw, [], 1));
+
+    % Compute the maximum log10 ratio between m2h and minf2hinf
+    m2hLogRatioRaw = log10(m2h ./ minf2hinf);
+    m2hLogRatioRaw(isinf(m2hLogRatioRaw)) = NaN;
+    m2hMaxLogRatio = force_column_vector(max(m2hLogRatioRaw, [], 1));
+
+    % Compute the log10 of everything
+    m2hLogRmsError = log10(m2hRmsError);
+    m2hLogMaxError = log10(m2hMaxError);
+    m2hLogMaxAbsError = log10(m2hMaxAbsError);
+
+    % Add or update variable
+    simSwpInfo = updatevars(simSwpInfo, m2hRmsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxAbsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxRatio);
+    simSwpInfo = updatevars(simSwpInfo, m2hLogRmsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hLogMaxError);
+    simSwpInfo = updatevars(simSwpInfo, m2hLogMaxAbsError);
+    simSwpInfo = updatevars(simSwpInfo, m2hMaxLogRatio);
 
     % Resave the simulated sweep info table
     writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
 end
 
-%% Plot open probability discrepancy against LTS presence
-if plotOpenProbabilityFlag
+%% Read LTS and open probability discrepancy info
+if plotOpenProbabilityFlag || findSpecialCasesFlag
+    % Display message
+    fprintf('Reading LTS and open probability discrepancy info ... \n');
+
     % Make sure the simulated sweep info table exists
     if ~isfile(simSwpInfoPath)
         error('Save a simulated sweep info table first!');
     end
 
-    % Display message
-    fprintf('Plotting open probability discrepancies ... \n');
+    % Create a rank string
+    rankStrOP = ['rank', create_label_from_sequence(rankNumsOpenProbability)];
+
+    % Construct figure paths
+    openProbPathBase = fullfile(outFolder, ...
+                                [prefix, '_', rankStrOP, '_', openProbSuffix]);
+    openProbStatsPath = [openProbPathBase, '_stats.txt'];
+
+    % Extract the corresponding cell names
+    cellNamesOP = ...
+        extract_from_rank_numbers(rankNumsOpenProbability, rankDirectory);
 
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
-    % Read the LTS peak times
-    if ~is_field(simSwpInfo, 'ltsPeakTime')
-        error('ltsPeakTime does not exist!');
-    else
-        ltsPeakTime = simSwpInfo.ltsPeakTime;
-    end
+    % Restrict to the cells of interest
+    simSwpInfoOP = simSwpInfo(contains(simSwpInfo.fileBase, cellNamesOP), :);
+
+    % Read file bases 
+    fileBasesOP = simSwpInfoOP.fileBase;
+
+    % Extract cell names
+    cellNamesEachFile = m3ha_extract_cell_name(fileBasesOP);
 
     % Read the LTS peak times
-    if ~is_field(simSwpInfo, 'openProbabilityDiscrepancy')
-        error('openProbabilityDiscrepancy does not exist yet!');
+    if ~is_field(simSwpInfoOP, 'ltsPeakTime')
+        error('ltsPeakTime does not exist!');
     else
-        openProbabilityDiscrepancy = simSwpInfo.openProbabilityDiscrepancy;
+        ltsPeakTime = simSwpInfoOP.ltsPeakTime;
+    end
+
+    % Read the open probability discrepancy measure
+    if ~is_field(simSwpInfoOP, 'm2hMaxLogRatio')
+        error('m2hMaxLogRatio does not exist yet!');
+    else
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hRmsError;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxAbsError;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxRatio;
+        % logOpenProbabilityDiscrepancy = simSwpInfoOP.m2hMaxLogRatio;
+        % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxError;
+        logOpenProbabilityDiscrepancy = simSwpInfoOP.m2hLogMaxError;
     end
 
     % Determine whether each sweep has an LTS
     noLts = isnan(ltsPeakTime);
+end
+
+%% Plot all individual plots
+if plotIndividualFlag
+    % Display message
+    fprintf('Plotting all individual fits ... \n');
+
+    % Locate all simulated .out files
+    [~, allSimOutPaths] = all_files('Directory', outFolder, ...
+                                    'Recursive', true, 'Extension', 'out');
+
+    % Median filter recorded trace only if not using HH2.mod
+    toMedianFilter = ~useHH;
+
+    % Plot simulated traces
+    array_fun(@(a) m3ha_plot_individual(a, individualXLimits, ...
+                            individualYLimits, individualYTickLocs, ...
+                            toMedianFilter), ...
+            allSimOutPaths);
+end
+
+%% Plot all essential plots
+if plotEssentialFlag
+    % Display message
+    fprintf('Plotting all essential plots ... \n');
+
+    % Locate all simulated .out files
+    [~, allSimOutPaths] = all_files('Directory', outFolder, ...
+                                    'Recursive', true, 'Extension', 'out');
+
+    % Plot simulated traces
+    array_fun(@(a) m3ha_plot_essential(a, overlappedXLimits, ...
+                            essentialYLimits, essentialYTickLocs, ...
+                            opdThreshold), ...
+            allSimOutPaths);
+end
+
+%% Plot open probability discrepancy against LTS presence
+if plotOpenProbabilityFlag
+    % Display message
+    fprintf('Plotting open probability discrepancies ... \n');
+
+    % Find the indices for each cell with or without LTS
+    [indEachCellWithLTS, indEachCellWithNoLTS] = ...
+        argfun(@(condition) ...
+                cellfun(@(c) condition & ...
+                                    strcmp(cellNamesEachFile, c), ...
+                        cellNamesOP, 'UniformOutput', false), ...
+                ~noLts, noLts);
+
+    % % Compute the average (geometric mean) open probability discrepancy
+    % %   for each cell with or without LTS
+    % [opdWithLTS, opdWithNoLTS] = ...
+    %     argfun(@(indEachCell) ...
+    %             cellfun(@(ind) compute_weighted_average(...
+    %                     openProbabilityDiscrepancy(ind), ...
+    %                     'AverageMethod', 'geometric'), indEachCell), ...
+    %             indEachCellWithLTS, indEachCellWithNoLTS);
+
+    % Compute the average (arithmetic mean) log open probability discrepancy
+    %   for each cell with or without LTS
+    [logOpdWithLTS, logOpdWithNoLTS] = ...
+        argfun(@(indEachCell) ...
+                cellfun(@(ind) compute_weighted_average(...
+                        logOpenProbabilityDiscrepancy(ind), ...
+                        'AverageMethod', 'arithmetic'), indEachCell), ...
+                indEachCellWithLTS, indEachCellWithNoLTS);
+
+    % Compute the average (arithmetic mean) log open probability discrepancy
+    %   for all traces
+    [logOpdWithLTSAllTraces, logOpdWithNoLTSAllTraces] = ...
+        argfun(@(ind) logOpenProbabilityDiscrepancy(ind), ...
+                ~noLts, noLts);
 
     % Separate into two groups
-    twoGroups = {openProbabilityDiscrepancy(noLts); ...
-                    openProbabilityDiscrepancy(~noLts)};
+    twoGroups = {logOpdWithNoLTS; logOpdWithLTS};
+    twoGroupsAllTraces = {logOpdWithNoLTSAllTraces; logOpdWithLTSAllTraces};
 
-    % Create figure
-    fig = set_figure_properties('AlwaysNew', true);
+    % Test for differences
+    fid = fopen(openProbStatsPath, 'w');
+    logOpenProbabilityDiscrepancyDifferences = ...
+        test_difference(twoGroups, 'IsPaired', true);
+    print_structure(logOpenProbabilityDiscrepancyDifferences, 'FileID', fid);
+    fclose(fid);
+    
+    % Contruct path base for all traces plot
+    openProbPathBaseAllTraces = [openProbPathBase, '_all_traces'];
 
-    % Plot violin plot
-    violins = plot_violin(twoGroups, 'XTickLabels', {'No LTS', 'With LTS'}, ...
-                            'YLabel', 'rms(m^2h - m_{inf}^2h_{inf})');
-
-    % Create a title
-    title(sprintf('Open Probability Discrepancy for %s', ...
-            replace(prefix, '_', '\_')));
-
-    % Set y axis to be on a log scale
-    set(gca, 'YScale', 'log');
-
-    % Save figure
-    save_all_figtypes(fig, openProbPathBase, figTypes);
+    % Plot violin plots
+    plot_open_probability_discrepancy(twoGroups, openProbPathBase, ...
+                                        prefix, openProbFigWidth, ...
+                                        openProbFigHeight, figTypes, ...
+                                        logOpdThreshold);
+    plot_open_probability_discrepancy(twoGroupsAllTraces, ...
+                                    openProbPathBaseAllTraces, ...
+                                        prefix, openProbFigWidth, ...
+                                        openProbFigHeight, figTypes, ...
+                                        logOpdThreshold);
 end 
+
+%% Find and copy special cases
+if findSpecialCasesFlag
+    % Display message
+    fprintf('Finding and copying special cases ... \n');
+
+    % Create special cases directories
+    specialDir = fullfile(outFolder, 'special_cases');
+    [falseNegDir, falsePosDir] = ...
+        argfun(@(s) fullfile(specialDir, s), ...
+                'highDiscrepancyNoLts', 'lowDiscrepancyHasLts');
+    check_dir({specialDir, falseNegDir, falsePosDir});
+
+    % Determine whether it is a special case
+    isFalseNeg = noLts & (logOpenProbabilityDiscrepancy >= logOpdThreshold);
+    isFalsePos = ~noLts & (logOpenProbabilityDiscrepancy < logOpdThreshold);
+
+    % Find corresponding file base
+    [fileBasesFalseNeg, fileBasesFalsePos] = ...
+        argfun(@(i) fileBasesOP(i), isFalseNeg, isFalsePos);
+
+    % Add '_' to file base
+    [fileBasesModFalseNeg, fileBasesModFalsePos] = ...
+        argfun(@(fb) strcat(fb, '_'), fileBasesFalseNeg, fileBasesFalsePos);
+
+    % Find corresponding essential plots
+    [~, essentialPathsFalseNeg] = ...
+        find_matching_files(fileBasesModFalseNeg, 'Directory', outFolder, ...
+                                'Recursive', true, 'Suffix', 'essential', ...
+                                'Extension', 'png');
+    [~, essentialPathsFalsePos] = ...
+        find_matching_files(fileBasesModFalsePos, 'Directory', outFolder, ...
+                                'Recursive', true, 'Suffix', 'essential', ...
+                                'Extension', 'png');
+
+    % Copy into special cases directories
+    copy_into(essentialPathsFalseNeg, falseNegDir);
+    copy_into(essentialPathsFalsePos, falsePosDir);
+end
+
+%% Compute cell info table
+if computeCellInfoTableFlag
+    % Display message
+    fprintf('Computing summary cell info table ... \n');
+
+    % Make sure the simulated sweep info table exists
+    if ~isfile(simSwpInfoPath)
+        error('Save a simulated sweep info table first!');
+    end
+
+    % Create the cell info table by combining the parameter tables
+    simCellInfoTable = ...
+        combine_param_tables(paramPaths, 'NewRowNames', cellNames);
+
+    % Read the simulated sweep info table
+    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
+
+    % Extract the sweep names
+    swpNames = simSwpInfo.Properties.RowNames;
+    cellName = m3ha_extract_cell_name(swpNames);
+
+    % Determine whether each sweep has an LTS or burst
+    ltsProbability = ~isnan(simSwpInfo.ltsPeakTime);
+    burstProbability = ~isnan(simSwpInfo.burstTime);
+
+    % Add ltsProbability & burstProbability
+    simSwpInfoOfInterest = ...
+        addvars(simSwpInfo, ltsProbability, burstProbability, 'Before', 1);
+
+    % Restrict to measures of interest
+    simSwpInfoOfInterest = simSwpInfoOfInterest(:, measuresOfInterestOrig);
+
+    % Add cell names
+    simSwpInfoOfInterest = ...
+        addvars(simSwpInfoOfInterest, cellName, 'Before', 1);
+
+    % Average all columns, grouped by cellName
+    %   Note: groupsummary() is available since R2018a
+    cellMeasureTable = ...
+        groupsummary(simSwpInfoOfInterest, 'cellName', @nanmean);
+
+    % Create the variable names returned by groupsummary()
+    summaryVarNames = strcat('fun1_', measuresOfInterestOrig);
+
+    % Rename variables
+    cellMeasureTable = renamevars(cellMeasureTable, ...
+                            summaryVarNames, measuresOfInterestNew);
+
+    % Make cell names row names
+    cellMeasureTable.Properties.RowNames = cellMeasureTable.cellName;
+
+    % Join tables
+    simCellInfoTable = join(simCellInfoTable, cellMeasureTable, 'Keys', 'Row');
+
+    % Write to the table
+    writetable(simCellInfoTable, simCellInfoPath, 'WriteRowNames', true);
+end
+
+%% Plot correlations
+if plotCorrelationsFlag
+    % Display message
+    fprintf('Plotting correlation plots ... \n');
+
+    % Make sure cell info table exists
+    if ~isfile(simCellInfoPath)
+        error('Save a simulated cell info table first!');
+    end
+
+    % Read the cell info table
+    simCellInfoTable = readtable(simCellInfoPath, 'ReadRowNames', true);
+
+    % Collect all x & y variables
+    paramVecs = extract_vars(simCellInfoTable, paramsOfInterest);
+    measureVecs = extract_vars(simCellInfoTable, measuresOfInterestNew);
+
+    % Plot all correlations between measures and params
+    plot_all_correlations(paramVecs, measureVecs, ...
+                        paramsOfInterest, measuresOfInterestNew, ...
+                        paramIslog, measuresIsLogNew, ...
+                        outFolderCorrMeas2Param);
+
+    % Plot all correlations between params and params
+    plot_all_correlations(paramVecs, paramVecs, ...
+                        paramsOfInterest, paramsOfInterest, ...
+                        paramIslog, paramIslog, ...
+                        outFolderCorrParam2Param);
+end
 
 %% Plot violin plots
 if plotViolinPlotsFlag
@@ -463,29 +900,16 @@ if plotViolinPlotsFlag
 
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
-    % Compute statistics if not done already
-    if ~isfile(stats2dPath)
-        % Load sweep info
-        simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
-        % Compute statistics for all features
-        disp('Computing statistics for violin plots ...');
-        statsTable = m3ha_compute_statistics('SwpInfo', simSwpInfo, ...
-                                                'PharmConditions', pCond2D, ...
-                                                'GIncrConditions', gCond2D, ...
-                                                'DataMode', dataMode);
-
-        % Generate labels
-        conditionLabel = conditionLabel2D;
-        pharmLabels = pharmLabelsShort;
-
-        % Save stats table
-        save(stats2dPath, 'statsTable', 'pharmLabels', ...
-                            'conditionLabel', '-v7.3');
-    end
-
-    % Plot all 2D violin plots
-    m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest);
+    % Compute and plot violin plots
+    cellfun(@(conditionLabel2D, pCond2D, gCond2D) ...
+            m3ha_compute_and_plot_violin(outFolder, ...
+                    pharmLabelsShort, conditionLabel2D, ...
+                    'SwpInfo', simSwpInfo, 'DataMode', dataMode, ...
+                    'PharmConditions', pCond2D, 'GIncrConditions', gCond2D, ...
+                    'RowsToPlot', measuresOfInterest, ...
+                    'OutFolder', outFolder), ...
+            conditionLabels2D, pConds2D, gConds2D);
 end
 
 %% Plot bar plots
@@ -521,6 +945,317 @@ if plotBarPlotsFlag
     m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest);
 end
 
+% Archive all scripts for this run
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', outFolder);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function myTable = updatevars (myTable, varValue)
+%% Replace a variable in a table or add it if it doesn't exist
+% TODO: Pull out as its own function
+
+varName = inputname(2);
+if is_field(myTable, varName)
+    myTable.(varName) = varValue;
+else
+    myTable = addvars(myTable, varValue, 'NewVariableNames', varName);
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [cellNames, iterStrs] = ...
+                extract_from_rank_numbers (rankNumsToUse, rankDirectory)
+
+% Create rank number prefixes
+rankPrefixes = create_labels_from_numbers(rankNumsToUse, ...
+                                    'Prefix', 'rank_', 'Suffix', '_');
+
+% Find png files matching the rank prefixes
+[~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'prefix', ...
+                        'Directory', rankDirectory, 'Extension', 'png', ...
+                        'ExtractDistinct', false);
+
+% Extract the cell names
+cellNames = m3ha_extract_cell_name(pngPaths, 'FromBaseName', true);
+
+% Extract the iteration numbers
+iterStrs = m3ha_extract_iteration_string(pngPaths, 'FromBaseName', true);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_plot_individual(simOutPath, xLimits, yLimits, yTickLocs, ...
+                                toMedianFilter)
+%% Plot an essential plot for a simulation
+
+% Extract the sweep name
+sweepName = m3ha_extract_sweep_name(simOutPath, 'FromBaseName', true);
+
+% Make the sweep the the figure title
+figTitle = replace(['Fits for ', sweepName], '_', '\_');
+
+% Create figure names
+figPathBase = replace(simOutPath, '.out', '_individual.png');
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot essential traces
+handles = ...
+    m3ha_plot_simulated_traces('PlotType', 'individual', ...
+                            'ToMedianFilter', toMedianFilter, ...
+                            'FileNames', simOutPath, ...
+                            'XLimits', xLimits, 'YLimits', yLimits, ...
+                            'YTickLocs', yTickLocs, ...
+                            'FigHandle', fig, 'FigTitle', figTitle);
+
+% Save original figure
+save_all_figtypes(fig, figPathBase, 'png');
+
+% Close figure
+close(fig);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_plot_essential(simOutPath, xLimits, ...
+                                yLimits, yTickLocs, opdThreshold)
+%% Plot an essential plot for a simulation
+
+% Extract the sweep name
+sweepName = m3ha_extract_sweep_name(simOutPath, 'FromBaseName', true);
+
+% Make the sweep the the figure title
+figTitle = replace(['Essential plots for ', sweepName], '_', '\_');
+
+% Create figure names
+figPathBase = replace(simOutPath, '.out', '_essential.png');
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot essential traces
+handles = ...
+    m3ha_plot_simulated_traces('PlotType', 'essential', ...
+                            'FileNames', simOutPath, ...
+                            'XLimits', xLimits, 'YLimits', yLimits, ...
+                            'YTickLocs', yTickLocs, ...
+                            'FigHandle', fig, 'FigTitle', figTitle);
+
+% Get all subplots
+subPlots = handles.subPlots;
+
+% Add a threshold line
+subplot(subPlots(5)); hold on;
+plot_horizontal_line(opdThreshold, 'ColorMap', 'DarkGreen', ...
+                        'LineStyle', ':', 'LineWidth', 1);
+
+% Save original figure
+save_all_figtypes(fig, figPathBase, 'png');
+
+% Close figure
+close(fig);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_all_correlations (xVarVecs, yVarVecs, ...
+                                xVarNames, yVarNames, ...
+                                xVarIsLog, yVarIsLog, outFolder)
+%% Plots all correlations between two sets of vectors
+% TODO: Pull out as its own function
+% Requires:
+% TODO
+% force_column_cell
+% all_ordered_pairs
+% plot_correlation
+
+% Force as column cell arrays
+[xVarVecs, yVarVecs] = argfun(@force_column_cell, xVarVecs, yVarVecs);
+
+% Create all ordered pairs
+allVecPairs = all_ordered_pairs({xVarVecs, yVarVecs});
+allVarPairs = all_ordered_pairs({xVarNames, yVarNames});
+allIsLogPairs = all_ordered_pairs({xVarIsLog, yVarIsLog});
+allFigPaths = cellfun(@(b) fullfile(outFolder, ...
+                                    [b{2}, '_vs_', b{1}, '.png']), ...
+                    allVarPairs, 'UniformOutput', false);
+
+% Plot correlations
+% cellfun(@(a, b, c, d) plot_correlation(a{1}, a{2}, b{1}, b{2}, ...
+%                                           c(1), c(2), d), ...
+%         allVecPairs, allVarPairs, allIsLogPairs, allFigPaths);
+% array_fun(@(a, b, c, d) plot_correlation(a{1}, a{2}, b{1}, b{2}, ...
+%                                           c(1), c(2), d), ...
+%         allVecPairs, allVarPairs, allIsLogPairs, allFigPaths);
+parfor iPair = 1:numel(allVecPairs)
+    vecPair = allVecPairs{iPair};
+    varPair = allVarPairs{iPair};
+    figPath = allFigPaths{iPair};
+    isLogPair = allIsLogPairs{iPair};
+    plot_correlation(vecPair{1}, vecPair{2}, varPair{1}, varPair{2}, ...
+                    isLogPair(1), isLogPair(2), figPath);
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = plot_correlation (xVec, yVec, xVar, yVar, ...
+                                        xIsLog, yIsLog, figPath)
+%% Plots correlation between two vectors
+
+% Add correlation value to figure name
+addCorrValueToFigName = true;
+addCovValueToFigName = true;
+
+% Find directory of figure path
+figDir = extract_fileparts(figPath, 'directory');
+if isempty(figDir)
+    figDir = pwd;
+end
+
+% Remove the pairs of values with NaN
+neitherNaN = ~isnan(xVec) & ~isnan(yVec);
+xVecNoNaN = xVec(neitherNaN);
+yVecNoNaN = yVec(neitherNaN);
+
+% Convert to log scale if requested 
+if xIsLog
+    xVecToCorr = log10(xVecNoNaN);
+else
+    xVecToCorr = xVecNoNaN;
+end
+if yIsLog
+    yVecToCorr = log10(yVecNoNaN);
+else
+    yVecToCorr = yVecNoNaN;
+end
+
+% Compute the correlation coefficient
+corrValue = corr2(xVecToCorr, yVecToCorr);
+
+% Compute the covariance value
+covMatrix = cov(xVecToCorr, yVecToCorr);
+covValue = covMatrix(1, 2);
+
+% Add covariance value to figure name if requested
+if addCovValueToFigName
+    figNameOld = extract_fileparts(figPath, 'name');
+    figNameNew = sprintf(['cov_%.2f_%s'], covValue, figNameOld);
+    figPath = replace(figPath, figNameOld, figNameNew);
+end
+
+% Add covariance value to figure name if requested
+if addCorrValueToFigName
+    figNameOld = extract_fileparts(figPath, 'name');
+    figNameNew = sprintf(['corr_%.2f_%s'], corrValue, figNameOld);
+    figPath = replace(figPath, figNameOld, figNameNew);
+end
+
+% Decide on the text color
+if abs(corrValue) > 0.6 && abs(corrValue) ~= 1
+    isSignificant = true;
+    textColor = 'r';
+else
+    isSignificant = false;
+    textColor = 'k';
+end
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot scatter plot
+scatter(xVecNoNaN, yVecNoNaN, 'o', 'LineWidth', 2);
+
+% Change axis scale if requested
+if xIsLog || yIsLog
+    [xScale, yScale] = argfun(@islog2scale, xIsLog, yIsLog);
+    set(gca, 'XScale', xScale, 'YScale', yScale);
+end
+
+% Show correlation coefficient
+text(0.1, 0.95, ...
+    ['Correlation coefficient: ', num2str(corrValue, 3)], ...
+    'Units', 'normalized', 'Color', textColor); 
+
+% Titles and axis labels
+title(['Correlation of ', yVar, ' vs. ', xVar]);
+xlabel(xVar);
+ylabel(yVar);
+
+% Save original figure
+save_all_figtypes(fig, figPath, 'png');
+
+if isSignificant
+    % Create directory for significant
+    sigDir = fullfile(figDir, 'significant');
+    check_dir(sigDir);
+
+    % Create path to significant figure
+    figName = extract_fileparts(figPath, 'name');
+    figPathSig = fullfile(sigDir, figName);
+
+    % Save original figure
+    save_all_figtypes(fig, figPathSig, 'png');
+end
+
+% Close figure
+close(fig);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_open_probability_discrepancy (twoGroups, openProbPathBase, ...
+                                        prefix, openProbFigWidth, ...
+                                        openProbFigHeight, figTypes, ...
+                                        logOpdThreshold)
+
+% Create figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot violin plot
+violins = plot_violin(twoGroups, 'ColorMap', {'Black', 'DarkGreen'}, ...
+                         'XTickLabels', {'No LTS', 'With LTS'}, ...
+                        'YLabel', 'max(log(m^2h - m_{inf}^2h_{inf}))');
+                        % 'YLabel', 'max(log(m^2h / m_{inf}^2h_{inf}))');
+                        % 'YLabel', 'max(m^2h / m_{inf}^2h_{inf})');
+                        % 'YLabel', 'max(abs(m^2h - m_{inf}^2h_{inf}))');
+                        % 'YLabel', 'rms(m^2h - m_{inf}^2h_{inf})');
+
+% Set y axis limits
+% TODO: Make this an optional argument
+ylim([-4.5, 0.5]);
+
+% Plot threshold
+hold on
+plot_horizontal_line(logOpdThreshold, 'ColorMap', 'r', 'LineWidth', 2);
+
+% Create a title
+title(sprintf('Open Probability Discrepancy for %s', ...
+        replace(prefix, '_', '\_')));
+
+% Save the figure
+openProbPathBaseOrig = [openProbPathBase, '_orig'];
+save_all_figtypes(fig, openProbPathBaseOrig, 'png');
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                'Width', openProbFigWidth, 'Height', openProbFigHeight);
+
+% Save figure
+save_all_figtypes(fig, openProbPathBase, figTypes);
+
+end 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
@@ -555,6 +1290,12 @@ swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
                     columnMode, attemptNumberAcrossTrials, ...
                     x, swpInfo, cellInfo), ...
             cellNamesToFit, 'UniformOutput', false);
+
+% Separate into two groups
+twoGroups = {logOpenProbabilityDiscrepancy(noLts); ...
+                logOpenProbabilityDiscrepancy(~noLts)};
+
+logOpenProbabilityDiscrepancyDifferences = test_difference(twoGroups);
 
 %}
 

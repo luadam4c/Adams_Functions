@@ -33,7 +33,11 @@ function output = apply_over_cells (myFunction, inputs, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/all_subdirs.m
+%       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
+%       cd/compute_activation_profile.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_rank_neurons.m
 %       cd/plot_vertical_line.m
 %       ~/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_conditions.m.m

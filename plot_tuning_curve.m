@@ -34,7 +34,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Arguments:
 %       pValues     - vector(s) of parameter values
-%                       each column is a readout vector
 %                   must be a numeric 2-D array
 %       readout     - vector(s) of readout values 
 %                       each column is a readout vector
@@ -129,6 +128,9 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                               'northeast' if nTraces is 2~9
 %                               'eastoutside' if nTraces is 10+
 %                   - 'PlotOnly': whether to plot the curves only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotForCorel': whether to plot for CorelDraw
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
@@ -233,13 +235,13 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/argfun.m
 %       cd/cell2num.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
-%       cd/set_axes_properties.m
-%       cd/set_figure_properties.m
+%       cd/extract_fileparts.m
 %       cd/fill_markers.m
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
@@ -247,6 +249,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/hold_on.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
+%       cd/islog2scale.m
+%       cd/match_column_count.m
 %       cd/parse_phase_info.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_selected.m
@@ -254,12 +258,17 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
+%       cd/set_axes_properties.m
 %       cd/set_default_flag.m
+%       cd/set_figure_properties.m
+%       cd/test_normality.m
 %       cd/unique_custom.m
 %       cd/union_over_cells.m
+%       cd/update_figure_for_corel.m
 %
 % Used by:
 %       cd/m3ha_network_tuning_curves.m
+%       cd/m3ha_plot_figure07.m
 %       cd/parse_current_family.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m
@@ -313,10 +322,11 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-12-18 Now allows pValues to be multiple vectors
 % 2019-12-23 Fixed colorMap argument
 % 2019-12-23 Added 'ReadoutIsLog' as an optional argument
+% 2020-02-17 Added normality tests
+% 2020-02-19 Added 'PlotForCorel' as an optional argument
+% TODO: Allow inputs to be cell arrays (use force_matrix.m)
+% TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
-
-%% Hard-coded constants
-WHITE = [1, 1, 1];
 
 %% Hard-coded parameters
 validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
@@ -325,7 +335,7 @@ validRBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 
 % TODO: Make optional arguments
 sigLevel = 0.05;                    % significance level for tests
-confIntFadePercentage = 1;          % fade percentage for confidence interval colors
+confIntFadePercentage = 50;         % fade percentage for confidence interval colors
 confIntLineStyle = 'none';
 confIntFaceAlpha = 0.25;
 confIntEdgeAlpha = 0.25;
@@ -379,6 +389,7 @@ confIntColorMapDefault = [];        % set later
 selectedColorMapDefault = [];       % set later
 legendLocationDefault = 'auto';     % set later
 plotOnlyDefault = false;            % setup default labels by default
+plotForCorelDefault = false;
 plotPhaseBoundariesDefault = [];    % set later
 plotPhaseAveragesDefault = [];      % set later
 plotIndSelectedDefault = [];        % set later
@@ -421,7 +432,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'pValues', ...              % vector of parameter values
-    @(x) validateattributes(x, {'numeric', 'datetime', 'duration'}, {'vector'}));
+    @(x) validateattributes(x, {'numeric', 'datetime', 'duration'}, ...
+                                {'2d'}));
 addRequired(iP, 'readout', ...              % a readout matrix
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
@@ -477,6 +489,8 @@ addParameter(iP, 'SelectedColorMap', selectedColorMapDefault, ...
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotForCorel', plotForCorelDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -564,6 +578,7 @@ selectedColorMap = iP.Results.SelectedColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 plotOnly = iP.Results.PlotOnly;
+plotForCorel = iP.Results.PlotForCorel;
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
 plotPhaseAverages = iP.Results.PlotPhaseAverages;
 plotIndSelected = iP.Results.PlotIndSelected;
@@ -745,15 +760,27 @@ else
 end
 
 % Run paired t-tests if requested
-if (runTTest || runRankTest) && size(readout, 1) > 1
-    % Transpose the readout matrix
-    readoutTransposed = transpose(readout);
+if (runTTest || runRankTest)
+    if size(readout, 1) > 1
+        % Transpose the readout matrix
+        readoutTransposed = transpose(readout);
 
-    % Extract the before columns
-    befores = readoutTransposed(:, 1:end-1);
+        % Extract the before columns
+        befores = readoutTransposed(:, 1:end-1);
 
-    % Extract the after columns
-    afters = readoutTransposed(:, 2:end);
+        % Extract the after columns
+        afters = readoutTransposed(:, 2:end);
+
+        % Compute consecutive differences
+        diffData = afters - befores;
+
+        % Test whether each pair of differences is normally-distributed
+        isNormal = test_normality(diffData);
+    else
+        disp('Difference test can''t be conducted for less than 2 groups!');
+        runTTest = false;
+        runRankTest = false;
+    end
 end
 
 % Run paired t-tests if requested
@@ -844,7 +871,8 @@ end
 % Decide on the confidence interval color map to use
 if isempty(confIntColorMap)
     % Color of the confidence interval
-    confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
+    confIntColorMap = decide_on_colormap(colorMap, 'OriginalNColors', true, ...
+                            'FadePercentage', confIntFadePercentage);
 end
 
 % Decide on the selected values color map to use
@@ -1108,6 +1136,10 @@ end
 % Plot selected values if any
 if plotIndSelected && ~isempty(indSelected)
     if iscell(indSelected)
+        % Match the column count
+        nColumns = size(readoutToPlot, 2);
+        pValuesToPlot = match_column_count(pValuesToPlot, nColumns);
+        
         % Color arbitrarily first
         selectedCell = ...
             arrayfun(@(x) ...
@@ -1175,14 +1207,16 @@ end
 if ~isempty(tTestPValues)
     plot_test_result(tTestPValues, tTestPString, ...
                     tTestYLocText, tTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValuesAll, sigLevel);
+                    testXLocRel, starXLocRel, pValuesAll, ...
+                    sigLevel, isNormal);
 end
 
 % Plot rank test p values if any
 if ~isempty(rankTestPValues)
     plot_test_result(rankTestPValues, rankTestPString, ...
                     rankTestYLocText, rankTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValuesAll, sigLevel);
+                    testXLocRel, starXLocRel, pValuesAll, ...
+                    sigLevel, ~isNormal);
 end
 
 % Hold off
@@ -1190,12 +1224,9 @@ hold_off(wasHold);
 
 % Modify axes scale if requested
 %   Note: this must occur after holding off
-if pIsLog && readoutIsLog
-    set(gca, 'XScale', 'log', 'YScale', 'log');
-elseif pIsLog && ~readoutIsLog
-    set(gca, 'XScale', 'log');
-elseif ~pIsLog && readoutIsLog
-    set(gca, 'YScale', 'log');
+if pIsLog || readoutIsLog
+    [xScale, yScale] = argfun(@islog2scale, pIsLog, readoutIsLog);
+    set(gca, 'XScale', xScale, 'YScale', yScale);
 end
 
 %% Post-plotting
@@ -1212,6 +1243,19 @@ end
 
 % Save figure if figName provided
 if ~isempty(figName)
+    % Plot for CorelDraw
+    if plotForCorel
+        % Create path for original figure
+        figNameOrig = [extract_fileparts(figName, 'pathbase'), '_orig'];
+
+        % Save original figure as png
+        save_all_figtypes(fig, figNameOrig, 'png');
+
+        % Update figure for CorelDraw
+        update_figure_for_corel(fig);
+    end
+
+    % Save figure
     save_all_figtypes(fig, figName, figTypes);
 end
 
@@ -1255,8 +1299,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_test_result (tTestPValues, pString, yLocTextRel, yLocStarRel, ...
-                            xLocTextRel, xLocStarRel, pValuesAll, sigLevel)
+function plot_test_result (testPValues, pString, yLocTextRel, yLocStarRel, ...
+                            xLocTextRel, xLocStarRel, pValuesAll, ...
+                            sigLevel, isAppropriate)
 %% Plots p values and star if significant
 
 % Decide on the x locations
@@ -1273,17 +1318,20 @@ yLocText = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocTextRel;
 yLocStar = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocStarRel;
 
 % Plot texts
-for iValue =  1:numel(tTestPValues)
+for iValue =  1:numel(testPValues)
     % Get the current values
-    tTestPValueThis = tTestPValues(iValue);
+    testPValueThis = testPValues(iValue);
     xLocTextThis = xLocsText(iValue);
     xLocStarThis = xLocsStar(iValue);
+    isAppropriateThis = isAppropriate(iValue);
 
     % Create a p value string to 2 significant digits
-    pValueString = [pString, ' = ', num2str(tTestPValueThis, 2)];
+    pValueString = [pString, ' = ', num2str(testPValueThis, 2)];
 
-    % Plot red if significant
-    if tTestPValueThis < sigLevel
+    % Plot gray if inappropriate, red if significant
+    if ~isAppropriateThis
+        pColor = [0.5, 0.5, 0.5];       % rgb('Gray')
+    elseif testPValueThis < sigLevel
         pColor = 'r';
     else
         pColor = 'k';
@@ -1295,7 +1343,7 @@ for iValue =  1:numel(tTestPValues)
             'HorizontalAlignment', 'center');
 
     % Plot star if significant, 'NS' if not
-    if tTestPValueThis < sigLevel
+    if testPValueThis < sigLevel
         plot(xLocStarThis, yLocStar, '*', 'Color', [0, 0, 0], ...
             'MarkerSize', 4);
     else
@@ -1470,6 +1518,18 @@ else
     p = plot(pValues, readout, lineSpec, ...
                     'LineWidth', lineWidth, otherArguments);
 end
+
+if pIsLog && readoutIsLog
+    set(gca, 'XScale', 'log', 'YScale', 'log');
+elseif pIsLog && ~readoutIsLog
+    set(gca, 'XScale', 'log');
+elseif ~pIsLog && readoutIsLog
+    set(gca, 'YScale', 'log');
+end
+
+%% Hard-coded constants
+WHITE = [1, 1, 1];
+confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
 
 %}
 

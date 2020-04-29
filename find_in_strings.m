@@ -127,7 +127,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 % 2019-01-04 Simplified code with contains()
 % 2019-01-09 Added 'ReturnNan' as an optional argument
 % 2019-01-09 Now uses find_custom.m
-% 2019-01-10 Renamed find_ind_str_in_cell -> find_in_strings
+% 2019-01-10 Renamed find_in_strings -> find_in_strings
 % 2019-01-10 Updated Explanation section
 % 2019-01-10 Now fully supports strings in double quotes
 % 2019-01-10 Moved code to is_matching_string.m

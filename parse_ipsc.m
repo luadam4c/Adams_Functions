@@ -78,15 +78,18 @@ function varargout = parse_ipsc (iVecs, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_closest.m
 %       cd/find_window_endpoints.m
+%       cd/match_format_vectors.m
 %       cd/match_row_count.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
 %       cd/plot_traces.m
 %       cd/set_figure_properties.m
+%       cd/vecfun.m
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/parse_lts.m
 
 % File History:
 % 2019-11-13 Adapted from m3ha_find_ipsc_peak.m and m3ha_find_ipsc_start_from_current.m
@@ -314,6 +317,9 @@ end
 % Decide on the window to look for IPSC peak
 if isempty(peakWindowMs)
     if ~isnan(stimStartMs)
+        % Match vector formats
+        [stimStartMs, tEnd] = match_format_vectors(stimStartMs, tEnd);
+
         peakWindowMs = transpose([stimStartMs, tEnd]);
     else
         peakWindowMs = transpose([tBase, tEnd]);
@@ -327,7 +333,7 @@ endPointsToFindPeak = find_window_endpoints(peakWindowMs, tVecs);
 iVecsPart = extract_subvectors(iVecs, 'EndPoints', endPointsToFindPeak);
 
 % Find the minimum in each region
-[peakAmplitude, idxPeakRel] = cellfun(@min, iVecsPart);
+[peakAmplitude, idxPeakRel] = vecfun(@min, iVecsPart, 'UniformOutput', true);
 
 % Compute the beginning index of the end points for peakWindowMs
 idxBegins = extract_elements(endPointsToFindPeak, 'first');

@@ -1,16 +1,15 @@
-function [h, g] = plot_grouped_scatter(figname, X, Y, grouping, grouping_labels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
+function [h, g] = plot_grouped_scatter (figName, X, Y, grouping, groupingLabels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
 %% Plot and save a grouped scatter plot with 95% confidence ellipses
-% Usage: [h, g] = plot_grouped_scatter(figname, X, Y, grouping, grouping_labels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
+% Usage: [h, g] = plot_grouped_scatter (figName, X, Y, grouping, groupingLabels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/plot_ellipse.m
+%       cd/plot_ellipse.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
-%		/media/adamX/Paula_IEIs/paula_iei4.m
 %
 % 2017-12-13 - Modified from plot_grouped_histogram.m
 % 2018-05-27 - Fixed the case when nGroups is NaN or 0
+% TODO: Merge with plot_correlation
 
 %% TODO: make the following optional arguments with given default
 ellipseNPoints = 1000;              % 1000 points
@@ -32,7 +31,7 @@ markerLineWidthDefault = 0.5;
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'plot_grouped_scatter';
+iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PlotEllipse', plotEllipseDefault, ...
@@ -208,7 +207,7 @@ if ~isempty(yLimits)
     ylim(yLimits);
 end
 if nGroups > 0
-    legend(grouping_labels, 'Interpreter', 'none', 'location', 'eastoutside');    
+    legend(groupingLabels, 'Interpreter', 'none', 'location', 'eastoutside');    
 end
 if ~isempty(xUnits)
     xlabel([xLabel, ' (', xUnits, ')']);
@@ -221,7 +220,7 @@ else
     ylabel(yLabel);
 end
 title(titleStr, 'Interpreter', 'none');
-saveas(h, figname, 'png');
+saveas(h, figName, 'png');
 close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

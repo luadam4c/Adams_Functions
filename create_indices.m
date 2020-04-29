@@ -19,8 +19,20 @@ function indices = create_indices (varargin)
 %       create_indices([1, 50], 'MaxNum', 5, 'AlignMethod', 'center')
 %       create_indices([5; 1], 'MaxNum', 2)
 %       create_indices([0, 0])
+%       create_indices([NaN, NaN])
+%       create_indices([1, NaN])
 %       create_indices([])
-%       create_indices([], 'Vectors', 1:5)
+%       create_indices([], 'Vectors', (1:5)')
+%       create_indices('Vectors', 1:5, 'IndexEnd', 4)
+%       create_indices('Vectors', (1:5)', 'IndexEnd', 4)
+%       create_indices('Vectors', magic(5), 'IndexEnd', 4)
+%       create_indices('Vectors', 1:5, 'IndexStart', 4)
+%       create_indices('Vectors', (1:5)', 'IndexStart', 4)
+%       create_indices('Vectors', magic(5), 'IndexStart', 4)
+%       create_indices('Vectors', {1:7, 1:5}, 'IndexStart', 4)
+%       create_indices('Vectors', (1:5)', 'IndexStart', 6)
+%       create_indices('Vectors', magic(5), 'IndexStart', 6)
+%       create_indices('Vectors', {1:7, 1:5}, 'IndexStart', 6)
 %
 % Outputs:
 %       indices     - indices for each pair of idxStart and idxEnd
@@ -118,6 +130,7 @@ function indices = create_indices (varargin)
 % 2019-05-16 Added 'AlignMethod' as an optional argument
 % 2019-09-10 Fixed bug when start and end indices are both empty
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
+% 2020-04-20 Fixed bug when start and end indices out of vector range
 % TODO: Added 'spanboth', 'spanleft' and 'spanright' as align methods
 % TODO: Use argument 'ForcePositive' as false where necessary
 
@@ -291,13 +304,17 @@ if ~isempty(vectors) && ...
         argfun(@(x) match_format_vector_sets(x, nSamples, 'MatchVectors', true), ...
                 idxStart, idxEnd);
 
-    % Make sure endpoint indices are in range
+    % Make sure endpoint indices are in range, step 1
     candidatesStart = match_and_combine_vectors(idxStart, 1);
     candidatesEnd = match_and_combine_vectors(idxEnd, nSamples);
     idxStart = compute_maximum_trace(candidatesStart, ...
                             'TreatRowAsMatrix', true, 'IgnoreNaN', false);
     idxEnd = compute_minimum_trace(candidatesEnd, ...
                             'TreatRowAsMatrix', true, 'IgnoreNaN', false);
+
+    % Make sure endpoint indices are in range, step 2
+    idxStart(idxStart > nSamples) = NaN;
+    idxEnd(idxEnd < 1) = NaN;
 end
 
 % Create the indices

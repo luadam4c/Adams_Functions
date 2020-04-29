@@ -47,6 +47,7 @@ function handles = plot_spike_histogram (spHistData, spHistParams, varargin)
 %       cd/plot_horizontal_line.m
 %
 % Used by:
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
 

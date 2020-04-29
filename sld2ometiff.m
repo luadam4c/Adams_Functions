@@ -14,7 +14,12 @@ function tiffPaths = sld2ometiff (varargin)
 %                       of cell arrays of character vectors
 %
 % Arguments:
-%       varargin    - 'FileNumber': File number to convert
+%       varargin    - 'OutputFormat': output format
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'separated' - separated tiffs for each image plane
+%                       'stacked'   - stacked multi-plane tiffs
+%                   default == 'separated'
+%                   - 'FileNumber': File number to convert
 %                   must be a numeric scalar
 %                   default == []
 %                   - Any other parameter-value pair for TODO()
@@ -27,18 +32,19 @@ function tiffPaths = sld2ometiff (varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/extract_fileparts.m
 %       cd/locate_functionsdir.m
-%       ~/Adams_Functions/struct2arglist.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
 
 % File History:
 % 2019-09-09 Created by Adam Lu (adapted from https://docs.openmicroscopy.org/bio-formats/5.7.3/developers/matlab-dev.html)
-% 
+% 2020-03-31 Now defaults to the creation of multi-page tiffs ('stacked')
 
 %% Hard-coded parameters
+validOutputFormats = {'separated', 'stacked'};
 
 %% Default values for optional arguments
+outputFormatDefault = 'stacked';
 fileNumberDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,18 +56,18 @@ iP.FunctionName = mfilename;
 % iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'OutputFormat', outputFormatDefault, ...
+    @(x) any(validatestring(x, validOutputFormats)));
 addParameter(iP, 'fileNumber', fileNumberDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+outputFormat = validatestring(iP.Results.OutputFormat, validOutputFormats);
 fileNumber = iP.Results.fileNumber;
 
 % Keep unmatched arguments for the TODO() function
-% otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
+% otherArguments = iP.Unmatched;
 
 %% If not compiled, add directories to search path for required functions
 %   Note: If addpath is used, adding `if ~isdeployed` is important to 
@@ -77,7 +83,8 @@ end
 
 %% Preparation
 % Get all .sld files in the directory
-[~, fullPaths] = all_files('Extension', 'sld', 'Recursive', true);
+[~, fullPaths] = all_files('Extension', 'sld', 'Recursive', false, ...
+                            'ForceCellOutput', true);
 
 % Restrict the file paths if requested
 if ~isempty(fileNumber)
@@ -86,12 +93,19 @@ end
 
 %% Do the job
 % Convert each .sld file
-tiffPaths = cellfun(@sld2ometiff_helper, fullPaths, 'UniformOutput', false);
+tiffPaths = cellfun(@(a) sld2ometiff_helper(a, outputFormat), ...
+                    fullPaths, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function tiffPaths = sld2ometiff_helper(slidePath)
+function tiffPaths = sld2ometiff_helper(slidePath, outputFormat)
 %% Converts a .sld file to a directory of OME-TIFFs
+
+%% Hard-coded parameters
+outExtension = '.tiff';
+frameStr = 'frame';
+dimensionPlanes = 4;
+% TODO: outExtension = '.ome.tiff';
 
 % Print message
 fprintf('Converting %s to TIFFs ...\n', slidePath);
@@ -99,7 +113,7 @@ fprintf('Converting %s to TIFFs ...\n', slidePath);
 % Decide on an output directory for the OME-TIFFs
 outDirPath = extract_fileparts(slidePath, 'pathbase');
 
-% Decide on an output directory for the OME-TIFFs
+% Extract the file base for the slidebook file
 slideBase = extract_fileparts(slidePath, 'base');
 
 % Make sure that directory exists
@@ -126,29 +140,98 @@ nFrames = reader1.getImageCount();
 % Read in the OME metadata stored
 omeMeta = reader1.getMetadataStore();
 
-% Create file bases for the OME-TIFF files
-tiffFileBases = create_labels_from_numbers(1:nFrames, ...
-                                    'Prefix', [slideBase, '_frame'], ...
-                                    'Suffix', '.ome.tiff');
+% Create frame numbers
+frameNumbers = transpose(1:nFrames);
 
-% Create full paths for the OME-TIFF files
-tiffPaths = fullfile(outDirPath, tiffFileBases);
+switch outputFormat
+    case 'separated'
+        % Create file bases for the OME-TIFF files
+        tiffFileBases = create_labels_from_numbers(frameNumbers, ...
+                            'Prefix', [slideBase, '_', frameStr], ...
+                            'Suffix', outExtension);
 
-% Read and save each frame
-arrayfun(@(x) read_then_save(reader1, x, tiffPaths{x}, omeMeta), 1:nFrames);
+        % Create full paths for the OME-TIFF files
+        tiffPaths = fullfile(outDirPath, tiffFileBases);
+
+        % Read and save each frame
+        arrayfun(@(x) read_then_save(reader1, x, tiffPaths{x}, omeMeta), ...
+                frameNumbers);
+    case 'stacked'
+        % Create a full path for the OME-TIFF file
+        tiffPaths = fullfile(outDirPath, [slideBase, outExtension]);
+
+        % Read each frame
+        allFramesCell = arrayfun(@(i) bfGetPlane(reader1, i), frameNumbers, ...
+                                'UniformOutput', false);
+
+        % Concatenate along the dimension for multiple image planes
+        allFrames = cat(dimensionPlanes, allFramesCell{:});
+
+        % Save the frames as a stacked TIFF file
+        % https://www.mathworks.com/help/matlab/ref/tiff.html
+        % https://www.awaresystems.be/imaging/tiff/tifftags/baseline.html
+        tagStruct.Photometric = Tiff.Photometric.MinIsBlack;
+        tagStruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+        tagStruct.Compression = Tiff.Compression.None;
+        tagStruct.SampleFormat = Tiff.SampleFormat.UInt;
+        tagStruct.BitsPerSample = 16;
+        tagStruct.SamplesPerPixel = 1;
+        tagStruct.RowsPerStrip = 1024;
+        tagStruct.ImageLength = size(allFrames, 1);
+        tagStruct.ImageWidth = size(allFrames, 2);
+        save_as_tiff(allFrames, tiffPaths, tagStruct);
+
+        % Save the frames as a stacked OME-TIFF file
+        % TODO: bfsave(allFrames, tiffPaths, 'metadata', omeMeta);
+    otherwise
+        error('outputFormat unrecognized!');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function read_then_save(reader, iFrame, tiffPath, omeMeta)
+function frame = read_then_save(reader, iFrame, tiffPath, omeMeta)
 % Read a frame and save it
 
 % Read the frame
 frame = bfGetPlane(reader, iFrame);
 
-% Save the frame
-% bfsave(frame, tiffPath, 'metadata', omeMeta);
-% bfsave(frame, tiffPath);
+% Save the frame as a TIFF file
 imwrite(frame, tiffPath);
+
+% Save the frame as an OME-TIFF file
+% TODO: bfsave(frame, tiffPath, 'metadata', omeMeta);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function save_as_tiff (imgData, tiffPath, tagStruct)
+%% Save image data as a TIFF file
+% TODO: Pull out as its own function
+%
+% File History:
+% Adapted from https://www.mathworks.com/matlabcentral/fileexchange/35684-multipage-tiff-stack
+
+% Count the number of planes
+nPlanes = size(imgData, 4);
+
+% Create a new Tiff object
+tiffObj = Tiff(tiffPath, 'w');
+
+% Write all planes
+for iPlane = 1:nPlanes
+    % Set the tag info for this image plane
+    tiffObj.setTag(tagStruct);
+
+    % Write the data for this image plane
+    tiffObj.write(imgData(:, :, :, iPlane));
+
+    % Create a new image directory for the next plane
+    if iPlane ~= nPlanes
+       tiffObj.writeDirectory();
+    end
+end
+
+% Close the Tiff object
+tiffObj.close();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

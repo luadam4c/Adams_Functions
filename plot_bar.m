@@ -54,6 +54,9 @@ function handles = plot_bar (val, varargin)
 %                       'vertical'   - vertical bars
 %                       'horizontal' - horizontal bars
 %                   default == 'vertical'
+%                   - 'BarWidth': relative bar width
+%                   must be a numeric scalar
+%                   default == 0.8
 %                   - 'GroupStyle': bar group style
 %                   must be recognizable as the 'style' parameter of the 
 %                       built-in bar() function
@@ -221,8 +224,8 @@ function handles = plot_bar (val, varargin)
 %       cd/m3ha_compute_and_compare_lts_statistics.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
-%       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/plot_struct.m
 %       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m
@@ -253,6 +256,7 @@ function handles = plot_bar (val, varargin)
 % 2019-12-18 Added 'GroupStyle' as an optional argument
 % 2019-12-18 Added 'LegendLocation' as an optional argument
 % 2019-12-18 Added 'ColumnLabels' as an optional argument
+% 2020-02-07 Added 'BarWidth' as an optional argument
 % TODO: Make sure there are enough ticks for the labels!
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 % TODO: Finish implementation of 'PhaseVectors' as in plot_tuning_curve
@@ -273,6 +277,7 @@ highDefault = [];
 forceVectorAsRowDefault = false;
 reverseOrderDefault = false;        % don't reverse order by default
 barDirectionDefault = 'vertical';
+barWidthDefault = 0.8;
 groupStyleDefault = 'grouped';
 cIRelativeBarWidthDefault = 0.33;   % default bar width relative to separation
 cIBarWidthDefault = [];
@@ -344,6 +349,7 @@ addParameter(iP, 'ReverseOrder', reverseOrderDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'BarDirection', barDirectionDefault, ...
     @(x) any(validatestring(x, validBarDirections)));
+addParameter(iP, 'BarWidth', barWidthDefault);
 addParameter(iP, 'GroupStyle', groupStyleDefault);
 addParameter(iP, 'CIRelativeBarWidth', cIRelativeBarWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
@@ -439,6 +445,7 @@ high = iP.Results.high;
 forceVectorAsRow = iP.Results.ForceVectorAsRow;
 reverseOrder = iP.Results.ReverseOrder;
 barDirection = validatestring(iP.Results.BarDirection, validBarDirections);
+barWidth = iP.Results.BarWidth;
 groupStyle = iP.Results.GroupStyle;
 cIRelativeBarWidth = iP.Results.CIRelativeBarWidth;
 cIBarWidth = iP.Results.CIBarWidth;
@@ -724,17 +731,21 @@ switch barDirection
             % One sample per group, but the bar() function
             %   will automatically construe it as one group. 
             %   Therefore, plot a stacked grouped bar graph to do the trick
-            bars = bar(pValuesToPlot, diag(val), 'stacked', otherArguments{:});
+            bars = bar(pValuesToPlot, diag(val), barWidth, 'stacked', ...
+                        otherArguments{:});
         else
             % Just use the bar() function
-            bars = bar(pValuesToPlot, val, groupStyle, otherArguments{:});
+            bars = bar(pValuesToPlot, val, barWidth, groupStyle, ...
+                        otherArguments{:});
         end
     case 'horizontal'
         if oneSamplePerGroup && strcmp(groupStyle, 'grouped')
-            bars = barh(pValuesToPlot, diag(val), 'stacked', otherArguments{:});
+            bars = barh(pValuesToPlot, diag(val), barWidth, 'stacked', ...
+                        otherArguments{:});
         else
             % Just use the barh() function
-            bars = barh(pValuesToPlot, val, groupStyle, otherArguments{:});
+            bars = barh(pValuesToPlot, val, barWidth, groupStyle, ...
+                        otherArguments{:});
         end
     otherwise
         error('barDirection unrecognized!');
@@ -761,7 +772,11 @@ if ~isempty(pTickLabels)
     end
 
     % Extract the corresponding tick labels
-    pTickLabelsNeeded = match_positions(pTickLabels, pValues, pTicksNow);
+    if numel(pTickLabels) == numel(pValues)
+        pTickLabelsNeeded = match_positions(pTickLabels, pValues, pTicksNow);
+    else
+        pTickLabelsNeeded = pTickLabels;
+    end
 
     % Plot the tick locations
     switch barDirection

@@ -12,10 +12,8 @@ function violins = plot_violin (data, varargin)
 %       plot_violin(data, 'MedianColorMap', 'GreenYellow')
 %
 % Outputs:
-%       handles     - handles to plotted objects for the data
-%                       violins
-%                       medianScatters
-%                   specified as a structure
+%       violins     - handles to plotted violins objects
+%                   specified as a Violin object array
 %
 % Arguments:
 %       data        - data table or data vectors
@@ -171,14 +169,39 @@ rangeValues = apply_iteratively(@max, dataValues) - ...
                 apply_iteratively(@min, dataValues);
 
 %% Do the job
+% Return if there is no data
+if isempty(dataValues)
+    violins = Violin.empty;
+    return
+end
+
 % Compute the bandwidth for the kernel density estimates
 bandWidth = relativeBandWidth * rangeValues;
+
+% Make sure the bandwidth is nonzero
+if bandWidth == 0
+    bandWidth = 1e-9;
+end
 
 % Plot a violin plot
 % violinplot(dataValues, xTickLabels);
 violins = violinplot(dataValues, xTickLabels, 'BandWidth', bandWidth, ...
                         otherArguments{:});
-
+%{
+while bandWidth > bandWidth * 10 ^ -2
+    try
+        violins = violinplot(dataValues, xTickLabels, 'BandWidth', bandWidth, ...
+                                otherArguments{:});
+        break
+    catch
+        relativeBandWidth = relativeBandWidth / 10;
+        fprintf('Warning: Relative bandwidth changed to %g!\n', relativeBandWidth);
+        bandWidth = bandWidth / 10;
+        clf;
+    end
+end
+%}
+                        
 % Apply the color map
 for iGroup = 1:nGroups
     violins(iGroup).ViolinColor = colorMap(iGroup, :);

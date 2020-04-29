@@ -69,10 +69,12 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 % Requires:
 %       cd/compute_spike_histogram.m
 %       cd/create_error_for_nargin.m
+%       cd/find_troughs_from_peaks.m
 %       cd/movingaveragefilter.m
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/parse_multiunit.m
 
 % File History:
@@ -197,6 +199,7 @@ if isempty(spikeTimesMs)
     autoCorrParams.oscPeriod2Ms = 0;
     autoCorrParams.minOscPeriod2Bins = 0;
     autoCorrParams.maxOscPeriod2Bins = 0;
+
     autoCorrData.autoCorr = [];
     autoCorrData.acf = [];
     autoCorrData.acfFiltered = [];
@@ -419,32 +422,6 @@ function [averageDistance, halfPeriodsToMultiple] = ...
                                     'RelativeToHalfBase', true), values);
 
 averageDistance = mean(halfPeriodsToMultiple);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [ampTroughs, indTroughs] = find_troughs_from_peaks(vec, indPeaks)
-%% Finds troughs in between given peak indices
-
-nPeaks = numel(indPeaks);
-
-if nPeaks < 2
-    % No troughs
-    ampTroughs = [];
-    indTroughs = [];
-else
-    % Left peak indices
-    indLeftPeak = indPeaks(1:(end-1));
-
-    % Right peak indices
-    indRightPeak = indPeaks(2:end);
-
-    % Use the minimums in each interval
-    [ampTroughs, indTroughsRel] = ...
-        arrayfun(@(x, y) min(vec(x:y)), indLeftPeak, indRightPeak);
-
-    % Compute the original indices
-    indTroughs = arrayfun(@(x, y) x + y - 1, indTroughsRel, indLeftPeak);
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

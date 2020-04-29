@@ -34,7 +34,7 @@ function outFilePaths = create_simulation_output_filenames (nSims, varargin)
 %       cd/force_string_end.m
 %
 % Used by:
-%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_sim_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:

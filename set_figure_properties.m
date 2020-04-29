@@ -64,12 +64,14 @@ function fig = set_figure_properties (varargin)
 %       cd/isemptycell.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_fminsearch3.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_essential.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_show_net.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_simulate_population.m
 %       cd/parse_current_family.m
@@ -79,6 +81,7 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_chevron.m
 %       cd/plot_frame.m
 %       cd/plot_histogram.m
+%       cd/plot_measures.m
 %       cd/plot_raster.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_traces.m

@@ -3,20 +3,24 @@ function isCellVector = iscellvector (x)
 % Usage: isCellVector = iscellvector (x)
 % Explanation:
 %       Tests whether the input is a cell array of vectors
+%
 % Example(s):
 %       iscellvector({1:10, 2:20})
 %       iscellvector({magic(3), 2:20})
 %       iscellvector({'sets', 'lasts'})
 %       iscellvector({{1:10, 2:20}, {1:10, 2:20}})
+%
 % Outputs:
 %       isCellVector    - whether the input is a cell array of vectors
 %                       specified as a logical scalar
+%
 % Arguments:    
 %       x               - an input to check
 %
 % Requires:
 %
 % Used by:
+%       cd/all_ordered_pairs.m
 %       cd/compute_combined_data.m
 
 % File History:

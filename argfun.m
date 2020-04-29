@@ -28,9 +28,11 @@ function varargout = argfun (myFunction, varargin)
 %       cd/alternate_elements.m
 %       cd/annotation_in_plot.m
 %       cd/combine_abf_data.m
+%       cd/compute_activation_profile.m
 %       cd/compute_average_pulse_response.m
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
+%       cd/compute_derivative_trace.m
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
@@ -44,6 +46,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/convert_units.m
 %       cd/copy_into.m
 %       cd/create_average_time_vector.m
+%       cd/create_default_grouping.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_looped_params.m
 %       cd/create_pleth_EEG_movies.m
@@ -55,14 +58,19 @@ function varargout = argfun (myFunction, varargin)
 %       cd/find_window_endpoints.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_component_errors.m
+%       cd/m3ha_network_analyze_spikes.m
+%       cd/m3ha_network_plot_essential.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
-%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_sim_params.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure04.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_plot_violin.m
 %       cd/m3ha_network_change_params.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_network_raster_plot.m
@@ -73,6 +81,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
+%       cd/metabolismR01_extrapolate_burst_probability.m
 %       cd/parse_all_abfs.m
 %       cd/parse_assyst_swd.m
 %       cd/parse_atf_swd.m
@@ -81,6 +90,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
+%       cd/parse_peaks.m
 %       cd/parse_phase_info.m
 %       cd/parse_pulse_response.m
 %       cd/parse_spike2_mat.m
@@ -89,6 +99,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_error_bar.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
 %       cd/plot_measures.m
 %       cd/plot_raw_multiunit.m
@@ -96,8 +107,10 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m
-%       cd/test_var_difference.m
+%       cd/plot_tuning_curve.m
+%       cd/test_difference.m
 %       cd/transform_vectors.m
+%       cd/update_figure_for_corel.m
 %       cd/xolotl_add_current_injection.m
 
 % File History:

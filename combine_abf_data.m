@@ -149,6 +149,9 @@ sortOrder = vertcat(indEachPhase{:});
 % Compute the new siMs
 siMsSl = mean(siMsSorted);
 
+% Check if all vectors have the same number of rows
+% TODO
+
 % Concatenate vectors
 % TODO: Fix force_matrix.m to accept cell arrays of non-vectors with an
 % optional argument

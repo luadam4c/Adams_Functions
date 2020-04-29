@@ -20,11 +20,12 @@ function [dataValues, varargout] = force_data_as_matrix (data, varargin)
 %                       specified as a cell array of character vectors
 %
 % Arguments:
-%       data        - data table or data vectors
+%       data        - data vectors or data table or path to data table
 %                   Note: The dimension with fewer elements is taken as 
 %                           the parameter
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
+%                       or a string scalar or a character vector
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -38,7 +39,9 @@ function [dataValues, varargout] = force_data_as_matrix (data, varargin)
 %
 % Used by:
 %       cd/plot_chevron.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/plot_violin.m
+%       cd/test_difference.m
 
 % File History:
 % 2019-12-30 Moved from plot_chevron.m
@@ -63,7 +66,8 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'data', ...
-    @(x) validateattributes(x, {'numeric', 'cell', 'table'}, {'2d'}));
+    @(x) validateattributes(x, {'numeric', 'cell', 'table', ...
+                            'char', 'string'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default, ...
@@ -74,6 +78,12 @@ parse(iP, data, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
+% Read from file
+if ischar(data) || isstring(data)
+    data = readtable(data);
+end
+
+% Read from the table or matrix
 if istable(data)
     % Extract values
     dataValues = table2array(data);

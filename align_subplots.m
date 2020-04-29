@@ -23,6 +23,7 @@ function figHandle = align_subplots (figHandle, varargin)
 %       cd/argfun.m
 %       cd/create_subplots.m
 %       cd/extract_elements.m
+%       cd/remove_non_axes.m
 %
 % Used by:
 %       cd/update_figure_for_corel.m
@@ -62,6 +63,9 @@ otherArguments = iP.Unmatched;
 %% Do the job
 % Find all axes in the figure
 ax = findall(figHandle, 'type', 'axes');
+
+% Remove titles and labels
+ax = remove_non_axes(ax);
 
 % Count the number of axes
 nAx = numel(ax);

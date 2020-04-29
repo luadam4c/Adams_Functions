@@ -115,7 +115,9 @@ function output = compute_sampsizepwr (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/create_power_tables.m
+%       cd/metabolismR01_power_analysis.m
+%       ~/plethR01/plethR01_power_analysis.m
 
 % File History:
 % 2019-08-20 Created by Adam Lu
@@ -260,7 +262,7 @@ nVectors = max(nVecs);
 
 %% Do the job
 % Compute the sample size or power
-[nSamplesNeeded, statPower, pNull, pAlt, ...
+[nSamplesNeeded, statPower, pNull, pAlt, effectSize, ...
     nSamplesCon, nSamplesExp, statPowerDesired] = ...
     cellfun(@(a, b, c, d, e, f, g, h, i, j, k, l, m) ...
             compute_sampsizepwr_helper(a, b, c, d, e, f, ...
@@ -274,15 +276,16 @@ nVectors = max(nVecs);
 switch outputType
     case {'all', 'scalars'}
         % Convert back to numeric vectors
-        [nSamplesNeeded, statPower, pAlt, ...
+        [nSamplesNeeded, statPower, pAlt, effectSize, ...
             nSamplesCon, nSamplesExp, statPowerDesired] = ...
-            argfun(@cell2num, nSamplesNeeded, statPower, pAlt, ...
+            argfun(@cell2num, nSamplesNeeded, statPower, pAlt, effectSize, ...
                 nSamplesCon, nSamplesExp, statPowerDesired);
 
         % Place together in a table
         sampsizeTable = table(testType, dataCon, dataExp, ...
                     nSamplesCon, nSamplesExp, ...
-                    pNull, pAlt, statPower, statPowerDesired, nSamplesNeeded);
+                    pNull, pAlt, effectSize, ...
+                    statPower, statPowerDesired, nSamplesNeeded);
 
         % Save the table as a .mat file
         if saveMatFlag 
@@ -300,7 +303,8 @@ switch outputType
         if strcmpi(outputType, 'scalars')
             % Compute scalar variables
             meanNull = extract_elements(pNull, 'specific', 'Index', 1);
-            stdNull = extract_elements(pNull, 'specific', 'Index', 2);
+            stdNull = extract_elements(pNull, 'specific', 'Index', 2, ...
+                                        'ReturnNaN', true);
             meanAlt = pAlt;
 
             % Add scalar variables
@@ -328,7 +332,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [nSamplesNeeded, statPower, pNull, pAlt, ...
+function [nSamplesNeeded, statPower, pNull, pAlt, effectSize, ...
                 nSamplesCon, nSamplesExp, statPowerDesired] = ...
                 compute_sampsizepwr_helper (testType, dataCon, dataExp, ...
                                 meanNull, meanAlt, stdev, ...
@@ -455,6 +459,19 @@ end
 % Compute the number of samples needed to reach that statistical power desired
 nSamplesNeeded = sampsizepwr(testType, pNull, pAlt, statPowerDesired, [], ...
                             'Ratio', nSamplesRatio, otherArguments{:});
+
+% Compute effect size
+switch testType
+    case {'z', 't', 't2'}
+        effectSize = pAlt - pNull;
+    case 'var'
+        effectSize = pAlt / pNull;
+    case 'p'
+        % TODO: Not sure about this
+        effectSize = pAlt - pNull;
+    otherwise
+        error('testType unrecognized!');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

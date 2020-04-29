@@ -17,6 +17,9 @@ function figHandle = update_figure_for_corel (varargin)
 %       varargin    - 'AlignSubplots': whether to align subplots
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'BoxOn': whether to add axes outlines
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -53,6 +56,9 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'RemoveTexts': whether to remove all texts
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveCircles': whether to remove plots that are circles
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'XTickLocs': locations of X ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == 'suppress'
@@ -86,7 +92,14 @@ function figHandle = update_figure_for_corel (varargin)
 %
 % Requires:
 %       cd/align_subplots.m
+%       cd/argfun.m
 %       cd/create_error_for_nargin.m
+%       cd/extract_elements.m
+%       cd/extract_fields.m
+%       cd/force_column_cell.m
+%       cd/is_field.m
+%       cd/match_positions.m
+%       cd/remove_non_axes.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
 %
@@ -96,8 +109,11 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure05.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_violin.m
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_measures.m
+%       cd/plot_tuning_curve.m
 %       cd/plot_traces_spike2_mat.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 
@@ -114,6 +130,8 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-12-02 Fixed bug when there are multiple labels of the same type
 % 2019-12-04 Added 'RemoveTexts' as an optional argument
 % 2019-12-29 Added 'AlignSubplots' as an optional argument
+% 2020-02-06 Added 'BoxOn' as an optional argument
+% 2019-04-22 Added 'RemoveCircles' as an optional argument
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -130,6 +148,7 @@ annotationLineWidth = 1; % TODO
 %% Default values for optional arguments
 figHandleDefault = [];
 alignSubplotsDefault = false;   % don't align by default
+boxOnDefault = false;           % no box by default
 removeTicksDefault = false;     % don't remove by default
 removeXTicksDefault = false;    % don't remove by default
 removeYTicksDefault = false;    % don't remove by default
@@ -142,6 +161,7 @@ removeYLabelsDefault = false;   % don't remove by default
 removeTitlesDefault = false;    % don't remove by default
 removeLegendsDefault = false;   % don't remove by default
 removeTextsDefault = false;     % don't remove by default
+removeCirclesDefault = false;   % don't remove by default
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
 labelsFontSizeDefault = 8;
@@ -171,6 +191,8 @@ addOptional(iP, 'figHandle', figHandleDefault);
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'AlignSubplots', alignSubplotsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'BoxOn', boxOnDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveXTicks', removeXTicksDefault, ...
@@ -195,12 +217,18 @@ addParameter(iP, 'RemoveLegends', removeLegendsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveTexts', removeTextsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveCircles', removeCirclesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
-    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
-        'XTickLocs must be ''suppress'' or a numeric vector!'));
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
+                    isnumericvector(x) || iscellnumericvector(x), ...
+        ['XTickLocs must be ''suppress'' or a numeric vector', ...
+            'or a cell array of numeric vectors!']));
 addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
-    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
-        'YTickLocs must be ''suppress'' or a numeric vector!'));
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
+                    isnumericvector(x) || iscellnumericvector(x), ...
+        ['YTickLocs must be ''suppress'' or a numeric vector', ...
+            'or a cell array of numeric vectors!']));
 addParameter(iP, 'LabelsFontSize', labelsFontSizeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'AxisFontSize', axisFontSizeDefault, ...
@@ -220,6 +248,7 @@ addParameter(iP, 'ScatterMarkerSize', scatterMarkerSizeDefault, ...
 parse(iP, varargin{:});
 figHandle = iP.Results.figHandle;
 alignSubplots = iP.Results.AlignSubplots;
+boxOn = iP.Results.BoxOn;
 removeTicks = iP.Results.RemoveTicks;
 removeXTicks = iP.Results.RemoveXTicks;
 removeYTicks = iP.Results.RemoveYTicks;
@@ -232,6 +261,7 @@ removeYLabels = iP.Results.RemoveYLabels;
 removeTitles = iP.Results.RemoveTitles;
 removeLegends = iP.Results.RemoveLegends;
 removeTexts = iP.Results.RemoveTexts;
+removeCircles = iP.Results.RemoveCircles;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
 labelsFontSize = iP.Results.LabelsFontSize;
@@ -271,7 +301,10 @@ end
 
 %% Set figure properties
 % Might change sizes
-figHandle = set_figure_properties('FigHandle', figHandle, otherArguments);
+%   Note: Changing the renderer to 'painters' ensure graphics 
+%           are saved as vectors
+figHandle = set_figure_properties('FigHandle', figHandle, ...
+                        'Renderer', 'painters', otherArguments);
 
 % Update figure position units
 unitsOrig = get(figHandle, 'Units');
@@ -280,8 +313,14 @@ if ~strcmp(unitsOrig, units)
 end
 
 %% Set axes properties
-% Find all axes in the figure
+% Find all subplots in the figure
 ax = findall(figHandle, 'type', 'axes');
+
+% Remove axes for suplabel or suptitle
+ax = remove_non_axes(ax);
+
+% Sort the subplots in the figure
+ax = sort_subplots(ax);
 
 % Count the number of axes
 nAx = numel(ax);
@@ -305,7 +344,12 @@ if removeXTicks
 else
     % Change the x tick values
     if ~ischar(xTickLocs) || ~strcmpi(xTickLocs, 'suppress')
-        set(ax, 'XTick', xTickLocs);
+        if iscell(xTickLocs)
+            xTickLocs = force_column_cell(xTickLocs);
+            cellfun(@(a, b) update_ticks(a, 'x', b), num2cell(ax), xTickLocs);
+        else
+            arrayfun(@(a) update_ticks(a, 'x', xTickLocs), ax);
+        end
     end
 end
 
@@ -315,7 +359,12 @@ if removeYTicks
 else
     % Change the y tick values
     if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
-        set(ax, 'YTick', yTickLocs);
+        if iscell(yTickLocs)
+            yTickLocs = force_column_cell(yTickLocs);
+            cellfun(@(a, b) update_ticks(a, 'y', b), num2cell(ax), yTickLocs);
+        else
+            arrayfun(@(a) update_ticks(a, 'y', yTickLocs), ax);
+        end
     end
 end
 
@@ -361,6 +410,11 @@ if removeTexts
     delete(texts);
 end
 
+% Add axes outline if requested
+if boxOn
+    arrayfun(@(x) box(x, 'On'), ax);
+end
+
 % Set font
 set(ax, 'FontName', 'Arial');
 set(ax, 'FontSize', axisFontSize);
@@ -383,6 +437,15 @@ if ~isempty(plotLineWidth)
     lines = findobj(figHandle, 'Type', 'Line');
     plots = lines(arrayfun(@(x) is_plot(x), lines));
     set(plots, 'LineWidth', plotLineWidth);
+end
+
+% Remove markers
+if removeCircles
+    lines = findobj(figHandle, 'Type', 'Line');
+    markers = extract_fields(lines, 'Marker', 'UniformOutput', false);
+    lineStyles = extract_fields(lines, 'LineStyle', 'UniformOutput', false);
+    toRemove = strcmp(markers, 'o') & strcmp(lineStyles, 'none');
+    delete(lines(toRemove))
 end
 
 % Update marker sizes
@@ -429,9 +492,15 @@ if ~strcmp(unitsNow, unitsOrig)
     set(figHandle, 'Units', unitsOrig);
 end
 
+%% Change color coding
+% Find all objects in the figure
+objects = findall(figHandle);
+arrayfun(@convert_color_to_rgb, objects);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function isPlot = is_plot(lineObject)
+% TODO: Pull out as its own function
 
 % Get x, y and z data
 xData = lineObject.XData;
@@ -444,11 +513,87 @@ isPlot = numel(xData) > 2 || numel(yData) > 2 || numel(zData) > 2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function set_string_empty (textObject)
+% TODO: Pull out as its own function
 
 if iscell(textObject)
     cellfun(@set_string_empty, textObject);
 else
     textObject.String = '';
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function update_ticks (ax, axisType, tickLocs)
+%% Updated the tick locations for an axes
+%   Note: this function won't remove ticks if tickLocs is empty
+% TODO: Pull out as its own function
+
+if isempty(tickLocs)
+    return
+end
+
+% Decide on which ticks to update
+switch axisType
+    case 'x'
+        tickStr = 'XTick';
+        tickLabelStr = 'XTickLabel';
+        tickLabelModeStr = 'XTickLabelMode';
+    case 'y'
+        tickStr = 'YTick';        
+        tickLabelStr = 'YTickLabel';
+        tickLabelModeStr = 'YTickLabelMode';
+    otherwise
+        error('axisType unrecognized!');
+end
+
+% Update ticks and tick labels
+if strcmp(ax.(tickLabelModeStr), 'manual')
+    tickLocsOrig = get(ax, tickStr);
+    tickLabelsOrig = get(ax, tickLabelStr);
+    yTickLabels = match_positions(tickLabelsOrig, tickLocsOrig, ...
+                                    tickLocs);
+    set(ax, tickStr, tickLocs);
+    set(ax, tickLabelStr, yTickLabels);
+else
+    set(ax, tickStr, tickLocs);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function ax = sort_subplots (ax)
+%% Sort subplots of a figure in the same order as the subplot function
+% TODO: Pull out as its own function
+
+if isempty(ax)
+    return
+end
+
+% Extract outer positions
+outerPositions = arrayfun(@(x) x.OuterPosition, ax, 'UniformOutput', false);
+
+% Extract the left and bottom positions
+[leftPositions, bottomPositions] = ...
+    argfun(@(a) extract_elements(outerPositions, 'specific', 'Index', a), ...
+            1, 2);
+
+% Put together into a table
+subplotTable = table(ax, outerPositions, leftPositions, bottomPositions);
+
+% First sort the bottom positions by descending order, 
+%   then sort the left positions by ascending order
+subplotTable = sortrows(subplotTable, {'bottomPositions', 'leftPositions'}, ...
+                        {'descend', 'ascend'});
+
+% Extract the axes
+ax = subplotTable.ax;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function convert_color_to_rgb(object)
+% TODO: Convert all grayscale to rgb?
+
+if is_field(object, 'Color')
+    % object.Color
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

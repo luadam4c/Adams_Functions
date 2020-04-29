@@ -35,14 +35,15 @@ function [radiusSoma, radiusDend, lengthDend] = decide_on_geom_params (varargin)
 % File History:
 % 2019-12-26 Now uses first_matching_field.m
 % 2019-12-31 Moved from by plot_ball_stick.m
-% 
+% 2020-01-31 Added 'soma_radius', 'soma_diam', 'dend1_diam', 'dend1_L'
 
 %% Hard-coded parameters
-radiusSomaStr = 'radiusSoma';
-diamSomaStr = 'diamSoma';
+radiusSomaStr = {'radiusSoma', 'soma_radius'};
+diamSomaStr = {'diamSoma', 'soma_diam'};
 radiusDendriteStr = {'radiusDendrite', 'radiusDend'};
-diamDendriteStr = {'diamDendrite', 'diamDend'};
+diamDendriteStr = {'diamDendrite', 'diamDend', 'dend1_diam'};
 lengthDendriteStr = {'lengthDendrite', 'lengthDend', 'LDend'};
+lengthDendrite1Str = {'dend1_L'};
 
 %% Default values for optional arguments
 geomParamsDefault = struct.empty;
@@ -61,11 +62,11 @@ iP.FunctionName = mfilename;
 addOptional(iP, 'geomParams', geomParamsDefault, ...
     @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addOptional(iP, 'radiusSoma', radiusSomaDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 addOptional(iP, 'radiusDend', radiusDendDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 addOptional(iP, 'lengthDend', lengthDendDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -78,12 +79,20 @@ lengthDend = iP.Results.lengthDend;
 % Radius of soma
 if isempty(radiusSoma)
     if ~isempty(geomParams)
-        if isfield(geomParams, radiusSomaStr)
-            radiusSoma = geomParams.radiusSoma;
-        elseif isfield(geomParams, diamSomaStr)
-            radiusSoma = geomParams.diamSoma / 2;
-        else
-            error('No soma radius provided in geomParams!');
+        % Look for a somatic radius
+        radiusSoma = first_matching_field(geomParams, radiusSomaStr);
+
+        % If not found, look for a dendritic diameter
+        if isempty(radiusSoma)
+            % Look for a somatic diameter
+            diamSoma = first_matching_field(geomParams, diamSomaStr);
+
+            % Compute the somatic radius
+            if ~isempty(diamSoma)
+                radiusSoma = diamSoma ./ 2;
+            else
+                error('No soma radius provided in geomParams!');
+            end
         end
     else
         error('No soma radius passed in!');
@@ -121,7 +130,15 @@ if isempty(lengthDend)
 
         % If not found, return error
         if isempty(lengthDend)
-            error('No dendrite length provided in geomParams!');
+            % Look for a dendrite 1 length
+            %   Note: this assumes there are only two dendrites of equal length
+            lengthDend1 = first_matching_field(geomParams, lengthDendrite1Str);
+
+            if ~isempty(lengthDend1)
+                lengthDend = lengthDend1 .* 2;
+            else
+                error('No dendrite length provided in geomParams!');
+            end
         end
     else
         error('No dendrite length passed in!');

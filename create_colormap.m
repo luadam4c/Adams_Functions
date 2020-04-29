@@ -48,6 +48,7 @@ function colorMap = create_colormap (varargin);
 % 2019-08-04 Added 'ReverseOrder' as an optional argument
 % 2019-08-04 Added 'HighContrast' as an optional argument
 % 2019-10-07 Changed default colors
+% 2020-02-08 Fixed bug
 % 
 
 %% Hard-coded parameters
@@ -95,9 +96,9 @@ highContrast = iP.Results.HighContrast;
 
 %% Do the job
 if numel(nColors) > 1
-    colorMap = arrayfun(@create_colormap_helper, nColors, colorMapFunc, ...
-                        reverseOrder, highContrast, ...
-                        'UniformOutput', false);
+    colorMap = arrayfun(@(a) create_colormap_helper(a, colorMapFunc, ...
+                            reverseOrder, highContrast), ...
+                        nColors, 'UniformOutput', false);
 else
     colorMap = create_colormap_helper(nColors, colorMapFunc, ...
                                      reverseOrder, highContrast);

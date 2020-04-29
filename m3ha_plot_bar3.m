@@ -67,6 +67,7 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 % 2019-12-27 Moved from m3ha_plot_figure02.m
 % 2019-12-28 Added 'FigTypes' as an optional argument
 % 2019-12-28 Added 'FigHeight' and 'FigWidth' as optional arguments
+% 2020-02-08 Changed z axis label to title
 % 
 
 %% Hard-coded parameters
@@ -74,9 +75,9 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %% Default values for optional arguments
 rowsToPlotDefault = 'all';
 outFolderDefault = '';          % set later
-figWidthDefault = 6;
-figHeightDefault = 6;
-figTypesDefault = {'png', 'epsc2'};
+figWidthDefault = 4.3; %6;
+figHeightDefault = 4.3; %6;
+figTypesDefault = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -238,7 +239,10 @@ errorBarHorz = ...
             upper95ValueTransposed, upper95ValueTransposed);
 
 % Plot z axis label
-zlabel(measureTitle);
+% zlabel(measureTitle);
+
+% Plot title
+title(measureTitle);
 
 % Set x tick labels
 set(gca, 'XTickLabel', xTickLabels);
@@ -248,6 +252,25 @@ xtickangle(xTickAngle);
 
 % Set y tick labels
 set(gca, 'YTickLabel', yTickLabels);
+
+% Save the figure
+save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
+
+% Set z axis limits based on measureTitle
+switch measureTitle
+    case 'LTS probability'
+        zlim([0, 1]);
+    case 'LTS onset time (ms)'
+        zlim([0, 3000]);
+    case 'Spikes per LTS'
+        zlim([0, 6.5]);
+    case 'LTS maximum slope (V/s)'
+        zlim([0, 4]);
+    case 'LTS amplitude (mV)'
+        zlim([-75, 0]);
+    otherwise
+        % Do nothing
+end
 
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...

@@ -38,10 +38,12 @@ function varargout = find_first_match (candidates, array, varargin)
 %       cd/ismember_custom.m
 %
 % Used by:
+%       cd/compute_activation_profile.m
 %       cd/find_matching_files.m
 %       cd/match_positions.m
 %       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_calcium_imaging_traces.m

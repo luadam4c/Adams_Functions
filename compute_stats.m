@@ -10,6 +10,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'mean')
 %       compute_stats(data, 'std')
 %       compute_stats(data, 'stderr')
+%       compute_stats(data, 'err')
 %       compute_stats(data, 'lower95')
 %       compute_stats(data, 'upper95')
 %       compute_stats(data, 'cov')
@@ -29,6 +30,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %                       'average' or 'mean' - mean
 %                       'std'       - standard deviation
 %                       'stderr'    - standard error
+%                       'err'       - error margin
 %                       'lower95'   - lower bound of the 95% confidence interval
 %                       'upper95'   - upper bound of the 95% confidence interval
 %                       'cov'       - coefficient of variation
@@ -76,13 +78,16 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/compute_population_average.m
 %       cd/compute_sampsizepwr.m
 %       cd/m3ha_compute_statistics.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/select_similar_values.m
+%       cd/test_difference.m
 %
 % Related functions:
 %       cd/compute_weighted_average.m

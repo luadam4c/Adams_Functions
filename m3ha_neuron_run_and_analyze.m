@@ -36,14 +36,34 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'UseHH': whether to use HH channels
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'UseCvode': whether to use CVODE
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false if useHH is true; true otherwise
+%                   - 'SecondOrder': whether to use the Crank-Nicholson method
+%                               (otherwise the Backward-Euler method is default)
+%                       see https://neuron.yale.edu/neuron/static/new_doc/
+%                               simctrl/programmatic.html?#secondorder
+%                   must be one of the following:
+%                           0 - Implicit Backward Euler
+%                           1 - Crank-Nicholson 
+%                           2 - Crank-Nicholson with ion current correction
+%                   default == 0
 %                   - 'TauhMode': mode for simulating tauh
 %                   must be one of:
 %                       0 - original curve
 %                       1 - the same as taum
 %                       2 - 10 times smaller amplitude
 %                       3 - 10 times larger amplitude
+%                       4 - 1.5 times smaller amplitude
+%                       5 - 1.5 times larger amplitude
+%                       6 - 2 times smaller amplitude
+%                       7 - 2 times larger amplitude
 %                       consistent with IT.mod
 %                   default == 0
+%                   - 'NewParams': new parameter-value pairs that updates
+%                                   neuronParamsTable
+%                   must be a list of string-numeric pairs or a structure
+%                   default == none (empty struct)
 %                   - 'BuildMode': TC neuron build mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'passive' - insert leak channels only
@@ -327,6 +347,7 @@ function [errorStruct, hFig, simData] = ...
 % Requires:
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
 %       cd/argfun.m
+%       cd/arglist2struct.m
 %       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_maximum_numel.m
@@ -347,8 +368,8 @@ function [errorStruct, hFig, simData] = ...
 %       cd/load_params.m
 %       cd/log_arraytext.m
 %       cd/m3ha_extract_cell_name.m
-%       cd/m3ha_neuron_create_simulation_params.m
-%       cd/m3ha_neuron_create_TC_commands.m
+%       cd/m3ha_neuron_create_sim_params.m
+%       cd/m3ha_neuron_create_sim_commands.m
 %       cd/plot_fitted_traces.m
 %       cd/m3ha_select_raw_traces.m
 %       cd/parse_ipsc.m
@@ -358,6 +379,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/test_var_difference.m
+%       cd/update_param_values.m
 %
 % Used by:    
 %       cd/m3ha_fminsearch3.m
@@ -489,6 +511,10 @@ function [errorStruct, hFig, simData] = ...
 % 2020-01-05 - Fixed the determination of nSweeps when no realData is passed in
 % 2020-01-06 - Now makes the individual plot figure size proportional to the 
 %               number of rows and columns
+% 2020-03-12 - Added 'NewParams' as an optional argument
+% 2020-04-27 - Added 'UseCvode' as an optional argument
+% 2020-04-27 - Added 'SecondOrder' as an optional argument
+% 2019-04-28 - Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -511,7 +537,7 @@ ipscpWinOrig = [1000, 1300];    % window (ms) in which IPSC reaches peak
                                 %   not influenced by LTSs before 1300 ms
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 % Default time windows to fit
@@ -571,7 +597,10 @@ INAPH_COL_SIM = 28;
 %% Default values for optional arguments
 hFigDefault = '';               % no prior hFig structure by default
 useHHDefault = false;           % don't use HH channels by default
+useCvodeDefault = [];           % set later
+secondOrderDefault = 0;         % use Backward Euler by default
 tauhModeDefault = 0;            % regular tauh by default
+newParamsDefault = struct.empty;% don't update parameters by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate active responses by default
 columnModeDefault = [];         % set in m3ha_select_raw_traces.m
@@ -676,8 +705,14 @@ addRequired(iP, 'neuronParamsTableOrFile', ...
 addParameter(iP, 'HFig', hFigDefault);
 addParameter(iP, 'UseHH', useHHDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'UseCvode', useCvodeDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SecondOrder', secondOrderDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'TauhMode', tauhModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
+addParameter(iP, 'NewParams', newParamsDefault, ...
+    @(x) validateattributes(x, {'cell', 'struct'}, {'2d'}));
 addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
@@ -854,7 +889,10 @@ addParameter(iP, 'Lts2SweepErrorRatio', lts2SweepErrorRatioDefault, ...
 parse(iP, neuronParamsTableOrFile, varargin{:});
 hFig = iP.Results.HFig;
 useHH = iP.Results.UseHH;
+useCvode = iP.Results.UseCvode;
+secondOrder = iP.Results.SecondOrder;
 tauhMode = iP.Results.TauhMode;
+newParams = iP.Results.NewParams;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 columnMode = iP.Results.ColumnMode;
@@ -989,6 +1027,16 @@ else
     cellName = '';
 end
 
+% Replace with new parameters
+if ~isempty(newParams)
+    % Make sure it is a structure
+    newParams = arglist2struct(newParams);
+
+    % Update table with new parameters
+    neuronParamsTable = update_param_values(neuronParamsTable, newParams, ...
+                                            'IgnoreRange', true);
+end
+
 % Choose data files to compare against if cell name provided
 if isempty(fileNames)
     if strcmpi(simMode, 'passive') && ~isempty(fileNamesCpr)
@@ -1049,7 +1097,7 @@ if strcmpi(simMode, 'passive')
 
         % Import data
         [realDataCpr, sweepInfoCpr] = ...
-            m3ha_import_raw_traces(fileNames, 'ImportMode', 'passive', ...
+            m3ha_import_raw_traces(fileNames, 'ImportMode', simMode, ...
                         'Verbose', verbose, 'OutFolder', outFolder, ...
                         'ResponseWindow', cprWindow - timeToStabilize);
 
@@ -1104,7 +1152,7 @@ elseif strcmpi(simMode, 'active')
 
         % Import data
         [realDataIpscr, sweepInfoIpscr] = ...
-            m3ha_import_raw_traces(fileNames, 'ImportMode', 'active', ...
+            m3ha_import_raw_traces(fileNames, 'ImportMode', simMode, ...
                         'Verbose', verbose, 'OutFolder', outFolder, ...
                         'ResponseWindow', ipscrWindow - timeToStabilize);
 
@@ -1205,7 +1253,8 @@ end
 
 % Decide on x-axis limits for plotting
 if plotFlag
-    xLimits = decide_on_xlimits(fitWindow, baseWindow, simMode, plotMarkFlag);
+    xLimits = decide_on_xlimits(fitWindow, baseWindow, simMode, ...
+                                plotMarkFlag, timeToStabilize);
 end
 
 % Set figure visibility status
@@ -1246,12 +1295,13 @@ if strcmpi(outFilePath, 'auto')
 end
 
 % Create a table of simulation parameters
-simParamsTable = m3ha_neuron_create_simulation_params(neuronParamsTable, ...
+simParamsTable = m3ha_neuron_create_sim_params(neuronParamsTable, ...
                         'Prefix', expStr, 'OutFolder', outFolder, ...
                         'SaveParamsFlag', saveParamsFlag, ...
                         'JitterFlag', jitterFlag, 'NSims', nSweeps, ...
                         'CprWindow', cprWindow, 'IpscrWindow', ipscrWindow, ...
-                        'UseHH', useHH, 'TauhMode', tauhMode, ...
+                        'UseHH', useHH, 'UseCvode', useCvode, ...
+                        'SecondOrder', secondOrder, 'TauhMode', tauhMode, ...
                         'BuildMode', buildMode, 'SimMode', simMode, ...
                         'OutFilePath', outFilePath, ...
                         'Tstop', tstop, 'HoldPotential', holdPotential, ...
@@ -1266,7 +1316,7 @@ simParamsTable = m3ha_neuron_create_simulation_params(neuronParamsTable, ...
                         'HoldCurrentNoise', holdCurrentNoise);
 
 % Create simulation commands to be read by NEURON
-simCommands = m3ha_neuron_create_TC_commands(simParamsTable, ...
+simCommands = m3ha_neuron_create_sim_commands(simParamsTable, ...
                         'Prefix', expStr, 'OutFolder', outFolder, ...
                         'SaveSimCmdsFlag', saveSimCmdsFlag);
 
@@ -1289,13 +1339,13 @@ if verbose
 end
 
 % Run NEURON with the hocfile and attached simulation commands
-output = run_neuron(hocFile, 'SimCommands', simCommands, ...
+runOutput = run_neuron(hocFile, 'SimCommands', simCommands, ...
                     'Prefix', expStr, 'OutFolder', outFolder, ...
                     'DebugFlag', debugFlag, 'OnHpcFlag', onHpcFlag, ...
                     'SaveStdOutFlag', saveStdOutFlag);
 
 % Check if there are errors
-if any(output.hasError)
+if any(runOutput.hasError)
     fprintf('Simulations ran into error!\n');
     return
 end
@@ -1309,7 +1359,7 @@ if verbose
 end
 
 % Create an experiment identifier for title
-expStrForTitle = strrep(expStr, '_', '\_');
+expStrForTitle = replace(expStr, '_', '\_');
 
 % Load .out files created by NEURON
 % If recorded data provided (tVecs not empty at this point),
@@ -1902,7 +1952,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function xLimits = decide_on_xlimits (fitWindow, baseWindow, ...
-                                        simMode, plotMarkFlag)
+                                        simMode, plotMarkFlag, timeToStabilize)
 %% Decide on x-axis limits
 
 % Put all window endpoints together
@@ -1910,8 +1960,8 @@ allEndpoints = [baseWindow, fitWindow];
 allEndpoints = allEndpoints(:);
 
 if plotMarkFlag && strcmpi(simMode, 'active')
-%    xLimits = [2800, 4500];
-    xLimits = [2800, 4800];
+%    xLimits = timeToStabilize + [800, 2500];
+    xLimits = timeToStabilize + [800, 2800];
 else
     xLimits = [min(allEndpoints), max(allEndpoints)];
 end

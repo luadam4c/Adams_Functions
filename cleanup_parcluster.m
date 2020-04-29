@@ -1,4 +1,6 @@
 %% Cleans up parallel cluster, removing all jobs that contain crash dump files
+% Used by:
+%       cd/array_fun.m
 
 % File History:
 % 2019-03-13 Created

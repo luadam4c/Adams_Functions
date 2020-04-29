@@ -17,6 +17,9 @@
 
 % File History:
 % 2020-01-02 Modified from m3ha_plot_figure02.m
+% 2020-03-10 Reordered measuresOfInterest
+% 2020-03-10 Updated pharm labels
+% 2020-03-11 Now plots violin plots for all gIncr
 
 %% Hard-coded parameters
 % Flags
@@ -36,22 +39,33 @@ fitDirName = 'optimizer4gabab';
 % rankDirName = '20200103_ranked_singleneuronfitting0-94';
 % rankNumsToUse = 1:11;
 
-rankDirName = '20200131_ranked_singleneuronfitting0-102';
-rankNumsToUse = 1:11; % TODO
+% rankDirName = '20200131_ranked_singleneuronfitting0-102';
+% rankNumsToUse = 1:11;
+
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
+
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
+
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+
+rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+rankNumsToUse = 1:31;
 
 % Files
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
 
 % Analysis settings
 % Note: must be consistent with m3ha_compute_statistics.m
-measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
-                    'ltsConcavity'; 'ltsProminence'; ...
-                    'ltsWidth'; 'ltsOnsetTime'; 'ltsTimeJitter'; ...
-                    'ltsProbability'; 'spikesPerLts'; ...
-                    'spikeMaxAmp'; 'spikeMinAmp'; ...
-                    'spikeFrequency'; 'spikeAdaptation'
-                    'burstOnsetTime'; 'burstTimeJitter'; ...
-                    'burstProbability'; 'spikesPerBurst'};
+measuresOfInterest = {'ltsProbability'; 'ltsOnsetTime'; ...
+                        'spikesPerLts'; 'ltsAmplitude'; 'ltsMaxSlope'; ...
+                        'burstProbability'; 'burstOnsetTime'; 'spikesPerBurst'; ...
+                        'ltsConcavity'; 'ltsProminence'; 'ltsWidth'; ...
+                        'spikeMaxAmp'; 'spikeMinAmp'; ...
+                        'spikeFrequency'; 'spikeAdaptation'; ...
+                        'ltsTimeJitter'; 'burstTimeJitter'};
 dataMode = 1;           % data mode:
                         %   0 - all data
                         %   1 - all of g incr = 100%, 200%, 400% 
@@ -61,10 +75,10 @@ dataMode = 1;           % data mode:
 
 % Plot settings
 pharmAll = [1; 2; 3; 4];
-pharmLabelsLong = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
-                    '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
-pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
-                    '{\it d}-GAT3', '{\it d}-Dual'};
+pharmLabelsLong = {'{\it d}Control', '{\it d}GAT1-Block', ...
+                    '{\it d}GAT3-Block', '{\it d}Dual-Block'};
+pharmLabelsShort = {'{\it d}Con', '{\it d}GAT1', ...
+                    '{\it d}GAT3', '{\it d}Dual'};
 if dataMode == 0
     gIncrAll = [25; 50; 100; 200; 400; 800];
     gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
@@ -72,22 +86,25 @@ elseif dataMode == 1 || dataMode == 2
     gIncrAll = [100; 200; 400];
     gIncrLabels = {'100%', '200%', '400%'};
 end
-conditionLabel2D = 'pharm_1-4_gincr_200_rec';
-pCond2D = num2cell(pharmAll);
-gCond2D = 200;
-conditionLabel3D = 'pharm_1-4_gincr_all_rec';
+conditionLabels2D = [create_labels_from_numbers(gIncrAll, ...
+                        'Prefix', 'pharm_1-4_gincr_', 'Suffix', '_rec'); ...
+                    'pharm_1-4_gincr_pooled_rec'];
+pConds2D = repmat({num2cell(pharmAll)}, numel(gIncrAll) + 1, 1);
+gConds2D = [num2cell(gIncrAll); {gIncrAll}];
+conditionLabel3D = 'pharm_1-4_gincr_all';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 
-% violinFigHeight = 5;            % in centimeters
-% violinFigWidth = 3.4;           % in centimeters
-% violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
-% medianColor = rgb('GreenYellow');     % color of median circle
-% medianSize = 6;                % size of median circle in points
-% bar3FigHeight = 6;              % in centimeters
-% bar3FigWidth = 6;               % in centimeters
+% Note: Use the default in m3ha_plot_violin.m and m3ha_plot_bar3.m
+% violinFigHeight = 3;            % in centimeters
+% violinFigWidth = 3.4;             % in centimeters
+% violinRelativeBandWidth = 0.1;    % bandwidth relative to data range
+% medianColor = rgb('GreenYellow'); % color of median circle
+% medianSize = 6;                   % size of median circle in points
+% bar3FigHeight = 4.3;              % in centimeters
+% bar3FigWidth = 4.3;               % in centimeters
 
-figTypes = {'png', 'epsc2'};
+figTypes = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,9 +126,9 @@ rankPrefixes = create_labels_from_numbers(rankNumsToUse, ...
 cellsStr = [rankDirName, '_rank', create_label_from_sequence(rankNumsToUse)];
 
 % Update condition labels
-[conditionLabel2D, conditionLabel3D] = ...
+[conditionLabels2D, conditionLabel3D] = ...
     argfun(@(x) force_string_end(x, ['_', cellsStr]), ...
-            conditionLabel2D, conditionLabel3D);
+            conditionLabels2D, conditionLabel3D);
 
 % Find png files matching the rank prefixes
 [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'prefix', ...
@@ -127,30 +144,14 @@ swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'Verbose', false, ...
 
 %% Plot 2D violin plots
 if plotViolinPlotsFlag
-    % Construct stats table path
-    stats2dPath = fullfile(figure04Dir, strcat(conditionLabel2D, '_stats.mat'));
-
-    % Compute statistics if not done already
-    if ~isfile(stats2dPath)
-        % Compute statistics for all features
-        disp('Computing statistics for violin plots ...');
-        statsTable = m3ha_compute_statistics('SwpInfo', swpInfo, ...
-                                                'PharmConditions', pCond2D, ...
-                                                'GIncrConditions', gCond2D, ...
-                                                'DataMode', dataMode);
-
-        % Generate labels
-        conditionLabel = conditionLabel2D;
-        pharmLabels = pharmLabelsShort;
-
-        % Save stats table
-        save(stats2dPath, 'statsTable', 'pharmLabels', ...
-                            'conditionLabel', '-v7.3');
-    end
-
-    % Plot violin plots
-    m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest, ...
-                    'OutFolder', figure04Dir);
+    cellfun(@(conditionLabel2D, pCond2D, gCond2D) ...
+            m3ha_compute_and_plot_violin(figure04Dir, ...
+                    pharmLabelsShort, conditionLabel2D, ...
+                    'SwpInfo', swpInfo, 'DataMode', dataMode, ...
+                    'PharmConditions', pCond2D, 'GIncrConditions', gCond2D, ...
+                    'RowsToPlot', measuresOfInterest, ...
+                    'OutFolder', figure04Dir), ...
+            conditionLabels2D, pConds2D, gConds2D);
 end
 
 %% Plot 3D bar plots

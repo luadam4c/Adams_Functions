@@ -49,6 +49,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %
 % Used by:
 %       cd/atfwrite.m
+%       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_all_pulse_responses.m
 %       cd/create_default_grouping.m
@@ -59,16 +60,19 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/force_data_as_matrix.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_extract_component_errors.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m
 %       cd/plot_chevron.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_histogram.m
 %       cd/plot_table_parallel.m
 %       cd/plot_raster.m
@@ -79,6 +83,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/renamevars.m
 %       cd/save_all_zooms.m
+%       cd/test_difference.m
 %       cd/transpose_table.m
 
 % File History:

@@ -31,6 +31,7 @@
 %       cd/convert_to_char.m
 %       cd/copy_into.m
 %       cd/create_error_for_nargin.m
+%       cd/isemptycell.m
 %       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_decide_on_sweep_weights.m
 %       cd/m3ha_extract_component_errors.m
@@ -52,58 +53,44 @@
 % 2019-12-30 Added error param comparison across cells
 % 2020-01-03 Restricted fitting window
 % 2020-01-24 Now uses m3ha_decide_on_sweep_weights.m
+% 2020-04-28 Added useCvode
+% 2020-04-28 Added updateScriptsFlag
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
-plotIndividualFlag = false; %true;
-rankNeuronsFlag = false; %true;
-plotHistogramsFlag = false; %true;
-plotBarPlotFlag = false; %true;
-plotParamViolinsFlag = false; %true;
-plotErrorParamComparisonFlag = true;
-archiveScriptsFlag = false; %true;
+updateScriptsFlag = true;
+chooseBestParamsFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
+plotBarPlotFlag = true;
+plotErrorParamComparisonAllFlag = true;
+plotErrorParamComparisonSelectedFlag = true;
+archiveScriptsFlag = true;
 
 plotErrorHistoryFlag = false; %true;
 plotErrorComparisonFlag = false; %true;
 plotParamHistoryFlag = false; %true;
 
+% Not implemented
+plotParamViolinsFlag = false; %true;
+
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
 useHH = false;
+useCvode = false;
 buildMode = 'active';
 simMode = 'active';
-dataMode = 3;                       % data mode:
-                                    %   0 - all data
-                                    %   1 - all of g incr = 100%, 200%, 400% 
-                                    %   2 - same g incr but exclude 
-                                    %       cell-pharm-g_incr sets 
-                                    %       containing problematic sweeps
-                                    %   3 - all data but exclude 
-                                    %       cell-pharm-g_incr sets 
-                                    %       containing problematic sweeps
 columnMode = 1;                     % optimization mode:
                                     %   1 - across trials
                                     %   2 - across cells TODO
 rowModeAcrossTrials = 1;            % row mode when fitting across trials:
                                     %   1 - each row is a pharm condition
                                     %   2 - each row is a pharm, g incr pair
-attemptNumberAcrossTrials = 6;      % attempt number for across trials:
-                                    %   1 - Use 4 traces @ 200% gIncr 
-                                    %           for this data mode
-                                    %   2 - Use all traces @ 200% gIncr 
-                                    %           for this data mode
-                                    %   3 - Use all traces for this data mode
-                                    %   4 - Use 1 trace for each pharm x gIncr 
-                                    %           for this data mode
-                                    %   5 - Use 4 traces @ 400% gIncr 
-                                    %       for this data mode
-                                    %   6 - Same as 4 but prioritize least vHold
-                                    %   7 - Same as 1 but prioritize least vHold
-                                    %   8 - Same as 5 but prioritize least vHold
 
 % Directory names
-parentDirectoryTemp = '/media/adamX/m3ha';
+parentDirectory = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
@@ -122,7 +109,7 @@ rankSheetExtension = 'csv';
 %   Note: Should be consistent with singleneuronfitting78.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
-sweepWeights = [];              % set later
+sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
 errorWeights = [1; 6; 5; 1; 1];
 ltsFeatureWeights = errorWeights(3:5);  
                                 % weights for LTS feature errors
@@ -138,9 +125,14 @@ lts2SweepErrorRatio = sum(errorWeights(2:5)) / errorWeights(1);
                                 % ratio of LTS error to sweep error
 normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
 
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+
 % Fitting window
-ipscrWindow = [2000, 4800];     % only simulate up to that time
-fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
+ipscrWindow = timeToStabilize + [0, 2800];     % only simulate up to that time
+fitWindowIpscr = timeToStabilize + [1000, 2800];  
+                                % the time window (ms) where all 
                                 %   recorded LTS would lie
 
 %   Note: The following must be consistent with compute_single_neuron_errors.m
@@ -153,7 +145,7 @@ avgLtsSlopeErrorStr = 'avgLtsSlopeError';
 cellNameStr = 'cellName';
 
 % TODO: Make optional argument
-% outFolder = '20191227_ranked_singleneuronfitting0-90';
+% outFolderName = '20191227_ranked_singleneuronfitting0-90';
 % iterSetStr = 'singleneuronfitting0-90';
 % rankNumsToPlot = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
 % iterSetStr = 'singleneuronfitting0-90';
@@ -162,7 +154,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20191229_ranked_singleneuronfitting0-91';
+% outFolderName = '20191229_ranked_singleneuronfitting0-91';
 % iterSetStr = 'singleneuronfitting0-91';
 % rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 % dataMode = 2;
@@ -170,7 +162,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200102_ranked_singleneuronfitting0-94';
+% outFolderName = '20200102_ranked_singleneuronfitting0-94';
 % iterSetStr = 'singleneuronfitting0-94';
 % rankNumsToPlot = [1:6, 21, 36];
 % rankNumsToPlot = [1:6, 8, 10, 11, 13:18, 21, 22, 24, 27, 28, 36];
@@ -180,7 +172,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200103_ranked_singleneuronfitting0-94';
+% outFolderName = '20200103_ranked_singleneuronfitting0-94';
 % iterSetStr = 'singleneuronfitting0-94';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -188,7 +180,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200106_ranked_singleneuronfitting0-95';
+% outFolderName = '20200106_ranked_singleneuronfitting0-95';
 % iterSetStr = 'singleneuronfitting0-95';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -196,7 +188,7 @@ cellNameStr = 'cellName';
 % sweepWeights = [];
 % attemptNumberAcrossTrials = 3;
 
-% outFolder = '20200108_ranked_singleneuronfitting0-95';
+% outFolderName = '20200108_ranked_singleneuronfitting0-95';
 % iterSetStr = 'singleneuronfitting0-95';
 % rankNumsToPlot = 1:11;
 % dataMode = 3;
@@ -204,7 +196,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [];
 
-% outFolder = '20200123_ranked_singleneuronfitting0-97';
+% outFolderName = '20200123_ranked_singleneuronfitting0-97';
 % iterSetStr = 'singleneuronfitting0-97';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -212,7 +204,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200129_ranked_singleneuronfitting101';
+% outFolderName = '20200129_ranked_singleneuronfitting101';
 % rankNumsToPlot = 1:11;
 % rankNumsToPlot = [8, 18];
 % rankNumsToPlot = [8, 18, 20, 23, 24, 26, 27, 30, 31, 33, 35, 36];
@@ -223,41 +215,140 @@ cellNameStr = 'cellName';
 % paramDirNames = fullfile('best_params', ...
 %                         {'bestparams_20200126_singleneuronfitting101'});
 
-outFolder = '';
+% outFolderName = '20200131_ranked_singleneuronfitting0-102';
+% iterSetStr = 'singleneuronfitting0-102';
+% rankNumsToPlot = 1:11;
+% dataMode = 3;
+% attemptNumberAcrossTrials = 3;
+% sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
+% errorWeights = [1; 6; 5; 1; 1];
+
+% outFolderName = '20200202_ranked_singleneuronfitting0-102';
+% iterSetStr = 'singleneuronfitting0-102';
+% rankNumsToPlot = 1:11;
+% dataMode = 2;
+% attemptNumberAcrossTrials = 3;
+% sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
+% errorWeights = [1; 6; 5; 1; 1];
+
+% outFolderName = '20200203_ranked_manual_singleneuronfitting0-102';
+% iterSetStr = 'manual_singleneuronfitting0-102';
+% rankNumsToPlot = 1:11;
+% dataMode = 2;
+% attemptNumberAcrossTrials = 3;
+% sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
+% errorWeights = [1; 6; 5; 1; 1];
+
+% outFolderName = '20200203_ranked_manual_singleneuronfitting0-102';
+% iterSetStr = 'manual_singleneuronfitting0-102';
+% rankNumsToPlot = [1, 2, 4, 7, 10];            % old best-fitted
+% rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33]; % mistake
+% rankNumsToPlot = [1, 2, 4:10, 12:25, 29, 33]; % old well-fitted
+% rankNumsToPlot = [2, 7, 10, 12, 20];      % old well-fitted, good response, not from D101310
+% rankNumsToPlot = [7, 10, 22, 33];         % old well-fitted, from curve-fitted geometry
+% rankNumsToPlot = [1:2, 4:10, 12:25];      % new well-fitted
+% dataMode = 2;
+% attemptNumberAcrossTrials = 3;
+% sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
+% errorWeights = [1; 6; 5; 1; 1];
+% paramDirNames = fullfile('best_params', ...
+%                         'bestparams_20200203_manual_singleneuronfitting0-102');
+% errorParamXTicks = 6:6:36;
+% rankYTickLocs = [1, 8, 15, 22, 29, 36];
+% selectedXTicks = [1, 25];
+
+% outFolderName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToPlot = 1:23;                  % new well-fitted
+% rankNumsToPlot = [1:3, 6, 9];               % best-fitted
+% iterSetStr = 'manual_singleneuronfitting0-102';
+% dataMode = 2;
+% attemptNumberAcrossTrials = 3;
+
+outFolderName = '20200429_ranked_manual_singleneuronfitting0-102';
+rankNumsToPlot = 1:23;
+iterSetStr = 'manual_singleneuronfitting0-102';
+dataMode = 2;                       % data mode:
+                                    %   0 - all data
+                                    %   1 - all of g incr = 100%, 200%, 400% 
+                                    %   2 - same g incr but exclude 
+                                    %       cell-pharm-g_incr sets 
+                                    %       containing problematic sweeps
+                                    %   3 - all data but exclude 
+                                    %       cell-pharm-g_incr sets 
+                                    %       containing problematic sweeps
+attemptNumberAcrossTrials = 3;      % attempt number for across trials:
+                                    %   1 - Use 4 traces @ 200% gIncr 
+                                    %           for this data mode
+                                    %   2 - Use all traces @ 200% gIncr 
+                                    %           for this data mode
+                                    %   3 - Use all traces for this data mode
+                                    %   4 - Use 1 trace for each pharm x gIncr 
+                                    %           for this data mode
+                                    %   5 - Use 4 traces @ 400% gIncr 
+                                    %       for this data mode
+                                    %   6 - Same as 4 but prioritize least vHold
+                                    %   7 - Same as 1 but prioritize least vHold
+                                    %   8 - Same as 5 but prioritize least vHold
+
 figTypes = {'png', 'epsc2'};
-rankNumsToPlot = 1:11;
-iterSetStr = 'singleneuronfitting0-102';
+% paramDirNames = fullfile('best_params', ...
+%                         {'bestparams_20191112_singleneuronfitting0', ...
+%                         'bestparams_20191112_singleneuronfitting1', ...
+%                         'bestparams_20191112_singleneuronfitting57', ...
+%                         'bestparams_20191120_singleneuronfitting60', ...
+%                         'bestparams_20191122_singleneuronfitting61', ...
+%                         'bestparams_20191123_singleneuronfitting62', ...
+%                         'bestparams_20191125_singleneuronfitting63', ...
+%                         'bestparams_20191129_singleneuronfitting72', ...
+%                         'bestparams_20191201_singleneuronfitting73', ...
+%                         'bestparams_20191203_singleneuronfitting74', ...
+%                         'bestparams_20191205_singleneuronfitting75', ...
+%                         'bestparams_20191211_singleneuronfitting76', ...
+%                         'bestparams_20191218_singleneuronfitting78', ...
+%                         'bestparams_20191219_singleneuronfitting85', ...
+%                         'bestparams_20191221_singleneuronfitting86', ...
+%                         'bestparams_20191225_singleneuronfitting90', ...
+%                         'bestparams_20191227_singleneuronfitting91', ...
+%                         'bestparams_20191230_singleneuronfitting92', ...
+%                         'bestparams_20191231_singleneuronfitting94', ...
+%                         'bestparams_20200103_singleneuronfitting95', ...
+%                         'bestparams_20200120_singleneuronfitting97', ...
+%                         'bestparams_20200124_singleneuronfitting99', ...
+%                         'bestparams_20200126_singleneuronfitting101', ...
+%                         'bestparams_20200129_singleneuronfitting102'});
 paramDirNames = fullfile('best_params', ...
-                        {'bestparams_20191112_singleneuronfitting0', ...
-                        'bestparams_20191112_singleneuronfitting1', ...
-                        'bestparams_20191112_singleneuronfitting57', ...
-                        'bestparams_20191120_singleneuronfitting60', ...
-                        'bestparams_20191122_singleneuronfitting61', ...
-                        'bestparams_20191123_singleneuronfitting62', ...
-                        'bestparams_20191125_singleneuronfitting63', ...
-                        'bestparams_20191129_singleneuronfitting72', ...
-                        'bestparams_20191201_singleneuronfitting73', ...
-                        'bestparams_20191203_singleneuronfitting74', ...
-                        'bestparams_20191205_singleneuronfitting75', ...
-                        'bestparams_20191211_singleneuronfitting76', ...
-                        'bestparams_20191218_singleneuronfitting78', ...
-                        'bestparams_20191219_singleneuronfitting85', ...
-                        'bestparams_20191221_singleneuronfitting86', ...
-                        'bestparams_20191225_singleneuronfitting90', ...
-                        'bestparams_20191227_singleneuronfitting91', ...
-                        'bestparams_20191230_singleneuronfitting92', ...
-                        'bestparams_20191231_singleneuronfitting94', ...
-                        'bestparams_20200103_singleneuronfitting95', ...
-                        'bestparams_20200120_singleneuronfitting97', ...
-                        'bestparams_20200124_singleneuronfitting99', ...
-                        'bestparams_20200126_singleneuronfitting101', ...
-                        'bestparams_20200129_singleneuronfitting102'});
+                        'bestparams_20200207_manual_singleneuronfitting0-102');
 
 % For plots
-errorParamXTicks = 6:6:36;
+rankYTickLocs = 1:4:33;
+decisionCutoff = 23.5;
+rankFigXLimits = [0, 3.5];
+rankFigWidth = 7.5;
+rankFigHeight = 8;
+selectedFigWidth = 10;
+selectedFigHeight = 6;
+
+errorParamXTicks = 1:4:33;
+selectedYLimits = {[8, 300]; [5, 400]; [1, 100]; ...
+                        [1e-6, 1e-4]; [-80, -60]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]};
+selectedYTicks = {[8, 150, 300]; [5, 200, 400]; [1, 50, 100]; ...
+                        [1e-6, 1e-5, 1e-4]; [-70]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]; ...
+                    [1e-9, 1e-1]; [1e-9, 1e-2]; [1e-9, 1e-2]; ...
+                        [1e-9, 1e-1]; [1e-9, 1e-2]};
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
+outFolder = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -289,18 +380,22 @@ otherArguments = iP.Unmatched;
 
 %% Preparation
 % Locate the home directory
-% parentDirectory = m3ha_locate_homedir;
-parentDirectory = parentDirectoryTemp;
+if isempty(parentDirectory)
+    parentDirectory = m3ha_locate_homedir;
+end
 
 % Locate the fit directory
 fitDirectory = fullfile(parentDirectory, fitDirName);
 
-% Decide on output folder
-if isempty(outFolder)
+% Decide on output folder name
+if isempty(outFolderName)
     % Create output folder name
     outFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
                             '_', defaultOutFolderStr, '_', iterSetStr);
+end
 
+% Decide on output folder
+if isempty(outFolder)
     % Create full path to output folder
     outFolder = fullfile(fitDirectory, outFolderName);
 end
@@ -312,8 +407,17 @@ check_dir(outFolder);
 rankBase = [iterSetStr, '_', rankSuffix];
 rankPathBase = fullfile(outFolder, rankBase);
 rankSheetPath = [rankPathBase, '.', rankSheetExtension];
+rankPathBaseOrig = [rankPathBase, '_orig'];
 
 paramViolinPathBase = [rankPathBase, '_params_violin'];
+paramViolinPathBaseOrig = [paramViolinPathBase, '_orig'];
+
+%% Make sure NEURON scripts are up to date in outFolder
+if updateScriptsFlag
+    % Display message
+    fprintf('Updating NEURON scripts ... \n');
+    update_neuron_scripts(fitDirectory, outFolder);
+end
 
 %% Choose the best parameters for each cell
 if chooseBestParamsFlag
@@ -329,18 +433,15 @@ if chooseBestParamsFlag
     % Decide on candidate parameters directory(ies)
     paramDirs = fullfile(fitDirectory, paramDirNames);
 
+    % Change to outFolder
+    cd(outFolder);
+
     %% Backup and compile
     % Display message
     fprintf('Backing up parameters ... \n');
 
     % Copy the candidate params directory(ies) over for backup
     copy_into(paramDirs, outFolder);
-
-    % Display message
-    fprintf('Compiling all .mod files ... \n');
-
-    % Compile or re-compile .mod files in the fitting directory
-    compile_mod_files(fitDirectory);
 
     %% Select recorded data
     % Display message
@@ -353,30 +454,36 @@ if chooseBestParamsFlag
     % Get all cell names to fit
     cellNamesToFit = cellInfo{cellIdsToFit, 'cellName'};
 
-    % Count the number of cells that were fitted 
-    nCellsToFit = numel(cellNamesToFit);
-
-    % Select the raw traces to import for each cell to fit
-    [fileNamesToFit, rowConditionsToFit] = ...
-        arrayfun(@(x) m3ha_select_raw_traces(x, 'ColumnMode', columnMode, ...
-                    'RowMode', rowModeAcrossTrials, ...
-                    'AttemptNumber', attemptNumberAcrossTrials, ...
-                    'SwpInfo', swpInfo, 'CellInfo', cellInfo), ...
-                cellIdsToFit, 'UniformOutput', false);
-
-    %% Find the best parameters for each cell
-    % Find all the possible initial parameters files for each cell to fit
+    % Find all the possible parameters files for each cell to fit
     [~, customInitPathsToFit] = ...
         cellfun(@(x) all_files('Directory', paramDirs, 'Keyword', x), ...
                                 cellNamesToFit, 'UniformOutput', false);
 
+    % Remove cells that don't have parameter files
+    toRank = ~isemptycell(customInitPathsToFit);
+    cellNamesToRank = cellNamesToFit(toRank);
+    cellIdsToRank = cellIdsToFit(toRank);
+    customInitPathsToRank = customInitPathsToFit(toRank);
+
+    % Select the raw traces to import for each cell to fit
+    [fileNamesToRank, rowConditionsToRank] = ...
+        arrayfun(@(x) m3ha_select_raw_traces(x, 'ColumnMode', columnMode, ...
+                    'RowMode', rowModeAcrossTrials, ...
+                    'AttemptNumber', attemptNumberAcrossTrials, ...
+                    'SwpInfo', swpInfo, 'CellInfo', cellInfo), ...
+                cellIdsToRank, 'UniformOutput', false);
+
+    %% Find the best parameters for each cell
+    % Count the number of cells that will be ranked
+    nCellsToRank = numel(cellNamesToRank);
+
     % Find the best parameters for each cell
-    for iCellToFit = nCellsToFit:-1:1
+    for iCellToRank = nCellsToRank:-1:1
         % Extract stuff for this cell
-        cellNameThis = cellNamesToFit{iCellToFit};
-        fileNamesThis = fileNamesToFit{iCellToFit};
-        rowConditionsThis = rowConditionsToFit{iCellToFit};
-        customInitPathsThis = customInitPathsToFit{iCellToFit};
+        cellNameThis = cellNamesToRank{iCellToRank};
+        fileNamesThis = fileNamesToRank{iCellToRank};
+        rowConditionsThis = rowConditionsToRank{iCellToRank};
+        customInitPathsThis = customInitPathsToRank{iCellToRank};
 
         % Display message
         fprintf('Choosing initial parameters for cell %s ... \n', cellNameThis);
@@ -394,7 +501,8 @@ if chooseBestParamsFlag
                 'PlotIndividualFlag', plotIndividualFlag, ...
                 'OutFolder', outFolder, 'FileNames', fileNamesThis, ...
                 'BuildMode', buildMode, 'SimMode', simMode, ...
-                'UseHH', useHH, 'RowConditionsIpscr', rowConditionsThis, ...
+                'UseHH', useHH, 'UseCvode', useCvode, ...
+                'RowConditionsIpscr', rowConditionsThis, ...
                 'IpscrWindow', ipscrWindow, ...
                 'FitWindowIpscr', fitWindowIpscr, ...
                 'SweepWeightsIpscr', sweepWeights, ...
@@ -488,6 +596,7 @@ if plotBarPlotFlag
 
     % Count the number of cells (number of rows)
     nCells = height(rankTable);
+    pLimits = 0.5 + [0, nCells];
 
     % Extract component errors
     [componentErrors, groupLabels] = m3ha_extract_component_errors(rankTable);
@@ -511,7 +620,9 @@ if plotBarPlotFlag
             'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
             'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
             'ColumnLabels', groupLabels, ...
-            'FigTitle', 'Total error separated by components');
+            'BarWidth', 1, 'PLimits', pLimits, ...
+            'FigTitle', 'Total error separated by components', ...
+            'PBoundaries', decisionCutoff);
 
     % Plot total error for verification
     subplot(ax(2));
@@ -520,10 +631,33 @@ if plotBarPlotFlag
             'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
             'PTicks', pTicks, ...
             'ColumnLabels', groupLabels, ...
-            'FigTitle', 'Total error');
+            'BarWidth', 1, 'PLimits', pLimits, ...
+            'FigTitle', 'Total error', ...
+            'PBoundaries', decisionCutoff);
+
+    % Save figure
+    save_all_figtypes(fig, rankPathBaseOrig, 'png');
+
+    % Create new figure
+    fig = set_figure_properties('Units', 'centimeters', ...
+                        'Width', rankFigWidth, 'Height', rankFigHeight, ...
+                        'AlwaysNew', true);
+
+    plot_bar(componentErrors, 'BarDirection', 'horizontal', ...
+            'ReverseOrder', true, 'GroupStyle', 'stacked', ...
+            'PLabel', 'Rank', 'ReadoutLabel', 'Error (dimensionless)', ...
+            'PTicks', pTicks, 'ColumnLabels', groupLabels, ...
+            'BarWidth', 1, 'PLimits', pLimits, ...
+            'ReadoutLimits', rankFigXLimits, ...
+            'FigTitle', 'Errors of Single Neuron Fits', ...
+            'PBoundaries', decisionCutoff);
+
+    % Update figure for CorelDraw
+    update_figure_for_corel(fig, 'YTickLocs', rankYTickLocs);
 
     % Save figure
     save_all_figtypes(fig, rankPathBase, figTypes);
+
 end
 
 %% Plot a parameters as violin plots
@@ -547,7 +681,7 @@ if plotParamViolinsFlag
 end
 
 %% Plot an error and parameter comparison plot
-if plotErrorParamComparisonFlag
+if plotErrorParamComparisonAllFlag || plotErrorParamComparisonSelectedFlag
     % Display message
     fprintf('Plotting error parameter comparison ... \n');
 
@@ -558,35 +692,80 @@ if plotErrorParamComparisonFlag
     [errorParamToPlot, errorParamLabels, ...
             errorParamYLimits, errorParamIsLog] = m3ha_decide_on_plot_vars;
 
-    % Create figure title and file name
-    errorParamFigTitle = ['Error & Parameter Comparison for all cells'];
-    errorParamFigName = strcat(rankPathBase, '_param_comparison_all');
+    % Decide on the errors and parameters to plot for CorelDraw
+    [errorParamToPlotForCorel, errorParamIsLogForCorel, ...       
+            errorParamYLimitsForCorel, errorParamLabelsForCorel] = ...
+        argfun(@(x) x(6:end), errorParamToPlot, errorParamIsLog, ...
+                errorParamYLimits, errorParamLabels);
 
-    % Plot error & parameter comparison
-    plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
-            'RowsToPlot', 'all', 'VarIsLog', errorParamIsLog, ...
-            'YLimits', errorParamYLimits, 'XTicks', errorParamXTicks, ...
-            'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
-            'FigTitle', errorParamFigTitle, 'FigTypes', figTypes, ...
-            'FigName', errorParamFigName);
+    if plotErrorParamComparisonAllFlag
+        % Create figure title and file name
+        errorParamFigTitle = ['Error & Parameter Comparison for all cells'];
+        errorParamFigName = strcat(rankPathBase, '_param_comparison_all');
 
-    % Create a rank string
-    rankStr = ['rank', create_label_from_sequence(rankNumsToPlot)];
+        % Plot error & parameter comparison
+        plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
+                'RowsToPlot', 'all', 'VarIsLog', errorParamIsLog, ...
+                'YLimits', errorParamYLimits, 'XTicks', errorParamXTicks, ...
+                'SubplotDimensions', [5, 5], ...
+                'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
+                'FigTitle', errorParamFigTitle, 'FigTypes', figTypes, ...
+                'FigName', errorParamFigName);
+    end
 
-    % Create figure title and file name
-    selectedFigTitle = ['Error & Parameter Comparison for cells with ranks ', rankStr];
-    selectedFigName = strcat(rankPathBase, '_param_comparison_', rankStr);
+    if plotErrorParamComparisonSelectedFlag
+        % Create a rank string
+        rankStr = ['rank', create_label_from_sequence(rankNumsToPlot)];
 
-    % Decide on x ticks
-    selectedXTicks = 1:numel(rankNumsToPlot);
+        % Create figure title and file name
+        selectedFigTitle = ['Error & Parameter Comparison ', ...
+                            'for cells with ranks ', rankStr];
+        selectedFigName = strcat(rankPathBase, '_param_comparison_', rankStr);
+        selectedFigNameOrig = strcat(selectedFigName, '_orig');
 
-    % Plot error & parameter comparison
-    plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
-            'RowsToPlot', rankNumsToPlot, 'VarIsLog', errorParamIsLog, ...
-            'YLimits', errorParamYLimits, 'XTicks', selectedXTicks, ...
-            'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
-            'FigTitle', selectedFigTitle, 'FigTypes', figTypes, ...
-            'FigName', selectedFigName);
+        % Plot error & parameter comparison
+        handles = ...
+            plot_table_parallel(rankTable, 'VarsToPlot', errorParamToPlot, ...
+                'RowsToPlot', rankNumsToPlot, 'VarIsLog', errorParamIsLog, ...
+                'YLimits', errorParamYLimits, ...
+                'SubplotDimensions', [5, 5], ...
+                'XLabel', 'Rank Number', 'YLabel', errorParamLabels, ...
+                'FigTitle', selectedFigTitle, 'FigTypes', 'png', ...
+                'FigName', selectedFigNameOrig);
+
+        % Create figure
+        fig = set_figure_properties('AlwaysNew', true);
+
+        % Plot error & parameter comparison
+        handles = ...
+            plot_table_parallel(rankTable, ...
+                'VarsToPlot', errorParamToPlotForCorel, ...
+                'RowsToPlot', rankNumsToPlot, ...
+                'VarIsLog', errorParamIsLogForCorel, ...
+                'YLimits', selectedYLimits, ...
+                'AxTitles', errorParamLabelsForCorel, ...
+                'SubplotDimensions', [4, 5], ...
+                'XLabel', 'suppress', 'YLabel', 'suppress');
+        
+        % Change marker sizes
+        lines = findobj(fig, 'Type', 'Line');
+        set(lines, 'MarkerSize', 2);
+
+        % Decide on x ticks
+        if numel(rankNumsToPlot) <= 5
+            selectedXTicks = 1:numel(rankNumsToPlot);
+        else
+            selectedXTicks = linspace(1, numel(rankNumsToPlot), 3);
+        end
+
+        % Update figure for CorelDraw
+        update_figure_for_corel(fig, 'Units', 'centimeters', ...
+            'Width', selectedFigWidth, 'Height', selectedFigHeight, ...
+            'XTickLocs', selectedXTicks, 'YTickLocs', selectedYTicks);
+
+        % Save figure
+        save_all_figtypes(fig, selectedFigName, figTypes);
+    end
 end
 
 % Archive all scripts for this run
@@ -657,6 +836,13 @@ else
 end
 
                         'bestparams_20191231_singleneuronfitting93', ...
+
+% Update ticks
+ax = handles.ax;
+for i = 6:20
+    subplot(ax(i));
+    yticks([1e-7, 1e-2]);
+end
 
 %}
 

@@ -3,13 +3,17 @@ function outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 % Usage: outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 % Explanation:
 %       TODO
+%
 % Example:
 %       TODO
+%
 % Side Effects:
 %       TODO
+%
 % Outputs:
 %       outputTable - combined table
 %                   specified as a 2-D table
+%
 % Arguments:    
 %       inputFileNames  - input spreadsheet file names
 %                       must be a cell array of strings or character arrays
@@ -30,7 +34,7 @@ function outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 % File History:
 % 2018-05-15 Created by Adam Lu
 % 2018-12-26 Turned 'OutputFileName' into an optional argument
-% 
+% TODO: Use apply_over_cells.m
 
 %% Hard-coded parameters
 

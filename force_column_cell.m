@@ -64,6 +64,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/atfwrite.m
 %       cd/all_dependent_functions.m
 %       cd/combine_data_from_same_slice.m
+%       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_sampsizepwr.m
 %       cd/combine_swd_sheets.m
@@ -82,7 +83,10 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/match_format_vector_sets.m
+%       cd/movingaveragefilter.m
 %       cd/parse_atf_swd.m
 %       cd/parse_current_family.m
 %       cd/parse_iox.m
@@ -91,7 +95,9 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/parse_pulse_response.m
 %       cd/plot_all_abfs.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_measures.m
 %       cd/plot_repetitive_protocols.m
+%       cd/plot_selected.m
 %       cd/plot_struct.m
 %       cd/plot_vertical_line.m
 %       cd/plot_vertical_shade.m
@@ -100,8 +106,10 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/run_neuron.m
 %       cd/save_all_zooms.m
 %       cd/struct2arglist.m
+%       cd/test_difference.m
 %       cd/test_normality.m
 %       cd/test_var_difference.m
+%       cd/update_figure_for_corel.m
 %       cd/vertcat_spreadsheets.m
 
 % File History:

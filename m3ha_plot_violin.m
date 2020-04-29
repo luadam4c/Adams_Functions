@@ -17,6 +17,10 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %       statsPath  - path to a .mat file containing the variables:
 %                       statsTable - statistics table 
 %                                       returned by m3ha_compute_statistics.m
+%                           must have these columns:
+%                               measureTitle
+%                               measureStr
+%                               allValues
 %                       pharmLabels
 %                       conditionLabel
 %                   must be a string scalar or a character vector
@@ -43,6 +47,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %                   - Any other parameter-value pair for plot_violin.m
 %
 % Requires:
+%       cd/argfun.m
 %       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
@@ -58,8 +63,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %       ~/Downloaded_Functions/Violinplot/violinplot.m
 %
 % Used by:
-%       cd/m3ha_plot_figure02.m
-%       cd/m3ha_plot_figure04.m
+%       cd/m3ha_compute_and_plot_violin.m
 %       cd/m3ha_simulate_population.m
 
 % File History:
@@ -77,9 +81,9 @@ medianSize = 6;                 % size of median circle in points
 %% Default values for optional arguments
 rowsToPlotDefault = 'all';
 outFolderDefault = '';          % set later
-figWidthDefault = 5;
-figHeightDefault = 3.4;
-figTypesDefault = {'png', 'epsc2'};
+figWidthDefault = 3.4;
+figHeightDefault = 3;
+figTypesDefault = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -160,30 +164,89 @@ allFigBases = combine_strings({allMeasureStrs, conditionLabel});
 % Create full path bases
 allFigPathBases = fullfile(outFolder, allFigBases);
 
+% Create a spreadsheet path for difference test results
+diffSheetPath = fullfile(outFolder, [conditionLabel, '_differences.csv']);
+diffSheetPathFirstThree = ...
+    fullfile(outFolder, [conditionLabel, '_differences_pharm1-3.csv']);
+diffSheetPathConGat1 = ...
+    fullfile(outFolder, [conditionLabel, '_differences_pharm1,2.csv']);
+diffSheetPathConGat3 = ...
+    fullfile(outFolder, [conditionLabel, '_differences_pharm1,3.csv']);
+diffSheetPathConDual = ...
+    fullfile(outFolder, [conditionLabel, '_differences_pharm1,4.csv']);
+
 %% Do the job
 % Plot all 2D violin plots
 disp('Plotting 2D violin plots ...');
-handles = cellfun(@(a, b, c) m3ha_plot_violin_helper(...
+[handles, diffStruct, diffStructFirstThree, ...
+        diffStructConGat1, diffStructConGat3, diffStructConDual] = ...
+    cellfun(@(a, b, c) m3ha_plot_violin_helper(...
                             a, violinRelativeBandWidth, ...
                             medianColor, medianSize, b, ...
                             pharmLabels, c, ...
                             figHeight, figWidth, ...
                             figTypes, otherArguments), ...
-                    allValues, allMeasureTitles, allFigPathBases);
+            allValues, allMeasureTitles, allFigPathBases);
+
+% Convert difference struct to a table
+[diffTable, diffTableFirstThree, ...
+        diffTableConGat1, diffTableConGat3, diffTableConDual] = ...
+    argfun(@(x) struct2table(x, 'AsArray', true, ...
+                            'RowNames', allMeasureStrs), ....
+            diffStruct, diffStructFirstThree, ...
+            diffStructConGat1, diffStructConGat3, diffStructConDual);
+[diffTable, diffTableFirstThree, ...
+        diffTableConGat1, diffTableConGat3, diffTableConDual] = ...
+    argfun(@(x) addvars(x, allMeasureTitles, allMeasureStrs, 'Before', 1, ...
+                        'NewVariableNames', {'measureTitle', 'measureStr'}), ...
+            diffTable, diffTableFirstThree, ...
+            diffTableConGat1, diffTableConGat3, diffTableConDual);
+
+% Save table
+writetable(diffTable, diffSheetPath);
+writetable(diffTableFirstThree, diffSheetPathFirstThree);
+writetable(diffTableConGat1, diffSheetPathConGat1);
+writetable(diffTableConGat3, diffSheetPathConGat3);
+writetable(diffTableConDual, diffSheetPathConDual);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function handles = m3ha_plot_violin_helper (allValues, relativeBandWidth, ...
-                                            medianColor, medianSize, ...
-                                            measureTitle, pharmLabels, ...
-                                            figPathBase, figHeight, figWidth, ...
-                                            figTypes, otherArguments)
+function [handles, diffStruct, diffStructFirstThree, ...
+            diffStructConGat1, diffStructConGat3, diffStructConDual] = ...
+            m3ha_plot_violin_helper (allValues, relativeBandWidth, ...
+                                        medianColor, medianSize, ...
+                                        measureTitle, pharmLabels, ...
+                                        figPathBase, figHeight, figWidth, ...
+                                        figTypes, otherArguments)
 
 % Hard-coded parameters
 MS_PER_S = 1000;
 xTickAngle = 320;
 
-% Create figure for conductance traces
+% Construct the pharm group names
+pharmNames = extractAfter(pharmLabels, '}');
+
+% Test whether groups are different
+diffStruct = test_difference(allValues, 'GroupNames', pharmNames, ...
+                                'IsPaired', true, 'DisplayAnova', false);
+
+% Test whether the first 3 groups are different
+diffStructFirstThree = ...
+    test_difference(allValues(1:3), 'GroupNames', pharmNames(1:3), ...
+                                'IsPaired', true, 'DisplayAnova', false);
+
+% Test whether each pair of groups are different
+diffStructConGat1 = ...
+    test_difference(allValues(1:2), 'GroupNames', pharmNames(1:2), ...
+                                'IsPaired', true, 'DisplayAnova', false);
+diffStructConGat3 = ...
+    test_difference(allValues([1, 3]), 'GroupNames', pharmNames([1, 3]), ...
+                                'IsPaired', true, 'DisplayAnova', false);
+diffStructConDual = ...
+    test_difference(allValues([1, 4]), 'GroupNames', pharmNames([1, 4]), ...
+                                'IsPaired', true, 'DisplayAnova', false);
+
+% Create figure
 fig = set_figure_properties('AlwaysNew', true);
 
 % Convert onset times from ms to seconds
@@ -212,6 +275,23 @@ violins = plot_violin(allValues, 'XTickLabels', pharmLabels, ...
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
+% Set y axis limits based on measureTitle
+switch measureTitle
+    case 'LTS probability'
+        ylim([0, 1]);
+    case 'LTS onset time (ms)'
+        ylim([0, 2000]);
+    case 'Spikes Per LTS'
+        ylim([0, 6.5]);
+    case 'LTS maximum slope (V/s)'
+        ylim([0, 5]);
+    case 'LTS amplitude (mV)'
+        ylim([-75, -45]);
+        yticks(-75:10:-45);
+    otherwise
+        % Do nothing
+end
+
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth, ...
@@ -236,6 +316,9 @@ handles.violins = violins;
 
 %{
 OLD CODE:
+
+% Construct the pharm group names
+pharmNames = extractAfter(pharmLabels, '-');
 
 %}
 

@@ -6,7 +6,7 @@ function vecs = force_matrix (vecs, varargin)
 %
 % Example(s):
 %       force_matrix({1:5, 1:3, 1:4})
-%       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftadjust')
+%       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftAdjust')
 %       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'none')
 %       force_matrix({1:5, magic(3)})
 %       force_matrix({{1:3, 1:3}, {1:3, 1:3}})
@@ -63,24 +63,32 @@ function vecs = force_matrix (vecs, varargin)
 % Used by:
 %       cd/alternate_elements.m
 %       cd/combine_abf_data.m
+%       cd/compute_activation_profile.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
+%       cd/compute_derivative_trace.m
 %       cd/compute_gabab_conductance.m
 %       cd/compute_relative_event_times.m
+%       cd/create_default_grouping.m
 %       cd/create_indices.m
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/detect_spikes_current_clamp.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
 %       cd/force_data_as_matrix.m
+%       cd/compute_pairwise_differences.m
 %       cd/compute_rms_error.m
 %       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_simulate_population.m
+%       cd/movingaveragefilter.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
+%       cd/plot_grouped_histogram.m
 %       cd/plot_measures.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_swd_histogram.m

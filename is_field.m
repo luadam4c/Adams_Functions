@@ -29,6 +29,7 @@ function isField = is_field (genStruct, candName, varargin)
 %       cd/first_matching_field.m
 %       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_simulate_population.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2019-12-30 Moved from first_matching_field.m

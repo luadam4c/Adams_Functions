@@ -126,7 +126,7 @@ if ~treatNaNsAsGroup && ~iscell(uniqueGroups)
     isNaNGroup = isnan(uniqueGroups);
 
     % Remove the last boundary if it is followed by a group of NaNs
-    if isNaNGroup(end)
+    if isNaNGroup(end) && ~isempty(boundaryValues)
         boundaryValues(end) = [];
     end
 

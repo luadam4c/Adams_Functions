@@ -1,7 +1,6 @@
 function handles = plot_traces (tVecs, data, varargin)
 %% Plots traces all in one place, overlapped or in parallel
-% Usage: [fig, subPlots, plotsData, plotsDataToCompare] = ...
-%               plot_traces (tVecs, data, varargin)
+% Usage: handles = plot_traces (tVecs, data, varargin)
 % Examples:
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'HorzBarWindow', [1.5, 2.5])
@@ -182,6 +181,9 @@ function handles = plot_traces (tVecs, data, varargin)
 %                                       the subplot order is 'bycolor'
 %                   must be a numeric array with 3 columns
 %                   default == set in decide_on_colormap.m
+%                   - 'ColorMapToCompare': color map for data to compare
+%                   must be a numeric array with 3 columns
+%                   default == 'k'
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
@@ -236,7 +238,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/find_window_endpoints.m
 %       cd/hold_off.m
 %       cd/hold_on.m
-%       cd/isemptycell.mplot_traces
+%       cd/isemptycell.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/islinestyle.m
@@ -255,7 +257,8 @@ function handles = plot_traces (tVecs, data, varargin)
 %
 % Used by:
 %       cd/m3ha_compute_gabab_ipsc.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_essential.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_plot_example_jitter.m.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_simulated_traces.m
@@ -310,8 +313,11 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2019-11-10 Fixed axes selection under non-'parallel' modes
 % 2019-11-17 Added 'FigSubTitles' as an optional argument
 % 2020-01-05 Added 'AlreadyRestricted' as an optional argument
+% 2020-01-30 Fixed the return of plotsData for parallel mode
+% 2020-02-06 Now allows yLimits to be a cell array in parallel mode
+% 2020-02-06 Added 'ColorMapToCompare' as an optional argument
+% 2020-04-09 Now allows yTickLocs to be updated in parallel mode
 % TODO: Add 'TraceNumbers' as an optional argument
-% TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
 %% Hard-coded parameters
@@ -365,6 +371,7 @@ traceLabelsDefault = '';        % set later
 yTickLocsDefault = [];          % set later
 yTickLabelsDefault = {};        % set later
 colorMapDefault = [];           % set later
+colorMapToCompareDefault = 'k'; % compare against black by default
 legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
 figSubTitlesDefault = {};       % set later
@@ -454,7 +461,7 @@ addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'YLimits', yLimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+    @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'LinkAxesOption', linkAxesOptionDefault, ...
     @(x) any(validatestring(x, validLinkAxesOptions)));
@@ -467,13 +474,17 @@ addParameter(iP, 'YLabel', yLabelDefault, ...
 addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
-    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
-        'YTickLocs must be ''suppress'' or a numeric vector!'));
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x) || ...
+                iscellnumericvector(x), ...
+        ['YTickLocs must be ''suppress'' or a numeric vector ', ...
+        ' or a cell array of numeric vectors!']));
 addParameter(iP, 'YTickLabels', yTickLabelsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
                 iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
-        'YTickLabels must be ''suppress'' or a cell array of character/string arrays!'));
+        ['YTickLabels must be ''suppress'' ', ...
+        'or a cell array of character/string arrays!']));
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'ColorMapToCompare', colorMapToCompareDefault);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
@@ -526,6 +537,7 @@ traceLabels = iP.Results.TraceLabels;
 yTickLocs = iP.Results.YTickLocs;
 yTickLabels = iP.Results.YTickLabels;
 colorMap = iP.Results.ColorMap;
+colorMapToCompare = iP.Results.ColorMapToCompare;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
@@ -633,6 +645,9 @@ switch colorMode
     otherwise
         error('colorMode unrecognized!');
 end
+
+% Decide on a colormap for data to compare
+colorMapToCompare = decide_on_colormap(colorMapToCompare, nPlots);
 
 if isempty(horzBarColorMap)
     horzBarColorMap = colorMap;
@@ -808,7 +823,7 @@ if iscell(xLimits)
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimitsThis, yLimits, linkAxesOption, ...
                         xLabel, yLabel, yLabelProvided, traceLabels, ...
-                        yTickLocs, yTickLabels, colorMap, ...
+                        yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                         legendLocation, figTitleThis, figSubTitles, ...
                         figHandle, figExpansion, figNumber, ...
                         figNameThis, figTypes, axHandles, ...
@@ -843,7 +858,7 @@ else
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
                         xLabel, yLabel, yLabelProvided, traceLabels, ...
-                        yTickLocs, yTickLabels, colorMap, ...
+                        yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                         legendLocation, figTitle, figSubTitles, ...
                         figHandle, figExpansion, figNumber, ...
                         figName, figTypes, axHandles, ...
@@ -874,7 +889,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                     xUnits, xLimits, yLimits, linkAxesOption, ...
                     xLabel, yLabel, yLabelProvided, traceLabels, ...
-                    yTickLocs, yTickLabels, colorMap, ...
+                    yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                     legendLocation, figTitle, figSubTitles, ...
                     figHandle, figExpansion, figNumber, figName, figTypes, ...
                     axHandles, nPlots, nRows, nColumns, nTracesPerPlot, ...
@@ -928,7 +943,9 @@ if isempty(xLimits)
 end
 
 % Initialize graphics object arrays for plots
-if numel(nTracesPerPlot) > 1
+if numel(nTracesPerPlot) > 1 || ...
+        strcmp(plotMode, 'parallel') && numel(nTracesPerPlot) == 1 && ...
+            nTracesPerPlot > 1
     plotsData = cell(nPlots, 1);
     plotsDataToCompare = cell(nPlots, 1);
 else
@@ -1040,8 +1057,15 @@ case {'overlapped', 'staggered'}
         dataThis = data{iPlot};
         dataToCompareThis = dataToCompare{iPlot};
 
+        % If nothing to plot, continue
+        if isempty(tVecsThis) && isempty(dataThis)
+            continue
+        end
+
         % Decide on the color for this plot
         colorThis = decide_on_this_color(colorMode, colorMap, ...
+                                        iPlot, nColumns);
+        colorToCompareThis = decide_on_this_color(colorMode, colorMapToCompare, ...
                                         iPlot, nColumns);
 
         % Get the number of colors for this plot
@@ -1049,7 +1073,7 @@ case {'overlapped', 'staggered'}
 
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompareThis)
-            p2 = plot(tVecsThis, dataToCompareThis, 'Color', 'k', ...
+            p2 = plot(tVecsThis, dataToCompareThis, 'Color', colorToCompareThis, ...
                         'LineStyle', lineStyleToCompare, otherArguments{:});
         end
         
@@ -1071,12 +1095,14 @@ case {'overlapped', 'staggered'}
         end
 
         % Store handles in array
-        if iscell(plotsData)
-            plotsData{iPlot} = p1;
-        else
-            plotsData(iPlot) = p1;
+        if ~isempty(p1)
+            if iscell(plotsData)
+                plotsData{iPlot} = p1;
+            else
+                plotsData(iPlot) = p1;
+            end
         end
-        if ~isempty(dataToCompareThis)
+        if ~isempty(dataToCompareThis) && ~isempty(p2)
             if iscell(plotsDataToCompare)
                 plotsDataToCompare{iPlot} = p2;
             else
@@ -1203,16 +1229,19 @@ case 'parallel'
         % Compute the number of vectors in dataThis
         nVectors = size(dataThis, 2);
 
-        % Set the default y-axis limits
-        if isempty(yLimits)
-            % Compute the y limits from both data and dataToCompare
-            yLimitsThis = ...
-                compute_axis_limits({dataThis, dataToCompareThis}, ...
-                                        'y', 'AutoZoom', autoZoom);                
-        elseif iscell(yLimits)
+        % Extract the y axis limits for this subplot
+        if iscell(yLimits)
             yLimitsThis = yLimits{iPlot};
         else
             yLimitsThis = yLimits;
+        end
+
+        % Set the default y-axis limits if not provided
+        if isempty(yLimitsThis)
+            % Compute the y limits from both data and dataToCompare
+            yLimitsThis = ...
+                compute_axis_limits({dataThis, dataToCompareThis}, ...
+                                        'y', 'AutoZoom', autoZoom);
         end
 
         % Compute a default horizontal bar y value
@@ -1242,6 +1271,8 @@ case 'parallel'
         % Decide on the color for this plot
         colorThis = decide_on_this_color(colorMode, colorMap, ...
                                         iPlot, nColumns);
+        colorToCompareThis = decide_on_this_color(colorMode, colorMapToCompare, ...
+                                        iPlot, nColumns);
 
         % Get the number of colors for this plot
         nColorsThis = size(colorThis, 1);
@@ -1249,13 +1280,16 @@ case 'parallel'
         % Make sure the color map is big enough
         if nColorsThis < nVectors
             colorThis = match_row_count(colorThis, nVectors);
+            colorToCompareThis = match_row_count(colorToCompareThis, nVectors);
         end
 
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iPlot})
-            plotsDataToCompare(iPlot) = ...
-                plot(tVecs{iPlot}, dataToCompare{iPlot}, 'Color', 'k', ...
+            pToCompare = ...
+                plot(tVecs{iPlot}, dataToCompare{iPlot}, 'Color', colorToCompareThis, ...
                         'LineStyle', lineStyleToCompare, otherArguments{:});
+        else
+            pToCompare = gobjects(1);
         end
 
         % Plot the data using the color map
@@ -1321,6 +1355,11 @@ case 'parallel'
             % set(axThis, 'TickLength', [0, 0]);
         end
 
+        % Set y tick locations if requested
+        if ~isempty(yTickLocs) && iscell(yTickLocs)
+            set(axThis, 'YTick', yTickLocs{iPlot});
+        end
+
         % Remove x tick labels except for the last row
         %   or if too many columns
         if nColumns > maxNColsForXTickLabels || ...
@@ -1359,6 +1398,11 @@ case 'parallel'
         else
             plotsData(iPlot) = p;
         end
+        if iscell(plotsDataToCompare)
+            plotsDataToCompare{iPlot} = pToCompare;
+        else
+            plotsDataToCompare(iPlot) = pToCompare;
+        end
     end
     
     % Create an overarching x-axis label
@@ -1374,8 +1418,12 @@ case 'parallel'
 
     % Create an overarching title
     if ~strcmpi(figTitle, 'suppress')
-        suptitle(figTitle);
-        % suplabel(figTitle, 't');
+        if nPlots > 1
+            suptitle(figTitle);
+            % suplabel(figTitle, 't');
+        else
+            title(figTitle);
+        end
     end
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);

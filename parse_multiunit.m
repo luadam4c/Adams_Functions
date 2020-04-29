@@ -653,7 +653,7 @@ resultsPath = fullfile(outFolder, [fileBase, resultsSuffix]);
 
 % Extract data only if results not provided
 if ~isfile(resultsPath)
-    toExtractData = false;
+    toExtractData = true;
 end
 
 % Extract data if needed
@@ -664,7 +664,7 @@ if toExtractData
     % Construct the .mat file expected
     [~, allMatPaths] = ...
         all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
-                    'SortBy', 'date', 'ForceCellOutput', true);
+                    'SortBy', 'datenum', 'ForceCellOutput', true);
 
     % Load or combine data
     if numel(allMatPaths) > 1
@@ -945,7 +945,7 @@ if plotCombinedFlag
     fprintf('Plotting a combined plot for %s ...\n', fileBase);    
 
     % Hard-Coded Parameters
-    iTraceToSample = 21;
+    iTraceToSample = min(21, height(parsedParams));
     MS_PER_S = 1000;
     vertBarWidth2Range = 1/10;
 

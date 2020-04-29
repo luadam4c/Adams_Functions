@@ -36,6 +36,10 @@ function varargout = find_matching_files (fileStrs, varargin)
 %                   - 'ExtractDistinct': whether to extract distinct parts
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ReturnEmpty': whether to return an empty string 
+%                                   if not matched
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -46,17 +50,20 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m
+%       cd/extract_subvectors.m
 %       cd/find_first_match.m
 %       cd/force_string_end.m
 %
 % Used by:
 %       cd/create_pleth_EEG_movies.m
+%       cd/create_power_tables.m
 %       cd/load_matching_sheets.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_traces_spike2_mat.m
 
@@ -65,6 +72,8 @@ function varargout = find_matching_files (fileStrs, varargin)
 % 2019-09-30 Now maintains character vectors as character vectors
 % 2019-10-15 Added 'ForceCellOutput' as an optional argument
 % 2019-12-20 Changed default extractDistinct to false
+% 2020-02-02 Added 'ReturnEmpty' as an optional argument
+% 2020-02-09 Fixed bug if file not found and returning empty
 % TODO: Add 'Delimiter' as an optional argument
 % TODO: 'MaxNum' not always 1
 % 
@@ -75,6 +84,7 @@ validPartTypes = {'prefix', 'keyword', 'suffix'};
 %% Default values for optional arguments
 partTypeDefault = 'keyword';
 extractDistinctDefault = false; % don't extract distinct parts by default
+returnEmptyDefault = false;
 forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -101,6 +111,8 @@ addParameter(iP, 'PartType', partTypeDefault, ...
     @(x) any(validatestring(x, validPartTypes)));
 addParameter(iP, 'ExtractDistinct', extractDistinctDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ReturnEmpty', returnEmptyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -108,6 +120,7 @@ addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
 parse(iP, fileStrs, varargin{:});
 partType = validatestring(iP.Results.PartType, validPartTypes);
 extractDistinct = iP.Results.ExtractDistinct;
+returnEmpty = iP.Results.ReturnEmpty;
 forceCellOutput = iP.Results.ForceCellOutput;
 
 % Keep unmatched arguments for the all_files() function
@@ -177,16 +190,26 @@ else
     % Find the first matching file
     indMatched = find_first_match(distinctPartsBase, fileBases, ...
                                         'MatchMode', partType);
-    if any(isnan(indMatched))
+
+    % Extract the corresponding files
+    if ~any(isnan(indMatched))
+        files = files(indMatched);
+        fullPaths = fullPaths(indMatched);
+    elseif ~returnEmpty
         error('Some files not matched!');
+    else
+        files = extract_subvectors(files, 'Indices', indMatched);
+        fullPaths = extract_subvectors(fullPaths, 'Indices', indMatched);
     end
-    files = files(indMatched);
-    fullPaths = fullPaths(indMatched);
 end
 
 % Extract the character array if it was one
 if wasChar && ~forceCellOutput
-    fullPaths = fullPaths{1};
+    if isempty(fullPaths)
+        fullPaths = '';
+    else
+        fullPaths = fullPaths{1};
+    end
 end
 
 % Get first output

@@ -40,6 +40,7 @@ function grouping = create_grouping_by_vectors (array, varargin)
 % Used by:
 %       cd/create_default_grouping.m
 %       cd/plot_swd_histogram.m
+%       cd/test_difference.m
 
 % File History:
 % 2018-12-27 Created by Adam Lu

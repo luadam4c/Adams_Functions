@@ -48,8 +48,8 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %       cd/run_neuron.m
 %       cd/match_format_vector_sets.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/m3ha_neuron_create_simulation_params.m
-%       cd/m3ha_neuron_create_TC_commands.m
+%       cd/m3ha_neuron_create_sim_params.m
+%       cd/m3ha_neuron_create_sim_commands.m
 %       cd/m3ha_plot_figure04.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_traces_spike2_mat.m

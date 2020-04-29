@@ -61,6 +61,7 @@ function output = run_neuron (hocFile, varargin)
 %       cd/compile_mod_files.m
 %       cd/decide_on_parpool.m
 %       cd/files2contents.m
+%       cd/is_in_parallel.m
 %       cd/isaninteger.m
 %       cd/ispositiveintegervector.m
 %       cd/force_column_cell.m
@@ -277,12 +278,17 @@ simStatus = zeros(nSims, 1);    % stores simulation statuses
 simStdOut = repmat({'No_Errors!'}, nSims, 1);     % stores simulation standard outputs
 timeTaken = zeros(nSims, 1);    % stores simulation times
 
-% Decide on the parallel Pool object, recreating it if necessary
-poolObj = decide_on_parpool('MaxNumWorkers', maxNumWorkers, ...
-                            'RenewParpoolFlag', renewParpoolFlag);
+% Only renew parallel pool if not already in a parallel loop
+if is_in_parallel
+    renewParpoolFlag = false;
+else
+    % Decide on the parallel Pool object, recreating it if necessary
+    poolObj = decide_on_parpool('MaxNumWorkers', maxNumWorkers, ...
+                                'RenewParpoolFlag', renewParpoolFlag);
 
-% Retrieve the number of workers
-numWorkers = poolObj.NumWorkers;
+    % Retrieve the number of workers
+    numWorkers = poolObj.NumWorkers;
+end
 
 % Create a counter for the number of simulations completed
 nSimsCompleted = 0;                         

@@ -1,11 +1,12 @@
 function [isNormal, pTable] = test_normality (data, varargin)
-%% Test whether set(s) of values are normally distributed
+%% Test whether each set of values is normally distributed
 % Usage: [isNormal, pTable] = test_normality (data, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       [a, b] = test_normality(randn(100, 1))
+%       [a, b] = test_normality(randn(100, 1) + 1)
 %       [a, b] = test_normality({randn(100, 1), rand(100, 1)})
 %
 % Outputs:
@@ -29,7 +30,8 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/test_var_difference.m
+%       cd/plot_tuning_curve.m
+%       cd/test_difference.m
 
 % File History:
 % 2019-09-01 Created by Adam Lu
@@ -98,8 +100,9 @@ pTable = table(pNormAvg, pNormLill, pNormAd, pNormJb);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function pNormLill = compute_pnorm_lill (x, sigLevel)
+%% Compute a p value using the Lilliefors test
 
-if numel(x) >= 4
+if sum(~isnan(x)) >= 4
     [~, pNormLill] = lillietest(x, 'Alpha', sigLevel);
 else
     pNormLill = NaN;
@@ -108,8 +111,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function pNormAd = compute_pnorm_ad (x, sigLevel)
+%% Compute a p value using the Anderson-Darling test
 
-if numel(x) >= 4
+if sum(~isnan(x)) >= 4
     [~, pNormAd] = adtest(x, 'Alpha', sigLevel);
 else
     pNormAd = NaN;
@@ -118,8 +122,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function pNormJb = compute_pnorm_jb (x, sigLevel)
+%% Compute a p value using the Jarque-Bera test
 
-if numel(x) >= 2
+if sum(~isnan(x)) >= 2
     [~, pNormJb] = jbtest(x, sigLevel);
 else
     pNormJb = NaN;

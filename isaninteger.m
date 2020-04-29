@@ -15,6 +15,7 @@ function isInteger = isaninteger (array)
 %       array       - an array to check
 %
 % Used by:
+%       cd/create_subplots.m
 %       cd/extract_elements.m
 %       cd/ispositiveintegerarray.m
 %       cd/ispositiveintegerscalar.m

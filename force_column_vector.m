@@ -74,8 +74,11 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/adjust_edges.m
 %       cd/annotation_in_plot.m
 %       cd/combine_variables_across_tables.m
+%       cd/compute_activation_profile.m
 %       cd/compute_centers_from_edges.m
 %       cd/compute_combined_trace.m
+%       cd/create_default_grouping.m
+%       cd/compute_derivative_trace.m
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_gabab_conductance.m
@@ -110,9 +113,13 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/match_reciprocals.m
 %       cd/match_vector_count.m
 %       cd/m3ha_network_change_params.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
-%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_sim_params.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_simulate_population.m
+%       cd/movingaveragefilter.m
+%       cd/parse_peaks.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_bar.m
 %       cd/plot_cfit_pulse_response.m
@@ -124,6 +131,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/remove_outliers.m
 %       cd/select_similar_values.m
 %       cd/unique_groups.m
+%       cd/vecfun.m
 %       cd/xolotl_set_simparams.m
 
 % File History:

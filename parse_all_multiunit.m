@@ -33,6 +33,9 @@ function varargout = parse_all_multiunit(varargin)
 %                                           of measures
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SkipAnalyzed': whether to skip files already analyzed
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for the parse_multiunit() function
 %
 % Requires:
@@ -61,6 +64,8 @@ function varargout = parse_all_multiunit(varargin)
 %               but .mat file not present
 % 2019-08-06 Now accepts any parameter-value pair for parse_multiunit.m
 % 2019-08-24 Now uses varargout
+% 2020-02-17 Added 'SkipAnalyzedFlag' as an optional argument 
+%               and made it true by default
 % TODO: Load data one file at a time
 
 %% Hard-coded parameters
@@ -72,6 +77,7 @@ varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
 regExpSliceBase = '.*slice[0-9]*';
 regexpSliceMatFile = '.*slice[0-9]*.*.mat';
 regexpSliceAbfFile = '.*slice[0-9]*.*.abf';
+regexpSliceParamsFile = '.*slice[0-9]*.*params.csv';
 channelTypes = {'voltage', 'current'};
 channelUnits = {'uV', 'arb'};
 
@@ -81,6 +87,7 @@ sliceBasesDefault = {};                 % detect from directory by default
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
 plotMeasuresFlagDefault = false;
+skipAnalyzedFlagDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -102,6 +109,8 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SkipAnalyzedFlag', skipAnalyzedFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -110,6 +119,7 @@ sliceBases = iP.Results.SliceBases;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
 plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
+skipAnalyzedFlag = iP.Results.SkipAnalyzedFlag;
 
 % Keep unmatched arguments for the parse_multiunit() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -128,15 +138,16 @@ end
 % Get all the slice bases with .mat data
 sliceBasesMat = all_slice_bases('Directory', inFolder, ...
                                 'RegExpFile', regexpSliceMatFile, ...
-                                'ForceCellOutput', true, 'SortBy', 'date', ...
+                                'ForceCellOutput', true, ...
+                                'SortBy', 'datenum', ...
                                 'RegExpBase', regExpSliceBase);
 
 % Get all the slice bases with .abf data
 sliceBasesAbf = all_slice_bases('Directory', inFolder, ...
                                 'RegExpFile', regexpSliceAbfFile, ...
-                                'ForceCellOutput', true, 'SortBy', 'date', ...
+                                'ForceCellOutput', true, ...
+                                'SortBy', 'datenum', ...
                                 'RegExpBase', regExpSliceBase);
-
 
 % Either combine data from .abf files or load .mat files
 if isempty(sliceBasesMat)
@@ -165,13 +176,30 @@ else
     % Get all the slice data .mat file names available
     [~, allMatPaths] = ...
         all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
-                    'SortBy', 'date', 'ForceCellOutput', true);
+                    'SortBy', 'datenum', 'ForceCellOutput', true);
 
-    % Restricted to specific slices if provided
+    % Restricted to specific slices
     if ~isempty(sliceBases)
+        % Restricted to specific slices if provided
         allMatPaths = allMatPaths(contains(allMatPaths, sliceBases));
+    elseif skipAnalyzedFlag
+        % Get all the slice bases with params.csv data
+        sliceBasesCsv = all_slice_bases('Directory', inFolder, ...
+                                        'RegExpFile', regexpSliceParamsFile, ...
+                                        'ForceCellOutput', true, ...
+                                        'SortBy', 'datenum', ...
+                                        'RegExpBase', regExpSliceBase);
+
+        % Restricted to specific slices if provided
+        allMatPaths = allMatPaths(~contains(allMatPaths, sliceBasesCsv));
     end
 
+    % Return if all slices already analyzed
+    if isempty(allMatPaths)
+        disp('All slices already analyzed!');
+        return
+    end
+    
     % Load data for each slice as a structure array
     fprintf('Loading data for each slice ...\n');
     allDataStruct = cellfun(@(x) load(x, varsNeeded{:}), allMatPaths);
@@ -197,7 +225,12 @@ phaseStrs = allDataTable.phaseStrs;
 if isnumeric(phaseBoundaries)
     phaseBoundaries = num2cell(phaseBoundaries);
 end
-
+if isnumeric(vVecsSl)
+    vVecsSl = {vVecsSl};
+end
+if isnumeric(iVecsSl)
+    iVecsSl = {iVecsSl};
+end
 
 %% Parse all slices
 % Count the number of slices

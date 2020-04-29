@@ -4,7 +4,9 @@
 % Requires:
 %       cd/archive_dependent_scripts.m
 %       cd/argfun.m
+%       cd/array_fun.m
 %       cd/check_dir.m
+%       cd/copy_into.m
 %       cd/create_subplots.m
 %       cd/extract_fileparts.m
 %       cd/extract_param_values.m
@@ -30,28 +32,74 @@
 % 2019-12-20 Added plotCurveFit
 % 2019-12-21 Added simulateCpr and simulateIpscr
 % 2019-12-28 Added updateScripts
+% 2020-04-27 Added useHH, useCvode and secondOrder
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 
 %% Hard-coded parameters
 % Flags
-updateScripts = false; %true;
-plotGeometry = false; %true;
+updateScripts = true;
 simulateCpr = false; %true;
 plotCpr = false; %true;
-simulateIpscr = false; %true;
-plotIpscr = false; %true;
+simulateIpscr = true;
+plotIpscr = true;
 plotOverlapped = false; %true;
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % Flags (ALREADY DONE!)
 estimatePassiveParams = false; %true;
 plotCurveFit = false; %true;
+plotGeometry = false; %true;
 
-% Directories
+% Other Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
-figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+% paramsDir = figure03Dir;
 matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
 fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
+
+% Working versions:
+% useHH = false;
+% useCvode = true;
+% secondOrder = 0;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-0-useCvode-true-useHH-false');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = false;
+% useCvode = false;
+% secondOrder = 0;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-0-useCvode-false-useHH-false');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+useHH = true;
+useCvode = true;
+secondOrder = 0;
+figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+                    'backup-20200428-secondOrder-0-useCvode-true-useHH-true');
+paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = true;
+% useCvode = true;
+% secondOrder = 2;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-2-useCvode-true-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = true;
+% useCvode = false;
+% secondOrder = 0;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-0-useCvode-false-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+
+% useHH = true;
+% useCvode = false;
+% secondOrder = 2;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200428-secondOrder-2-useCvode-false-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % Files
 sweepInfoFile = 'dclampdatalog_take4.csv';
@@ -62,10 +110,21 @@ passiveLogSuffix = 'dclampPassiveLog';
 paramFileSuffix = 'params';
 
 % Analysis settings
-exampleCellNames = {'D101310'; 'C101210'};
+
+% Should be consistent with m3ha_plot_figure02.m & m3ha_plot_figure07.m
+% exampleCellNames = {'D101310'; 'C101210'};
 % exampleCellNames = {'C101210'};
+% exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};
+exampleCellNames = {'D101310'; 'G101310'};
 
 % Simulation settings
+% useHH = false;
+% useCvode = true;
+% secondOrder = 0;
+columnMode = 1;
+plotAllFlag = false;
+plotIndividualFlag = true;
+saveSimOutFlag = true;
 dataModeCpr = 1;                    % data mode for current pulse response
 dataModeIpscr = 2;                  % data mode for IPSC response
                                     %   0 - all data
@@ -78,24 +137,31 @@ rowmodeIpscr = 1;                   % row mode for IPSC response
                                     %   1 - each row is a pharm condition
                                     %   2 - each row is a pharm, g incr pair
 attemptNumberCpr = 3;               % attempt number for current pulse response
-attemptNumberIpscr = 4;             % attempt number for IPSC response
+attemptNumberIpscr = 6;             % attempt number for IPSC response
                                     %   1 - Use 4 traces @ 200% gIncr 
                                     %           for this data mode
                                     %   2 - Use all traces @ 200% gIncr 
                                     %           for this data mode
                                     %   3 - Use all traces for this data mode
                                     %   4 - Use 1 trace for each pharm x gIncr 
-                                    %           pair for this data mode
+                                    %           for this data mode
                                     %   5 - Use 4 traces @ 400% gIncr 
                                     %       for this data mode
+                                    %   6 - Same as 4 but prioritize least vHold
+                                    %   7 - Same as 1 but prioritize least vHold
+                                    %   8 - Same as 5 but prioritize least vHold
+
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
 
 % Plot settings
 somaColor = rgb('DarkGreen');
 dendriteColor = rgb('DarkOrange');
 curveFigWidth = 8.5;
-curveFigHeight = 4;
+curveFigHeight = 3;
 curveXLimits = [0, 60];
-curveYLimits = [-1.2, 0];
+curveYLimits = [-1.5, 0];
 % geomFigWidth = 4;
 % geomFigHeight = 10.5;
 geomFigWidth = 10;
@@ -106,12 +172,13 @@ geomXLimits = [-250, 250];
 geomYLimits = [-250, 250];
 cprFigWidth = 8.5;
 cprFigHeight = 6;
-cprXLimits = [2070, 2250];
+cprXLimits = timeToStabilize + [70, 250];
 cprYLimits = [];
-ipscrFigWidth = 8.5;
+ipscrFigWidth = 7.5;
 ipscrFigHeight = 7;
-ipscrXLimits = [2800, 4500];
-ipscrYLimits = [-100, -20];
+ipscrXLimits = timeToStabilize + [800, 2500];
+ipscrYLimits = [-100, -40];
+ipscrYTicks = [-80, -60];
 overlappedFigWidth = [];
 overlappedFigHeight = [];
 overlappedXLimits = [];
@@ -133,7 +200,7 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 %% Perform curve fitting to estimate passive parameters
 if estimatePassiveParams
     cellfun(@(x) estimate_passive_params_for_one_cell(x, ...
-                    swpInfo, dataMode, matFilesDir, ...
+                    swpInfo, dataModeCpr, matFilesDir, ...
                     initialSlopesPath, figure03Dir, passiveLogSuffix), ...
             exampleCellNames);
 end
@@ -160,9 +227,11 @@ if plotGeometry || simulateCpr || simulateIpscr || ...
         plotCpr || plotIpscr || plotOverlapped
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
-        find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
+        find_matching_files(exampleCellNames, 'Directory', paramsDir, ...
                             'Suffix', paramFileSuffix, 'Extension', 'csv', ...
                             'Recursive', false);
+    % Back up parameter files
+    copy_into(exampleParamPaths, figure03Dir);
 
     % Extract file bases
     exampleParamFileBases = extract_fileparts(exampleParamPaths, 'base');
@@ -183,6 +252,11 @@ if plotGeometry || simulateCpr || simulateIpscr || ...
     check_dir(outFoldersIpscr);
 end
 
+%% Change directory if simulating
+if simulateCpr || simulateIpscr
+    cd(figure03Dir);
+end
+
 %% Plot geometry
 if plotGeometry
     % Plot curve fitting results
@@ -195,31 +269,50 @@ end
 
 %% Simulate current pulse responses
 if simulateCpr
-    cellfun(@(x, y, z) simulate_cpr(x, y, z, dataModeCpr, rowmodeCpr, ...
-                                attemptNumberCpr), ...
-            exampleLabelsCpr, exampleParamPaths, outFoldersCpr);
+    array_fun(@(x, y, z) m3ha_neuron_run_and_analyze(x, ...
+                        'OutFolder', y, 'Prefix', z, ...
+                        'BuildMode', 'passive', 'SimMode', 'passive', ...
+                        'DataMode', dataModeCpr, 'ColumnMode', columnMode, ...
+                        'Rowmode', rowmodeCpr, 'UseHH', useHH, ...
+                        'UseCvode', useCvode, 'SecondOrder', secondOrder, ...
+                        'AttemptNumber', attemptNumberCpr, ...
+                        'PlotAllFlag', plotAllFlag, ...
+                        'PlotIndividualFlag', plotIndividualFlag, ...
+                        'SaveSimOutFlag', saveSimOutFlag), ...
+            exampleParamPaths, outFoldersCpr, exampleLabelsCpr);
 end
 
 %% Plot current pulse responses
 if plotCpr
     cellfun(@(x, y) plot_cpr(x, y, figure03Dir, figTypes, ...
                                 cprFigWidth, cprFigHeight, ...
-                                cprXLimits, cprYLimits), ...
+                                cprXLimits, cprYLimits, ...
+                                'ToMedianFilter', ~useHH), ...
             exampleLabelsCpr, outFoldersCpr);
 end
 
 %% Simulate IPSC responses
 if simulateIpscr
-    cellfun(@(x, y, z) simulate_ipscr(x, y, z, dataModeIpscr, rowmodeIpscr, ...
-                                attemptNumberIpscr), ...
-            exampleLabelsIpscr, exampleParamPaths, outFoldersIpscr);
+    array_fun(@(x, y, z) m3ha_neuron_run_and_analyze(x, ...
+                        'OutFolder', y, 'Prefix', z, ...
+                        'BuildMode', 'active', 'SimMode', 'active', ...
+                        'DataMode', dataModeIpscr, 'ColumnMode', columnMode, ...
+                        'Rowmode', rowmodeIpscr, 'UseHH', useHH, ...
+                        'UseCvode', useCvode, 'SecondOrder', secondOrder, ...
+                        'AttemptNumber', attemptNumberIpscr, ...
+                        'PlotAllFlag', plotAllFlag, ...
+                        'PlotIndividualFlag', plotIndividualFlag, ...
+                        'SaveSimOutFlag', saveSimOutFlag), ...
+            exampleParamPaths, outFoldersIpscr, exampleLabelsIpscr);
+
 end
 
 %% Plot IPSC responses
 if plotIpscr
     cellfun(@(x, y) plot_ipscr(x, y, figure03Dir, figTypes, ...
                                 ipscrFigWidth, ipscrFigHeight, ...
-                                ipscrXLimits, ipscrYLimits), ...
+                                ipscrXLimits, ipscrYLimits, ipscrYTicks, ...
+                                'ToMedianFilter', ~useHH), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -454,40 +547,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function simulate_cpr(label, neuronParamsFile, outFolder, ...
-                        dataMode, rowmode, attemptNumber)
-
-% Simulate
-m3ha_neuron_run_and_analyze(neuronParamsFile, ...
-                        'OutFolder', outFolder, 'Prefix', label, ...
-                        'BuildMode', 'passive', 'SimMode', 'passive', ...
-                        'DataMode', dataMode, 'ColumnMode', 1, ...
-                        'Rowmode', rowmode, 'AttemptNumber', attemptNumber, ...
-                        'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
-                        'SaveSimOutFlag', true);
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function simulate_ipscr(label, neuronParamsFile, outFolder, ...
-                        dataMode, rowmode, attemptNumber)
-
-% Simulate
-m3ha_neuron_run_and_analyze(neuronParamsFile, ...
-                        'OutFolder', outFolder, 'Prefix', label, ...
-                        'BuildMode', 'active', 'SimMode', 'active', ...
-                        'DataMode', dataMode, 'ColumnMode', 1, ...
-                        'Rowmode', rowmode, 'AttemptNumber', attemptNumber, ...
-                        'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
-                        'SaveSimOutFlag', true);
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function plot_cpr(expStr, directory, outFolder, figTypes, ...
-                    figWidth, figHeight, xLimits, yLimits)
+                    figWidth, figHeight, xLimits, yLimits, varargin)
 
 % Create a figure name
 figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
@@ -498,7 +559,7 @@ figIndividual = set_figure_properties('AlwaysNew', true);
 % Plot traces
 m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                     'PlotType', 'individual', 'FigHandle', figIndividual, ...
-                    'XLimits', xLimits, 'YLimits', yLimits);
+                    'XLimits', xLimits, 'YLimits', yLimits, varargin{:});
 
 % Plot a scale bar
 plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 10, ...
@@ -517,18 +578,26 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_ipscr(expStr, directory, outFolder, figTypes, ...
-                    figWidth, figHeight, xLimits, yLimits)
+                    figWidth, figHeight, xLimits, yLimits, yTicks, varargin)
 
 % Create a figure name
 figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
+figPathBaseOrig = [figPathBaseIndividual, '_orig'];
 
 % Create the figure
 figIndividual = set_figure_properties('AlwaysNew', true);
 
 % Plot traces
-m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
+handles = ...
+    m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'PlotType', 'individual', 'FigHandle', figIndividual, ...
-                'XLimits', xLimits, 'YLimits', yLimits);
+                'XLimits', xLimits, varargin{:});
+
+% Save the figure
+save_all_figtypes(figIndividual, figPathBaseOrig, 'png');
+
+% Update y axis limits
+ylim(yLimits);
 
 % Plot a scale bar
 hold on
@@ -538,7 +607,8 @@ plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
 % Update figure for CorelDraw
 update_figure_for_corel(figIndividual, 'Units', 'centimeters', ...
                 'Width', figWidth, 'Height', figHeight, ...
-                'RemoveXTicks', true, 'RemoveXRulers', true);
+                'RemoveXTicks', true, 'RemoveXRulers', true, ...
+                'YTickLocs', yTicks);
 
 
 % Save the figure

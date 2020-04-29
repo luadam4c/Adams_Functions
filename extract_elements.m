@@ -32,11 +32,16 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                       'center'- center element of each vector
 %                       'min'   - minimum-valued element of each vector
 %                       'max'   - maximum-valued element of each vector
+%                       'maxabs'- maximum-absolute-valued element
 %                       'firstdiff' - first difference of each vector
 %                       'specific'  - at a a specific index
 %       varargin    - 'Index': index of the element from each vector
 %                   must be a positive numeric vector
 %                   default == []
+%                   - 'ReturnNan': Return NaN instead of empty 
+%                                       if nothing to extract
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/array_fun.m
@@ -50,6 +55,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/adjust_edges.m
 %       cd/align_subplots.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
@@ -61,6 +67,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/find_closest.m
 %       cd/is_overlapping.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
@@ -69,7 +76,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/plot_autocorrelogram.m
 %       cd/plot_repetitive_protocols.m
 %       cd/select_similar_values.m
-%       cd/adjust_edges.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu
@@ -80,6 +87,8 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2019-09-08 Added 'center' as a possible extract mode
 % 2019-10-04 Fixed bug
 % 2019-12-01 Now allows vecs to be a matrix cell array
+% 2020-02-26 Added 'ReturnNan' as a an optional arguement
+% 2020-04-22 Added 'maxabs' as a possible extract mode
 % TODO: Add 'TreatCellAsArray' as a parameter
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
@@ -87,7 +96,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 
 
 %% Hard-coded parameters
-validExtractModes = {'first', 'last', 'center', 'min', 'max', ...
+validExtractModes = {'first', 'last', 'center', 'min', 'max', 'maxabs', ...
                         'firstdiff', 'specific'};
 
 % TODO: Add as optional argument
@@ -95,6 +104,8 @@ treatCellAsArray = false;   % TODO: Not working yet. UniformOutput might need to
 
 %% Default values for optional arguments
 indexDefault = [];
+returnNanDefault = true;    % whether to return NaN instead of empty 
+                            %   if nothing to extract by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -116,33 +127,40 @@ addRequired(iP, 'extractMode', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Index', indexDefault, ...
     @(x) assert(isnumericvector(x), 'Index must be a numeric vector!'));
+addParameter(iP, 'ReturnNan', returnNanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs, extractMode, varargin{:});
 index = iP.Results.Index;
+returnNan = iP.Results.ReturnNan;
 
 % Validate extractMode
 extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
 switch extractMode
-case {'first', 'last', 'center', 'min', 'max', 'firstdiff'}
+case {'first', 'last', 'center', 'min', 'max', 'maxabs', 'firstdiff'}
     % Extract from a position
     if iscellnumericvector(vecs) && ~treatCellAsArray
         [elements, idxElement] = ...
-            array_fun(@(x) extract_by_position(x, extractMode), vecs);
+            array_fun(@(x) extract_by_position(x, extractMode, returnNan), ...
+                        vecs);
     elseif iscell(vecs) && ~treatCellAsArray
         try
             [elements, idxElement] = ...
-                array_fun(@(x) extract_elements(x, extractMode), vecs);
+                array_fun(@(x) extract_elements(x, extractMode, ...
+                                            'ReturnNan', returnNan), vecs);
         catch
             [elements, idxElement] = ...
-                array_fun(@(x) extract_elements(x, extractMode), vecs, ...
+                array_fun(@(x) extract_elements(x, extractMode, ...
+                                            'ReturnNan', returnNan), vecs, ...
                         'UniformOutput', false);
         end
     else
         [elements, idxElement] = ...
-            array_fun(@(x) extract_by_position(vecs(:, x), extractMode), ...
+            array_fun(@(x) extract_by_position(vecs(:, x), extractMode, ...
+                                                returnNan), ...
                     transpose(1:size(vecs, 2)));
     end
 case 'specific'
@@ -164,7 +182,7 @@ case 'specific'
 
         % Extract by index on each vector
         [elements, idxElement] = ...
-            array_fun(@(x, y) extract_by_index(x, y), vecs, index);
+            array_fun(@(x, y) extract_by_index(x, y, returnNan), vecs, index);
     else
         % Count the number of vectors
         nVectors = count_vectors(vecs);
@@ -177,7 +195,7 @@ case 'specific'
 
         % Extract by index on each comlumn
         [elements, idxElement] = ...
-            array_fun(@(x, y) extract_by_index(vecs(:, x), y), ...
+            array_fun(@(x, y) extract_by_index(vecs(:, x), y, returnNan), ...
                     transpose(1:nVectors), index);
     end
 otherwise
@@ -186,11 +204,16 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [element, idxElement] = extract_by_position (x, extractMode)
+function [element, idxElement] = extract_by_position (x, extractMode, returnNan)
 
 if numel(x) < 1
-    element = NaN;
-    idxElement = NaN;
+    if returnNan
+        element = NaN;
+        idxElement = NaN;
+    else
+        element = [];
+        idxElement = [];
+    end
     return
 end
 
@@ -221,6 +244,8 @@ switch extractMode
         [element, idxElement] = min(x);
     case 'max'
         [element, idxElement] = max(x);
+    case 'maxabs'
+        [element, idxElement] = max(abs(x));
     case 'firstdiff'
         element = x(2) - x(1);
         idxElement = NaN;
@@ -230,11 +255,15 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [element, idxElement] = extract_by_index (x, index)
+function [element, idxElement] = extract_by_index (x, index, returnNan)
 
 % Decide on the actual index
 if numel(x) == 0
-    idxElement = NaN;
+    if returnNan
+        idxElement = NaN;
+    else
+        idxElement = [];
+    end
 elseif isnan(index)
     idxElement = NaN;
 elseif index == Inf
@@ -244,19 +273,31 @@ elseif index == -Inf
 elseif index >= 1 && index <= numel(x)
     idxElement = index;
 else
-    error('The index %g is out of bounds!', index);
+    fprintf('Warning: The index %g is out of bounds!\n', index);
+    if returnNan
+        idxElement = NaN;
+    else
+        idxElement = [];
+    end
 end
 
 % Get the element
-element = get_element(x, idxElement);
+element = get_element(x, idxElement, returnNan);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function element = get_element (vector, index)
+function element = get_element (vector, index, returnNan)
 %% Retrieves an element based on vector type
 
 % Return NaN if index is NaN
-if ~isempty(index) && isnan(index)
+if isempty(index)
+    if returnNan
+        element = NaN;
+    else
+        element = [];
+    end
+    return
+elseif isnan(index)
     element = NaN;
     return
 end

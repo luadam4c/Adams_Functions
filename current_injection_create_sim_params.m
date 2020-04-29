@@ -1,8 +1,8 @@
 function [simParamsTable, simParamsPath] = ...
-                m3ha_neuron_create_simulation_params (neuronParamsTable, varargin)
+                m3ha_neuron_create_sim_params (neuronParamsTable, varargin)
 %% Generates a table of simulation parameters from table(s) of neuron parameters
 % Usage: [simParamsTable, simParamsPath] = ...
-%               m3ha_neuron_create_simulation_params (neuronParamsTable, varargin)
+%               m3ha_neuron_create_sim_params (neuronParamsTable, varargin)
 % Explanation:
 %       TODO
 %
@@ -325,8 +325,7 @@ if isempty(gababAmp)
     % Load default GABAB IPSC parameters in uS
     [gababAmpTemplate, gababTriseTemplate, gababTfallFastTemplate, ...
             gababTfallSlowTemplate, gababWeightTemplate] = ...
-        m3ha_load_gabab_ipsc_params('AmpScaleFactor', ampScaleFactor, ...
-                                    'AmpUnits', 'uS');
+        m3ha_load_gabab_ipsc_params('AmpScaleFactor', 100, 'AmpUnits', 'uS');
 
     % Set the amplitude based on whether cprFlag is on
     if cprFlag

@@ -36,14 +36,14 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   default == 10 ms
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
-%                   default == 20 ms
+%                   default == 60 ms
 %                   - 'MaxFirstInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                                                   between the first two bursts
 %                   must be a positive scalar
 %                   default == 2000 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 1000 ms
+%                   default == 2000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
 %                   default == 100 Hz
@@ -79,11 +79,11 @@ signal2NoiseDefault = 2.5;          % use 2.5 by default
 filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
-minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
+minBurstLengthMsDefault = 60;       % bursts must be at least 20 ms by default
 maxFirstInterBurstIntervalMsDefault = 2000;
                                     % first two bursts are no more than 
                                     %   2 seconds apart by default
-maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
+maxInterBurstIntervalMsDefault = 2000;  % bursts are no more than 
                                         %   1 second apart by default
 minSpikeRateInBurstHzDefault = 100;     % bursts must have a spike rate of 
                                         %   at least 100 Hz by default

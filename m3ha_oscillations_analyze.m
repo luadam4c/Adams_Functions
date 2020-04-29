@@ -3,10 +3,10 @@
 %
 % Requires:
 %       cd/archive_dependent_scripts.m
-%       cd/force_row_vector.m
 %       cd/parse_all_multiunit.m
 %       cd/plot_autocorrelogram.m
-%       cd/plot_bar.m
+%       cd/plot_chevron.m
+%       cd/plot_chevron_bar_inset.m
 %       cd/plot_measures.m
 %       cd/plot_raster.m
 %       cd/plot_raw_multiunit.m
@@ -39,8 +39,9 @@ figure01Dir = fullfile('/media', 'adamX', 'm3ha', ...
 parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
 %                       'parse_multiunit_m3ha');
-archiveDir = parentDir;
-dirsToAnalyze = {'dual-final', 'snap5114-final', 'no711-final'};
+% archiveDir = parentDir;
+archiveDir = figure01Dir;
+dirsToAnalyze = {'control-final', 'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
@@ -51,41 +52,46 @@ dirsToAnalyze = {'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'important-cases'};
 % dirsToAnalyze = {'difficult-cases'};
 specificSlicesToAnalyze = {};
+sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
+
+% Special cases
+% dirsToAnalyze = {'dual-60'};
+% sweepsRelToPhase2 = -19:60;         % select between -20 & 60 min
 
 % For manuscript
 figTypesForVis = {'png'};
-figTypesForCorel = {'epsc2'};
+figTypesForCorel = {'epsc'};
 
-plotFigure1Individual = false; % true;
-parseExamplesFlag = false;
-plotExampleContourFlag = false; % true;
+plotFigure1Individual = false; %true;
+parseExamplesFlag = false; %true;
+plotExampleContourFlag = false; %true;
 contourXLimitsSeconds = [2, 20];
 contourWidth = 11;
 contourHeight = 3;
-plotExampleRawTracesFlag = false; % true;
+plotExampleRawTracesFlag = false; %true;
 rawPlotLineWidth = 0.25;
 rawSweepNumbers = [16, 56];
 rawWidth = 8;
 rawHeight = 2.75;
 rawXLimits = [2, 15];
 rawYLimits = [-5, 5];
-plotExampleSpikeDetectionFlag = false; % true;
+plotExampleSpikeDetectionFlag = false; %true;
 sampleXLimits = [2.5, 8.5];
 sampleSweepNumber = 16;
 samplePlotLineWidth = 0.25;
 sampleRasterLineWidth = 0.25;
 spikeDetWidth = 8;
 spikeDetHeight = 2;
-plotExampleSpikeHistogramFlag = false; % true;
+plotExampleSpikeHistogramFlag = false; %true;
 spikeHistWidth = 8;
 spikeHistHeight = 2;
 spikeHistYLimits = [0, 8.5];
-plotExampleAcfFlag = false; % true;
+plotExampleAcfFlag = false; %true;
 acfWidth = 7;
 acfHeight = 4;
 acfXLimits = [0, 5];        % Good for 20190525_slice4_gat3_trace16
 acfYLimits = [-75, 2000];   % Good for 20190525_slice4_gat3_trace16
-plotExampleAutoCorrFlag = false; % true;
+plotExampleAutoCorrFlag = false; %true;
 autoCorrWidth = 3.5;
 autoCorrHeight = 2.5;
 autoCorrXLimits = [-5, 5];      % Good for 20190525_slice4_gat3_trace16
@@ -97,6 +103,7 @@ chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
 barInsetWidth = 1;              % figure width in cm
 barInsetHeight = 2;             % figure height in cm
+computeFigure1Stats = true;
 
 % Flags
 parseIndividualFlag = false; % true;
@@ -105,24 +112,25 @@ plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
 plotRasterFlag = false; % true;
 plotSpikeDensityFlag = false; % true;
-plotSpikeHistogramFlag = true;
-plotAutoCorrFlag = true;
+plotSpikeHistogramFlag = false; % true;
+plotAutoCorrFlag = false; % true;
 plotMeasuresFlag = false; % true;
-plotContourFlag = false; % true;
-plotCombinedFlag = true;
+plotContourFlag = false; %true;
+plotCombinedFlag = false; % true;
 
 parsePopulationRestrictedFlag = false; %true;
-plotChevronFlag = true;
-plotByFileFlag = true;
-plotByPhaseFlag = true;
-plotNormByFileFlag = true;
-plotNormByPhaseFlag = true;
-plotPopAverageFlag = true;
-plotSmoothNormPopAvgFlag = true;
+plotChevronFlag = false; %true;
+plotByFileFlag = false; %true;
+plotByPhaseFlag = false; %true;
+plotNormByFileFlag = false; %true;
+plotNormByPhaseFlag = false; %true;
+plotPopAverageFlag = false; %true;
+plotSmoothNormPopAvgFlag = false; %true;
+
 parsePopulationAllFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -148,7 +156,6 @@ filterWidthMs = 100;
 minRelProm = 0.02;
 
 % For compute_phase_average.m & plot_measures.m
-sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
 nSweepsLastOfPhase = 10;            % select from last 10 values of each phase
 nSweepsToAverage = 5;               % select 5 values to average
 % nSweepsToAverage = 10;            % select 10 values to average
@@ -457,7 +464,7 @@ if plotFigure1Individual
 end
 
 % Plot Chevron plots for Figure 01
-if plotFigure1Population
+if plotFigure1Population || computeFigure1Stats
     % Get all paths to Chevron tables
     [~, allSheetPaths] = all_files('Directory', figure01Dir, ...
                                 'Suffix', 'chevron', 'Extension', 'csv');
@@ -468,14 +475,34 @@ if plotFigure1Population
 
     % Create figure names
     figPathBasesChevron = extract_fileparts(allSheetPaths, 'pathbase');
- 
+end
+
+% Plot Chevrons if requested
+if plotFigure1Population
     % Plot and save all Chevron tables
     cellfun(@(x, y) plot_and_save_chevron(x, y, figTypesForCorel, ...
                             chevronWidth, chevronHeight, chevronMarkerSize, ...
                             barInsetWidth, barInsetHeight), ...
-            allChevronTables, figPathBasesChevron);
+                allChevronTables, figPathBasesChevron);
+
 end
 
+% Compute statistics if requested
+if computeFigure1Stats
+    % Test differences for all Chevron tables
+    diffStructs = cellfun(@(a) test_difference(a, 'IsPaired', true), ...
+                            allChevronTables);
+    
+    % Convert to a table
+    diffTable = struct2table(diffStructs);
+
+    % Add Chevron path
+    diffTable = addvars(diffTable, figPathBasesChevron, 'Before', 1);
+
+    % Save difference table
+    writetable(diffTable, fullfile(figure01Dir, 'difference_table.csv'));
+end
+    
 % Run through all directories
 for iDir = 1:numel(dirsToAnalyze)
     % Get the current directory to analyze
@@ -585,17 +612,21 @@ drugName = extractBefore(figBase, '-');
 
 % Modify stuff based on drug name
 switch drugName
+    case 'control'
+        condLabel = 'Control';
+        meanColorMap = decide_on_colormap('Black', 1);
+        insetColorMap = decide_on_colormap({'Black'; 'Black'}, 2);
     case 'no711'
         condLabel = 'NO-711';
-        colorMap = decide_on_colormap('Blue', 1);
+        meanColorMap = decide_on_colormap('Blue', 1);
         insetColorMap = decide_on_colormap({'Black'; 'Blue'}, 2);
     case 'snap5114'
         condLabel = 'SNAP-5114';
-        colorMap = decide_on_colormap('Red', 1);
+        meanColorMap = decide_on_colormap('Red', 1);
         insetColorMap = decide_on_colormap({'Black'; 'Red'}, 2);
     case 'dual'
         condLabel = 'Dual';
-        colorMap = decide_on_colormap('Purple', 1);
+        meanColorMap = decide_on_colormap('Purple', 1);
         insetColorMap = decide_on_colormap({'Black'; 'Purple'}, 2);
     otherwise
         error('drugName unrecognized!');
@@ -631,13 +662,18 @@ switch measureName
         error('measureName unrecognized!');
 end
 
+barInsetRulerLineWidth = 0.5;
+barInsetAxisFontSize = 5;
+barInsetLabelsFontSize = 6;
+insetPLimits = [0.5, 2.5];
+
 % Create figure
 fig1 = set_figure_properties('AlwaysNew', true);
 
 % Plot Chevron
 plot_chevron(chevronTable, 'PlotMeanValues', true, ...
                 'PlotMeanDifference', true, 'PlotErrorBars', false, ...
-                'ColorMap', 'k', 'MeanColorMap', colorMap, ...
+                'ColorMap', 'k', 'MeanColorMap', meanColorMap, ...
                 'ReadoutLimits', readoutLimits, ...
                 'PTickLabels', pTickLabels, ...
                 'ReadoutLabel', readoutLabel, 'FigTitle', 'suppress', ...
@@ -662,24 +698,9 @@ fig2 = set_figure_properties('AlwaysNew', true);
 figPathBaseBar = strcat(figPathBase, '_bar_inset');
 
 % Plot bar inset
-% TODO: plot_chevron_bar_inset.m
-
-% Extract values so that each column is a parameter
-dataValues = table2array(chevronTable);
-
-% Compute means
-means = compute_stats(dataValues, 'mean', 2);
-
-% Compute normalized means
-normalizedMeans = (means ./ means(1)) .* 100;
-
-% Force as a row so that bars are different groups
-normalizedMeans = force_row_vector(normalizedMeans);
-
-% Plot bar inset
-plot_bar(normalizedMeans, 'PTickLabels', pTickLabels, ...
+plot_chevron_bar_inset(chevronTable, 'PTickLabels', pTickLabels, ...
         'ReadoutLabel', 'suppress', 'PLabel', 'suppress', ...
-        'PLimits', [0.5, 2.5], 'ReadoutLimits', insetReadoutLimits, ...
+        'PLimits', insetPLimits, 'ReadoutLimits', insetReadoutLimits, ...
         'FigTitle', '% Baseline', 'ColorMap', insetColorMap);
 
 % Save figure
@@ -688,8 +709,9 @@ save_all_figtypes(fig2, figPathBaseBar, 'png');
 % Update figure for CorelDraw
 update_figure_for_corel(fig2, 'Units', 'centimeters', ...
                         'Width', barInsetWidth, 'Height', barInsetHeight, ...
-                        'RulerLineWidth', 0.5, 'AxisFontSize', 5, ...
-                        'LabelsFontSize', 6, ...
+                        'RulerLineWidth', barInsetRulerLineWidth, ...
+                        'AxisFontSize', barInsetAxisFontSize, ...
+                        'LabelsFontSize', barInsetLabelsFontSize, ...
                         'RemoveXTicks', true);
 
 % Save figure
@@ -701,12 +723,6 @@ end
 
 %{
 OLD CODE:
-
-parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
-lastSweepToMeasure = 45;        % select between sweeps 1:45
-
-% Make drug name all caps
-drugLabel = upper(drugName);
 
 %}
 

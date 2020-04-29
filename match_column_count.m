@@ -28,6 +28,7 @@ function arrayNew = match_column_count (arrayOld, nColumnsNew, varargin)
 %       cd/match_row_count.m
 %
 % Used by:
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2020-01-02 Modified from match_row_count.m

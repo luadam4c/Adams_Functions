@@ -23,6 +23,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/force_column_cell.m
 %
 % Used by:
+%       cd/array_fun.m
 %       cd/annotation_in_plot.m
 %       cd/apply_to_all_cells.m
 %       cd/apply_over_cells.m
@@ -33,11 +34,13 @@ function argList = struct2arglist (structure, varargin)
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_violin.m
 %       cd/medianfilter.m
+%       cd/parse_peaks.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_ball_stick.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_histogram.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/solve_function_at_value.m
@@ -45,6 +48,7 @@ function argList = struct2arglist (structure, varargin)
 
 % File History:
 % 2018-12-28 Moved from annotation_in_plot.m
+% 2020-03-09 Now returns empty if empty
 % 
 
 %% Hard-coded parameters
@@ -66,7 +70,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'structure', ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+    @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default, ...
@@ -77,6 +81,12 @@ parse(iP, structure, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
+% Return empty if empty
+if isempty(structure)
+    argList = {};
+    return
+end
+
 % Get all the parameter names
 names = fieldnames(structure);
 

@@ -180,6 +180,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2019-11-13 Added siMs to swpInfo
 % 2019-11-14 Added 'ImportMode' as an optional parameter
 % 2019-12-04 Now imports the GABA-B IPSC parameters used in dynamic clamp
+% 2019-04-28 Changed timeToStabilize from 2000 to 3000
 % TODO: Use m3ha_correct_unbalanced_bridge.m to not correct for all sweeps
 
 %% Hard-coded constants
@@ -198,7 +199,7 @@ initialSlopesFileName = 'initial_slopes_nSamplesForPlot_2_threeStdMainComponent.
 passiveFileName = 'dclampPassiveParams_byCells_tofit.xlsx';
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;     % time to make sure initial value of simulation is stabilized
+timeToStabilize = 3000;     % time to make sure initial value of simulation is stabilized
 
 % The following must be consistent with dclampDataExtractor.m
 ipscTimeOrig = 1000;                % time of IPSC application (ms), original

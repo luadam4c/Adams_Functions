@@ -18,9 +18,9 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %       vecs        - vector(s) to moving average filter
 %                   must be a numeric array
 %       filtWidth   - (opt) filter window width in time units
-%                           must be a numeric scalar
+%                           must be a numeric vector
 %       si          - (opt) sampling interval in time units
-%                           must be a numeric scalar
+%                           must be a numeric vector
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -30,11 +30,18 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %       cd/apply_to_nonnan_part.m
 %       cd/create_error_for_nargin.m
 %       cd/find_nearest_odd.m
+%       cd/force_column_cell.m
+%       cd/force_column_vector.m
+%       cd/force_matrix.m
+%       cd/isnum.m
+%       cd/iscellnumericvector.m
+%       cd/set_default_flag.m
 %       cd/struct2arglist.m
 %       cd/vecfun.m
 %
 % Used by:
 %       cd/compute_autocorrelogram.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 
@@ -66,13 +73,15 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vec', ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+    @(x) assert(isnum(x) || iscellnumericvector(x), ...
+                ['Vectors must be a numeric array ', ...
+                    'or a cell array of numeric vectors!']));
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'filtWidth', filtWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addOptional(iP, 'si', siDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default, ...
@@ -91,12 +100,32 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Calculate the moving average filter window width in samples
 %   Note: Round down to the nearest odd integer to preserve values!!
 %           However, must be >= 1
-filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
+filtWidthSamples = find_nearest_odd(filtWidth ./ si, 'Direction', 'down');
 
 % Moving average filter vectors
-vecsFilt = vecfun(@(x) movingaveragefilter_helper(x, filtWidthSamples, ...
-                                                otherArguments), ...
-                    vecs);
+if isscalar(filtWidthSamples)
+    vecsFilt = vecfun(@(x) movingaveragefilter_helper(x, filtWidthSamples, ...
+                                                    otherArguments), ...
+                        vecs, 'UniformOutput', false);
+else
+    % Save whether was a non-cell matrix
+    wasMatrix = set_default_flag([], ~iscell(vecs));
+    
+    % Match formats
+    vecs = force_column_cell(vecs);
+    filtWidthSamples = force_column_vector(filtWidthSamples);
+
+    % Apply a different filter window to each vector
+    vecsFilt = cellfun(@(x, y) movingaveragefilter_helper(x, y, ...
+                                                    otherArguments), ...
+                        vecs, num2cell(filtWidthSamples), ...
+                        'UniformOutput', false);
+    
+    % Reform a non-cell matrix
+    if wasMatrix
+        vecsFilt = force_matrix(vecsFilt);
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -273,9 +273,10 @@ if isempty(data) || isempty(siUs) || isempty(fileInfo)
     end
 
     % Load abf file, si is in us
-    if exist('abf2load', 'file') == 2
+    if exist('abf3load', 'file') == 2
         try
-            [data, siUs, fileInfo] = abf3load(abfFullFileName);
+            [data, siUs, fileInfo] = abf3load(abfFullFileName, ...
+                                                'verbose', verbose);
         catch
             try
                 [data, siUs, fileInfo] = abf2load(abfFullFileName);

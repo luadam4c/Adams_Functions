@@ -79,11 +79,11 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                   - 'MissedLtsError': a dimensionless error that penalizes 
 %                                       a misprediction of the existence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == 2
+%                   default == 18
 %                   - 'FalseLtsError': a dimensionless error that penalizes 
 %                                       a misprediction of the absence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == 0.5
+%                   default == 6
 %                   - 'Match2FeatureErrorRatio': ratio of LTS match error to 
 %                                                   LTS feature error
 %                   must be empty or a numeric vector with length == nSweeps

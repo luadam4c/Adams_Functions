@@ -83,11 +83,15 @@ function varargout = all_files (varargin)
 %       cd/force_string_start.m
 %       cd/load_matching_sheets.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_single_neuron.m
+%       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_simulate_population.m
 %       cd/m3ha_pfiles2csv.m
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/metabolismR01_plot_chevrons.m
 %       cd/parse_all_abfs.m
 %       cd/parse_all_multiunit.m
 %       cd/parse_all_swds.m
@@ -97,7 +101,8 @@ function varargout = all_files (varargin)
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_traces_EEG.m
 %       cd/update_file_base_in_matfiles.m
-%       /home/Matlab/plethR01/plethR01_analyze.m
+%       ~/plethR01/plethR01_analyze.m
+%       ~/FluoroSNNAP/FluroSNNAP.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting63.m
 %       
 
@@ -114,10 +119,13 @@ function varargout = all_files (varargin)
 % 2019-12-13 Added 'SubDirInstead' as an optional argument 
 % 2019-12-31 Fixed usage of the 'Prefix' option
 % 2019-01-22 Added usage of add_escape_char()
+% 2019-01-30 Fixed 'SubDirInstead'
+% 2019-01-30 Now sorts by 'datenum' if the user wants to sort by 'date'
+% 2019-01-30 Now allows a '.' to be in the prefix, keyword, suffix or extension
 % TODO: Fix bug when a dot is in the folder name
 
 %% Hard-coded parameters
-validSortBys = {'name', 'date', 'bytes'};
+validSortBys = {'name', 'date', 'bytes', 'datenum'};
 
 %% Default values for optional arguments
 verboseDefault = false;         % don't print to standard output by default
@@ -217,8 +225,13 @@ if isempty(regExp)
         % Match the prefix, keyword, suffix and extension
         regExp = sprintf('^%s.*%s.*%s%s$', prefix, keyword, suffix, extension);
     else
-        % Match the prefix, keyword, suffix
-        regExp = sprintf('^%s.*%s.*%s[.].*$', prefix, keyword, suffix);
+        if subDirInstead
+            % Match the prefix, keyword, suffix
+            regExp = sprintf('^%s.*%s.*%s$', prefix, keyword, suffix);
+        else
+            % Match the prefix, keyword, suffix
+            regExp = sprintf('^%s.*%s.*%s[.].*$', prefix, keyword, suffix);
+        end
     end
 else
     % Display warning if an extension is provided
@@ -267,6 +280,11 @@ end
 
 % Sort by date or bytes if requested
 if ~strcmpi(sortBy, 'name')
+    % If the user wants to sort by date, actually sort by datenum
+    if strcmpi(sortBy, 'date')
+        sortBy = 'datenum';
+    end
+
     % Convert the struct array to a table
     filesTable = struct2table(files);
 
@@ -342,8 +360,8 @@ function str = add_escape_char (str)
 % TODO: Pull out as a function
 % TODO for SHINSHIN: Examine usage of regexp for other special characters
 
-specialChars = {'[', ']'};
-specialCharsEscaped = {'\[', '\]'};
+specialChars = {'[', ']', '.'};
+specialCharsEscaped = {'\[', '\]', '[.]'};
 
 str = replace(str, specialChars, specialCharsEscaped);
 

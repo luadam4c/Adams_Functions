@@ -91,6 +91,7 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 % Used by:
 %       cd/compute_autocorrelogram.m
 %       cd/compute_oscillation_duration.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/parse_multiunit.m
 
 % File History:
@@ -165,14 +166,19 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Compute the bin width in seconds
-binWidthSec = binWidthMs ./ MS_PER_S;
+[stimStartSec, binWidthSec, maxInterBurstIntervalSec] = ...
+    argfun(@(x) x ./ MS_PER_S, ...
+            stimStartMs, binWidthMs, maxInterBurstIntervalMs);
 
 % Save parameters used
 histParams.stimStartMs = stimStartMs;
+histParams.stimStartSec = stimStartSec;
 histParams.binWidthMs = binWidthMs;
+histParams.binWidthSec = binWidthSec;
 histParams.minBurstLengthMs = minBurstLengthMs;
 histParams.maxFirstInterBurstIntervalMs = maxFirstInterBurstIntervalMs;
 histParams.maxInterBurstIntervalMs = maxInterBurstIntervalMs;
+histParams.maxInterBurstIntervalSec = maxInterBurstIntervalSec;
 histParams.minSpikeRateInBurstHz = minSpikeRateInBurstHz;
 
 %% Do the job
@@ -180,6 +186,7 @@ if isempty(spikeTimesMs)
     histParams.nBins = 0;
     histParams.halfNBins = 0;
     histParams.histLeftMs = NaN;
+    histParams.histLeftSec = NaN;
     histParams.nBurstsTotal = 0;
     histParams.nBurstsIn10s = 0;
     histParams.nBurstsInOsc = 0;
@@ -192,10 +199,13 @@ if isempty(spikeTimesMs)
     histParams.nSpikesIn10s = 0;
     histParams.nSpikesInOsc = 0;
     histParams.timeOscEndMs = stimStartMs;
+    histParams.timeOscEndSec = stimStartSec;
     histParams.oscDurationMs = 0;    
+    histParams.oscDurationSec = 0;
 
     histData.spikeCounts = [];
     histData.edgesMs = [];
+    histData.edgesSec = [];
     histData.iBinBurstStarts = [];
     histData.iBinBurstEnds = [];
     histData.iBinBurstIn10sStarts = [];
@@ -206,7 +216,9 @@ if isempty(spikeTimesMs)
     histData.spikeCountsEachBurstIn10s = [];
     histData.spikeCountsEachBurstInOsc = [];
     histData.timeBurstStartsMs = [];
+    histData.timeBurstStartsSec = [];
     histData.timeBurstEndsMs = [];
+    histData.timeBurstEndsSec = [];
     histData.timeBurstIn10sStartsMs = [];
     histData.timeBurstIn10sEndsMs = [];
     histData.timeBurstInOscStartsMs = [];
@@ -405,17 +417,13 @@ end
 oscDurationMs = timeOscEndMs - stimStartMs;
 
 % Convert to seconds
-[binWidthSec, maxInterBurstIntervalSec, ...
-    histLeftSec, timeOscEndSec, oscDurationSec, ...
+[histLeftSec, timeOscEndSec, oscDurationSec, ...
     edgesSec, timeBurstStartsSec, timeBurstEndsSec] = ...
     argfun(@(x) x ./ MS_PER_S, ...
-            binWidthMs, maxInterBurstIntervalMs, ...
             histLeftMs, timeOscEndMs, oscDurationMs, ...
             edgesMs, timeBurstStartsMs, timeBurstEndsMs);
 
 %% Output results
-histParams.binWidthSec = binWidthSec;
-histParams.maxInterBurstIntervalSec = maxInterBurstIntervalSec;
 histParams.nBins = nBins;
 histParams.halfNBins = halfNBins;
 histParams.histLeftMs = histLeftMs;

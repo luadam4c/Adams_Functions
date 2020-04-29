@@ -51,7 +51,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 %                           4 - Find cells within indices to fit 
 %                                   present for all pharm conditions and all g_incr
 %                           5 - Choose the "best" sweep from each cell in iCellToFit
-%                   default == 4 if columnMode == 1
+%                   default == 6 if columnMode == 1
 %                              5 if columnMode == 2
 %                   - 'DataMode': data mode
 %                   must be empty or one of:
@@ -119,6 +119,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 % 2020-01-20 Now restricts gCondToUse to only those with data for 
 %               all pCondToUse present
 % 2020-01-23 Added attempt numbers 6-8
+% 2020-01-XX Default attemptNumber is now 6 for columnMode == 1
 
 %% Hard-coded parameters
 pharmStr = 'prow';

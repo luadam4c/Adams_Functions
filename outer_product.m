@@ -7,6 +7,7 @@ function product = outer_product (X, Y)
 %
 % Example(s):
 %       outer_product({'a', 'b'}, {'1', '2', '3'})
+%       outer_product({1:2, 1:3}, {2:3, 2:4, 1:5})
 %       outer_product(1:3, 4:6)
 %       product = outer_product(num2cell(1:4), num2cell([100; 200; 400]))
 %

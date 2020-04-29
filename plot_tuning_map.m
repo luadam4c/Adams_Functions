@@ -146,7 +146,7 @@ if pIsLog(1)
 elseif pIsLog(2)
     set(gca, 'YScale', 'log');
 end
-set(gca, 'CLimits', climits);
+set(gca, 'CLim', climits);
 colorbar;
 
 % Restrict x axis if xlimits provided

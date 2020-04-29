@@ -69,8 +69,11 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
 %       cd/compute_combined_data.m
+%       cd/load_neuron_outputs.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_analyze_spikes.m
+%       cd/m3ha_network_plot_essential.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_example_jitter.m.m
 %       cd/m3ha_plot_figure02.m

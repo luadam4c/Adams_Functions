@@ -13,23 +13,6 @@ function statsTable = m3ha_compute_statistics (varargin)
 %       statsTable = m3ha_compute_statistics('PharmConditions', num2cell(1:4))
 %       statsTable = m3ha_compute_statistics('PharmConditions', num2cell(1:4), 'GIncrCondition', num2cell([100; 200; 400]))
 %
-% Requires:
-%       cd/argfun.m
-%       cd/array_fun.m
-%       cd/compute_stats.m
-%       cd/first_matching_field.m
-%       cd/force_column_cell.m
-%       cd/force_column_vector.m
-%       cd/match_row_count.m
-%       cd/m3ha_load_sweep_info.m
-%       cd/m3ha_select_sweeps.m
-%
-% Used by:
-%       cd/m3ha_compute_and_plot_statistics.m
-%       cd/m3ha_plot_figure02.m
-%       cd/m3ha_plot_figure04.m
-%       cd/m3ha_simulate_population.m
-%
 % Outputs:
 %       statsTable  - a table containing measures as row names
 %                       and the following variables:
@@ -87,6 +70,21 @@ function statsTable = m3ha_compute_statistics (varargin)
 %                   must be empty or some of: -60, -65, -70
 %                       or a cell array of them (will become 3rd dimension)
 %                   default == no restrictions
+%
+% Requires:
+%       cd/argfun.m
+%       cd/array_fun.m
+%       cd/compute_stats.m
+%       cd/first_matching_field.m
+%       cd/force_column_cell.m
+%       cd/force_column_vector.m
+%       cd/match_row_count.m
+%       cd/m3ha_load_sweep_info.m
+%       cd/m3ha_select_sweeps.m
+%
+% Used by:
+%       cd/m3ha_compute_and_plot_statistics.m
+%       cd/m3ha_compute_and_plot_violin.m
 
 % File History:
 % 2016-08-19 Created
@@ -100,6 +98,7 @@ function statsTable = m3ha_compute_statistics (varargin)
 %               as optional arguments
 % 2019-12-04 Added other LTS features that might be of interest:
 % 2019-12-04 Added other burst features that might be of interest
+% 2020-02-16 Now makes sure the same cells are represented in all groups
 % TODO: Add 'MeasuresToCompute' as an optional argument
 
 %% Hard-coded parameters
@@ -183,6 +182,23 @@ if isempty(swpInfo)
     swpInfo = m3ha_load_sweep_info;
 end
 
+% Update the toUse column based on data mode
+swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'Verbose', false, ...
+                            'DataMode', dataMode);
+
+%% Determine all possible cells
+% Extract whether to use the sweep
+toUse = swpInfo.toUse;
+
+% Restrict swpInfo to those sweeps
+swpInfoToUse = swpInfo(toUse, :);
+
+% Extract the cell IDs
+cellIdRow = swpInfoToUse.(cellIdStr);
+
+% Find unique cell IDs
+uniqueCellIds = unique(cellIdRow);
+
 %% Create all conditions
 if iscell(pharmConditionsUser) || iscell(gIncrConditionsUser) || ...
         iscell(vHoldConditionsUser)
@@ -242,8 +258,8 @@ if manyConditionsFlag
     [allValues, nValues, meanValue, stdValue, ...
             stderrValue, errValue, upper95Value, lower95Value] = ...
         array_fun(@(x, y, z) ...
-                    m3ha_compute_statistics_helper(swpInfo, dataMode, ...
-                        x, y, z, cellIdStr, measureStr, ...
+                    m3ha_compute_statistics_helper(swpInfo, ...
+                        x, y, z, uniqueCellIds, cellIdStr, measureStr, ...
                         ltsAmplitudeStr, ltsMaxSlopeStr, ltsConcavityStr, ...
                         ltsProminenceStr, ltsWidthStr, ltsOnsetTimeStr, ...
                         spikesPerLtsStr, spikeMaxAmpStr, spikeMinAmpStr, ...
@@ -276,9 +292,9 @@ else
     %            or a nMeasures x 1 column numeric vector
     [allValues, nValues, meanValue, stdValue, ...
             stderrValue, errValue, upper95Value, lower95Value] = ...
-        m3ha_compute_statistics_helper(swpInfo, dataMode, ...
+        m3ha_compute_statistics_helper(swpInfo, ...
                 pharmCondition, gIncrCondition, vHoldCondition, ...
-                cellIdStr, measureStr, ...
+                uniqueCellIds, cellIdStr, measureStr, ...
                 ltsAmplitudeStr, ltsMaxSlopeStr, ltsConcavityStr, ...
                 ltsProminenceStr, ltsWidthStr, ltsOnsetTimeStr, ...
                 spikesPerLtsStr, spikeMaxAmpStr, spikeMinAmpStr, ...
@@ -307,9 +323,9 @@ statsTable = table(measureTitle, measureStr, dataMode, ...
 
 function [allValues, nValues, meanValue, stdValue, ...
                     stderrValue, errValue, upper95Value, lower95Value] = ...
-                m3ha_compute_statistics_helper(swpInfo, dataMode, ...
+                m3ha_compute_statistics_helper(swpInfo, ...
                         pharmConditions, gIncrConditions, vHoldConditions, ...
-                        cellIdStr, measureStr, ...
+                        uniqueCellIds, cellIdStr, measureStr, ...
                         ltsAmplitudeStr, ltsMaxSlopeStr, ltsConcavityStr, ...
                         ltsProminenceStr, ltsWidthStr, ltsOnsetTimeStr, ...
                         spikesPerLtsStr, spikeMaxAmpStr, spikeMinAmpStr, ...
@@ -318,9 +334,8 @@ function [allValues, nValues, meanValue, stdValue, ...
 %% Computes LTS and burst statistics for one condition
 
 %% Select sweeps
-% Select the sweeps based on data mode
+% Restrict sweeps to use to the given conditions
 swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'Verbose', false, ...
-                                'DataMode', dataMode, ...
                                 'PharmConditions', pharmConditions, ...
                                 'GIncrConditions', gIncrConditions, ...
                                 'VHoldConditions', vHoldConditions);
@@ -331,12 +346,8 @@ toUse = swpInfo.toUse;
 % Restrict swpInfo to those sweeps
 swpInfoToUse = swpInfo(toUse, :);
 
-%% Determine all possible cells
 % Extract the cell IDs
 cellIdRow = swpInfoToUse.(cellIdStr);
-
-% Find unique cell IDs
-uniqueCellIds = unique(cellIdRow);
 
 %% Extract measures
 % Extract the measures
@@ -375,13 +386,11 @@ burstOnsetTimeEachSwp(~hasLts) = NaN;
 spikesPerBurstEachSwp(~hasLts) = NaN;
 
 %% Compute LTS & burst measures for each cell
-% Compute the LTS probability for each cell
-ltsProbability = array_fun(@(x) sum(cellIdRow == x & hasLts) / ...
-                                sum(cellIdRow == x), uniqueCellIds);
-
-% Compute the burst probability for each cell
-burstProbability = array_fun(@(x) sum(cellIdRow == x & hasBurst) / ...
-                                sum(cellIdRow == x), uniqueCellIds);
+% Compute the LTS or burst probability for each cell
+[ltsProbability, burstProbability] = ...
+    argfun(@(a) array_fun(@(b) compute_feature_prob(b, cellIdRow, a), ...
+                            uniqueCellIds), ...
+            hasLts, hasBurst);
 
 % Compute means of LTS and burst properties for each cell
 [ltsAmplitude, ltsMaxSlope, ltsConcavity, ...
@@ -419,6 +428,25 @@ nValues = array_fun(@(x) sum(~isnan(x)), allValues);
     argfun(@(x) array_fun(@(y) compute_stats(y, x, 'IgnoreNan', true), ...
                         allValues), ...
             'mean', 'std', 'stderr', 'err', 'upper95', 'lower95');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function featProb = compute_feature_prob (cellId, cellIdVec, hasFeatVec)
+%% Computes the probability of a feature occuring
+
+% Determine whether each sweep is from this cell
+isThisCell = cellIdVec == cellId;
+
+% Count the number of sweeps for this cell
+nSweepsThisCell = sum(isThisCell);
+nSweepsHasFeatThisCell = sum(isThisCell & hasFeatVec);
+
+% Compute the probability if there is a sweep
+if nSweepsThisCell > 0
+    featProb = nSweepsHasFeatThisCell / nSweepsThisCell;
+else
+    featProb = NaN;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

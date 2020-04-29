@@ -21,6 +21,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       mat = [2, 3; NaN, 4; NaN, 5];
 %       extract_subvectors(mat, 'EndPoints', [1, 1; 1, 2])
 %       extract_subvectors({mat, mat}, 'EndPoints', {[1, 1; 1, 2], [1, 1; 2, 3]})
+%       extract_subvectors({'a', 'b'}, 'Indices', [2, 2])
+%       extract_subvectors({'a', 'b'}, 'Indices', [2, NaN])
 %
 % Outputs:
 %       subVecs     - subvectors extracted
@@ -119,12 +121,16 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/extract_columns.m
 %       cd/extract_common_directory.m
 %       cd/find_closest.m
+%       cd/find_in_list.m
+%       cd/find_matching_files.m
 %       cd/find_passive_params.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/force_matrix.m
 %       cd/iscellvector.m
+%       cd/load_neuron_outputs.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/match_positions.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
@@ -165,6 +171,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % 2019-10-04 Added 'Pattern' as an optional argument
 % 2020-01-01 Now returns original vectors if no custom inputs
+% 2020-02-04 Improved create_empty_match
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -422,7 +429,8 @@ end
 % If indices all NaNs, it is for padding, so return it as the subvector
 %   If the time window is out of range, return an empty vector
 if isnumeric(indices) && all(all(isnan(indices)))
-    subVec = indices;
+    subVec = create_empty_match(vec, 'NRows', size(indices, 1), ...
+                                'NColumns', size(indices, 2));
     return
 elseif isempty(indices) || isempty(vec)
     subVec = [];
@@ -497,12 +505,12 @@ if ispositiveintegerarray(indices)
     subVec = vec(indices, :);
 else
     % Use interpolation
-    subVec = interp_indices (vec, indices);
+    subVec = interpolate_indices (vec, indices);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subVec = interp_indices (vec, indices)
+function subVec = interpolate_indices (vec, indices)
 % Extract subvector(s) from one set of indices using interpolation
 
 % Set up indices
@@ -706,6 +714,13 @@ for iCol = 1:nColumns
     % Replace the parts of this column that are not NaNs
     subVec(withoutNaNsThis, iCol) = ...
         extract_subvec(vecThis, indicesThis(withoutNaNsThis));
+end
+
+try
+catch
+    % Index out of bounds, return empty
+    fprintf('Warning: Indices out of bounds!\n');
+    subVec = [];
 end
 
 %}
