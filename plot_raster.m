@@ -123,6 +123,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       cd/extract_common_prefix.m
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
+%       cd/isnum.m
 %       cd/set_figure_properties.m
 %
 % Used by:    
@@ -191,7 +192,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'data', ...             % a cell array of event time arrays
-    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isempty(x) || isnum(x) || iscellnumeric(x), ...
                 ['data must be either empty or a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 
@@ -290,7 +291,7 @@ if plotOnly
 end
 
 % If numeric, force as a column cell array of column vectors
-if isnumeric(data)
+if isnum(data)
     data = force_column_vector(data, 'IgnoreNonVectors', false, ...
                                 'ForceCellOutput', true);
 end

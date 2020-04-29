@@ -33,6 +33,7 @@ function isNum = isnum (x, varargin)
 %       cd/medianfilter.m
 %       cd/movingaveragefilter.m
 %       cd/plot_psth.m
+%       cd/plot_raster.m
 
 % File History:
 % 2018-12-28 Created by Adam Lu

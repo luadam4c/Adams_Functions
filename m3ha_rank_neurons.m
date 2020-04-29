@@ -31,6 +31,7 @@
 %       cd/convert_to_char.m
 %       cd/copy_into.m
 %       cd/create_error_for_nargin.m
+%       cd/isemptycell.m
 %       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_decide_on_sweep_weights.m
 %       cd/m3ha_extract_component_errors.m
@@ -89,7 +90,7 @@ rowModeAcrossTrials = 1;            % row mode when fitting across trials:
                                     %   2 - each row is a pharm, g incr pair
 
 % Directory names
-parentDirectoryTemp = '/media/adamX/m3ha';
+parentDirectory = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
@@ -144,7 +145,7 @@ avgLtsSlopeErrorStr = 'avgLtsSlopeError';
 cellNameStr = 'cellName';
 
 % TODO: Make optional argument
-% outFolder = '20191227_ranked_singleneuronfitting0-90';
+% outFolderName = '20191227_ranked_singleneuronfitting0-90';
 % iterSetStr = 'singleneuronfitting0-90';
 % rankNumsToPlot = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
 % iterSetStr = 'singleneuronfitting0-90';
@@ -153,7 +154,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20191229_ranked_singleneuronfitting0-91';
+% outFolderName = '20191229_ranked_singleneuronfitting0-91';
 % iterSetStr = 'singleneuronfitting0-91';
 % rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 % dataMode = 2;
@@ -161,7 +162,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200102_ranked_singleneuronfitting0-94';
+% outFolderName = '20200102_ranked_singleneuronfitting0-94';
 % iterSetStr = 'singleneuronfitting0-94';
 % rankNumsToPlot = [1:6, 21, 36];
 % rankNumsToPlot = [1:6, 8, 10, 11, 13:18, 21, 22, 24, 27, 28, 36];
@@ -171,7 +172,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200103_ranked_singleneuronfitting0-94';
+% outFolderName = '20200103_ranked_singleneuronfitting0-94';
 % iterSetStr = 'singleneuronfitting0-94';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -179,7 +180,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200106_ranked_singleneuronfitting0-95';
+% outFolderName = '20200106_ranked_singleneuronfitting0-95';
 % iterSetStr = 'singleneuronfitting0-95';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -187,7 +188,7 @@ cellNameStr = 'cellName';
 % sweepWeights = [];
 % attemptNumberAcrossTrials = 3;
 
-% outFolder = '20200108_ranked_singleneuronfitting0-95';
+% outFolderName = '20200108_ranked_singleneuronfitting0-95';
 % iterSetStr = 'singleneuronfitting0-95';
 % rankNumsToPlot = 1:11;
 % dataMode = 3;
@@ -195,7 +196,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [];
 
-% outFolder = '20200123_ranked_singleneuronfitting0-97';
+% outFolderName = '20200123_ranked_singleneuronfitting0-97';
 % iterSetStr = 'singleneuronfitting0-97';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -203,7 +204,7 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
-% outFolder = '20200129_ranked_singleneuronfitting101';
+% outFolderName = '20200129_ranked_singleneuronfitting101';
 % rankNumsToPlot = 1:11;
 % rankNumsToPlot = [8, 18];
 % rankNumsToPlot = [8, 18, 20, 23, 24, 26, 27, 30, 31, 33, 35, 36];
@@ -214,7 +215,7 @@ cellNameStr = 'cellName';
 % paramDirNames = fullfile('best_params', ...
 %                         {'bestparams_20200126_singleneuronfitting101'});
 
-% outFolder = '20200131_ranked_singleneuronfitting0-102';
+% outFolderName = '20200131_ranked_singleneuronfitting0-102';
 % iterSetStr = 'singleneuronfitting0-102';
 % rankNumsToPlot = 1:11;
 % dataMode = 3;
@@ -222,7 +223,7 @@ cellNameStr = 'cellName';
 % sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
 % errorWeights = [1; 6; 5; 1; 1];
 
-% outFolder = '20200202_ranked_singleneuronfitting0-102';
+% outFolderName = '20200202_ranked_singleneuronfitting0-102';
 % iterSetStr = 'singleneuronfitting0-102';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -230,7 +231,7 @@ cellNameStr = 'cellName';
 % sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
 % errorWeights = [1; 6; 5; 1; 1];
 
-% outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
+% outFolderName = '20200203_ranked_manual_singleneuronfitting0-102';
 % iterSetStr = 'manual_singleneuronfitting0-102';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
@@ -238,7 +239,7 @@ cellNameStr = 'cellName';
 % sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
 % errorWeights = [1; 6; 5; 1; 1];
 
-% outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
+% outFolderName = '20200203_ranked_manual_singleneuronfitting0-102';
 % iterSetStr = 'manual_singleneuronfitting0-102';
 % rankNumsToPlot = [1, 2, 4, 7, 10];            % old best-fitted
 % rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33]; % mistake
@@ -256,15 +257,15 @@ cellNameStr = 'cellName';
 % rankYTickLocs = [1, 8, 15, 22, 29, 36];
 % selectedXTicks = [1, 25];
 
-% outFolder = '20200207_ranked_manual_singleneuronfitting0-102';
+% outFolderName = '20200207_ranked_manual_singleneuronfitting0-102';
 % rankNumsToPlot = 1:23;                  % new well-fitted
 % rankNumsToPlot = [1:3, 6, 9];               % best-fitted
 % iterSetStr = 'manual_singleneuronfitting0-102';
 % dataMode = 2;
 % attemptNumberAcrossTrials = 3;
 
-outFolder = '20200428_ranked_manual_singleneuronfitting0-102';
-rankNumsToPlot = 1:23;                  % new well-fitted
+outFolderName = '20200429_ranked_manual_singleneuronfitting0-102';
+rankNumsToPlot = 1:23;
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2;                       % data mode:
                                     %   0 - all data
@@ -347,6 +348,7 @@ selectedYTicks = {[8, 150, 300]; [5, 200, 400]; [1, 50, 100]; ...
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
+outFolder = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -378,18 +380,22 @@ otherArguments = iP.Unmatched;
 
 %% Preparation
 % Locate the home directory
-% parentDirectory = m3ha_locate_homedir;
-parentDirectory = parentDirectoryTemp;
+if isempty(parentDirectory)
+    parentDirectory = m3ha_locate_homedir;
+end
 
 % Locate the fit directory
 fitDirectory = fullfile(parentDirectory, fitDirName);
 
-% Decide on output folder
-if isempty(outFolder)
+% Decide on output folder name
+if isempty(outFolderName)
     % Create output folder name
     outFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
                             '_', defaultOutFolderStr, '_', iterSetStr);
+end
 
+% Decide on output folder
+if isempty(outFolder)
     % Create full path to output folder
     outFolder = fullfile(fitDirectory, outFolderName);
 end
@@ -448,30 +454,36 @@ if chooseBestParamsFlag
     % Get all cell names to fit
     cellNamesToFit = cellInfo{cellIdsToFit, 'cellName'};
 
-    % Count the number of cells that were fitted 
-    nCellsToFit = numel(cellNamesToFit);
-
-    % Select the raw traces to import for each cell to fit
-    [fileNamesToFit, rowConditionsToFit] = ...
-        arrayfun(@(x) m3ha_select_raw_traces(x, 'ColumnMode', columnMode, ...
-                    'RowMode', rowModeAcrossTrials, ...
-                    'AttemptNumber', attemptNumberAcrossTrials, ...
-                    'SwpInfo', swpInfo, 'CellInfo', cellInfo), ...
-                cellIdsToFit, 'UniformOutput', false);
-
-    %% Find the best parameters for each cell
-    % Find all the possible initial parameters files for each cell to fit
+    % Find all the possible parameters files for each cell to fit
     [~, customInitPathsToFit] = ...
         cellfun(@(x) all_files('Directory', paramDirs, 'Keyword', x), ...
                                 cellNamesToFit, 'UniformOutput', false);
 
+    % Remove cells that don't have parameter files
+    toRank = ~isemptycell(customInitPathsToFit);
+    cellNamesToRank = cellNamesToFit(toRank);
+    cellIdsToRank = cellIdsToFit(toRank);
+    customInitPathsToRank = customInitPathsToFit(toRank);
+
+    % Select the raw traces to import for each cell to fit
+    [fileNamesToRank, rowConditionsToRank] = ...
+        arrayfun(@(x) m3ha_select_raw_traces(x, 'ColumnMode', columnMode, ...
+                    'RowMode', rowModeAcrossTrials, ...
+                    'AttemptNumber', attemptNumberAcrossTrials, ...
+                    'SwpInfo', swpInfo, 'CellInfo', cellInfo), ...
+                cellIdsToRank, 'UniformOutput', false);
+
+    %% Find the best parameters for each cell
+    % Count the number of cells that will be ranked
+    nCellsToRank = numel(cellNamesToRank);
+
     % Find the best parameters for each cell
-    for iCellToFit = nCellsToFit:-1:1
+    for iCellToRank = nCellsToRank:-1:1
         % Extract stuff for this cell
-        cellNameThis = cellNamesToFit{iCellToFit};
-        fileNamesThis = fileNamesToFit{iCellToFit};
-        rowConditionsThis = rowConditionsToFit{iCellToFit};
-        customInitPathsThis = customInitPathsToFit{iCellToFit};
+        cellNameThis = cellNamesToRank{iCellToRank};
+        fileNamesThis = fileNamesToRank{iCellToRank};
+        rowConditionsThis = rowConditionsToRank{iCellToRank};
+        customInitPathsThis = customInitPathsToRank{iCellToRank};
 
         % Display message
         fprintf('Choosing initial parameters for cell %s ... \n', cellNameThis);
