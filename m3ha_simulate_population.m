@@ -97,8 +97,8 @@ plotBarPlotsFlag = true;
 archiveScriptsFlag = true;
 
 % Simulation parameters
-useHH = false;          % whether to use Hudgin-Huxley Na+ and K+ channels
-useCvode = false;       % whether to use variable integration time steps
+useHH = true;            % whether to use Hudgin-Huxley Na+ and K+ channels
+useCvode = false;        % whether to use variable integration time steps
 buildMode = 'active';
 simMode = 'active';
 dataMode = 1; %0;           % data mode:
@@ -296,11 +296,29 @@ individualYTickLocs = [];
 % rankNumsToUse = 1:23;
 % rankNumsOpenProbability = 1:23;
 
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200428_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:23;
+% rankNumsOpenProbability = 1:23;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200429_population_rank1-31_dataMode1_attemptNumber3_noHH_cvode_on');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:31;
+% rankNumsOpenProbability = 1:31;
+
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200429_population_rank1-31_dataMode1_attemptNumber3_noHH_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:31;
+% rankNumsOpenProbability = 1:31;
+
 outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-        '20200428_population_rank1-23_dataMode1_attemptNumber3_noHH_cvode_off');
+        '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_off');
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = 1:23;
-rankNumsOpenProbability = 1:23;
+rankNumsToUse = 1:31;
+rankNumsOpenProbability = 1:31;
 
 prefix = '';
 opdThreshold = 1e-2;

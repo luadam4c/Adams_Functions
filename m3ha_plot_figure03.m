@@ -61,45 +61,27 @@ fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 % Working versions:
 % useHH = false;
 % useCvode = true;
-% secondOrder = 0;
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200429-secondOrder-0-useCvode-true-useHH-false');
+%                     'backup-20200430-useCvode-true-useHH-false');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % useHH = false;
 % useCvode = false;
-% secondOrder = 0;
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200429-secondOrder-0-useCvode-false-useHH-false');
+%                     'backup-20200430-useCvode-false-useHH-false');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % useHH = true;
 % useCvode = true;
-% secondOrder = 0;
 % figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200429-secondOrder-0-useCvode-true-useHH-true');
-% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
-
-% useHH = true;
-% useCvode = true;
-% secondOrder = 2;
-% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200429-secondOrder-2-useCvode-true-useHH-true');
+%                     'backup-20200430-useCvode-true-useHH-true');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 useHH = true;
 useCvode = false;
-secondOrder = 0;
 figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-                    'backup-20200429-secondOrder-0-useCvode-false-useHH-true');
+                    'backup-20200430-useCvode-false-useHH-true');
 paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
-
-% useHH = true;
-% useCvode = false;
-% secondOrder = 2;
-% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-%                     'backup-20200429-secondOrder-2-useCvode-false-useHH-true');
-% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % Files
 sweepInfoFile = 'dclampdatalog_take4.csv';
@@ -120,7 +102,7 @@ exampleCellNames = {'D101310'; 'G101310'};
 % Simulation settings
 % useHH = false;
 % useCvode = true;
-% secondOrder = 0;
+secondOrder = 0;
 columnMode = 1;
 plotAllFlag = false;
 plotIndividualFlag = true;
@@ -184,7 +166,8 @@ overlappedFigHeight = [];
 overlappedXLimits = [];
 overlappedYLimits = [];
 
-figTypes = {'png', 'epsc2'};
+% figTypes = {'png', 'epsc2'};
+figTypes = {'png'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
