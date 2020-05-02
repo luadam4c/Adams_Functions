@@ -1,4 +1,6 @@
-function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, seedNumberNeuron)
+function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, ...
+                                        seedNumberNeuron, seedNumberMatlab, ...
+                                        paramsDirName, outFolderParent)
 %% Launches NEURON with simulation commands and plot output figures
 %
 % Requires:
@@ -42,7 +44,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, seedNum
 % 2017-11-06 Moved code to define_actmode.m
 % 2017-11-07 Added candidateIDs
 % 2017-11-07 Added actMode = 8~10
-% 2017-11-08 Added candidateLabel to fileLabel
+% 2017-11-08 Added networkLabel to fileLabel
 % 2017-11-08 Added seedNumberMatlab
 % 2018-02-28 Don't use HH
 % 2018-03-29 Fixed ordering of useHH and REnsegs
@@ -91,27 +93,36 @@ experimentName = 'm3ha';
 %% Hard-coded parameters
 % Make directory to save all data
 bestParamsDirName = fullfile('optimizer4gabab', 'best_params');
-% paramsDirName = 'bestparams_20171213_singleneuronfitting16_Rivanna';
-% paramsDirName = 'bestparams_20180424_singleneuronfitting21_Rivanna';
-% paramsDirName = 'bestparams_20200103_ranked_singleneuronfitting0-94';
-% paramsDirName = 'bestparams_20200120_singleneuronfitting97';
-% paramsDirName = 'bestparams_20200124_singleneuronfitting99';
-% paramsDirName = 'bestparams_20200126_singleneuronfitting101';
-paramsDirName = 'bestparams_20200203_manual_singleneuronfitting0-102';
 homeDirName = 'network_model';
 candidateSheetName = 'candidate_cells.csv';
 
 %% Optional arguments
+if nargin <= 3
+    savePlotMode = '';
+end
 if nargin <= 4
     seedNumberNeuron = 0;       % number to seed random number generator
                                 %   for gpas variation
 end
+if nargin <= 5
+    seedNumberMatlab = 0;       % number to seed random number generator
+                                %   for TC template ordering
+end
+if nargin <= 6
+    % paramsDirName = 'bestparams_20171213_singleneuronfitting16_Rivanna';
+    % paramsDirName = 'bestparams_20180424_singleneuronfitting21_Rivanna';
+    % paramsDirName = 'bestparams_20200103_ranked_singleneuronfitting0-94';
+    % paramsDirName = 'bestparams_20200120_singleneuronfitting97';
+    % paramsDirName = 'bestparams_20200124_singleneuronfitting99';
+    % paramsDirName = 'bestparams_20200126_singleneuronfitting101';
+    paramsDirName = 'bestparams_20200203_manual_singleneuronfitting0-102';
+end
+if nargin <= 7
+    outFolderParent = '';
+end
 
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
-seedNumberMatlab = seedNumberNeuron;  %1;
-                                % number to seed random number generator
-                                %   for TC template selection
 simNumbers = []; %5;            % run only these simulation numbers
 onLargeMemFlag = false;         % whether to run on large memory nodes
 onHpcFlag = false;              % whether on high-performance computing server
@@ -597,34 +608,28 @@ TCgababW = 0.952;           % weight (1) of the fast decay
 %% Initial ion concentrations
 cai0 = 2.4e-4;  % initial intracellular [Ca++] (mM), Destexhe et al
 cao0 = 2;       % initial extracellular [Ca++] (mM), Peter's value
-% cli0 = 5;     % initial intracellular [Cl-] (mM), 
-                %   corresponding to eGABA = -71 mV
-                %            TODO: Ulrich
 cli0 = 8;       % initial intracellular [Cl-] (mM),
                 %   corresponding to eGABA = -61 mV
                 %            Jedlicka et al 2011 (agrees with Peter's data)
-% cli0 = 11;    % initial intracellular [Cl-] (mM),
-                %   corresponding to eGABA = -54 mV
-                %            TODO: Peter's data with ChABC added
-% cli0 = 17;    % initial intracellular [Cl-] (mM),
-                %   corresponding to eGABA = -45 mV
-                %            TODO: Sun
-clo0 = 130.5;   % initial extracellular [Cl-] (mM), Peter's value (Jedlicka et al 2011 used 133.5 mM)
+clo0 = 130.5;   % initial extracellular [Cl-] (mM), Peter's value 
+                %   (Jedlicka et al 2011 used 133.5 mM)
 
 %% Activation parameters for actMode == 1~3, 6~9
+timeToStabilize = 2000;         % time for everything to stabilize
 actCellID = floor(nCells/2);    % ID # of central neuron to activate
-stimStart = 3000;               % stimulation delay (ms)
+stimStart = timeToStabilize + 1000;
+                                % stimulation delay (ms)
 stimDur = 40;                   % stimulation duration (ms)
 stimFreq = 0.1;                 % stimulation frequency (Hz),
                                 %   must be less than 1000/cpDur
 cpDur = 40;                     % current pulse duration (ms)
 
 % The following must be consistent with m3ha_network_update_dependent_params.m
-cpAmp = 0.2*(REdiam/10)^2;     % current pulse amplitude (nA),
+cpAmp = 0.2*(REdiam/10)^2;      % current pulse amplitude (nA),
                                 %   must be proportional to square of diameter 
-cpPer = floor(1000/stimFreq); % current pulse period (ms),
+cpPer = floor(1000/stimFreq);   % current pulse period (ms),
                                 %   i.e. interval between pulse onsets
-cpNum = ceil(stimDur/cpPer); % number of current pulses
+cpNum = ceil(stimDur/cpPer);    % number of current pulses
 
 %% Activation parameters for actMode == 4
 actCellV = 0;                   % voltage (mV) to set activated neuron to
@@ -635,14 +640,15 @@ actWidth = 50;                  % width of Gaussian distribution for
 actMaxP = 0.5;                  % maximum likelihood of activation at center
 
 %% Simulation parameters
+% total time of simulation (ms)
 if simMode == 1
-    tStop = 30000;              % total time of simulation (ms)
+    tStop = timeToStabilize + 28000;    
 elseif simMode == 2
-    tStop = 4000; %1000;        % total time of simulation (ms)
+    tStop = timeToStabilize + 2000;
 elseif simMode == 3
-    tStop = 7000; %4000;        % total time of simulation (ms)
+    tStop = timeToStabilize + 5000;
 elseif simMode == 4
-    tStop = 4800; %4000;        % total time of simulation (ms)
+    tStop = timeToStabilize + 2800;
 end
 dt = 0.1;                       % time step of integration (ms)
 
@@ -713,7 +719,7 @@ sTCparamsF = 'TCparams.csv';    % file with TC neuron parameters
 %% For debug mode
 if debugFlag
     tStart = 0;
-    tStop = 2000;
+    tStop = timeToStabilize;
 
     % Minimize number of points
     for p = 1:length(pNames)
@@ -738,6 +744,19 @@ else
     heteroTCFlag = 0;
 end
 
+%% Randomize candidate order
+% Seed random number generator with repetition number
+rng(seedNumberMatlab);
+
+% Force as a column vector
+candidateIDs = force_column_vector(candidateIDs, 'ToLinearize', true);
+
+% Sort in ascending order
+candidateIDsSorted = sort(candidateIDs, 'ascend');
+
+% Randomize to new order
+candidateIDsActualOrder = candidateIDsSorted(randperm(nCandidates));
+
 %% Set folders for reading and saving files
 % Find parent and home directory
 % parentDirectory = m3ha_locate_homedir;
@@ -749,18 +768,30 @@ homeDirectory = fullfile(parentDirectory, homeDirName);
 %compile_mod_files(homeDirectory);
 
 % Create or locate the parent output folder
-dateStamp = create_time_stamp('FormatOut', 'yyyymmdd');
-outFolderParent = fullfile(homeDirectory, ...
-                            [dateStamp, '_using_', paramsDirName], ...
-                            ['seedNumber_', num2str(seedNumberNeuron)]);
+if isempty(outFolderParent)
+    dateStamp = create_time_stamp('FormatOut', 'yyyymmdd');
+    outFolderParent = fullfile(homeDirectory, ...
+                                [dateStamp, '_using_', paramsDirName]);
+end
 check_dir(outFolderParent);
 
+% Create the seed directory
+outFolderThisSeed = fullfile(outFolderParent, ...
+                            ['seedNumber_', num2str(seedNumberNeuron)]);
+check_dir(outFolderThisSeed);
+
+% Create a candidate ID label
+if nCandidates == 1
+    candidateLabel = ['candidateIDs_', num2str(candidateIDsActualOrder)];
+else
+    candidateLabel = ['candidateIDs_', ...
+                    strjoin(convert_to_char(candidateIDsActualOrder), ',')];
+end
+
 % Decide on the file label suffix
-% fileSuffix = 'stimstart_3000';
 fileSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
-            '_candidateIDs_', create_label_from_sequence(candidateIDs), ...
-            '_simMode_', num2str(simMode), '_actMode_', num2str(actMode), ...
-            '_', savePlotMode];
+            '_', candidateLabel, '_simMode_', num2str(simMode), ...
+            '_actMode_', num2str(actMode), '_', savePlotMode];
 
 % Find the candidate table file and read it
 candidateSheetPath = fullfile(homeDirectory, candidateSheetName);
@@ -775,15 +806,16 @@ allCandNames = allCandNames(origInd);
 % Create a file label
 %   Note: Use current date & time in the format: YYYYMMDDThhmm
 timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
-if nCandidates > 1
-    candidateLabel = ['hetero', num2str(nCandidates)];
+if nCandidates == 1
+    networkLabel = allCandNames{candidateIDs};
 else
-    candidateLabel = allCandNames{candidateIDs};
+    networkLabel = ['hetero', num2str(nCandidates), ...
+                    'seed', num2str(seedNumberMatlab)];
 end
-fileLabel = [timeStamp, '_', candidateLabel, '_', fileSuffix];
+fileLabel = [timeStamp, '_', networkLabel, '_', fileSuffix];
 
 % Create an output folder for this file label
-outFolder = fullfile(outFolderParent, fileLabel);
+outFolder = fullfile(outFolderThisSeed, fileLabel);
 check_dir(outFolder);
 
 %% Construct looped parameters
@@ -986,14 +1018,8 @@ TCcellID = transpose(1:nCells) - 1;
 stimCellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
                                             RERErad, RETCrad);
 
-% Seed random number generator with repetition number
-rng(seedNumberMatlab);
-
-% Force as a column vector
-candidateIDs = force_column_vector(candidateIDs, 'ToLinearize', true);
-
 % Randomize order and match the number of desired neurons
-candidateIDsUsed = match_row_count(candidateIDs(randperm(nCandidates)), nCells);
+candidateIDsUsed = match_row_count(candidateIDsActualOrder, nCells);
 
 % Select candidates for each TC neuron
 candidateNamesUsed = match_positions(allCandNames, allIds, candidateIDsUsed);
@@ -1270,6 +1296,8 @@ paramsTable = m3ha_network_change_params(paramsTable, pchname, pchvalue, ...
 
 %{
 OLD CODE:
+
+candidateLabel = ['candidateIDs_', create_label_from_sequence(candidateIDs)];
 
 %}
 

@@ -61,7 +61,8 @@ function handles = m3ha_network_plot_gabab (varargin)
 %% Hard-coded parameters
 spExtension = 'singsp';
 spPrefix = 'TC[0]';
-ipscStartMs = 3000;
+timeToStabilize = 2000;         % time for everything to stabilize
+ipscStartMs = timeToStabilize + 1000;
 ampUnits = 'nS';
 
 % Column numbers for simulated data

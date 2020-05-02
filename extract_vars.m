@@ -38,7 +38,7 @@ function varExtracted = extract_vars (tableOrPath, varNames, varargin)
 %       cd/arglist2struct.m
 %       cd/compute_combined_trace.m
 %       cd/create_error_for_nargin.m
-%       cd/ismatch.m
+%       cd/ismember_custom.m
 %       cd/ispositiveintegervector.m
 %
 % Used by:
@@ -52,6 +52,7 @@ function varExtracted = extract_vars (tableOrPath, varNames, varargin)
 % 2019-12-03 Moved from singleneuronfitting.m
 % 2019-12-23 Now outputs a cell array if extracting more than one variable
 % 2020-04-19 Now allows the first argument to be a cell array
+% 2020-05-01 Now uses ismember_custom.m instead of ismatch.m
 % TODO: Allow other strings for rowsToExtract, such as 'first', 'last', etc.
 % TODO: Add 'OutputMode' to optionally extract as many outputs
 
@@ -143,7 +144,7 @@ elseif ~isempty(rowConditions)
     
     % Detemine whether each row matches the condition, for each condition
     isMatchingRowEachCondition = ...
-        cellfun(@(x) ismatch(tableOfVars.(x), rowConditions.(x)), ...
+        cellfun(@(x) ismember_custom(tableOfVars.(x), rowConditions.(x)), ...
                             conditionVarNames, 'UniformOutput', false);
                         
     % Determine whether each row is to be used

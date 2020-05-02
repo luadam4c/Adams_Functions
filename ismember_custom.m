@@ -57,6 +57,7 @@ function varargout = ismember_custom (cand, list, varargin)
 %       cd/istext.m
 %
 % Used by:
+%       cd/extract_vars.m
 %       cd/find_first_match.m
 %       cd/is_on_path.m
 

@@ -70,7 +70,7 @@ validPlotTypes = {'essential', 'm2h'};
 spExtension = 'singsp';
 cellIdRT = 0;
 cellIdTC = 0;
-ipscStartMs = 3000;
+timeToStabilize = 2000;         % time for everything to stabilize
 
 % Column numbers for simulated data
 %   Note: Must be consistent with m3ha_net.hoc
@@ -120,7 +120,7 @@ plotTypeDefault = 'essential';
 inFolderDefault = pwd;      % use current directory by default
 ampScaleFactorDefault = []; % set later
 pharmConditionDefault = []; % set later
-xLimitsDefault = [2000, 10000];
+xLimitsDefault = timeToStabilize + [0, 8000];
 outFolderDefault = '';      % set later
 figTitleDefault = '';           % set later
 figNameDefault = '';        % no figure name by default

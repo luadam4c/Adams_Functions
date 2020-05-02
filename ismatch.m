@@ -66,7 +66,6 @@ function varargout = ismatch (list, cand, varargin)
 %       cd/set_default_flag.m
 %
 % Used by:
-%       cd/extract_vars.m
 %       cd/find_in_strings.m
 %       cd/is_var_in_table.m
 %       cd/ismember_custom.m

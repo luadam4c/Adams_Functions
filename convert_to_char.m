@@ -5,6 +5,7 @@ function strs = convert_to_char (data, varargin)
 %       TODO
 % Example(s):
 %       convert_to_char(1:10)
+%       convert_to_char([4, 2, 5])
 %       convert_to_char({1:10, 3:5})
 %       convert_to_char({'dog', 'cat'})
 %       convert_to_char(["dog", "cat"])
