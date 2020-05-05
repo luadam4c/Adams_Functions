@@ -5,12 +5,11 @@ function [plotFrames, handles] = create_trace_plot_movie (xData, yData, varargin
 %       TODO
 %
 % Example(s):
-%       [plotFrames, handles] = create_trace_plot_movie(1:3, magic(3));
-%       write_frames(plotFrames, 'FileBase', 'magic3');
+%       [plotFrames, handles] = create_trace_plot_movie(1:3, magic(3), 'FileBase', 'magic3');
 %       dataWithNaN = magic(7);
 %       dataWithNaN([1, 4, 7], [2, 4]) = NaN;
 %       [plotFrames, handles] = create_trace_plot_movie(1:7, dataWithNaN, 'PlotMode', 'overlapped');
-%       write_frames(plotFrames, 'FileBase', 'magic5withNaN');
+%       write_frames(plotFrames, 'FileBase', 'magic7withNaN');
 %       [plotFrames, handles] = create_trace_plot_movie(1:100, randn(100, 3), 0.1);
 %       write_frames(plotFrames, 'FileBase', 'randn100');
 %

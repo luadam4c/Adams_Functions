@@ -1384,15 +1384,18 @@ otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
                 nan(1, size(d2xdt2VecsSmoothed, 2))];
 otherYLimits = [-0.001, 0.001];
 
-% figTitle6 = sprintf('d2(log(m2hdiff))/dt2 vs dV/dt');
-% plotPrePostForOtherVecs = false;
-% otherXVecsLabel = 'dV/dt';
-% otherXVecs = [nan(1, size(dvdtVecsSmoothed, 2)); dvdtVecsSmoothed];
-% otherXLimits = [0, 0.2];
-% otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
-% otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
-%                 nan(1, size(d2xdt2VecsSmoothed, 2))];
-% otherYLimits = [-0.001, 0.001];
+% figTitle7 = sprintf('d2(log(m2hdiff))/dt2 vs dV/dt');
+figTitle7 = sprintf('d2(log(m2hdiff))/dt2 vs dV/dt');
+plotPrePostForOther2Vecs = false;
+% other2XVecsLabel = 'dV/dt';
+other2XVecsLabel = 'Slope of Voltage';
+other2XVecs = [nan(1, size(dvdtVecsSmoothed, 2)); dvdtVecsSmoothed];
+other2XLimits = [0, 0.2];
+% other2YVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
+other2YVecsLabel = 'Concavity of Open Probability Discrepancy';
+other2YVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
+                nan(1, size(d2xdt2VecsSmoothed, 2))];
+other2YLimits = [-0.001, 0.001];
 
 %% Replace specific values with NaNs
 % Find indices corresponding to out-of-view m2hDiff values

@@ -16,6 +16,7 @@ function hold_off (wasHold)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/create_plot_movie.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_ball_stick.m
 %       cd/plot_chevron.m

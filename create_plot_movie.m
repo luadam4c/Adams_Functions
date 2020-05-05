@@ -27,12 +27,17 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 %                   - 'FileBase': file base for the movie
 %                   must be a string scalar or a character vector
 %                   default == set in write_frames.m
+%                   - 'PlotLeadPoints': whether to plot leading points
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - Any other parameter-value pair for plot_traces()
 %
 % Requires:
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
+%       cd/hold_on.m
+%       cd/hold_off.m
 %       cd/match_time_info.m
 %       cd/write_frames.m
 %
@@ -42,9 +47,11 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 % File History:
 % 2020-05-04 Moved from create_plot_movie.m
 % 2020-05-04 Added 'FileBase' as an optional argument
+% 2020-05-04 Added 'PlotLeadPoints' as an optional argument
 
 %% Hard-coded constants
 MS_PER_S = 1000;
+markerExpansionRatio = 1.5;
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'staggered'};
@@ -53,6 +60,7 @@ validPlotModes = {'overlapped', 'parallel', 'staggered'};
 fiSecondsDefault = [];      % set later
 frameTimesDefault = [];     % set later
 fileBaseDefault = '';       % don't save by default
+plotLeadPointsDefault = true;   % plot leading points by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,12 +89,15 @@ addParameter(iP, 'FrameTimes', frameTimesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PlotLeadPoints', plotLeadPointsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, figHandle, varargin{:});
 fiSeconds = iP.Results.fiSeconds;
 frameTimes = iP.Results.FrameTimes;
 fileBase = iP.Results.FileBase;
+plotLeadPoints = iP.Results.PlotLeadPoints;
 
 % Keep unmatched arguments for the plot_traces() function
 otherArguments = iP.Unmatched;
@@ -109,7 +120,7 @@ yData = extract_fields(lineHandles, 'YData', 'UniformOutput', false);
 nSamples = cellfun(@numel, yData);
 
 % Set the number of plot frames to be the maximum number of samples
-nPlotFrames = max(nSamples);
+nPlotFrames = max(nSamples) + 1;
 
 % Set default frame interval
 if isempty(fiSeconds) && isempty(frameTimes)
@@ -131,13 +142,24 @@ fiSeconds = fiMs / MS_PER_S;
 plotFrames = create_empty_frames(figHeight, figWidth, [nPlotFrames, 1], ...
                                 'Duration', fiSeconds);
 
+% Initialize extra handles
+extraHandles = gobjects(1);
+
+% Find all legends
+legends = findobj(gcf, 'type', 'Legend');
+
+% Set auto update to be off
+if ~isempty(legends)
+    set(legends, 'AutoUpdate', 'off');
+end
+
 % Loop through all frame times in reverse
 for iPlotFrame = nPlotFrames:-1:1
-    % Update plot
-    drawnow;
-
     % Get the current plot frame time
     plotFrameTimeThis = frameTimes(iPlotFrame);
+
+    % Update plot
+    drawnow;
 
     % Capture this plot frame
     plotFrameThis = getframe(figHandle);
@@ -147,8 +169,12 @@ for iPlotFrame = nPlotFrames:-1:1
     plotFrames(iPlotFrame, 1).colormap = plotFrameThis.colormap;
     plotFrames(iPlotFrame, 1).time = plotFrameTimeThis;
 
-    % Remove last data point
-    arrayfun(@remove_last_data_point, lineHandles, 'UniformOutput', false);
+    % Only remove the last point if not the last frame
+    removeLastPoints = set_default_flag([], iPlotFrame < nPlotFrames);
+
+    % Generate the plot for the previous frame
+    extraHandles = generate_previous_frame(lineHandles, extraHandles, ...
+                        removeLastPoints, plotLeadPoints, markerExpansionRatio);
 end
 
 % Write frames to a movie file if requested
@@ -158,18 +184,93 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function lineHandle = remove_last_data_point (lineHandle)
-%% Removes the last data point from the plot
+function extraHandles = generate_previous_frame (lineHandles, extraHandles, ...
+                        removeLastPoints, plotLeadPoints, markerExpansionRatio)
+%% Modifies the plot for the previous frame
+
+% Remove any extra handles from before
+delete(extraHandles);
+
+% Remove the last data point of each Line object
+if removeLastPoints
+    arrayfun(@remove_last_data_point, lineHandles);
+end
+
+% Return the last data point remaining in each Line object
+[xLast, yLast] = arrayfun(@return_last_data_point, lineHandles, ...
+                            'UniformOutput', false);
+
+% Plot over the last data points
+if plotLeadPoints
+    % Extract the color for each Line object
+    lineColors = extract_fields(lineHandles, 'Color', 'UniformOutput', false);
+
+    % Extract the parent axes each Line object
+    axHandles = extract_fields(lineHandles, 'Parent', 'UniformOutput', false);
+
+    % Extract the marker sizes for each Line object
+    markerSizeOrig = extract_fields(lineHandles, 'MarkerSize', ...
+                                    'UniformOutput', true);
+
+    % Decide on new marker size
+    markerSize = num2cell(markerSizeOrig .* markerExpansionRatio);
+
+    % Plot each of the last data points as large dots
+    extraHandles = cellfun(@plot_large_dot, axHandles, xLast, yLast, ...
+                            lineColors, markerSize);
+else
+    extraHandles = gobjects(1);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function remove_last_data_point (lineHandle)
+%% Removes the last data point from the plot and returns the coordinates
 
 % Extract x and y data
 xDataOld = lineHandle.XData;
 yDataOld = lineHandle.YData;
 
-% Remove last data point
+% Remove and return last data point
 if ~isempty(xDataOld) && ~isempty(yDataOld)
+    % Remove last data point
     lineHandle.XData = xDataOld(1:end-1);
     lineHandle.YData = yDataOld(1:end-1);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [xLast, yLast] = return_last_data_point (lineHandle)
+%% Return the coordinates of the last data point from the plot and returns
+
+% Extract x and y data
+xDataOld = lineHandle.XData;
+yDataOld = lineHandle.YData;
+
+% Return last data point
+if ~isempty(xDataOld) && ~isempty(yDataOld)
+    xLast = xDataOld(end);
+    yLast = yDataOld(end);
+else
+    xLast = NaN;
+    yLast = NaN;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function lineObject = plot_large_dot (axHandle, x, y, colorMap, ...
+                                        markerSize, varargin)
+
+% Hold on
+wasHold = hold_on;
+
+% Plot the dot
+lineObject = plot(axHandle, x, y, 'Color', colorMap, ...
+                'LineStyle', 'none', 'Marker', '.', ...
+                'MarkerSize', markerSize, varargin{:});
+
+% Hold off
+hold_off(wasHold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
