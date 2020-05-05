@@ -218,7 +218,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - 'AxesHandle': axes handle for created axes
+%                   - 'AxesHandles': axes handle for created axes
 %                   must be a empty or a axes object handle
 %                   default == []
 %                   - Any other parameter-value pair for the plot() function
@@ -256,6 +256,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       ~/Downloaded_Function/suplabel.m
 %
 % Used by:
+%       cd/create_trace_plot_movie.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_network_plot_gabab.m
@@ -380,7 +381,7 @@ figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
 figNameDefault = '';            % don't save figure by default
 figTypesDefault = {'png', 'epsc'};  % save as both epsc and png by default
-axHandleDefault = [];           % gca by default
+axHandlesDefault = [];          % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -501,7 +502,7 @@ addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
-addParameter(iP, 'AxesHandle', axHandleDefault);
+addParameter(iP, 'AxesHandles', axHandlesDefault);
 
 % Read from the Input Parser
 parse(iP, tVecs, data, varargin{:});
@@ -547,7 +548,7 @@ figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
-axHandles = iP.Results.AxesHandle;
+axHandles = iP.Results.AxesHandles;
 
 % Keep unmatched arguments for the plot() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -928,6 +929,8 @@ case {'overlapped', 'staggered'}
 case 'parallel'
     if numel(axHandles) == nRows * nColumns
         ax = axHandles;
+        fig = ancestor(ax(1), 'figure');
+        figure(fig);
     else
         % Create subplots
         [fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...

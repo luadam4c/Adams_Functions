@@ -1,6 +1,6 @@
-function [output1] = play_frames (reqarg1, varargin)
-%% TODO: A summary of what the function does (must be a single unbreaked line)
-% Usage: [output1] = play_frames (reqarg1, varargin)
+function [output1] = play_frames (frames, varargin)
+%% TODO: Play frames as a movie
+% Usage: [output1] = play_frames (frames, varargin)
 % Explanation:
 %       TODO
 %
@@ -12,7 +12,7 @@ function [output1] = play_frames (reqarg1, varargin)
 %                   specified as a TODO
 %
 % Arguments:
-%       reqarg1     - TODO: Description of reqarg1
+%       frames     - TODO: Description of frames
 %                   must be a TODO
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
@@ -50,13 +50,13 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'reqarg1');
+addRequired(iP, 'frames');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'param1', param1Default);
 
 % Read from the Input Parser
-parse(iP, reqarg1, varargin{:});
+parse(iP, frames, varargin{:});
 param1 = iP.Results.param1;
 
 % Keep unmatched arguments for the TODO() function

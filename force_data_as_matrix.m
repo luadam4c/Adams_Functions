@@ -26,18 +26,21 @@ function [dataValues, varargout] = force_data_as_matrix (data, varargin)
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
 %                       or a string scalar or a character vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'ForceVectorAsColumns': whether to convert row vectors 
+%                                               to column vectors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
+%       cd/create_trace_plot_movie.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
 %
 % Used by:
+%       cd/create_trace_plot_movie.m
 %       cd/plot_chevron.m
 %       cd/plot_chevron_bar_inset.m
 %       cd/plot_violin.m
@@ -45,12 +48,12 @@ function [dataValues, varargout] = force_data_as_matrix (data, varargin)
 
 % File History:
 % 2019-12-30 Moved from plot_chevron.m
-% 
+% 2020-05-04 Added 'ForceVectorAsColumns' as an optional argument
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+forceVectorAsColumnsDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -70,12 +73,12 @@ addRequired(iP, 'data', ...
                             'char', 'string'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'ForceVectorAsColumns', forceVectorAsColumnsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
-% param1 = iP.Results.param1;
+forceVectorAsColumns = iP.Results.ForceVectorAsColumns;
 
 %% Do the job
 % Read from file
@@ -102,6 +105,11 @@ if istable(data)
 else
     % Force as a matrix
     dataValues = force_matrix(data, 'AlignMethod', 'leftadjustpad');
+end
+
+% Force as a column vector if requested
+if forceVectorAsColumns && isrow(dataValues)
+    dataValues = force_column_vector(dataValues);
 end
 
 % Decide on group labels

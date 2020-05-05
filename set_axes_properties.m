@@ -13,6 +13,7 @@ function ax = set_axes_properties (varargin)
 % Outputs:
 %       ax         - axes handle to use
 %                   specified as a Axes object handle
+%
 % Arguments:
 %       varargin    - 'AxesHandle': axes handle for created axes
 %                   must be a empty or a axes object handle

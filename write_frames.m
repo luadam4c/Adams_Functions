@@ -6,7 +6,7 @@ function vidWriter = write_frames (frames, varargin)
 %
 % Example(s):
 %       [xylo, v] = read_frames('xylophone.mp4')
-%       write_frames(xylo, 'VideoReaderObject', v)
+%       write_frames(xylo, 'VideoReaderObject', v, 'FileBase', 'xylotest')
 %
 % Outputs:
 %       vidWriter   - the VideoWriter object created for the video
@@ -47,16 +47,19 @@ function vidWriter = write_frames (frames, varargin)
 %                   - Any other parameter-value pair for VideoWriter()
 %
 % Requires:
+%       cd/construct_fullpath.m
 %       cd/create_error_for_nargin.m
+%       cd/rmfield_custom.m
 %       cd/struct2arglist.m
 %
 % Used by:
 %       cd/create_pleth_EEG_movies.m
+%       cd/create_plot_movie.m
 
 % File History:
 % 2019-09-05 Created by Adam Lu
 % 2019-09-05 Made OutFolder, FileBase, MovieType optional arguments
-% TODO: Make 'VideoWriterObject' an optional argument
+% 2020-05-04 Made 'VideoWriterObject' an optional argument
 % 
 
 %% Hard-coded parameters
@@ -70,7 +73,8 @@ extraFields = {'time', 'duration'};
 %% Default values for optional arguments
 frameRateDefault = [];
 movieTypeDefault = 'Motion JPEG AVI';
-videoReaderObjectDefault = VideoReader.empty;
+videoReaderObjectDefault = [];
+videoWriterObjectDefault = [];
 outFolderDefault = pwd;
 fileBaseDefault = 'newVideo';
 
@@ -97,6 +101,8 @@ addParameter(iP, 'MovieType', movieTypeDefault);
     @(x) any(validatestring(x, validMovieTypes));
 addParameter(iP, 'VideoReaderObject', videoReaderObjectDefault, ...
     @(x) validateattributes(x, {'VideoReader'}, {'2d'}));
+addParameter(iP, 'VideoWriterObject', videoWriterObjectDefault, ...
+    @(x) validateattributes(x, {'VideoWriter'}, {'2d'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 addParameter(iP, 'FileBase', fileBaseDefault, ...
@@ -108,6 +114,7 @@ parse(iP, frames, varargin{:});
 frameRate = iP.Results.FrameRate;
 movieType = validatestring(iP.Results.MovieType, validMovieTypes);
 vidReader = iP.Results.VideoReaderObject;
+vidWriter = iP.Results.VideoWriterObject;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 
@@ -129,10 +136,12 @@ end
 framesMatlab = rmfield_custom(frames, extraFields);
     
 % Create a path for the movie
-moviePathBase = fullfile(outFolder, fileBase);
+moviePathBase = construct_fullpath(fileBase, 'Directory', outFolder);
 
 % Create a VideoWriter object
-vidWriter = VideoWriter(moviePathBase, movieType, otherArguments{:});
+if isempty(vidWriter)
+    vidWriter = VideoWriter(moviePathBase, movieType, otherArguments{:});
+end
 
 % Set the frame rate in Hz
 vidWriter.FrameRate = frameRate;

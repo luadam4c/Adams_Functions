@@ -17,6 +17,7 @@ function varargout = match_time_info (tVecs, varargin)
 %                   specified as a positive vector
 %       nSamples    - number of samples
 %                   specified as a positive integer vector
+%
 % Arguments:
 %       tVecs       - time vector(s)
 %                   must be empty or 
@@ -44,6 +45,7 @@ function varargout = match_time_info (tVecs, varargin)
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/create_plot_movie.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m

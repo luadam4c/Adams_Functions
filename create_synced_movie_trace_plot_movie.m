@@ -277,7 +277,7 @@ plotFrameTimeThis = plotFrameTimes(1);
 % Compute the first x limits
 xLimitsFirst = plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1];
 
-% TODO: Update plot_traces.m with plotSpectrogram?
+% TODO: Update plot_traces.m with plotSpectrogramFlag?
 % Plot the traces
 traceLines = gobjects(nTraces, 1);
 spect = gobjects;
@@ -344,8 +344,8 @@ if nPlotFrames > 1
     % Prevent y ticks from automatically updating
     % TODO: How to do this?
     % NOT this: yticklabels('manual');
-	% NOT this: set(traceSubPlot, 'YTickLabelMode', 'manual');
-	% NOT this: set(traceSubPlot, 'DataAspectRatioMode', 'manual');
+    % NOT this: set(traceSubPlot, 'YTickLabelMode', 'manual');
+    % NOT this: set(traceSubPlot, 'DataAspectRatioMode', 'manual');
     
     for iPlotFrame = 2:nPlotFrames
         % Get the current plot frame time

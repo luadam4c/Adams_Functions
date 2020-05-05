@@ -22,7 +22,7 @@
 % 2020-01-29 Separated outputs to figure05Dir and figure06Dir
 % 2020-04-09 Changed the y axis limits of m2h discrepancy plot to [1e-1, 1e3]
 % 2020-04-13 Added plotVoltageVsOpd
-% 2019-04-28 Changed timeToStabilize from 2000 to 3000
+% 2020-05-04 Added createPlotMovie
 
 %% Hard-coded parameters
 % Flags
@@ -43,6 +43,8 @@ plotEssential = false; %true;
 plotM2h = false; %true;
 
 plotVoltageVsOpd = true;
+createPlotMovieFig5 = true;
+createPlotMovieFig6 = false;
 
 simulateNoITSoma = false; %true;
 
@@ -107,7 +109,7 @@ tauhModesAll = 1:7;
 newParamsNoITSoma = {'pcabarITSoma', 0};
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 % Plot settings
@@ -148,7 +150,8 @@ m2hXLimits = timeToStabilize + [800, 2800]; %[800, 2000];
 m2hYLimits = [1e-7, 1e0];
 m2hYTickLocs = [1e-5, 1e-3, 1e-1];
 
-voltageVsOpdTimeLimits = timeToStabilize + [800, 2800];
+voltageVsOpdTimeLimits1 = timeToStabilize + [800, 2800];
+voltageVsOpdTimeLimits2 = timeToStabilize + [1000, 2000];
 voltageVsOpdSiMs = 1;
 voltageVsOpdFig5FigWidth = 5.5 * 2;
 voltageVsOpdFig5FigHeight = 5 * 2;
@@ -349,7 +352,6 @@ if plotM2h
                                 m2hXLimits, m2hYLimits, ...
                                 m2hYTickLocs, colorMapPharm), ...
             exampleLabelsIpscr, outFoldersIpscr);
-
     for iMode = 1:numel(tauhModesAll)
         cellfun(@(x, y) plot_m2h(x, y, figure06Dir, figTypes, ...
                                 m2hFigWidth, m2hFigHeight, ...
@@ -371,18 +373,19 @@ end
 if plotVoltageVsOpd
     cellfun(@(x, y) plot_voltage_vs_opd(x, y, figure05Dir, figTypes, ...
                     voltageVsOpdFig5FigWidth, voltageVsOpdFig5FigHeight, ...
-                    voltageVsOpdTimeLimits, voltageVsOpdSiMs, ...
+                    voltageVsOpdTimeLimits1, voltageVsOpdSiMs, ...
                     voltageVsOpdFig5XLimits, voltageVsOpdFig5YLimits, ...
                     voltageVsOpdFig5YTickLocs, voltageVsOpdFig5ToAnnotate, ...
-                    colorMapPharm), ...
+                    colorMapPharm, createPlotMovieFig5, voltageVsOpdTimeLimits2), ...
             exampleLabelsIpscr, outFoldersIpscr);
+%{
     for iMode = 1:numel(tauhModesAll)
         cellfun(@(x, y) plot_voltage_vs_opd(x, y, figure06Dir, figTypes, ...
                     voltageVsOpdFig6FigWidth, voltageVsOpdFig6FigHeight, ...
                     voltageVsOpdTimeLimits, voltageVsOpdSiMs, ...
                     voltageVsOpdFig6XLimits, voltageVsOpdFig6YLimits, ...
                     voltageVsOpdFig6YTickLocs, voltageVsOpdFig6ToAnnotate, ...
-                    colorMapPharm), ...
+                    colorMapPharm, createPlotMovieFig6), ...
                 exampleLabelsModeAll{iMode}, outFoldersModeAll{iMode});
     end
     for iSheet = 1:numel(gababIpscSheetBases)
@@ -391,9 +394,10 @@ if plotVoltageVsOpd
                     voltageVsOpdTimeLimits, voltageVsOpdSiMs, ...
                     voltageVsOpdFig6XLimits, voltageVsOpdFig6YLimits, ...
                     voltageVsOpdFig6YTickLocs, voltageVsOpdFig6ToAnnotate, ...
-                    colorMapVary), ...
+                    colorMapVary, createPlotMovieFig6), ...
                 exampleLabelsVaryAll{iSheet}, outFoldersVaryAll{iSheet});
     end
+%}
 end
 
 %% Simulate when there is no T current in the soma
@@ -557,18 +561,24 @@ end
 function plot_voltage_vs_opd (expStr, directory, outFolder, figTypes, ...
                                 figWidth, figHeight, timeLimits, siMs, ...
                                 xLimits, yLimits, yTickLocs, ...
-                                toAnnotate, colorMap)
+                                toAnnotate, colorMap, ...
+                                createPlotMovie, timeLimitsMovie)
+
+% Hard-coded constants
+MS_PER_S = 1000;
 
 % Hard-coded parameters
 nSamples = floor(diff(timeLimits) / siMs);
 tVecToMatch = create_time_vectors(nSamples, 'TimeStart', timeLimits(1), ...
                             'SamplingIntervalMs', siMs, 'TimeUnits', 'ms');
 plotMarkerSize = 3;
+fiSeconds = (siMs / MS_PER_S) * 100;            % play at 1/100 x speed
 
 % Create a figure name
 figPathBaseVoltVsOpd = fullfile(outFolder, [expStr, '_voltageVsOpd']);
 figPathBaseVoltVsOpdOrig = [figPathBaseVoltVsOpd, '_orig'];
 figPathBaseVoltVsOpdCompressed = [figPathBaseVoltVsOpd, '_compressed'];
+figPathBaseVoltVsOpdMovie = [figPathBaseVoltVsOpd, '_movie'];
 
 % Create the figure
 figVoltVsOpdOrig = set_figure_properties('AlwaysNew', true);
@@ -576,8 +586,9 @@ figVoltVsOpdOrig = set_figure_properties('AlwaysNew', true);
 % Plot traces
 handles = ...
     m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
-                        'PlotType', 'voltageVsOpd', ...
+                        'PlotType', 'voltageVsOpd1', ...
                         'FigHandle', figVoltVsOpdOrig, ...
+                        'TimeLimits', timeLimits, ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
                         'ColorMap', colorMap, 'LineStyle', 'none', ...
                         'tVecs', tVecToMatch, 'Marker', '.');
@@ -596,13 +607,13 @@ if ~toAnnotate
     update_figure_for_corel(figVoltVsOpdOrig, 'RemoveCircles', true);
 end
 
-% Save the figure
-save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpd, figTypes);
-
 % Plot a scale bar
 subplot(handles.ax(1)); hold on;
 plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
                 'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
+
+% Save the figure
+save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpd, figTypes);
 
 % Update figure for CorelDraw
 update_figure_for_corel(figVoltVsOpdOrig, 'Units', 'centimeters', ...
@@ -610,6 +621,24 @@ update_figure_for_corel(figVoltVsOpdOrig, 'Units', 'centimeters', ...
 
 % Save the figure
 save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpdCompressed, figTypes);
+
+% Create a plot movie if requested
+if createPlotMovie
+    % Create the figure
+    figMovie = set_figure_properties('AlwaysNew', true);
+
+    % Plot traces
+    handles = m3ha_plot_simulated_traces('Directory', directory, ...
+                    'ExpStr', expStr, 'PlotType', 'voltageVsOpd2', ...
+                    'FigHandle', figMovie, 'TimeLimits', timeLimitsMovie, ...
+                    'XLimits', xLimits, 'YLimits', yLimits, ...
+                    'ColorMap', colorMap, 'LineStyle', 'none', ...
+                    'tVecs', tVecToMatch, 'Marker', '.');
+
+    % Create movie
+    create_plot_movie(figMovie, fiSeconds, ...
+                        'FileBase', figPathBaseVoltVsOpdMovie);
+end
 
 end
 

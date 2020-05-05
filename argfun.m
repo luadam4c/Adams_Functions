@@ -51,6 +51,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/create_looped_params.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/create_indices.m
+%       cd/create_trace_plot_movie.m
 %       cd/extract_subvectors.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_closest.m

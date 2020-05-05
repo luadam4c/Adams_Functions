@@ -78,6 +78,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/plot_histogram.m
 %       cd/save_params.m
 %       cd/test_var_difference.m
+%       cd/write_frames.m
 %       ~/RTCl/neuronlaunch.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 

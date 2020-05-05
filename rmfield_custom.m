@@ -32,6 +32,7 @@ function structArray = rmfield_custom (structArray, fields, varargin)
 %       cd/array_fun.m
 %       cd/compute_bins.m
 %       cd/update_param_values.m
+%       cd/write_frames.m
 
 % File History:
 % 2019-11-13 Created by Adam Lu

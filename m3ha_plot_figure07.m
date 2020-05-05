@@ -56,8 +56,8 @@ plot2CellM2h = false; %true;
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPopulation = true;
-plot2CellViolins = true;
+combine2CellPopulation = false; %true;
+plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 
@@ -65,8 +65,8 @@ analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
 combineActivationProfiles = false; %true;
-combine200CellPopulation = false; %true;
-plot200CellViolins = false; %true;
+combine200CellPopulation = true;
+plot200CellViolins = true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
 plot200CellGroupByEpasJitters = false; %true;
@@ -99,33 +99,34 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % exampleSeedDirName200Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 % exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 % popIterName2Cell = '20200418_using_bestparams_20200203_manual_singleneuronfitting0-102';
+% popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 
 exampleIterName2Cell = '20200501_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
 exampleSeedDirName2Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
 exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 exampleSeedDirName200Cell = 'seedNumber_21';      % Use seed number 21 (TCepas = -70)
-popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
+popIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
-% % Stable baseline for the range epas = -67 to -60 (30 networks)
+% % Stable baseline for the range epas = -62 to -60 (30 networks)
 % rankNumsToUse = [1:29, 31];
-% epasToUse = -67:-60;
+% epasToUse = -62:-60;
 % % Stable baseline for the range epas = -70 to -60 (29 networks)
 % rankNumsToUse = [1:19, 21:29, 31];
 % epasToUse = -70:-60;
 % % Stable baseline for the range epas = -72 to -60 (28 networks)
 % rankNumsToUse = [1:11, 13:19, 21:29, 31];
 % epasToUse = -72:-60;
-% % Stable baseline for the range epas = -73 to -60 (27 networks)
-% rankNumsToUse = [2:11, 13:19, 21:29, 31];
+% % Stable baseline for the range epas = -73 to -60 (25 networks)
+% rankNumsToUse = [2:11, 13:19, 21:24, 26:29];
 % epasToUse = -73:-60;
-% Stable baseline for the range epas = -74 to -60 (26 networks)
-rankNumsToUse = [2:3, 5:11, 13:19, 21:29, 31];
+% Stable baseline for the range epas = -74 to -60 (24 networks)
+rankNumsToUse = [2:3, 5:11, 13:19, 21:24, 26:29];
 epasToUse = -74:-60;
-% % Stable baseline for the range epas = -75 to -60 (23 networks)
-% rankNumsToUse = [2:3, 5:7, 9:11, 13:18, 21:26, 28:29, 31];
+% % Stable baseline for the range epas = -75 to -60 (19 networks)
+% rankNumsToUse = [2:3, 5:7, 9:11, 13, 15:18, 21:24, 26, 28];
 % epasToUse = -75:-60;
 
 % Files
@@ -183,12 +184,11 @@ pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
                     '{\it s}GAT3', '{\it s}Dual'};
 
 % epasToPlot = [];
-% epasToPlot = [-74; -70; -66; -62];
-epasToPlot = [-73; -70; -67; -64];
+epasToPlot = [-74; -70; -66; -62];
 
 % Candidate labels
-rankNumsToUse2Cell = [2:3, 5:7, 9:11, 13:18, 21:26, 28:29, 31];
-rankNumsToUse200Cell = [2:3, 5:7, 9:11, 13:18, 21:26, 28:29, 31];
+rankNumsToUse2Cell = rankNumsToUse;
+rankNumsToUse200Cell = rankNumsToUse;
 
 % candidateLabelsEach200Cell = {'candidateIDs_32'; 'candidateIDs_2,14,32,35'; ...
 %                                   'candidateIDs_2,14,20,29-30,32,35-36'};
@@ -200,15 +200,16 @@ candidateLabelsEach200Cell = {};
 %                     'candidateIDs_2'; 'candidateIDs_14'; 'candidateIDs_20'; ...
 %                     'candidateIDs_29'; 'candidateIDs_30'; 'candidateIDs_32'; ...
 %                     'candidateIDs_35'; 'candidateIDs_36'};
-candidateLabels200CellEcdfs = {'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'; ...
-                    'candidateIDs_2'; 'candidateIDs_7'; 'candidateIDs_11'; ...
-                    'candidateIDs_13'; 'candidateIDs_14'; 'candidateIDs_20'; ...
-                    'candidateIDs_27'; 'candidateIDs_29'; 'candidateIDs_30'; ...
-                    'candidateIDs_32'; 'candidateIDs_35'; 'candidateIDs_36'};
+% candidateLabels200CellEcdfs = {'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'; ...
+%                     'candidateIDs_2'; 'candidateIDs_7'; 'candidateIDs_11'; ...
+%                     'candidateIDs_13'; 'candidateIDs_14'; 'candidateIDs_20'; ...
+%                     'candidateIDs_27'; 'candidateIDs_29'; 'candidateIDs_30'; ...
+%                     'candidateIDs_32'; 'candidateIDs_35'; 'candidateIDs_36'};
+candidateLabels200CellEcdfs = {};
 
-% candidateLabels200CellActivationProfiles = {};
-candidateLabels200CellActivationProfiles = {'candidateIDs_32'; ...
-                    'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'};
+% candidateLabels200CellActivationProfiles = {'candidateIDs_32'; ...
+%                     'candidateIDs_2,7,11,13-14,20,27,29-30,32,35-36'};
+candidateLabels200CellActivationProfiles = {};
 
 cellNameStr = 'cellName';
 epasStr = 'TCepas';
