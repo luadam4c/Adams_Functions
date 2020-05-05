@@ -43,12 +43,12 @@ plotEssential = false; %true;
 plotM2hFig5 = false; %true;
 plotM2hFig6 = false; %true;
 
-plotVoltageVsOpdFig5 = false; %true;
+plotVoltageVsOpdFig5 = true;
 createPlotMovieFig5 = false; %true;
 
 plotVoltageVsOpdFig6 = true;
 createPlotMovieTauh = false;
-createPlotMovieGabab = true;
+createPlotMovieGabab = false;
 
 simulateNoITSoma = false; %true;
 
@@ -159,14 +159,14 @@ voltageVsOpdTimeLimits1 = timeToStabilize + [800, 2800];
 voltageVsOpdTimeLimits2 = timeToStabilize + [1000, 2000];
 voltageVsOpdSiMs = 1;
 voltageVsOpdFig5FigWidth = 5.5 * 2;
-voltageVsOpdFig5FigHeight = 5 * 2;
+voltageVsOpdFig5FigHeight = 5 * 3;
 voltageVsOpdFig5XLimits = [1e-7, 1e0];
 voltageVsOpdFig5YLimits = [-95, -45];
 voltageVsOpdFig5YTickLocs = [];
 voltageVsOpdFig5ToAnnotate = true;
 
 voltageVsOpdFig6FigWidth = 4.7 * 2;
-voltageVsOpdFig6FigHeight = 2.2 * 2;
+voltageVsOpdFig6FigHeight = 2.2 * 3;
 voltageVsOpdFig6XLimits = [1e-7, 1e0];
 voltageVsOpdFig6YLimits = [-95, -45];
 voltageVsOpdFig6YTickLocs = [];
@@ -423,11 +423,14 @@ end
 
 %% Archive all scripts for this run
 if archiveScriptsFlag
+    if simulateIpscr || plotAllVoltages || plotAllTotalCurrents || ...
+            plotAllComponentCurrents || plotDend2ITproperties || ...
+            plotM2hFig5 || plotVoltageVsOpdFig5 || simulateNoITSoma
+        archive_dependent_scripts(mfilename, 'OutFolder', figure05Dir);
+    end
     if simulateTauhModes || simulateIpscVariation || ...
         plotEssential || plotSomaVoltage || plotM2hFig6 || plotVoltageVsOpdFig6
         archive_dependent_scripts(mfilename, 'OutFolder', figure06Dir);
-    else
-        archive_dependent_scripts(mfilename, 'OutFolder', figure05Dir);
     end
 end
 
