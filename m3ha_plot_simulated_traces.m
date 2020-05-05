@@ -1273,6 +1273,7 @@ end
 
 %% Preparation
 itm2hDiffLeftBound = xLimits(1);
+itm2hDiffRightBound = xLimits(2);
 
 % Count the number of traces
 nTraces = numel(simData);
@@ -1390,6 +1391,14 @@ otherYLimits = [-0.001, 0.001];
 % otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
 %                 nan(1, size(d2xdt2VecsSmoothed, 2))];
 % otherYLimits = [-0.001, 0.001];
+
+%% Replace specific values with NaNs
+% Find indices corresponding to out-of-view m2hDiff values
+indOutOfView = itm2hDiff < itm2hDiffLeftBound | itm2hDiff > itm2hDiffRightBound;
+
+% Replace those values in otherXVecs and otherYVecs with NaNs
+otherXVecs(indOutOfView) = NaN;
+otherYVecs(indOutOfView) = NaN;
 
 %% Restrict to LTS region
 if strcmpi(plotType, 'voltageVsOpd1')
@@ -1513,7 +1522,7 @@ if strcmpi(plotType, 'voltageVsOpd1')
                                 itm2hDiffLts, itm2hDiffLowerLimit, filtWidthMs);
 end
 
-%% Plots
+%% Set up plots
 % Print to standard output
 fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 

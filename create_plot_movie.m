@@ -95,9 +95,9 @@ otherArguments = iP.Unmatched;
 % Get the figure position
 figPosition = get(figHandle, 'Position');
 
-% Get the figure width and height
-figWidth = figPosition(3);
-figHeight = figPosition(4);
+% Get the figure width and height, rounded to the nearest integer
+figWidth = round(figPosition(3));
+figHeight = round(figPosition(4));
 
 % Extract the line handles
 lineHandles = findobj(figHandle, 'Type', 'Line');
@@ -122,6 +122,9 @@ fiMs = fiSeconds * MS_PER_S;
 % Match the frame times with the frame interval
 [frameTimes, fiMs] = ...
     match_time_info(frameTimes, fiMs, nPlotFrames, 'TimeUnits', 's');
+
+% Convert the matched frame interval to seconds
+fiSeconds = fiMs / MS_PER_S;
 
 %% Do the job
 % Initialize plot movie frames

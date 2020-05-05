@@ -40,7 +40,7 @@ function vidWriter = write_frames (frames, varargin)
 %                   default == VideoReader.empty
 %                   - 'OutFolder': directory to place movie
 %                   must be a string scalar or a character vector
-%                   default == pwd
+%                   default == set in construct_fullpath.m
 %                   - 'FileBase': file base for the movie
 %                   must be a string scalar or a character vector
 %                   default == 'newVideo'
@@ -75,7 +75,7 @@ frameRateDefault = [];
 movieTypeDefault = 'Motion JPEG AVI';
 videoReaderObjectDefault = [];
 videoWriterObjectDefault = [];
-outFolderDefault = pwd;
+outFolderDefault = '';
 fileBaseDefault = 'newVideo';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

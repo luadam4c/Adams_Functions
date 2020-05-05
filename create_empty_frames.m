@@ -78,6 +78,11 @@ parse(iP, height, width, varargin{:});
 dimensions = iP.Results.dimensions;
 duration = iP.Results.Duration;
 
+%% Preparation
+% Make sure height and width are integers
+height = ceil(height);
+width = ceil(width);
+
 %% Do the job
 % Create one empty frame
 frames = struct('cdata', zeros(height, width, 3, 'uint8'), ...
