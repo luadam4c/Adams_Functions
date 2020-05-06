@@ -39,6 +39,7 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 %       cd/hold_on.m
 %       cd/hold_off.m
 %       cd/match_time_info.m
+%       cd/set_default_flag.m
 %       cd/write_frames.m
 %
 % Used by:
@@ -51,7 +52,7 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 
 %% Hard-coded constants
 MS_PER_S = 1000;
-markerExpansionRatio = 1.5;
+markerExpansionRatio = 2;
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'staggered'};
@@ -103,6 +104,9 @@ plotLeadPoints = iP.Results.PlotLeadPoints;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Make current figure
+figure(figHandle);
+
 % Get the figure position
 figPosition = get(figHandle, 'Position');
 
@@ -142,8 +146,8 @@ fiSeconds = fiMs / MS_PER_S;
 plotFrames = create_empty_frames(figHeight, figWidth, [nPlotFrames, 1], ...
                                 'Duration', fiSeconds);
 
-% Initialize extra handles
-extraHandles = gobjects(1);
+% Initialize lead point handles
+leadPointHandles = plot([]);
 
 % Find all legends
 legends = findobj(gcf, 'type', 'Legend');
@@ -173,7 +177,8 @@ for iPlotFrame = nPlotFrames:-1:1
     removeLastPoints = set_default_flag([], iPlotFrame < nPlotFrames);
 
     % Generate the plot for the previous frame
-    extraHandles = generate_previous_frame(lineHandles, extraHandles, ...
+    leadPointHandles = ...
+        generate_previous_frame(lineHandles, leadPointHandles, ...
                         removeLastPoints, plotLeadPoints, markerExpansionRatio);
 end
 
@@ -184,12 +189,10 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function extraHandles = generate_previous_frame (lineHandles, extraHandles, ...
-                        removeLastPoints, plotLeadPoints, markerExpansionRatio)
+function leadPointHandles = generate_previous_frame (lineHandles, ...
+                                leadPointHandles, removeLastPoints, ...
+                                plotLeadPoints, markerExpansionRatio)
 %% Modifies the plot for the previous frame
-
-% Remove any extra handles from before
-delete(extraHandles);
 
 % Remove the last data point of each Line object
 if removeLastPoints
@@ -198,7 +201,7 @@ end
 
 % Return the last data point remaining in each Line object
 [xLast, yLast] = arrayfun(@return_last_data_point, lineHandles, ...
-                            'UniformOutput', false);
+                            'UniformOutput', true);
 
 % Plot over the last data points
 if plotLeadPoints
@@ -215,11 +218,14 @@ if plotLeadPoints
     % Decide on new marker size
     markerSize = num2cell(markerSizeOrig .* markerExpansionRatio);
 
-    % Plot each of the last data points as large dots
-    extraHandles = cellfun(@plot_large_dot, axHandles, xLast, yLast, ...
-                            lineColors, markerSize);
-else
-    extraHandles = gobjects(1);
+    % Plot or update each of the last data points as large dots
+    if isempty(leadPointHandles)
+        leadPointHandles = cellfun(@plot_large_dots, axHandles, ...
+                                    num2cell(xLast), num2cell(yLast), ...
+                                    lineColors, markerSize);
+    else
+        arrayfun(@update_large_dot, leadPointHandles, xLast, yLast);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -258,8 +264,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function lineObject = plot_large_dot (axHandle, x, y, colorMap, ...
+function lineObject = plot_large_dots (axHandle, x, y, colorMap, ...
                                         markerSize, varargin)
+
+% Get current axes
+set(gcf, 'CurrentAxes', axHandle);
 
 % Hold on
 wasHold = hold_on;
@@ -271,6 +280,13 @@ lineObject = plot(axHandle, x, y, 'Color', colorMap, ...
 
 % Hold off
 hold_off(wasHold);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function update_large_dot (leadPointHandle, xLast, yLast)
+
+leadPointHandle.XData = xLast;
+leadPointHandle.YData = yLast;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

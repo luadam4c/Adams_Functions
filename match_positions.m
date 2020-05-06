@@ -34,6 +34,7 @@ function elements1 = match_positions (array1, array2, elements2, varargin)
 %       cd/compute_peak_decay.m
 %       cd/extract_channel.m
 %       cd/m3ha_network_launch.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_table_parallel.m
 %       cd/update_figure_for_corel.m
 
