@@ -27,6 +27,7 @@
 %       cd/ismatch.m
 %       cd/lower_first_char.m
 %       cd/m3ha_extract_candidate_label.m
+%       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
@@ -64,9 +65,16 @@ plot200CellExamples = false; %true;
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
+combine200CellPopulation = false;
+plot200CellViolins = false;
+
+analyzeHeteroSpikes = false; %true;
+plotAnalysisHetero = false;
+backupPreviousHetero = false;
+combineHeteroPopulation = true;
+plotHeteroViolins = true;
+
 combineActivationProfiles = false; %true;
-combine200CellPopulation = true;
-plot200CellViolins = true;
 plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
 plot200CellGroupByEpasJitters = false; %true;
@@ -107,6 +115,7 @@ popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfittin
 exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 exampleSeedDirName200Cell = 'seedNumber_21';      % Use seed number 21 (TCepas = -70)
 popIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+popIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -189,6 +198,7 @@ epasToPlot = [-74; -70; -66; -62];
 % Candidate labels
 rankNumsToUse2Cell = rankNumsToUse;
 rankNumsToUse200Cell = rankNumsToUse;
+rankNumsToUseHetero = [];
 
 % candidateLabelsEach200Cell = {'candidateIDs_32'; 'candidateIDs_2,14,32,35'; ...
 %                                   'candidateIDs_2,14,20,29-30,32,35-36'};
@@ -224,6 +234,7 @@ exampleIterDir2Cell = fullfile(networkDirectory, exampleIterName2Cell);
 exampleIterDir200Cell = fullfile(networkDirectory, exampleIterName200Cell);
 popIterDir2Cell = fullfile(networkDirectory, popIterName2Cell);
 popIterDir200Cell = fullfile(networkDirectory, popIterName200Cell);
+popIterDirHetero = fullfile(networkDirectory, popIterNameHetero);
 
 % Find all possible candidate labels
 if isempty(candidateLabelsEach200Cell)
@@ -245,14 +256,16 @@ rankStr = ['rank', create_label_from_sequence(rankNumsToUse)];
 epasStr = ['TCepas', create_label_from_sequence(epasToUse)];
 
 % Create a condition label
-[conditionLabel2Cell, conditionLabel200Cell] = ...
+[conditionLabel2Cell, conditionLabel200Cell, conditionLabelHetero] = ...
     argfun(@(x) [x, '_', rankStr, '_gIncr', num2str(gIncr), '_', epasStr], ...
-            popIterName2Cell, popIterName200Cell);
+            popIterName2Cell, popIterName200Cell, popIterNameHetero);
 
 % Create a population data spreadsheet name
 popDataSheetName2Cell = [popIterName2Cell, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
 popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
+                            oscParamsSuffix, '.csv'];
+popDataSheetNameHetero = [popIterNameHetero, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
 
 % Create a network data spreadsheet names
@@ -267,6 +280,7 @@ networkSheetNamesEcdfs = strcat(popIterName200Cell, '_', ...
 % Contruct the full path to the population data spreadsheet
 popDataPath2Cell = fullfile(figure07Dir, popDataSheetName2Cell);
 popDataPath200Cell = fullfile(figure08Dir, popDataSheetName200Cell);
+popDataPathHetero = fullfile(figure08Dir, popDataSheetNameHetero);
 networkDataPaths = fullfile(figure08Dir, networkSheetNames);
 networkDataPathsEcdfs = fullfile(figure08Dir, networkSheetNamesEcdfs);
 
@@ -361,16 +375,28 @@ if combine2CellPopulation
                             rankNumsToUse2Cell, popDataPath2Cell);
 end
 
-%% Analyzes spikes for all 200-cell networks
+%% Analyzes spikes for all homogeneous 200-cell networks
 if analyze200CellSpikes
     reanalyze_network_spikes(popIterDir200Cell, backupPrevious200Cell, ...
                                 plotAnalysis200Cell);
+end
+
+%% Analyzes spikes for all heterogeneous 200-cell networks
+if analyzeHeteroSpikes
+    reanalyze_network_spikes(popIterDirHetero, backupPrevioushetero, ...
+                                plotAnalysishetero);
 end
 
 %% Combines quantification over all homogeneous 200-cell networks
 if combine200CellPopulation
     combine_osc_params(popIterDir200Cell, candCellSheetPath, ...
                             rankNumsToUse200Cell, popDataPath200Cell);
+end
+
+%% Combines quantification over all heterogeneous 200-cell networks
+if combineHeteroPopulation
+    combine_osc_params(popIterDirHetero, candCellSheetPath, ...
+                            rankNumsToUseHetero, popDataPathHetero);
 end
 
 %% Combines activation profiles over seed numbers for each 200-cell network
@@ -398,7 +424,7 @@ if plot2CellViolins
 end
 
 %% Plots mean oscillation measures over pharm condition 
-%       across all 200-cell networks
+%       across all homogeneous 200-cell networks
 if plot200CellViolins
     % Construct stats table path
     stats2dPath200Cell = ...
@@ -412,6 +438,24 @@ if plot200CellViolins
 
     % Plot violin plots
     m3ha_plot_violin(stats2dPath200Cell, 'RowsToPlot', measuresOfInterest, ...
+                    'OutFolder', figure08Dir);
+end
+
+%% Plots mean oscillation measures over pharm condition 
+%       across all heterogeneous 200-cell networks
+if plotHeteroViolins
+    % Construct stats table path
+    stats2dPathHetero = ...
+        fullfile(figure08Dir, strcat(conditionLabelHetero, '_stats.mat'));
+
+    % Compute statistics if not done already
+    m3ha_network_compute_and_save_statistics(stats2dPathHetero, ...
+                popDataPathHetero, gIncr, epasToUse, ...
+                measuresOfInterest, measureTitles, ...
+                'mean', cellNameStr, conditionLabelHetero, pharmLabelsShort);
+
+    % Plot violin plots
+    m3ha_plot_violin(stats2dPathHetero, 'RowsToPlot', measuresOfInterest, ...
                     'OutFolder', figure08Dir);
 end
 
@@ -466,9 +510,10 @@ end
 
 %% Archive all scripts for this run
 if archiveScriptsFlag
-    if plot200CellExamples || analyze200CellSpikes || plotAnalysis200Cell || ...
-            backupPrevious200Cell || combineActivationProfiles || ...
-            combine200CellPopulation || plot200CellViolins || ...
+    if plot200CellExamples || analyze200CellSpikes || ...
+            combineActivationProfiles || combine200CellPopulation || ...
+            plot200CellViolins || analyzeHeteroSpikes || ...
+            combineHeteroPopulation || plotHeteroViolins || ...
             plot200CellGroupByCellJitters || combineEach200CellNetwork || ...
             plot200CellGroupByEpasJitters || plot200CellCumDist
         archive_dependent_scripts(mfilename, 'OutFolder', figure08Dir);
@@ -714,7 +759,10 @@ candLabelStr = 'candidateLabel';
 candCellTable = readtable(candCellSheetPath, 'ReadRowNames', true);
 
 % Find the cell names to use from the table
-if isnumeric(ranksOrcandidateLabels)
+if isempty(ranksOrcandidateLabels)
+    candidateLabels = {};
+    cellNamesToUse = {};
+elseif isnumeric(ranksOrcandidateLabels)
     % Rank number to use
     rankNumsToUse = ranksOrcandidateLabels;
 
@@ -743,7 +791,7 @@ end
 % Extract all tables for each seed number
 oscParamTablesCell = ...
     cellfun(@(seedNumDir) retrieve_osc_param_tables(seedNumDir, ...
-                        candidateLabels, cellNamesToUse, oscParamsSuffix, ...
+                        candidateLabels, oscParamsSuffix, ...
                         seedNumStr, cellNameStr, candLabelStr), ...
             seedNumDirs, 'UniformOutput', false);
 
@@ -985,14 +1033,10 @@ end
 
 function oscParamTables = ...
                 retrieve_osc_param_tables (seedNumDir, candidateLabelsToUse, ...
-                                        cellNamesToUse, oscParamsSuffix, ...
-                                        seedNumStr, cellNameStr, candLabelStr)
+                        oscParamsSuffix, seedNumStr, cellNameStr, candLabelStr)
 
 % Hard-coded parameters
 epasStr = 'TCepas';
-
-% Force as a column cell array
-cellNamesToUse = force_column_cell(cellNamesToUse);
 
 % Extract the seed number
 seedNumber = sscanf_full(extract_fileparts(seedNumDir, 'base'), '%d');
@@ -1000,11 +1044,27 @@ seedNumber = sscanf_full(extract_fileparts(seedNumDir, 'base'), '%d');
 % Compute the TC epas
 TCepas = -75 + mod(seedNumber, 16);
 
-% Locate corresponding oscillation parameter paths
-[~, oscParamPaths] = ...
-    find_matching_files(candidateLabelsToUse, 'Directory', seedNumDir, ...
-                        'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
-                        'Recursive', true, 'ForceCellOutput', true);
+% Find oscillation parameter paths
+if ~isempty(candidateLabelsToUse)
+    % Locate corresponding oscillation parameter paths
+    [~, oscParamPaths] = ...
+        find_matching_files(candidateLabelsToUse, 'Directory', seedNumDir, ...
+                            'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
+                            'Recursive', true, 'ForceCellOutput', true);
+else
+    % Find all oscillation parameter paths
+    [~, oscParamPaths] = all_files('Directory', seedNumDir, ...
+                            'Suffix', oscParamsSuffix, 'Extension', 'csv', ...
+                            'Recursive', true, 'ForceCellOutput', true);
+
+    % Extract candidate labels
+    candidateLabelsToUse = ...
+        m3ha_extract_candidate_label(oscParamPaths, 'FromBaseName', true);
+
+end
+
+% Extract cell names
+cellNamesToUse = m3ha_extract_cell_name(oscParamPaths, 'FromBaseName', true);
 
 % Read the oscillation parameter tables
 oscParamTables = cellfun(@readtable, oscParamPaths, 'UniformOutput', false);
@@ -1029,8 +1089,8 @@ oscParamTables = ...
 
 % Add the cell name to the tables
 oscParamTables = ...
-    cellfun(@(x, y) addvars_custom(x, {y}, 'NewVariableNames', cellNameStr, ...
-                                    'Before', 1), ...
+    cellfun(@(x, y) addvars_custom(x, {y}, 'NewVariableNames', ...
+                                    cellNameStr, 'Before', 1), ...
             oscParamTables, cellNamesToUse, 'UniformOutput', false);
 
 end

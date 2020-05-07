@@ -99,6 +99,8 @@ function statsTable = m3ha_compute_statistics (varargin)
 % 2019-12-04 Added other LTS features that might be of interest:
 % 2019-12-04 Added other burst features that might be of interest
 % 2020-02-16 Now makes sure the same cells are represented in all groups
+% 2020-05-06 Now removes LTS amplitude values that are less than -100 mV
+
 % TODO: Add 'MeasuresToCompute' as an optional argument
 
 %% Hard-coded parameters
@@ -384,6 +386,9 @@ spikeFrequencyEachSwp(~hasLts) = NaN;
 spikeAdaptationEachSwp(~hasLts) = NaN;
 burstOnsetTimeEachSwp(~hasLts) = NaN;
 spikesPerBurstEachSwp(~hasLts) = NaN;
+
+% Remove LTS amplitude values that are less than -100 mV
+ltsAmplitudeEachSwp(ltsAmplitudeEachSwp < -100) = NaN;
 
 %% Compute LTS & burst measures for each cell
 % Compute the LTS or burst probability for each cell

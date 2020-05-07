@@ -37,6 +37,7 @@
 %       cd/force_matrix.m
 %       cd/is_field.m
 %       cd/load_neuron_outputs.m
+%       cd/m3ha_compute_and_plot_violin.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
@@ -81,17 +82,17 @@
 
 %% Hard-coded parameters
 % Flags
-updateScriptsFlag = true;
-chooseBestNeuronsFlag = true;
-simulateFlag = true;
-combineFeatureTablesFlag = true;
-computeOpenProbabilityFlag = true;
-plotIndividualFlag = true;
-plotEssentialFlag = true;
-plotOpenProbabilityFlag = true;
-findSpecialCasesFlag = true;
-computeCellInfoTableFlag = true;
-plotCorrelationsFlag = true;
+updateScriptsFlag = false; %true;
+chooseBestNeuronsFlag = false; %true;
+simulateFlag = false; %true;
+combineFeatureTablesFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
+plotIndividualFlag = false; %true;
+plotEssentialFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+findSpecialCasesFlag = false; %true;
+computeCellInfoTableFlag = false; %true;
+plotCorrelationsFlag = false; %true;
 plotViolinPlotsFlag = true;
 plotBarPlotsFlag = true;
 archiveScriptsFlag = true;

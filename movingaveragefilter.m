@@ -9,6 +9,8 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %       movingaveragefilter(magic(5), 10, 10)
 %       movingaveragefilter(magic(5), 10, 2)
 %       movingaveragefilter(magic(5), 10, 1)
+%       movingaveragefilter([])
+%       movingaveragefilter({1:5, []})
 %
 % Outputs:
 %       vecsFilt    - filtered vector(s)

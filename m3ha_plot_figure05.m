@@ -50,9 +50,9 @@ createPlotMovieFig5 = false; %true;
 createPlotMovieTauh = false;
 createPlotMovieGabab = false; %true;
 
-createPhasePlotOnlyMovieFig5 = true;
+createPhasePlotOnlyMovieFig5 = false; %true;
 createPhasePlotOnlyMovieTauh = false;
-createPhasePlotOnlyMovieGabab = false; %true;
+createPhasePlotOnlyMovieGabab = true;
 
 simulateNoITSoma = false; %true;
 
@@ -673,9 +673,13 @@ figPathBaseVoltVsOpd = fullfile(outFolder, [expStr, '_voltageVsOpd']);
 figPathBaseVoltVsOpdOrig = [figPathBaseVoltVsOpd, '_orig'];
 figPathBaseVoltVsOpdCompressed = [figPathBaseVoltVsOpd, '_compressed'];
 figPathBaseVoltVsOpdMovie = [figPathBaseVoltVsOpd, '_movie'];
+figPathBaseVoltVsOpdAligned = [figPathBaseVoltVsOpd, '_movie_aligned'];
 figPathBaseConcavityVsSlope = ...
     fullfile(outFolder, [expStr, '_concavityVsSlope']);
-figPathBaseConcavityVsSlopeMovie = [figPathBaseConcavityVsSlope, '_movie'];
+figPathBaseConcavityVsSlopeMovie = ...
+    [figPathBaseConcavityVsSlope, '_movie'];
+figPathBaseConcavityVsSlopeAligned = ...
+    [figPathBaseConcavityVsSlope, '_movie_aligned'];
 
 % Create and save plot
 switch plotType
@@ -724,25 +728,51 @@ case 'voltageVsOpd1'
                         figTypes);
 case {'voltageVsOpd2', 'voltageVsOpd3'}
     % Create the figure
-    figMovie = set_figure_properties('AlwaysNew', true);
+    figMovie1 = set_figure_properties('AlwaysNew', true);
 
     % Plot traces
     handles = m3ha_plot_simulated_traces('Directory', directory, ...
                     'ExpStr', expStr, 'PlotType', plotType, ...
-                    'FigHandle', figMovie, 'TimeLimits', timeLimits, ...
+                    'FigHandle', figMovie1, 'TimeLimits', timeLimits, ...
                     'XLimits', xLimits, 'YLimits', yLimits, ...
                     'ColorMap', colorMap, 'LineStyle', 'none', ...
-                    'tVecs', tVecToMatch, 'Marker', '.');
+                    'tVecs', tVecToMatch, 'Marker', '.', ...
+                    'PlotSelected', true);
 
-    % Create movie
+    % Decide on movie file base
     switch plotType
     case 'voltageVsOpd2'
-        create_plot_movie(figMovie, fiSeconds, ...
-                            'FileBase', figPathBaseVoltVsOpdMovie);
+        fileBase = figPathBaseVoltVsOpdMovie;
     case 'voltageVsOpd3'
-        create_plot_movie(figMovie, fiSeconds, ...
-                            'FileBase', figPathBaseConcavityVsSlopeMovie);
+        fileBase = figPathBaseConcavityVsSlopeMovie;
     end
+
+    % Create movie
+    create_plot_movie(figMovie1, fiSeconds, 'FileBase', fileBase);
+
+    % Create the figure
+    figMovie2 = set_figure_properties('AlwaysNew', true);
+
+    % Plot traces
+    handles = m3ha_plot_simulated_traces('Directory', directory, ...
+                    'ExpStr', expStr, 'PlotType', plotType, ...
+                    'FigHandle', figMovie2, 'TimeLimits', timeLimits, ...
+                    'XLimits', xLimits, 'YLimits', yLimits, ...
+                    'ColorMap', colorMap, 'LineStyle', 'none', ...
+                    'tVecs', tVecToMatch, 'Marker', '.', ...
+                    'PlotSelected', true);
+
+    % Decide on movie file base
+    switch plotType
+    case 'voltageVsOpd2'
+        fileBase = figPathBaseVoltVsOpdAligned;
+    case 'voltageVsOpd3'
+        fileBase = figPathBaseConcavityVsSlopeAligned;
+    end
+
+    % Create movie
+    create_plot_movie(figMovie2, fiSeconds, 'FileBase', fileBase, ...
+                        'AlignToSelected', true);
 otherwise
     error('plotType unrecognized!')
 end

@@ -12,6 +12,7 @@ function varargout = find_in_list (cand, list, varargin)
 %       [i, e] = find_in_list(3, [3, 4, 5, 3])
 %       [i, e] = find_in_list([5, 4], [3, 4, 5, 3])
 %       [i, e] = find_in_list([3, 4], [3, 4, 5, 3])
+%       [i, e] = find_in_list(3, {[3, 4], [5, 6]})
 %       [i, e] = find_in_list([3, 4], [3, 4, 5, 3], 'MaxNum', 1)
 %       [i, e] = find_in_list([2, 3, 4], [3, 4, 5, 3], 'MaxNum', 1)
 %       [i, e] = find_in_list([2, 3, 4], [3, 4, 5, 3], 'MaxNum', 1, 'ReturnNaN', true)
@@ -112,15 +113,15 @@ if strcmp(matchMode, 'regexp') && ~istext(cand)
     error('First input must be text if ''MatchMode'' is ''regexp''!');
 end
 
-% Translate match mode to search mode
-if strcmp(matchMode, 'parts')
-    searchMode = 'substrings';
-else
-    searchMode = matchMode;
-end
-
 %% Use ismatch.m
 if istext(cand)
+    % Translate match mode to search mode
+    if strcmp(matchMode, 'parts')
+        searchMode = 'substrings';
+    else
+        searchMode = matchMode;
+    end
+
     % Use find_in_strings.m
     [varargout{1:nargout}] = ...
         find_in_strings(cand, list, 'searchMode', searchMode, ...
@@ -128,24 +129,7 @@ if istext(cand)
                         'ReturnNan', returnNan);
 else
     % Find all indices
-    if numel(cand) == 1
-        indices = find_custom(list == cand, maxNum, 'ReturnNaN', returnNan);
-    else
-        if ~isempty(maxNum) && maxNum == 1 && returnNan
-            indices = array_fun(@(x) find_custom(list == x, 1, ...
-                                                'ReturnNaN', true), cand);
-        else
-            try
-                indices = array_fun(@(x) find_custom(list == x, maxNum, ...
-                                                    'ReturnNaN', returnNan), ...
-                                    cand, 'UniformOutput', true);
-            catch
-                indices = array_fun(@(x) find_custom(list == x, maxNum, ...
-                                                    'ReturnNaN', returnNan), ...
-                                    cand, 'UniformOutput', false);
-            end
-        end        
-    end
+    indices = find_in_list_helper(cand, list, maxNum, returnNan);
 
     % Outputs
     varargout{1} = indices;
@@ -159,6 +143,30 @@ else
             varargout{2} = list(indices);
         end
     end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indices = find_in_list_helper (cand, list, maxNum, returnNan)
+%% Find candidate in a list
+
+if numel(cand) == 1
+    indices = find_custom(list == cand, maxNum, 'ReturnNaN', returnNan);
+else
+    if ~isempty(maxNum) && maxNum == 1 && returnNan
+        indices = array_fun(@(x) find_custom(list == x, 1, ...
+                                            'ReturnNaN', true), cand);
+    else
+        try
+            indices = array_fun(@(x) find_custom(list == x, maxNum, ...
+                                                'ReturnNaN', returnNan), ...
+                                cand, 'UniformOutput', true);
+        catch
+            indices = array_fun(@(x) find_custom(list == x, maxNum, ...
+                                                'ReturnNaN', returnNan), ...
+                                cand, 'UniformOutput', false);
+        end
+    end        
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

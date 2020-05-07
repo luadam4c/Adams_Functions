@@ -8,6 +8,7 @@
 %       cd/create_labels_from_numbers.m
 %       cd/find_matching_files.m
 %       cd/force_string_end.m
+%       cd/m3ha_compute_and_plot_violin.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_load_sweep_info.m

@@ -34,15 +34,16 @@ function cellNames = m3ha_extract_cell_name (strs, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure04.m
-%       cd/m3ha_simulate_population.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-12-21 Created by Adam Lu
-% 
+% 2020-05-06 Added cellNamePatternAlt
 
 %% Hard-coded parameters
 cellNamePattern = '[A-Z][0-9]{6}';
+cellNamePatternAlt = 'hetero[0-9]*seed[0-9]*';
 
 %% Default values for optional arguments
 fromBaseNameDefault = true;
@@ -81,6 +82,16 @@ otherArguments = iP.Unmatched;
 % Extract the cell names
 cellNames = extract_substrings(strs, 'FromBaseName', fromBaseName, ...
                                 'RegExp', cellNamePattern, otherArguments);
+
+% Determine if there is any empty string
+toReplace = isemptycell(cellNames);
+
+% Replace with alternative cell name string
+if any(toReplace)
+    cellNamesAlt = extract_substrings(strs, 'FromBaseName', fromBaseName, ...
+                                    'RegExp', cellNamePatternAlt, otherArguments);
+    cellNames(toReplace) = cellNamesAlt(toReplace);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -18,6 +18,7 @@ function vecs = force_matrix (vecs, varargin)
 %       force_matrix(myCellCellNumeric, 'TreatCellAsArray', true);
 %       force_matrix({{1:5; 1:3}, {1:2; 1:6}}, 'TreatCellAsArray', true)
 %       force_matrix({{1:5}, {1:2; 1:6}}, 'TreatCellNumAsArray', true)
+%       cf. align_vectors_by_index.m
 %
 % Outputs:
 %       vecs        - vectors as a matrix
@@ -61,6 +62,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/isnum.m
 %
 % Used by:
+%       cd/align_vectors_by_index.m
 %       cd/alternate_elements.m
 %       cd/combine_abf_data.m
 %       cd/compute_activation_profile.m

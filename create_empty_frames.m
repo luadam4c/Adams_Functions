@@ -33,6 +33,7 @@ function frames = create_empty_frames (width, height, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/create_plot_movie.m
 %       cd/read_frames.m
 
 % File History:

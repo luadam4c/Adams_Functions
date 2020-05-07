@@ -28,6 +28,7 @@ function flag = set_default_flag (flag, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/align_vectors_by_index.m
 %       cd/compute_single_neuron_errors.m
 %       cd/create_plot_movie.m
 %       cd/find_zeros.m

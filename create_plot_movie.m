@@ -30,10 +30,15 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 %                   - 'PlotLeadPoints': whether to plot leading points
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - Any other parameter-value pair for plot_traces()
+%                   - 'AlignToSelected': whether to align to selected points
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - Any other parameter-value pair for create_empty_frames()
 %
 % Requires:
+%       cd/align_vectors_by_index.m
 %       cd/argfun.m
+%       cd/create_empty_frames.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
 %       cd/hold_on.m
@@ -49,19 +54,20 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 % 2020-05-04 Moved from create_plot_movie.m
 % 2020-05-04 Added 'FileBase' as an optional argument
 % 2020-05-04 Added 'PlotLeadPoints' as an optional argument
+% 2020-05-06 Added 'AlignToSelected' as an optional argument
 
 %% Hard-coded constants
 MS_PER_S = 1000;
 markerExpansionRatio = 2;
 
 %% Hard-coded parameters
-validPlotModes = {'overlapped', 'parallel', 'staggered'};
 
 %% Default values for optional arguments
 fiSecondsDefault = [];      % set later
 frameTimesDefault = [];     % set later
 fileBaseDefault = '';       % don't save by default
 plotLeadPointsDefault = true;   % plot leading points by default
+alignToSelectedDefault = false; % don't align to selected by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -92,6 +98,8 @@ addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PlotLeadPoints', plotLeadPointsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlignToSelected', alignToSelectedDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, figHandle, varargin{:});
@@ -99,8 +107,9 @@ fiSeconds = iP.Results.fiSeconds;
 frameTimes = iP.Results.FrameTimes;
 fileBase = iP.Results.FileBase;
 plotLeadPoints = iP.Results.PlotLeadPoints;
+alignToSelected = iP.Results.AlignToSelected;
 
-% Keep unmatched arguments for the plot_traces() function
+% Keep unmatched arguments for the create_empty_frames() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
@@ -116,6 +125,10 @@ figHeight = round(figPosition(4));
 
 % Extract the line handles
 lineHandles = findobj(figHandle, 'Type', 'Line');
+
+% Deal with selected points
+[lineHandles, selectedHandles] = ...
+    deal_with_selected(lineHandles, alignToSelected);
 
 % Extract all y data
 yData = extract_fields(lineHandles, 'YData', 'UniformOutput', false);
@@ -144,7 +157,7 @@ fiSeconds = fiMs / MS_PER_S;
 %% Do the job
 % Initialize plot movie frames
 plotFrames = create_empty_frames(figHeight, figWidth, [nPlotFrames, 1], ...
-                                'Duration', fiSeconds);
+                                'Duration', fiSeconds, otherArguments);
 
 % Initialize lead point handles
 leadPointHandles = plot([]);
@@ -179,7 +192,8 @@ for iPlotFrame = nPlotFrames:-1:1
     % Generate the plot for the previous frame
     leadPointHandles = ...
         generate_previous_frame(lineHandles, leadPointHandles, ...
-                        removeLastPoints, plotLeadPoints, markerExpansionRatio);
+                                selectedHandles, removeLastPoints, ...
+                                plotLeadPoints, markerExpansionRatio);
 end
 
 % Write frames to a movie file if requested
@@ -189,14 +203,107 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function [lineHandles, selectedHandles] = ...
+                deal_with_selected (lineHandlesOrig, alignToSelected)
+
+% Extract all y data
+yData = extract_fields(lineHandlesOrig, 'YData', 'UniformOutput', false);
+
+% Find the number of samples for each object
+nSamples = cellfun(@numel, yData);
+
+% If there are any objects with only one data point, make it a selected handle
+%   otherwise, make it a line handle
+selectedHandles = lineHandlesOrig(nSamples == 1);
+lineHandles = lineHandlesOrig(nSamples > 1);
+
+% Match each selected handle with one of the line handles
+[selectedHandles, indMatchedLine, idxSelectedEachLine] = ...
+    arrayfun(@(s) match_selected_with_a_line(s, lineHandles, false), ...
+            selectedHandles);
+
+% Align line objects to selected indices by padding data with NaNs
+if alignToSelected
+    align_lines_to_index(lineHandles(indMatchedLine), idxSelectedEachLine);
+end
+
+% Match each selected handle with one of the line handles 
+%   and pad the selected object
+arrayfun(@(s) match_selected_with_a_line(s, lineHandles, true), ...
+        selectedHandles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [selectedHandle, idxMatchedLine, idxSelected] = ...
+                match_selected_with_a_line (selectedHandle, lineHandles, ...
+                                            padSelected)
+
+% Extract x and y data from the selected object
+xSelected = selectedHandle.XData;
+ySelected = selectedHandle.YData;
+
+% Extract x and y data from line objects
+[xLines, yLines] = ...
+    extract_fields(lineHandles, {'XData', 'YData'}, 'UniformOutput', false);
+
+% Find the first matching line object 
+idxMatchedLine = find(ismatch(xLines, xSelected, 'MatchMode', 'parts') & ...
+                ismatch(yLines, ySelected, 'MatchMode', 'parts'), 1, 'first');
+
+% If doesn't exist, return empty plot
+if isempty(idxMatchedLine)
+    selectedHandle = plot([]);
+    idxMatchedLine = NaN;
+    idxSelected = NaN;
+    return
+end
+
+% Extract the data for this line object
+xThisLine = xLines{idxMatchedLine};
+yThisLine = yLines{idxMatchedLine};
+
+% Find the number of samples
+nSamplesThisLine = numel(yThisLine);
+
+% Find the index of the matching selected point in the line data
+idxSelected = find(xThisLine == xSelected & yThisLine == ySelected, 1, 'first');
+
+% Pad NaNs for selected object
+if padSelected
+    [selectedHandle.XData, selectedHandle.YData] = ...
+        argfun(@(x) [nan(1, idxSelected - 1), x, ...
+                    nan(1, nSamplesThisLine - idxSelected)], ...
+                xSelected, ySelected);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function align_lines_to_index(lineHandles, idxSelected)
+
+% Extract x and y data from line objects
+[xDataOrig, yDataOrig] = ...
+    extract_fields(lineHandles, {'XData', 'YData'}, 'UniformOutput', false);
+
+% Align vectors to a particular index
+[xDataNew, yDataNew] = ...
+    argfun(@(x) align_vectors_by_index(x, idxSelected), xDataOrig, yDataOrig);
+
+% Set as new data
+cellfun(@(a, b) set(a, 'XData', b), num2cell(lineHandles), xDataNew);
+cellfun(@(a, b) set(a, 'YData', b), num2cell(lineHandles), yDataNew);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function leadPointHandles = generate_previous_frame (lineHandles, ...
-                                leadPointHandles, removeLastPoints, ...
-                                plotLeadPoints, markerExpansionRatio)
+                                        leadPointHandles, selectedHandles, ...
+                                        removeLastPoints, plotLeadPoints, ...
+                                        markerExpansionRatio)
 %% Modifies the plot for the previous frame
 
-% Remove the last data point of each Line object
+% Remove the last data point of each line and selected object
 if removeLastPoints
     arrayfun(@remove_last_data_point, lineHandles);
+    arrayfun(@remove_last_data_point, selectedHandles);
 end
 
 % Return the last data point remaining in each Line object

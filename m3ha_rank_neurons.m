@@ -59,13 +59,13 @@
 
 %% Hard-coded parameters
 % Flags
-updateScriptsFlag = true;
-chooseBestParamsFlag = true;
-plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
-plotBarPlotFlag = true;
-plotErrorParamComparisonAllFlag = true;
+updateScriptsFlag = false; %true;
+chooseBestParamsFlag = false; %true;
+plotIndividualFlag = false; %true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
+plotBarPlotFlag = false; %true;
+plotErrorParamComparisonAllFlag = false; %true;
 plotErrorParamComparisonSelectedFlag = true;
 archiveScriptsFlag = true;
 
@@ -79,7 +79,6 @@ plotParamViolinsFlag = false; %true;
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
 useHH = false;
-useCvode = false;
 buildMode = 'active';
 simMode = 'active';
 columnMode = 1;                     % optimization mode:
@@ -263,9 +262,17 @@ cellNameStr = 'cellName';
 % iterSetStr = 'manual_singleneuronfitting0-102';
 % dataMode = 2;
 % attemptNumberAcrossTrials = 3;
+% useCvode = true;
 
-outFolderName = '20200429_ranked_manual_singleneuronfitting0-102';
-rankNumsToPlot = 1:23;
+% outFolderName = '20200429_ranked_manual_singleneuronfitting0-102';
+% rankNumsToPlot = 1:23;
+% iterSetStr = 'manual_singleneuronfitting0-102';
+% dataMode = 2;
+% attemptNumberAcrossTrials = 3;
+% useCvode = false;
+
+outFolderName = '20200207_ranked_manual_singleneuronfitting0-102';
+rankNumsToPlot = 1:31;
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2;                       % data mode:
                                     %   0 - all data
@@ -289,6 +296,7 @@ attemptNumberAcrossTrials = 3;      % attempt number for across trials:
                                     %   6 - Same as 4 but prioritize least vHold
                                     %   7 - Same as 1 but prioritize least vHold
                                     %   8 - Same as 5 but prioritize least vHold
+useCvode = true;
 
 figTypes = {'png', 'epsc2'};
 % paramDirNames = fullfile('best_params', ...

@@ -31,6 +31,7 @@ function varargout = vecfun (myFunction, inVecs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
+%       cd/iscellvector.m
 %       cd/struct2arglist.m
 %
 % Used by:

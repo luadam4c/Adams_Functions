@@ -72,6 +72,7 @@ function vectors = force_column_vector (vectors, varargin)
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
 %       cd/adjust_edges.m
+%       cd/align_vectors_by_index.m
 %       cd/annotation_in_plot.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_activation_profile.m

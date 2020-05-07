@@ -13,6 +13,7 @@ function varargout = ismatch (list, cand, varargin)
 %       ismatch([1 NaN 2 1 1 NaN 3 NaN 2 3], 2)
 %       ismatch([1 NaN 2 1 1 NaN 3 NaN 2 3], NaN)
 %       ismatch({'', '12', 'dg', ''}, '')
+%       ismatch({[3, 4], [5, 6]}, [3], 'MatchMode', 'parts')
 %       strs1 = {'Mark''s fish', 'Peter''s fish', 'Katie''s sealion'};
 %       strs2 = ["Mark's fish", "Peter's fish", "Katie's sealion"];
 %       ismatch(strs1, 'fish')
@@ -59,6 +60,7 @@ function varargout = ismatch (list, cand, varargin)
 %                   default == false
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/create_error_for_nargin.m
 %       cd/find_custom.m
 %       cd/is_matching_string.m
@@ -122,8 +124,9 @@ maxNum = iP.Results.MaxNum;
 returnNan = iP.Results.ReturnNan;
 
 % Check relationships between arguments
-if ~strcmp(matchMode, 'exact') && ~istext(cand)  
-    error('Second input must be text if ''MatchMode'' is not ''exact''!');
+if ~any(strcmp(matchMode, {'exact', 'parts'})) && ~istext(cand)  
+    error(['Second input must be text if ''MatchMode'' ', ...
+            'is not ''exact'' or ''parts''!']);
 end
 
 %% Preparation
@@ -151,10 +154,11 @@ if istext(list)
                             'MatchOnce', matchOnce, 'IgnoreCase', ignoreCase);
 else
     % Test whether each member is a match to cand
-    if iscell(list)
-        isMatch = cellfun(@(x) isequaln(x, cand), list);
-    else
-        isMatch = arrayfun(@(x) isequaln(x, cand), list);
+    switch matchMode
+    case 'exact'
+        isMatch = array_fun(@(x) isequaln(cand, x), list);
+    case 'parts'
+        isMatch = array_fun(@(x) ismember(cand, x), list);
     end
 end
 

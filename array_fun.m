@@ -33,6 +33,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/align_vectors_by_index.m
 %       cd/argfun.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/check_fullpath.m
@@ -50,6 +51,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/find_in_list.m
 %       cd/find_window_endpoints.m
 %       cd/force_string_end.m
+%       cd/ismatch.m
 %       cd/ismember_custom.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_compute_statistics.m

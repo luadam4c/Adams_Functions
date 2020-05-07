@@ -8,6 +8,7 @@
 %       cd/create_labels_from_numbers.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
+%       cd/m3ha_compute_and_plot_violin.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_create_cell_info_table.m
 %       cd/m3ha_extract_cell_name.m

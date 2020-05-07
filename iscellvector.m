@@ -22,6 +22,7 @@ function isCellVector = iscellvector (x)
 % Used by:
 %       cd/all_ordered_pairs.m
 %       cd/compute_combined_data.m
+%       cd/vecfun.m
 
 % File History:
 % 2019-01-18 Adapted from iscellnonvector.m
@@ -35,7 +36,8 @@ if nargin < 1
 end
 
 %% Do the job
-isCellVector = iscell(x) && all(all(all(cellfun(@isvector, x))));
+isCellVector = iscell(x) && ...
+                all(all(all(cellfun(@(x) isempty(x) || isvector(x), x))));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
