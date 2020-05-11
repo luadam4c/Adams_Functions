@@ -99,7 +99,7 @@ archiveScriptsFlag = true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
-useCvode = true;        % whether to use variable integration time steps
+useCvode = false;       % whether to use variable integration time steps
 buildMode = 'active';
 simMode = 'active';
 dataMode = 1; %0;           % data mode:
@@ -316,13 +316,13 @@ individualYTickLocs = [];
 % rankNumsOpenProbability = 1:31;
 
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-%         '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_off');
+%         '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_on');
 % rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 % rankNumsToUse = 1:31;
 % rankNumsOpenProbability = 1:31;
 
 outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-        '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_on');
+        '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_off');
 rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = 1:31;
 rankNumsOpenProbability = 1:31;

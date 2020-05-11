@@ -284,10 +284,14 @@ switch measureTitle
     case 'Spikes Per LTS'
         ylim([0, 6.5]);
     case 'LTS maximum slope (V/s)'
-        ylim([0, 5]);
+        % ylim([0, 5]);
+        ylim([0, 8]);
+        yticks([0:2:8]);
     case 'LTS amplitude (mV)'
-        ylim([-75, -45]);
-        yticks(-75:10:-45);
+        % ylim([-75, -45]);
+        % yticks(-75:10:-45);
+        ylim([-75, -30]);
+        yticks(-75:10:-35);
     otherwise
         % Do nothing
 end

@@ -60,7 +60,8 @@ backupPrevious2Cell = false; %true;
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 
-plot200CellExamples = false; %true;
+plot200CellExamples = true;
+plotHeteroExamples = true;
 
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
@@ -71,8 +72,8 @@ plot200CellViolins = false;
 analyzeHeteroSpikes = false; %true;
 plotAnalysisHetero = false;
 backupPreviousHetero = false;
-combineHeteroPopulation = true;
-plotHeteroViolins = true;
+combineHeteroPopulation = false;
+plotHeteroViolins = false;
 
 combineActivationProfiles = false; %true;
 plot200CellGroupByCellJitters = false; %true;
@@ -108,12 +109,15 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % exampleIterName2Cell = '20200207T1554_using_bestparams_20200203_manual_singleneuronfitting0-102_REena88_TCena88_2cell_examples';
 % popIterName2Cell = '20200418_using_bestparams_20200203_manual_singleneuronfitting0-102';
 % popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
+% exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
+% exampleSeedDirName200Cell = 'seedNumber_21';      % Use seed number 21 (TCepas = -70)
 
 exampleIterName2Cell = '20200501_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
 exampleSeedDirName2Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
-exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
-exampleSeedDirName200Cell = 'seedNumber_21';      % Use seed number 21 (TCepas = -70)
+exampleIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+exampleIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
+exampleSeedDirName200Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 popIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 popIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 candCellSheetName = 'candidate_cells.csv';
@@ -144,7 +148,9 @@ epasToUse = -74:-60;
 % Should be consistent with m3ha_plot_figure03.m & m3ha_plot_figure07.m
 exampleCellNames2Cell = {'D101310'; 'G101310'};
 % exampleCellNames200Cell = {'D101310'; 'G101310'; 'hetero4'; 'hetero8'; 'hetero12'};
-exampleCellNames200Cell = {'D101310'; 'hetero12'};
+% exampleCellNames200Cell = {'D101310'; 'hetero12'};
+exampleCellNames200Cell = {'D101310'};
+exampleCellNamesHetero = {'hetero24seed9'};
 
 gIncr = 200;                % Original dynamic clamp gIncr value
 pharmConditions = (1:4)';   % Pharmacological conditions
@@ -232,6 +238,7 @@ figTypes = {'png', 'epsc'};
 % Find the directory for this iteration
 exampleIterDir2Cell = fullfile(networkDirectory, exampleIterName2Cell);
 exampleIterDir200Cell = fullfile(networkDirectory, exampleIterName200Cell);
+exampleIterDirHetero = fullfile(networkDirectory, exampleIterNameHetero);
 popIterDir2Cell = fullfile(networkDirectory, popIterName2Cell);
 popIterDir200Cell = fullfile(networkDirectory, popIterName200Cell);
 popIterDirHetero = fullfile(networkDirectory, popIterNameHetero);
@@ -319,6 +326,17 @@ if plot200CellExamples
                                 'Keyword', x, 'Recursive', true), ...
                 exampleCellNames200Cell, 'UniformOutput', false);
 end
+if plotHeteroExamples
+    % Select seed number directory
+    seedNumberDirHetero = ...
+        fullfile(exampleIterDirHetero, exampleSeedDirName200Cell);
+
+    % Find example network directories
+    [~, exampleDirsHetero] = ...
+        cellfun(@(x) all_subdirs('Directory', seedNumberDirHetero, ...
+                                'Keyword', x, 'Recursive', true), ...
+                exampleCellNamesHetero, 'UniformOutput', false);
+end
 
 %% Plots figures for comparing dynamic clamp ipsc
 if plotIpscComparison
@@ -353,13 +371,23 @@ if plot2CellM2h
         num2cell(pharmConditions), colorMapPharmCell);
 end
 
-%% Plots example 200-cell networks
+%% Plots example homogeneous 200-cell networks
 if plot200CellExamples
     arrayfun(@(z) ...
         cellfun(@(x, y) plot_200cell_examples(x, exampleIterName200Cell, ...
                             gIncr, z, y, figure08Dir, figTypes, ...
                         example200CellFigWidth, example200CellFigHeight), ...
                 exampleCellNames200Cell, exampleDirs200Cell), ...
+        pharmConditions);
+end
+
+%% Plots example heterogenous 200-cell networks
+if plotHeteroExamples
+    arrayfun(@(z) ...
+        cellfun(@(x, y) plot_200cell_examples(x, exampleIterNameHetero, ...
+                            gIncr, z, y, figure08Dir, figTypes, ...
+                        example200CellFigWidth, example200CellFigHeight), ...
+                exampleCellNamesHetero, exampleDirsHetero), ...
         pharmConditions);
 end
 
