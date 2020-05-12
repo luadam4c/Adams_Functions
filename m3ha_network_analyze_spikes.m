@@ -304,8 +304,9 @@ halfActiveLatencyMsTC = halfActiveTimeMsTC - stimEndMs;
                             'SpikeHistParams', histParams, ...
                             'SpikeHistData', histData);
 
-% Decide whether there is an oscillation based on RT spikes
+% Decide whether there is an oscillation based on all spikes
 %   Note: Number of bursts in an oscillation must be more than 2.
+%           i.e., there must be at least 2 cycles
 hasOscillation = histParams.nBurstsInOsc > 2;
 
 %% Plot for verification

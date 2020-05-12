@@ -26,6 +26,7 @@
 %       cd/force_matrix.m
 %       cd/ismatch.m
 %       cd/lower_first_char.m
+%       cd/m3ha_decide_on_ylimits.m
 %       cd/m3ha_extract_candidate_label.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_network_analyze_spikes.m
@@ -60,20 +61,20 @@ backupPrevious2Cell = false; %true;
 combine2CellPopulation = false; %true;
 plot2CellViolins = false; %true;
 
-plot200CellExamples = true;
-plotHeteroExamples = true;
+plot200CellExamples = false; %true;
+plotHeteroExamples = false; %true;
 
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
-combine200CellPopulation = false;
-plot200CellViolins = false;
+combine200CellPopulation = false; %true;
+plot200CellViolins = false; %true;
 
-analyzeHeteroSpikes = false; %true;
-plotAnalysisHetero = false;
+analyzeHeteroSpikes = true;
+plotAnalysisHetero = true;
 backupPreviousHetero = false;
-combineHeteroPopulation = false;
-plotHeteroViolins = false;
+combineHeteroPopulation = false; %true;
+plotHeteroViolins = false; %true;
 
 combineActivationProfiles = false; %true;
 plot200CellGroupByCellJitters = false; %true;
@@ -159,18 +160,19 @@ pharmConditions = (1:4)';   % Pharmacological conditions
                             %   3 - GAT 3 Block
                             %   4 - Dual Block
 measuresOfInterest = {'oscillationProbability'; 'meanOscPeriod2Ms'; ...
-                        'meanOscIndex4'; 'meanPercentActive'; ...
-                        'meanOscDurationSec'; 'meanPercentActiveTC'; ...
-                        'meanHalfActiveLatencyMsTC'};
+                        'meanOscIndex4'; 'meanPercentActiveTC'; ...
+                        'meanHalfActiveLatencyMsTC'; 'meanPercentActive'; ...
+                        'meanOscDurationSec'};
 measureTitles = {'Oscillation Probability'; 'Oscillation Period (ms)'; ...
-                    'Oscillatory Index'; 'Active Cells (%)'; ...
-                    'Oscillation Duration (sec)'; 'Active TC Cells (%)'; ...
-                    'Half Activation Time (ms)'};
+                    'Oscillatory Index'; 'Active TC Cells (%)'; ...
+                    'Half Activation Time (ms)'; 'Active Cells (%)'; ...
+                    'Oscillation Duration (sec)'};
 measuresOfInterestJitter = {'oscPeriod2Ms'; ...
-                        'oscIndex4'; 'percentActive'; ...
-                        'oscDurationSec'; 'percentActiveTC'; ...
-                        'halfActiveLatencyMsTC'};
+                        'oscIndex4'; 'percentActiveTC'; ...
+                        'halfActiveLatencyMsTC'; 'percentActive'; ...
+                        'oscDurationSec'};
 measureTitlesJitter = measureTitles(2:end);
+measuresToPlot = replace(measuresOfInterest, 'Ms', 'Sec');
 
 % The following must be consistent with m3ha_net.hoc
 timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
@@ -411,8 +413,8 @@ end
 
 %% Analyzes spikes for all heterogeneous 200-cell networks
 if analyzeHeteroSpikes
-    reanalyze_network_spikes(popIterDirHetero, backupPrevioushetero, ...
-                                plotAnalysishetero);
+    reanalyze_network_spikes(popIterDirHetero, backupPreviousHetero, ...
+                                plotAnalysisHetero);
 end
 
 %% Combines quantification over all homogeneous 200-cell networks
@@ -447,7 +449,7 @@ if plot2CellViolins
                     'mean', cellNameStr, conditionLabel2Cell, pharmLabelsShort);
 
     % Plot violin plots
-    m3ha_plot_violin(stats2dPath2Cell, 'RowsToPlot', measuresOfInterest, ...
+    m3ha_plot_violin(stats2dPath2Cell, 'RowsToPlot', measuresToPlot, ...
                     'OutFolder', figure07Dir);
 end
 
@@ -465,7 +467,7 @@ if plot200CellViolins
                 'mean', cellNameStr, conditionLabel200Cell, pharmLabelsShort);
 
     % Plot violin plots
-    m3ha_plot_violin(stats2dPath200Cell, 'RowsToPlot', measuresOfInterest, ...
+    m3ha_plot_violin(stats2dPath200Cell, 'RowsToPlot', measuresToPlot, ...
                     'OutFolder', figure08Dir);
 end
 
@@ -483,7 +485,7 @@ if plotHeteroViolins
                 'mean', cellNameStr, conditionLabelHetero, pharmLabelsShort);
 
     % Plot violin plots
-    m3ha_plot_violin(stats2dPathHetero, 'RowsToPlot', measuresOfInterest, ...
+    m3ha_plot_violin(stats2dPathHetero, 'RowsToPlot', measuresToPlot, ...
                     'OutFolder', figure08Dir);
 end
 
@@ -1193,9 +1195,35 @@ popTableOfInterest = popDataTable(toUse, colsOfInterest);
                                         pharmStr, groupNameStr, x, method), ...
                     measureStrOrig, 'UniformOutput', false);
 
+% Convert times from ms to seconds
+[measureStr, measureTitle, allValues] = ...
+    cellfun(@(a, b, c) convert_ms_to_sec(a, b, c), ...
+            measureStr, measureTitle, allValues, 'UniformOutput', false);
+
 % Create the statistics table
 statsTable = table(measureTitle, measureStr, pharmCondition, ...
                     uniqueGroupValues, allValues, 'RowNames', measureStr);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [measureStr, measureTitle, allValues] = ...
+                    convert_ms_to_sec (measureStr, measureTitle, allValues)
+
+%% Hard-coded constants
+MS_PER_S = 1000;
+
+if contains(measureStr, 'Ms')
+    % Update measure string
+    measureStr = replace(measureStr, 'Ms', 'Sec');
+
+    % Update title
+    measureTitle = replace(measureTitle, 'ms', 'sec');
+
+    % Update values
+    allValues = cellfun(@(x) x ./ MS_PER_S, allValues, 'UniformOutput', false);
+end
 
 end
 
@@ -1206,10 +1234,27 @@ function [allValuesEachPharm, pharmCondition, uniqueGroupValues] = ...
                                     pharmStr, groupNameStr, measureStr, method)
 %% Computes the statistics for one measure
 
+%% Hard-coded parameters
+hasOscStr = 'hasOscillation';
+measuresOnlyIfOsc = {'oscPeriod2Ms', 'oscIndex4', 'halfActiveLatencyMsTC'};
+
 %% Do the job
 % Extract from table
 pharmAll = popDataTable.(pharmStr);
 groupValueAll = popDataTable.(groupNameStr);
+
+% For selected measures, make measure values without oscillations NaN 
+if ismember(measureStr, measuresOnlyIfOsc)
+    % Extract values
+    hasOscillation = popDataTable{:, hasOscStr};
+    measureValues = popDataTable{:, measureStr};
+
+    % Make values for no oscillations NaN
+    measureValues(~hasOscillation) = NaN;
+
+    % Update the table
+    popDataTable{:, measureStr} = measureValues;
+end
 
 % Get all possible pharmacological conditions
 pharmCondition = force_column_cell(num2cell(unique(pharmAll, 'sorted')));
@@ -1350,20 +1395,9 @@ title(figTitle);
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Set y axis limits based on measureTitle
-switch measureTitle
-    case 'LTS probability'
-        ylim([0, 1]);
-    case 'LTS onset time (ms)'
-        ylim([0, 2000]);
-    case 'Spikes Per LTS'
-        ylim([0, 6.5]);
-    case 'LTS maximum slope (V/s)'
-        ylim([0, 5]);
-    case 'LTS amplitude (mV)'
-        ylim([-75, -45]);
-        yticks(-75:10:-45);
-    otherwise
-        % Do nothing
+yLimits = m3ha_decide_on_ylimits(measureTitle);
+if ~isempty(yLimits)
+    ylim(yLimits);
 end
 
 % Update figure for CorelDraw

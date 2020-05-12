@@ -46,7 +46,7 @@ plotM2hFig6 = false; %true;
 plotVoltageVsOpdFig5 = false; %true;
 plotVoltageVsOpdFig6 = false; %true;
 
-createPlotMovieFig5 = false; %true;
+createPlotMovieFig5 = true;
 createPlotMovieTauh = false;
 createPlotMovieGabab = false; %true;
 
@@ -110,6 +110,9 @@ attemptNumberIpscr = 7;             % attempt number for IPSC response
                                     %   6 - Same as 4 but prioritize least vHold
                                     %   7 - Same as 1 but prioritize least vHold
                                     %   8 - Same as 5 but prioritize least vHold
+                                    %   9 - Use 4 traces @ 100% gIncr 
+                                    %       for this data mode
+                                    %   10 - Same as 7 but prioritize least actVHold
 % tauhModesAll = 4:5;
 % tauhModesAll = 1:5;
 % tauhModesAll = 6:7;
@@ -118,7 +121,7 @@ tauhModesAll = 1:7;
 newParamsNoITSoma = {'pcabarITSoma', 0};
 
 % The following must be consistent with singleneuron4compgabab.hoc
-timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+timeToStabilize = 3000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 % Plot settings
@@ -727,6 +730,7 @@ case 'voltageVsOpd1'
     save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpdCompressed, ...
                         figTypes);
 case {'voltageVsOpd2', 'voltageVsOpd3'}
+%{
     % Create the figure
     figMovie1 = set_figure_properties('AlwaysNew', true);
 
@@ -749,7 +753,7 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
 
     % Create movie
     create_plot_movie(figMovie1, fiSeconds, 'FileBase', fileBase);
-
+%}
     % Create the figure
     figMovie2 = set_figure_properties('AlwaysNew', true);
 

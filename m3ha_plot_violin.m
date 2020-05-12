@@ -55,6 +55,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %       cd/force_matrix.m
 %       cd/isfigtype.m
 %       cd/ispositiveintegervector.m
+%       cd/m3ha_decide_on_ylimits.m
 %       cd/plot_violin.m
 %       cd/struct2arglist.m
 %       cd/save_all_figtypes.m
@@ -276,24 +277,9 @@ violins = plot_violin(allValues, 'XTickLabels', pharmLabels, ...
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Set y axis limits based on measureTitle
-switch measureTitle
-    case 'LTS probability'
-        ylim([0, 1]);
-    case 'LTS onset time (ms)'
-        ylim([0, 2000]);
-    case 'Spikes Per LTS'
-        ylim([0, 6.5]);
-    case 'LTS maximum slope (V/s)'
-        % ylim([0, 5]);
-        ylim([0, 8]);
-        yticks([0:2:8]);
-    case 'LTS amplitude (mV)'
-        % ylim([-75, -45]);
-        % yticks(-75:10:-45);
-        ylim([-75, -30]);
-        yticks(-75:10:-35);
-    otherwise
-        % Do nothing
+yLimits = m3ha_decide_on_ylimits(measureTitle);
+if ~isempty(yLimits)
+    ylim(yLimits);
 end
 
 % Update figure for CorelDraw

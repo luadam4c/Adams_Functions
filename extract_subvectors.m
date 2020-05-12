@@ -12,6 +12,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       subVecs5 = extract_subvectors(magic(3), 'EndPoints', {[1,Inf], [2,Inf], [3,Inf]})
 %       subVecs6 = extract_subvectors({{1:5, 2:6}, {1:2}}, 'TreatCellNumAsArray', true)
 %       subVecs7 = extract_subvectors(magic(3), 'EndPoints', [1, 1, 1; 2, 2, 2])
+%       subVecs8 = extract_subvectors({1:5, 2:6}, 'EndPoints', [2, 4], 'PadRemaining', true)
 %       extract_subvectors(3:3:18, 'Indices', [2.5, 5.5])
 %       extract_subvectors(3:3:18, 'Indices', {3.5; [2.5, 5.5]})
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'odd')
@@ -73,6 +74,9 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       'rightAdjustPad' - align to the right and pad
 %                       'none'        - no alignment/truncation
 %                   default == 'none'
+%                   - 'PadRemaining': whether to pad remaining indices with NaN
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'TreatCellAsArray': whether to treat a cell array
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -107,6 +111,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/isnumericvector.m
 %       cd/ispositiveintegerarray.m
 %       cd/match_format_vector_sets.m
+%       cd/nan_except.m
 %       cd/unique_custom.m
 %
 % Used by:
@@ -172,6 +177,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-10-04 Added 'Pattern' as an optional argument
 % 2020-01-01 Now returns original vectors if no custom inputs
 % 2020-02-04 Improved create_empty_match
+% 2020-05-12 Added 'PadRemaining' as an optional argument
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -189,6 +195,7 @@ indexEndDefault = [];           % set later
 maxNumDefault = Inf;            % no limit by default
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
+padRemainingDefault = false;    % don't pad remaining with NaN by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
                                     %   as many arrays by default
@@ -237,6 +244,8 @@ addParameter(iP, 'Windows', windowsDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
+addParameter(iP, 'PadRemaining', padRemainingDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
@@ -256,6 +265,7 @@ indexEnd = iP.Results.IndexEnd;
 maxNum = iP.Results.MaxNum;
 windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
+padRemaining = iP.Results.PadRemaining;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
@@ -396,18 +406,20 @@ else
 
     % Extract subvectors
     if iscellnumeric(vecs) && ~treatCellNumAsArray
-        subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
+        subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y, ...
+                                                        padRemaining), ...
                             vecs, indices, 'UniformOutput', false);
     elseif iscell(vecs) && ~treatCellAsArray && ...
                 ~(iscellnumeric(vecs) && treatCellNumAsArray) && ...
                 ~(iscellstr(vecs) && treatCellStrAsArray)
         subVecs = array_fun(@(x, y) extract_subvectors(x, 'Indices', y, ...
+                                'PadRemaining', padRemaining, ...
                                 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray), ...
                             vecs, indices, 'UniformOutput', false);
     else
-        subVecs = extract_subvectors_helper(vecs, indices);
+        subVecs = extract_subvectors_helper(vecs, indices, padRemaining);
     end
 end
 
@@ -418,8 +430,15 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subVec = extract_subvectors_helper (vec, indices)
-%% Extract a subvector from vector(s) if not empty
+function subVec = extract_subvectors_helper (vec, indices, padRemaining)
+%% Extract subvector(s) from vector(s) if not empty
+
+% If to pad remaining with NaNs, simply make everything in vec NaN
+%   except for selected indices
+if padRemaining
+    subVec = nan_except(vec, indices);
+    return
+end
 
 % Force cell arrays as numeric matrices
 if iscell(indices)
@@ -484,7 +503,8 @@ if nIndices == 1
     subVec(~isNan, :) = extract_subvec(vec, indices(~isNan));
 else
     % Extract from each column separately
-    outVecs = array_fun(@(x) extract_subvec(vec(:, x), indices(~isNan(:, x), x)), ...
+    outVecs = array_fun(@(x) extract_subvec(vec(:, x), ...
+                                            indices(~isNan(:, x), x)), ...
                         1:nIndices, 'UniformOutput', false);
 
     % Concatenate into a single vector

@@ -224,7 +224,10 @@ lineHandles = lineHandlesOrig(nSamples > 1);
 
 % Align line objects to selected indices by padding data with NaNs
 if alignToSelected
-    align_lines_to_index(lineHandles(indMatchedLine), idxSelectedEachLine);
+    toAlign = ~isnan(indMatchedLine);
+    indMatchedToAlign = indMatchedLine(toAlign);
+    idxSelectedToAlign = idxSelectedEachLine(toAlign);
+    align_lines_to_index(lineHandles(indMatchedToAlign), idxSelectedToAlign);
 end
 
 % Match each selected handle with one of the line handles 
@@ -252,7 +255,6 @@ idxMatchedLine = find(ismatch(xLines, xSelected, 'MatchMode', 'parts') & ...
 
 % If doesn't exist, return empty plot
 if isempty(idxMatchedLine)
-    selectedHandle = plot([]);
     idxMatchedLine = NaN;
     idxSelected = NaN;
     return

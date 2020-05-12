@@ -83,6 +83,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
 %       cd/metabolismR01_extrapolate_burst_probability.m
+%       cd/nan_except.m
 %       cd/parse_all_abfs.m
 %       cd/parse_assyst_swd.m
 %       cd/parse_atf_swd.m

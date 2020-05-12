@@ -27,6 +27,7 @@ function empty = create_empty_match (array, varargin)
 %       cd/compute_combined_trace.m
 %       cd/extract_subvectors.m
 %       cd/force_matrix.m
+%       cd/nan_except.m
 
 % File History:
 % 2019-01-03 Moved from extract_subvectors.m

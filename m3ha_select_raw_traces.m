@@ -40,6 +40,8 @@ function [fileNames, rowConditions, figurePositions] = ...
 %                           6 - Same as 4 but prioritize least vHold
 %                           7 - Same as 1 but prioritize least vHold
 %                           8 - Same as 5 but prioritize least vHold
+%                           9 - Use 4 traces @ 100% gIncr for this data mode
+%                           10 - Same as 7 but prioritize least actVHold
 %                       FOR columnMode == 2
 %                           1 - Find cells with LTSs present 
 %                                   for all pharm conditions @ 200% g_incr
@@ -120,6 +122,8 @@ function [fileNames, rowConditions, figurePositions] = ...
 %               all pCondToUse present
 % 2020-01-23 Added attempt numbers 6-8
 % 2020-01-XX Default attemptNumber is now 6 for columnMode == 1
+% 2020-05-11 Added attempt number 9
+% 2020-05-11 Added attempt number 10
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -130,6 +134,7 @@ ltsDelayStr = 'ltspeaktime';
 maxNoiseStr = 'maxnoise';
 toUseStr = 'toUse';
 cellNameStr = 'cellName';
+actVholdStr = 'actVhold';
 
 %% Default values for optional arguments
 columnModeDefault = [];
@@ -237,6 +242,7 @@ vrow = swpInfo{:, vHoldStr};
 burstTime = swpInfo{:, burstDelayStr};
 ltsPeakTime = swpInfo{:, ltsDelayStr};
 maxNoise = swpInfo{:, maxNoiseStr};
+actVhold = swpInfo{:, actVholdStr};
 toUse = swpInfo{:, toUseStr};
 
 % Decide on pharm and gIncr conditions
@@ -262,9 +268,9 @@ end
 % Set default attempt number
 if isempty(attemptNumber)
     if columnMode == 1
-        attemptNumber = 6;
-    else
         attemptNumber = 7;
+    else
+        attemptNumber = 10;
     end
 end
 
@@ -272,7 +278,8 @@ end
 % Update rowMode based on colMode and attemptNumber
 if rowMode ~= 1 && ...
     ((colMode == 1 && (attemptNumber <= 2 || attemptNumber == 5 || ...
-                        attemptNumber == 7 || attemptNumber == 8)) || ...
+                        attemptNumber == 7 || attemptNumber == 8 || ...
+                        attemptNumber == 9 || attemptNumber == 10)) || ...
     (colMode == 2 && attemptNumber <= 3))
     fprintf(['Row Mode changed to 1 for ', ...
             'column mode %d and attempt number %d!\n'], ...
@@ -351,47 +358,41 @@ case 1
 
     % Decide on the indices based on attempt number
     switch attemptNumber
-    case {1, 2, 5, 7, 8}
-        % Print message
-        if attemptNumber == 1
-            fprintf('Attempt #1: Using 4 traces of %s @ 200%% gIncr ... \n', ...
-                    cellName);
-        elseif attemptNumber == 2
-            fprintf('Attempt #2: Using all traces of %s @ 200%% gIncr ... \n', ...
-                    cellName);
-        elseif attemptNumber == 5
-            fprintf('Attempt #5: Using 4 traces of %s @ 400%% gIncr ... \n', ...
-                    cellName);
-        elseif attemptNumber == 7
-            fprintf('Attempt #7: Using 4 traces of %s @ 200%% gIncr ... \n', ...
-                    cellName);
-        elseif attemptNumber == 8
-            fprintf('Attempt #8: Using 4 traces of %s @ 400%% gIncr ... \n', ...
-                    cellName);
+    case {1, 2, 5, 7, 8, 9, 10}
+        % Decide on the gIncr of interest
+        if attemptNumber == 1 || attemptNumber == 2 || ...
+                attemptNumber == 7 || attemptNumber == 10
+            gCondThis = 200;
+        elseif attemptNumber == 5 || attemptNumber == 8
+            gCondThis = 400;
+        elseif attemptNumber == 9
+            gCondThis = 100;
+        else
+            error('attemptNumber unrecognized!');
         end
 
-        % Return whether gCondToUse is 200
-        isGIncr200 = gCondToUse == 200;
+        % Print message
+        if attemptNumber == 2
+            fprintf('Attempt #%d: Using all traces of %s @ %d%% gIncr ... \n', ...
+                    attemptNumber, cellName, gCondThis);
+        else
+            fprintf('Attempt #%d: Using 4 traces of %s @ %d%% gIncr ... \n', ...
+                    attemptNumber, cellName, gCondThis);
+        end
 
-        % Return whether gCondToUse is 400
-        isGIncr400 = gCondToUse == 400;
+        % Determine whether gCondToUse is the gIncr of interest
+        isGIncrThis = gCondToUse == gCondThis;
 
         % Find the sweep indices for each pharmacological condition 
         %   @ 200% g_incr from this cell to be fitted
-        if attemptNumber == 1 || attemptNumber == 7
-            swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr200} & ...
+        if attemptNumber == 2
+            swpIndRow = cellfun(@(x) find(x & isGCond{isGIncrThis} & toUse), ...
+                                    isPCond, 'UniformOutput', false);
+        else
+            swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncrThis} & ...
                                                     toUse, ...
                                                 hasLts, hasBurst, maxNoise, ...
-                                                vrow, attemptNumber), ...
-                                    isPCond, 'UniformOutput', false);
-        elseif attemptNumber == 2
-            swpIndRow = cellfun(@(x) find(x & isGCond{isGIncr200} & toUse), ...
-                                    isPCond, 'UniformOutput', false);
-        elseif attemptNumber == 5 || attemptNumber == 8
-            swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr400} & ...
-                                                    toUse, ...
-                                                hasLts, hasBurst, maxNoise, ...
-                                                vrow, attemptNumber), ...
+                                                actVhold, vrow, attemptNumber), ...
                                     isPCond, 'UniformOutput', false);
         end
 
@@ -401,13 +402,12 @@ case 1
         end
 
         % Decide on the number of columns per row
-        if attemptNumber == 1 || attemptNumber == 5 || ...
-                attemptNumber == 7 || attemptNumber == 8
-            % Use only the first column
-            nColumns = 1;
-        elseif attemptNumber == 2
+        if attemptNumber == 2
             % Make sure each row has the same number of traces
             nColumns = min(cellfun(@length, swpIndRow));
+        else
+            % Use only the first column
+            nColumns = 1;
         end
     case 3
         % Print message
@@ -452,7 +452,7 @@ case 1
                     % Select the "most representative trace"
                     swpIdxSelected = ...
                         select_trace(isThisCond, hasLts, hasBurst, ...
-                                    maxNoise, vrow, attemptNumber);
+                                    maxNoise, actVhold, vrow, attemptNumber);
 
                     if isempty(swpIdxSelected)
                         error(['Most representative trace not found', ...
@@ -467,8 +467,8 @@ case 1
             end
         elseif size(rowConditions, 2) == 2
             swpIndRow = arrayfun(@(x) select_trace(x & toUse, ...
-                                        hasLts, hasBurst, maxNoise, vrow, ...
-                                        attemptNumber), ...
+                                        hasLts, hasBurst, maxNoise, ...
+                                        actVhold, vrow, attemptNumber), ...
                                 isRowCond, 'UniformOutput', false);
         end
 
@@ -632,8 +632,9 @@ case 2
                         indThisCond = swpIndByCondition{iFit}{iG, iPEachRow(iRow)};
 
                         % Select "most representative trace"
-                        swpIdxSelected = select_trace(indThisCond, swpIndHasLts, ...
-                                            swpIndHasBursts, maxNoise, vrow, 6);
+                        swpIdxSelected = select_trace(indThisCond, ...
+                                            swpIndHasLts, swpIndHasBursts, ...
+                                            maxNoise, actVhold, vrow, 6);
                         swpIndRow{iRow} = [swpIndRow{iRow}; swpIdxSelected];
                     end
                 end
@@ -661,7 +662,8 @@ case 2
 
                     % Select "most representative trace"
                     swpIdxSelected = select_trace(indThisCond, swpIndHasLts, ...
-                                            swpIndHasBursts, maxNoise, vrow, 6);
+                                                swpIndHasBursts, maxNoise, ...
+                                                actVhold, vrow, 6);
                     swpIndRow{iRow} = [swpIndRow{iRow}; swpIdxSelected];
                 end
 
@@ -719,7 +721,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function swpIdxSelected = select_trace (isThisCond, hasLts, hasBursts, ...
-                                        maxNoise, vrow, attemptNumber)
+                                    maxNoise, actVhold, vrow, attemptNumber)
 %% Selects the most representative trace based on majority rule
 
 % Return error if there are no traces for this condition
@@ -779,19 +781,25 @@ if attemptNumber >= 6
     indCandidates = indCandidates(vrow(indCandidates) == leastVHold);
 end
 
-% Select trace with least maximum noise
-swpIdxSelected = select_trace_with_least_noise(indCandidates, maxNoise, ...
-                                                attemptNumber);
+% Select one trace from the candidates
+if attemptNumber <= 9
+    % Select trace with least maximum noise
+    swpIdxSelected = select_index_with_least_value(maxNoise, indCandidates);
+elseif attemptNumber == 10
+    % Select trace with least actVhold value
+    swpIdxSelected = select_index_with_least_value(actVhold, indCandidates);
+else
+    error('attemptNumber unrecognized!');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function swpIdxSelected = select_trace_with_least_noise (swpIdxCandidates, ...
-                                                maxNoise, attemptNumber)
-%% Select a trace with least maximum noise
+function idxSelected = select_index_with_least_value (vec, indCandidates)
+%% Select an index with minimum value
 
-% Look for the sweep with minimum noise in all candidate traces
-[~, iTemp] = min(maxNoise(swpIdxCandidates));
-swpIdxSelected = swpIdxCandidates(iTemp);
+% Look for the index with minimum value in vec
+[~, iTemp] = min(vec(indCandidates));
+idxSelected = indCandidates(iTemp);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
