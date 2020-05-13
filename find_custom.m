@@ -29,6 +29,7 @@ function varargout = find_custom (X, varargin)
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
+%       cd/create_plot_movie.m
 %       cd/ismatch.m
 %       cd/find_in_list.m
 %       cd/find_in_strings.m

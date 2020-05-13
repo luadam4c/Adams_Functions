@@ -7,9 +7,11 @@ function varargout = find_first_match (candidates, array, varargin)
 %       as a part of a candidate
 %
 % Example(s):
-%       find_first_match([2, 5, 1], 5:-1:1)
-%       find_first_match({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
-%       find_first_match(["dog", "fly", "cat"], {'dog'; 'cat'})
+%       [index, matched] = find_first_match([2, 5, 1], 5:-1:1)
+%       [index, matched] = find_first_match({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
+%       [index, matched] = find_first_match(["dog", "fly", "cat"], {'dog'; 'cat'})
+%       [index, matched] = find_first_match(2:5, {1:3, 2:5, 6:8})
+%       [index, matched] = find_first_match({6:8, 1:3}, {1:3, 2:5, 6:8})
 %
 % Outputs:
 %       index       - the index with matching element in the array
@@ -39,6 +41,7 @@ function varargout = find_first_match (candidates, array, varargin)
 %
 % Used by:
 %       cd/compute_activation_profile.m
+%       cd/create_plot_movie.m
 %       cd/find_matching_files.m
 %       cd/match_positions.m
 %       cd/m3ha_decide_on_plot_vars.m
@@ -53,6 +56,7 @@ function varargout = find_first_match (candidates, array, varargin)
 % 2019-01-09 Created by Adam Lu
 % 2019-01-10 Now returns matched
 % 2020-01-01 Added 'prefix', 'keyword', 'suffix' as match modes
+% 2020-05-13 Now accepts array as any cell array
 
 %% Hard-coded parameters
 validMatchModes = {'exact', 'parts', 'prefix', 'keyword', 'suffix', 'regexp'};
@@ -91,13 +95,17 @@ ignoreCase = iP.Results.IgnoreCase;
 
 %% Do the job
 % Find the index in array for each element in candidates
-%   Note: If not found, zero will be returned
+%   Note: If not found, NaN will be returned by ismember_custom.m
 [~, index] = ismember_custom(candidates, array, ...
                             'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
 
 % Get all matched elements if requested
 if nargout >= 2
-    matched = array(index);
+    if iscell(array) && numel(index) == 1
+        matched = array{index};
+    else
+        matched = array(index);
+    end
 end
 
 %% Deal with outputs

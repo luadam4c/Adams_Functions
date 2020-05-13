@@ -41,11 +41,8 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 %       cd/create_empty_frames.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
-%       cd/find_custom.m
-%       cd/find_first_match.m
 %       cd/hold_on.m
 %       cd/hold_off.m
-%       cd/ismatch.m
 %       cd/match_time_info.m
 %       cd/set_default_flag.m
 %       cd/write_frames.m
@@ -220,107 +217,29 @@ nSamples = cellfun(@numel, yData);
 selectedHandles = lineHandlesOrig(nSamples == 1);
 lineHandles = lineHandlesOrig(nSamples > 1);
 
+% Match each selected handle with one of the line handles
+[selectedHandles, indMatchedLine, idxSelectedEachLine] = ...
+    arrayfun(@(s) match_selected_with_a_line(s, lineHandles, false), ...
+            selectedHandles);
+
 % Align line objects to selected indices by padding data with NaNs
 if alignToSelected
-    % Match each line handle with one of the selected handles
-    %   and find the index of the selected data in the line data
-    [lineHandles, idxInLine] = ...
-        match_each_line_with_a_selected(lineHandles, selectedHandles);
-
-    % Align line objects to selected indices
-    align_lines_to_index(lineHandles, idxInLine);
+    toAlign = ~isnan(indMatchedLine);
+    indMatchedToAlign = indMatchedLine(toAlign);
+    idxSelectedToAlign = idxSelectedEachLine(toAlign);
+    align_lines_to_index(lineHandles(indMatchedToAlign), idxSelectedToAlign);
 end
 
 % Match each selected handle with one of the line handles 
 %   and pad the selected object
-arrayfun(@(s) pad_selected_to_a_line(s, lineHandles), selectedHandles);
+arrayfun(@(s) match_selected_with_a_line(s, lineHandles, true), ...
+        selectedHandles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [lineHandles, idxInLine, indMatchedSelected] = ...
-                match_each_line_with_a_selected (lineHandles, selectedHandles)
-%% Matches each line object with a selected object
-
-% Initialize output
-idxInLine = nan(size(lineHandles));
-indMatchedSelected = nan(size(lineHandles));
-
-% Extract x and y data from line objects
-[xLines, yLines] = ...
-    extract_fields(lineHandles, {'XData', 'YData'}, 'UniformOutput', false);
-
-% Extract x and y data from selected objects
-[xSelected, ySelected] = ...
-    extract_fields(selectedHandles, {'XData', 'YData'}, 'UniformOutput', false);
-
-% For each line object, find the first matching selected object by data overlap 
-indMatchedSelectedByData = ...
-    cellfun(@(x, y) find_custom(ismember(xSelected, x) & ...
-                                    ismember(ySelected, y), ...
-                                1, 'first', 'ReturnNan', true), ...
-            xLines, yLines, 'UniformOutput', true);
-
-% Find the index of the matching selected point in the line data
-idxInLine = ...
-    cellfun(@(x, y, i) find_selected_index (x, y, xSelected, ySelected, i), ...
-            xLines, yLines, num2cell(indMatchedSelectedByData), ...
-            'UniformOutput', true);
-
-% Extract color from line and selected objects
-[colorLines, colorSelected] = ...
-    argfun(@(x) extract_fields(x, 'Color', 'UniformOutput', false), ...
-            lineHandles, selectedHandles);
-
-% For each line object, find the first matching selected object by color
-indMatchedSelectedByColor = find_first_match(colorLines, colorSelected);
-
-% Replace NaN values by data overlap with the match by color
-toReplace = isnan(indMatchedSelectedByData);
-indMatchedSelected = indMatchedSelectedByData;
-indMatchedSelected(toReplace) = indMatchedSelectedByColor(toReplace);
-
-% Try to replace NaN values by data overlap with the match by color
-idxInLine = update_nan_indices(idxInLine, indMatchedSelected);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function idxInLine = find_selected_index (xLine, yLine, ...
-                                    xSelectedAll, ySelectedAll, idxSelected)
-
-if isnan(idxSelected)
-    idxInLine = NaN;
-else
-    idxInLine = find(xLine == xSelectedAll(idxSelected) & ...
-                    yLine == ySelectedAll(idxSelected), 1, 'first');
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function idxInLine = update_nan_indices (idxInLine, indMatchedSelected)
-
-% Find all rows that are NaNs
-rowsNans = find(isnan(idxInLine));
-
-% Return if there are none
-if isempty(rowsNans)
-    return
-end
-
-% For each row that is NaN, find the first row 
-%   with the same matched selected object that already has idxInLine
-idxInLineRowsNans = ...
-    arrayfun(@(x) find_custom(indMatchedSelected == indMatchedSelected(x) & ...
-                                ~isnan(idxInLine), 1, 'first', ...
-                                'ReturnNan', true), ...
-            rowsNans);
-
-% Update the rows that were NaNs
-idxInLine(rowsNans) = idxInLineRowsNans;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function pad_selected_to_a_line (selectedHandle, lineHandles)
-%% Pads a selected object to match the dimensions of a matching line object
+function [selectedHandle, idxMatchedLine, idxSelected] = ...
+                match_selected_with_a_line (selectedHandle, lineHandles, ...
+                                            padSelected)
 
 % Extract x and y data from the selected object
 xSelected = selectedHandle.XData;
@@ -330,12 +249,14 @@ ySelected = selectedHandle.YData;
 [xLines, yLines] = ...
     extract_fields(lineHandles, {'XData', 'YData'}, 'UniformOutput', false);
 
-% Find the first matching line object by data overlap
+% Find the first matching line object 
 idxMatchedLine = find(ismatch(xLines, xSelected, 'MatchMode', 'parts') & ...
                 ismatch(yLines, ySelected, 'MatchMode', 'parts'), 1, 'first');
 
-% If doesn't exist, do nothing
+% If doesn't exist, return empty plot
 if isempty(idxMatchedLine)
+    idxMatchedLine = NaN;
+    idxSelected = NaN;
     return
 end
 
@@ -350,15 +271,16 @@ nSamplesThisLine = numel(yThisLine);
 idxSelected = find(xThisLine == xSelected & yThisLine == ySelected, 1, 'first');
 
 % Pad NaNs for selected object
-[selectedHandle.XData, selectedHandle.YData] = ...
-    argfun(@(x) [nan(1, idxSelected - 1), x, ...
-                nan(1, nSamplesThisLine - idxSelected)], ...
-            xSelected, ySelected);
+if padSelected
+    [selectedHandle.XData, selectedHandle.YData] = ...
+        argfun(@(x) [nan(1, idxSelected - 1), x, ...
+                    nan(1, nSamplesThisLine - idxSelected)], ...
+                xSelected, ySelected);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function align_lines_to_index(lineHandles, idxSelected)
-%% Aligns data in line objects to given indices for each line
 
 % Extract x and y data from line objects
 [xDataOrig, yDataOrig] = ...

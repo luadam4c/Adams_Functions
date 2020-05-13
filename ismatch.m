@@ -62,6 +62,7 @@ function varargout = ismatch (list, cand, varargin)
 % Requires:
 %       cd/array_fun.m
 %       cd/create_error_for_nargin.m
+%       cd/create_plot_movie.m
 %       cd/find_custom.m
 %       cd/is_matching_string.m
 %       cd/istext.m

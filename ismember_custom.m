@@ -64,6 +64,7 @@ function varargout = ismember_custom (cand, list, varargin)
 % File History:
 % 2019-01-10 Modified from find_in_strings.m
 % 2020-01-01 Added 'prefix', 'keyword', 'suffix' as match modes
+% 2020-05-13 Now accepts list as any cell array
 
 %% Hard-coded constants
 validMatchModes = {'exact', 'parts', 'prefix', 'keyword', 'suffix', 'regexp'};
@@ -118,17 +119,25 @@ if istext(cand) && (ignoreCase || ~strcmp(matchMode, 'exact'))
             array_fun(@(x) is_in_strings(x, list, matchMode, ignoreCase), cand);
     end
 else
-    % Test whether each candidate is a member in the list
-    if nargout >= 2
-        % Find the index too
-        %   Note: If not found, zero will be returned
-        [isMember, index] = ismember(cand, list);
-
-        % Make all zeros NaNs instead
-        index(index == 0) = NaN;
+    if iscell(list)
+        if iscell(cand)
+            [isMember, index] = cellfun(@(x) is_an_element(x, list), cand);
+        else
+            [isMember, index] = is_an_element(cand, list);
+        end
     else
-        % Just test whether each candidate is a member in the list
-        isMember = ismember(cand, list);
+    % Test whether each candidate is a member in the list
+        if nargout >= 2
+            % Find the index too
+            %   Note: If not found, zero will be returned by ismember()
+            [isMember, index] = ismember(cand, list);
+
+            % Make all zeros NaNs instead
+            index(index == 0) = NaN;
+        else
+            % Just test whether each candidate is a member in the list
+            isMember = ismember(cand, list);
+        end
     end
 end
 
@@ -162,6 +171,24 @@ isMember = any(isMatch);
 varargout{1} = isMember;
 if nargout >= 2
     varargout{2} = index;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [isAnElement, index] = is_an_element (cand, cellArray)
+%% Returns whether cand is an element of a cell array
+
+% Initialize output
+isAnElement = false;
+index = NaN;
+
+% Run through each element
+for iElement = 1:numel(cellArray)
+    if isequal(cand, cellArray{iElement})
+        isAnElement = true;
+        index = iElement;
+        return;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

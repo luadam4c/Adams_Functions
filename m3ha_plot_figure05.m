@@ -48,11 +48,11 @@ plotVoltageVsOpdFig6 = false; %true;
 
 createPlotMovieFig5 = true;
 createPlotMovieTauh = false;
-createPlotMovieGabab = false; %true;
+createPlotMovieGabab = true;
 
 createPhasePlotOnlyMovieFig5 = false; %true;
 createPhasePlotOnlyMovieTauh = false;
-createPhasePlotOnlyMovieGabab = true;
+createPhasePlotOnlyMovieGabab = false; %true;
 
 simulateNoITSoma = false; %true;
 
@@ -754,6 +754,7 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
     % Create movie
     create_plot_movie(figMovie1, fiSeconds, 'FileBase', fileBase);
 %}
+
     % Create the figure
     figMovie2 = set_figure_properties('AlwaysNew', true);
 

@@ -13,7 +13,9 @@ function vecsNew = align_vectors_by_index (vecsOrig, idxToAlign, varargin)
 %                   specified as a TODO
 %
 % Arguments:
-%       vecsOrig     - TODO: Description of vecsOrig
+%       vecsOrig    - TODO: Description of vecsOrig
+%                   must be a TODO
+%       idxToAlign  - TODO: Description of vecsOrig
 %                   must be a TODO
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
@@ -31,6 +33,7 @@ function vecsNew = align_vectors_by_index (vecsOrig, idxToAlign, varargin)
 
 % File History:
 % 2020-05-06 Created by Adam Lu
+% 2020-05-13 Now accepts NaN or empty as idxToAlign
 % TODO: Use in force_matrix.m?
 
 %% Hard-coded parameters
@@ -56,7 +59,7 @@ iP.FunctionName = mfilename;
 % Add required inputs to the Input Parser
 addRequired(iP, 'vecsOrig');
 addRequired(iP, 'idxToAlign', ...
-    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default, ...
@@ -67,6 +70,12 @@ parse(iP, vecsOrig, idxToAlign, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
+% Return if index to align is empty or NaN
+if isempty(idxToAlign) || isnan(idxToAlign)
+    vecsNew = vecsOrig;
+    return
+end
+
 % Determine whether vectors was a matrix
 wasMatrix = set_default_flag([], ~iscell(vecsOrig));
 

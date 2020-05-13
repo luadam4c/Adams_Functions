@@ -70,9 +70,9 @@ backupPrevious200Cell = false;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
-analyzeHeteroSpikes = true;
-plotAnalysisHetero = true;
-backupPreviousHetero = false;
+analyzeHeteroSpikes = false; %true;
+plotAnalysisHetero = false; %true;
+backupPreviousHetero = false; %true;
 combineHeteroPopulation = false; %true;
 plotHeteroViolins = false; %true;
 
