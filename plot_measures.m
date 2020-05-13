@@ -172,7 +172,7 @@ function plot_measures (varargin)
 %       cd/plot_chevron_bar_inset.m
 %       cd/plot_table.m
 %       cd/plot_tuning_curve.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %       cd/save_all_figtypes.m
 %       cd/set_default_flag.m
 %       cd/set_figure_properties.m

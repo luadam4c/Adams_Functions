@@ -34,6 +34,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 % Used by:
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_network_plot_gabab.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_simulated_traces.m
 
 % File History:

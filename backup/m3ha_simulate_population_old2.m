@@ -45,7 +45,7 @@
 %       cd/plot_violin.m
 %       cd/print_cellstr.m
 %       cd/print_structure.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %       cd/vertcat_spreadsheets.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -359,7 +359,7 @@ if combineFeatureTablesFlag
     simSwpInfo = vertcat_spreadsheets(simLtsParamPaths);
 
     % Rename variables
-    simSwpInfo = renamevars(simSwpInfo, 'fileBase', 'simFileBase');
+    simSwpInfo = renamevars_custom(simSwpInfo, 'fileBase', 'simFileBase');
 
     % Extract the simulation file bases
     simFileBase = simSwpInfo.simFileBase;

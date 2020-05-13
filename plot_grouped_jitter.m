@@ -78,7 +78,7 @@ function handles = plot_grouped_jitter (data, varargin)
 
 %% Hard-coded parameters
 maxNGroupsForInnerLegend = 8;
-maxNGroupsForOuterLegends =20;
+maxNGroupsForOuterLegends = 25;
 
 %% Default values for optional arguments
 groupingDefault = [];           % set later

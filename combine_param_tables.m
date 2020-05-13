@@ -28,7 +28,7 @@ function combinedTable = combine_param_tables (paramPathsOrTables, varargin)
 %       cd/create_label_from_numbers.m
 %       cd/extract_fileparts.m
 %       cd/force_column_cell.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %       cd/transpose_table.m
 %
 % Used by:
@@ -103,7 +103,7 @@ paramTables = array_fun(@(x) x(:, 'Value'), ...
                         paramTables, 'UniformOutput', false);
 
 % Rename 'Value' by the condition string
-paramTables = array_fun(@(x, y) renamevars(x, 'Value', y), ...
+paramTables = array_fun(@(x, y) renamevars_custom(x, 'Value', y), ...
                         paramTables, newRowNames, 'UniformOutput', false);
 
 % Combine all tables

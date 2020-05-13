@@ -5,7 +5,7 @@ function outputs = apply_to_all_cells (myFunction, inputs, varargin)
 %       TODO
 %
 % Example(s):
-%       apply_to_all_cells(@(x) x .* 3, {[1, 2], {3, 4}});
+%       apply_to_all_cells(@(x) x .* 3, {[1, 2], {3, 4}})
 %
 % Outputs:
 %       outputs     - outputs

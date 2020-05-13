@@ -30,7 +30,7 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 %       cd/plot_struct.m
 %       cd/plot_traces.m
 %       cd/read_line_from_file.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 
 % File History:

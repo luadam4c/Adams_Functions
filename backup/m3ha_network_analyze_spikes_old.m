@@ -41,7 +41,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %       cd/load_neuron_outputs.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_spike_histogram.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %       cd/save_all_figtypes.m
 %       cd/transpose_table.m
 %
@@ -143,7 +143,7 @@ paramTables = array_fun(@(x) x(:, 'Value'), ...
                         paramTables, 'UniformOutput', false);
 
 % Rename 'Value' by the condition string
-paramTables = array_fun(@(x, y) renamevars(x, 'Value', y), ...
+paramTables = array_fun(@(x, y) renamevars_custom(x, 'Value', y), ...
                         paramTables, condStr, 'UniformOutput', false);
 
 % Combine all tables

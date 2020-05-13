@@ -43,6 +43,7 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %
 % Used by:
 %       cd/compute_autocorrelogram.m
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m

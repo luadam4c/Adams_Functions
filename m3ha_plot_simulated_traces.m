@@ -123,6 +123,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/match_positions.m
 %       cd/movingaveragefilter.m
 %       cd/m3ha_extract_sweep_name.m
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_figure05.m
 %       cd/parse_peaks.m
@@ -1430,8 +1431,9 @@ figTitle6 = sprintf('Discrepancy Concavity vs. Discrepancy Slope');
 % otherXVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
 otherXVecsLabel = 'Slope of Open Probability Discrepancy';
 otherXVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
-otherXLimits = [-0.05, 0.05];
-otherXLimits = [-0.01, 0.05];
+% otherXLimits = [-0.05, 0.05];
+% otherXLimits = [-0.01, 0.05];
+otherXLimits = [0, 0.03];
 % otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
 otherYVecsLabel = 'Concavity of Open Probability Discrepancy';
 otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
@@ -1580,9 +1582,15 @@ end
 if plotSelected
     % Find decision points from the LTS rising phase
     %   Note: these indices correspond to the LTS region as well
-    indDecision = ...
-        m3ha_find_decision_points(tVecsRise, vVecsRise, ...
-                            itm2hDiffRise, itm2hDiffLowerLimit, filtWidthMs);
+
+    % indDecision = test_find_decision_points(tVecsRise, vVecsRise, ...
+    %                 itm2hDiffRise, itm2hDiffLowerLimit, filtWidthMs);
+
+    indDecision = m3ha_find_decision_point(itm2hDiffRise, ...
+                        'tVecs', tVecsRise, 'FiltWidthMs', filtWidthMs, ...
+                        'Itm2hDiffLowerLimit', itm2hDiffLowerLimit, ...
+                        'Itm2hDiffLeftBound', itm2hDiffLeftBound);
+    indDecision = num2cell(indDecision);
 else
     indDecision = [];
 end
@@ -2005,7 +2013,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indDecision = m3ha_find_decision_points (tVecs, vVecsSim, ...
+function indDecision = test_find_decision_points (tVecs, vVecsSim, ...
                                     itm2hDiff, itm2hDiffLowerLimit, filtWidthMs)
 
 % Hard-coded parameters

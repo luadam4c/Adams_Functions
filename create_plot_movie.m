@@ -304,14 +304,15 @@ end
 
 % For each row that is NaN, find the first row 
 %   with the same matched selected object that already has idxInLine
-idxInLineRowsNans = ...
+rowsSameSelected = ...
     arrayfun(@(x) find_custom(indMatchedSelected == indMatchedSelected(x) & ...
                                 ~isnan(idxInLine), 1, 'first', ...
                                 'ReturnNan', true), ...
             rowsNans);
 
 % Update the rows that were NaNs
-idxInLine(rowsNans) = idxInLineRowsNans;
+toUpdate = ~isnan(rowsSameSelected);
+idxInLine(rowsNans(toUpdate)) = idxInLine(rowsSameSelected(toUpdate));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

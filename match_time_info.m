@@ -46,6 +46,7 @@ function varargout = match_time_info (tVecs, varargin)
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/create_plot_movie.m
+%       cd/m3ha_find_decision_point.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m

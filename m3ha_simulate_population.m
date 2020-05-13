@@ -52,7 +52,7 @@
 %       cd/plot_violin.m
 %       cd/print_cellstr.m
 %       cd/print_structure.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %       cd/vertcat_spreadsheets.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -86,15 +86,15 @@ updateScriptsFlag = false; %true;
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
+computeOpenProbabilityFlag = true;
 plotIndividualFlag = false; %true;
 plotEssentialFlag = false; %true;
-plotOpenProbabilityFlag = false; %true;
+plotOpenProbabilityFlag = true;
 findSpecialCasesFlag = false; %true;
 computeCellInfoTableFlag = false; %true;
 plotCorrelationsFlag = false; %true;
-plotViolinPlotsFlag = true;
-plotBarPlotsFlag = true;
+plotViolinPlotsFlag = false; %true;
+plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
 % Simulation parameters
@@ -309,11 +309,11 @@ individualYTickLocs = [];
 % rankNumsToUse = 1:31;
 % rankNumsOpenProbability = 1:31;
 
-% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-%         '20200429_population_rank1-31_dataMode1_attemptNumber3_noHH_cvode_off');
-% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-% rankNumsToUse = 1:31;
-% rankNumsOpenProbability = 1:31;
+outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+        '20200429_population_rank1-31_dataMode1_attemptNumber3_noHH_cvode_off');
+rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+rankNumsToUse = 1:31;
+rankNumsOpenProbability = 1:31;
 
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
 %         '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_on');
@@ -321,11 +321,11 @@ individualYTickLocs = [];
 % rankNumsToUse = 1:31;
 % rankNumsOpenProbability = 1:31;
 
-outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-        '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_off');
-rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = 1:31;
-rankNumsOpenProbability = 1:31;
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_off');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:31;
+% rankNumsOpenProbability = 1:31;
 
 prefix = '';
 opdThreshold = 1e-2;
@@ -518,7 +518,7 @@ if combineFeatureTablesFlag
     simSwpInfo = vertcat_spreadsheets(simLtsParamPaths);
 
     % Rename variables
-    simSwpInfo = renamevars(simSwpInfo, 'fileBase', 'simFileBase');
+    simSwpInfo = renamevars_custom(simSwpInfo, 'fileBase', 'simFileBase');
 
     % Extract the simulation file bases
     simFileBase = simSwpInfo.simFileBase;
@@ -875,7 +875,7 @@ if computeCellInfoTableFlag
     summaryVarNames = strcat('fun1_', measuresOfInterestOrig);
 
     % Rename variables
-    cellMeasureTable = renamevars(cellMeasureTable, ...
+    cellMeasureTable = renamevars_custom(cellMeasureTable, ...
                             summaryVarNames, measuresOfInterestNew);
 
     % Make cell names row names

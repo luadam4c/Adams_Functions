@@ -1,6 +1,6 @@
-function table = renamevars (table, prevNames, newNames, varargin)
+function table = renamevars_custom (table, prevNames, newNames, varargin)
 %% Rename variable(s) in a table
-% Usage: table = renamevars (table, prevNames, newNames, varargin)
+% Usage: table = renamevars_custom (table, prevNames, newNames, varargin)
 % Explanation:
 %       TODO
 %

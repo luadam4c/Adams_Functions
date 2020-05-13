@@ -48,6 +48,7 @@ function parsedParams = parse_peaks (vec, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_plot_simulated_traces.m
 
 % File History:

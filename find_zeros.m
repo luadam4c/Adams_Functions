@@ -32,6 +32,7 @@ function indZeros = find_zeros (vecs, varargin)
 %       cd/set_default_flag.m
 %
 % Used by:
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_plot_simulated_traces.m
 
 % File History:

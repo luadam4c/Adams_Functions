@@ -59,6 +59,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/find_window_endpoints.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_component_errors.m
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_network_plot_gabab.m

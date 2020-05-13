@@ -81,7 +81,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_swd_raster.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %       cd/save_all_zooms.m
 %       cd/test_difference.m
 %       cd/transpose_table.m

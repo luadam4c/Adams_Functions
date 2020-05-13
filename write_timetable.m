@@ -84,7 +84,7 @@ end
 OLD CODE:
 
 % Rename 'rowTimes' -> 'Time' if exists
-table = renamevars(table, 'rowTimes', 'Time');
+table = renamevars_custom(table, 'rowTimes', 'Time');
 
 %}
 

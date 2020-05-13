@@ -32,6 +32,7 @@ function [dydxVec, xVecNew] = compute_derivative_trace (yVec, xVec, varargin)
 %       cd/force_matrix.m
 %
 % Used by:
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_plot_simulated_traces.m
 
 % File History:

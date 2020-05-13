@@ -139,7 +139,7 @@ function varargout = parse_pulse_response (vectors, siMs, varargin)
 %       cd/iscellnumeric.m
 %       cd/match_dimensions.m
 %       cd/parse_pulse.m
-%       cd/renamevars.m
+%       cd/renamevars_custom.m
 %
 % Used by:
 %       cd/compute_all_pulse_responses.m
@@ -285,10 +285,10 @@ if ~isempty(pulseVectors)
     pulseParams = removevars(pulseParams, pulseParamsToRemove);
 
     % Rename variables in pulseParams
-    pulseParams = renamevars(pulseParams, pulseParamNamesOld, pulseParamNamesNew);
+    pulseParams = renamevars_custom(pulseParams, pulseParamNamesOld, pulseParamNamesNew);
 
     % Rename variables in pulseData
-    pulseData = renamevars(pulseData, pulseDataNamesOld, pulseDataNamesNew);
+    pulseData = renamevars_custom(pulseData, pulseDataNamesOld, pulseDataNamesNew);
 end
 
 % Find indices for all the pulse response endpoints

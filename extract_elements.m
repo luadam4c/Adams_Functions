@@ -66,6 +66,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/extract_columns.m
 %       cd/find_closest.m
 %       cd/is_overlapping.m
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_ipsc.m

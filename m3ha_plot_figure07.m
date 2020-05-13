@@ -12,6 +12,7 @@
 %       cd/array_fun.m
 %       cd/compute_combined_trace.m
 %       cd/convert_to_char.m
+%       cd/convert_units.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
 %       cd/create_subplots.m
@@ -58,8 +59,8 @@ plot2CellM2h = false; %true;
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPopulation = true;
-plot2CellViolins = true;
+combine2CellPopulation = false; %true;
+plot2CellViolins = false; %true;
 
 plot200CellExamples = false; %true;
 plotHeteroExamples = false; %true;
@@ -67,17 +68,19 @@ plotHeteroExamples = false; %true;
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
-combine200CellPopulation = true;
-plot200CellViolins = true;
+combine200CellPopulation = false; %true;
+plot200CellViolins = false; %true;
 
 analyzeHeteroSpikes = false; %true;
 plotAnalysisHetero = false; %true;
 backupPreviousHetero = false; %true;
-combineHeteroPopulation = true;
-plotHeteroViolins = true;
+combineHeteroPopulation = false; %true;
+plotHeteroViolins = false; %true;
+
+plot200CellGroupByCellJitters = false; %true;
+plotHeteroGroupByCellJitters = false; %true;
 
 combineActivationProfiles = false; %true;
-plot200CellGroupByCellJitters = false; %true;
 combineEach200CellNetwork = false; %true;
 plot200CellGroupByEpasJitters = false; %true;
 plot200CellCumDist = false; %true;
@@ -175,6 +178,7 @@ measuresOfInterestJitter = {'oscPeriod2Ms'; ...
                         'oscDurationSec'};
 measureTitlesJitter = measureTitles(2:end);
 measuresToPlot = replace(measuresOfInterest, 'Ms', 'Sec');
+measuresToPlotJitter = replace(measuresOfInterestJitter, 'Ms', 'Sec');
 
 % The following must be consistent with m3ha_net.hoc
 timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
@@ -491,7 +495,7 @@ if plotHeteroViolins
                     'OutFolder', figure08Dir);
 end
 
-%% Plots oscillation measures grouped by cells
+%% Plots oscillation measures grouped by cells for the homogeneous networks
 if plot200CellGroupByCellJitters
     % Construct stats table path
     statsGroupByCellPath200Cell = ...
@@ -506,7 +510,25 @@ if plot200CellGroupByCellJitters
 
     % Plot jitter plots
     m3ha_plot_all_jitters(statsGroupByCellPath200Cell, figure08Dir, ...
-                                measuresOfInterestJitter);
+                                measuresToPlotJitter);
+end
+
+%% Plots oscillation measures grouped by cells for the heterogeneous networks
+if plotHeteroGroupByCellJitters
+    % Construct stats table path
+    statsGroupByCellPathHetero = ...
+        fullfile(figure08Dir, strcat(conditionLabelHetero, ...
+                    '_groupByCell_stats.mat'));
+
+    % Compute statistics if not done already
+    m3ha_network_compute_and_save_statistics(statsGroupByCellPathHetero, ...
+            popDataPathHetero, gIncr, epasToUse, ...
+            measuresOfInterestJitter, measureTitlesJitter, ...
+            'grouped', cellNameStr, conditionLabelHetero, pharmLabelsShort);
+
+    % Plot jitter plots
+    m3ha_plot_all_jitters(statsGroupByCellPathHetero, figure08Dir, ...
+                                measuresToPlotJitter);
 end
 
 %% Combines quantification over each 200-cell networks
@@ -543,15 +565,15 @@ end
 %% Archive all scripts for this run
 if archiveScriptsFlag
     if plotIpscComparison || plot2CellEssential || plot2CellM2h || ...
-            plot2CellExamples|| analyze2CellSpikes || ...
-            combine2CellPopulation || plot2CellViolins
+            analyze2CellSpikes || combine2CellPopulation || plot2CellViolins
         archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
     end
     if plot200CellExamples || analyze200CellSpikes || ...
             combineActivationProfiles || combine200CellPopulation || ...
             plot200CellViolins || analyzeHeteroSpikes || ...
             combineHeteroPopulation || plotHeteroViolins || ...
-            plot200CellGroupByCellJitters || combineEach200CellNetwork || ...
+            plot200CellGroupByCellJitters || plotHeteroGroupByCellJitters || ...
+            combineEach200CellNetwork || ...
             plot200CellGroupByEpasJitters || plot200CellCumDist
         archive_dependent_scripts(mfilename, 'OutFolder', figure08Dir);
     end
@@ -1164,6 +1186,7 @@ seedNumStr = 'seedNumber';
 gIncrStr = 'gIncr';
 pharmStr = 'pCond';
 epasStr = 'TCepas';
+hasOscStr = 'hasOscillation';
 dclamp2NetworkAmpRatio = 12;
 
 %% Do the job
@@ -1191,6 +1214,11 @@ end
 % Locate the columns of interest
 colsOfInterest = [{groupNameStr}; {seedNumStr}; {pharmStr}; measureStrOrig];
 
+% Add hasOscStr if not already exists
+if ~contains(colsOfInterest, hasOscStr)
+    colsOfInterest = [colsOfInterest; {hasOscStr}];
+end
+
 % Extract the table of interest
 popTableOfInterest = popDataTable(toUse, colsOfInterest);
 
@@ -1216,9 +1244,6 @@ end
 function [measureStr, measureTitle, allValues] = ...
                     convert_ms_to_sec (measureStr, measureTitle, allValues)
 
-%% Hard-coded constants
-MS_PER_S = 1000;
-
 if contains(measureStr, 'Ms')
     % Update measure string
     measureStr = replace(measureStr, 'Ms', 'Sec');
@@ -1227,7 +1252,7 @@ if contains(measureStr, 'Ms')
     measureTitle = replace(measureTitle, 'ms', 'sec');
 
     % Update values
-    allValues = cellfun(@(x) x ./ MS_PER_S, allValues, 'UniformOutput', false);
+    allValues = convert_units(allValues, 'ms', 's');
 end
 
 end
