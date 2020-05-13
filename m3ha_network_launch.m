@@ -759,8 +759,7 @@ candidateIDsActualOrder = candidateIDsSorted(randperm(nCandidates));
 
 %% Set folders for reading and saving files
 % Find parent and home directory
-% parentDirectory = m3ha_locate_homedir;
-parentDirectory = '/media/adamX/m3ha';
+parentDirectory = m3ha_locate_homedir;
 paramsDirectory = fullfile(parentDirectory, bestParamsDirName, paramsDirName);
 homeDirectory = fullfile(parentDirectory, homeDirName);
 
