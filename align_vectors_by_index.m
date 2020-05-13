@@ -70,8 +70,8 @@ parse(iP, vecsOrig, idxToAlign, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
-% Return if index to align is empty or NaN
-if isempty(idxToAlign) || isnan(idxToAlign)
+% Return if index to align is empty
+if isempty(idxToAlign)
     vecsNew = vecsOrig;
     return
 end
@@ -109,13 +109,23 @@ nToPadPre = idxAlignedNew - idxToAlign;
 nToPadPost = (nSamplesNew - idxAlignedNew) - (nSamplesEachVec - idxToAlign);
 
 % Pad with NaNs
-vecsNew = array_fun(@(a, b, c) [nan(a, 1); b; nan(c, 1)], ...
+vecsNew = array_fun(@(a, b, c) pad_with_nan_if_possible(a, b, c), ...
                     num2cell(nToPadPre), vecsOrig, num2cell(nToPadPost), ...
                     'UniformOutput', false);
 
 % Convert back to numeric array
 if wasMatrix
     vecsNew = force_matrix(vecsNew);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vecNew = pad_with_nan_if_possible(nToPadPre, vecOrig, nToPadPost)
+
+if ~isnan(nToPadPre) && ~isnan(nToPadPost)
+    vecNew = [nan(nToPadPre, 1); vecOrig; nan(nToPadPost, 1)];
+else
+    vecNew = vecOrig;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

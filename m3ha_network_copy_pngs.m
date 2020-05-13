@@ -11,8 +11,10 @@ networdDir = '/media/adamX/m3ha/network_model/';
 % iterDirName = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 iterDirName = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 iterDir = fullfile(networdDir, iterDirName);
-% pngsDir = fullfile(iterDir, 'pngfiles');
-pngsDir = fullfile(iterDir, 'rasters');
+pngsDir = fullfile(iterDir, 'pngfiles');
+suffix = '';
+% pngsDir = fullfile(iterDir, 'rasters');
+% suffix = '_raster_plot';
 seedNumbers = transpose(0:79);
 
 pCondStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
@@ -25,28 +27,29 @@ condDirs = fullfile(pngsDir, condStrs);
 check_dir(condDirs);
 
 %% Find the rasters
-cellfun(@(condDir) copy_pngs_for_cond(iterDir, condDir, seedNumbers), ...
+cellfun(@(condDir) copy_pngs_for_cond(iterDir, condDir, ...
+                                        seedNumbers, suffix), ...
         condDirs);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function copy_pngs_for_cond (iterDir, condDir, seedNumbers)
+function copy_pngs_for_cond (iterDir, condDir, seedNumbers, suffix)
 
-arrayfun(@(seedNum) copy_pngs_for_seedNum(iterDir, condDir, seedNum), ...
+arrayfun(@(seedNum) copy_pngs_for_seedNum(iterDir, condDir, ...
+                                            seedNum, suffix), ...
             seedNumbers);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function copy_pngs_for_seedNum(iterDir, condDir, seedNum)
+function copy_pngs_for_seedNum(iterDir, condDir, seedNum, suffix)
 
 seedDir = fullfile(iterDir, ['seedNumber_', num2str(seedNum)]);
 
 condStr = extract_fileparts(condDir, 'name');
 
-keyword = [condStr, '_raster_plot'];
-% keyword = condStr;
+keyword = [condStr, suffix];
 
 [~, copyFrom] = all_files('Directory', seedDir, 'Keyword', keyword, ...
                         'Extension', 'png', 'Recursive', true);

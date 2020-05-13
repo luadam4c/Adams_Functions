@@ -58,8 +58,8 @@ plot2CellM2h = false; %true;
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPopulation = false; %true;
-plot2CellViolins = false; %true;
+combine2CellPopulation = true;
+plot2CellViolins = true;
 
 plot200CellExamples = false; %true;
 plotHeteroExamples = false; %true;
@@ -67,14 +67,14 @@ plotHeteroExamples = false; %true;
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false;
 backupPrevious200Cell = false;
-combine200CellPopulation = false; %true;
-plot200CellViolins = false; %true;
+combine200CellPopulation = true;
+plot200CellViolins = true;
 
 analyzeHeteroSpikes = false; %true;
 plotAnalysisHetero = false; %true;
 backupPreviousHetero = false; %true;
-combineHeteroPopulation = false; %true;
-plotHeteroViolins = false; %true;
+combineHeteroPopulation = true;
+plotHeteroViolins = true;
 
 combineActivationProfiles = false; %true;
 plot200CellGroupByCellJitters = false; %true;
@@ -138,10 +138,12 @@ oscParamsSuffix = 'oscillation_params';
 % epasToUse = -73:-60;
 % Stable baseline for the range epas = -74 to -60 (24 networks)
 rankNumsToUse = [2:3, 5:11, 13:19, 21:24, 26:29];
-epasToUse = -74:-60;
+% epasToUse = -74:-60;
 % % Stable baseline for the range epas = -75 to -60 (19 networks)
 % rankNumsToUse = [2:3, 5:7, 9:11, 13, 15:18, 21:24, 26, 28];
 % epasToUse = -75:-60;
+
+epasToUse = -73:-60;
 
 % Files
 
@@ -540,6 +542,11 @@ end
 
 %% Archive all scripts for this run
 if archiveScriptsFlag
+    if plotIpscComparison || plot2CellEssential || plot2CellM2h || ...
+            plot2CellExamples|| analyze2CellSpikes || ...
+            combine2CellPopulation || plot2CellViolins
+        archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
+    end
     if plot200CellExamples || analyze200CellSpikes || ...
             combineActivationProfiles || combine200CellPopulation || ...
             plot200CellViolins || analyzeHeteroSpikes || ...
@@ -547,8 +554,6 @@ if archiveScriptsFlag
             plot200CellGroupByCellJitters || combineEach200CellNetwork || ...
             plot200CellGroupByEpasJitters || plot200CellCumDist
         archive_dependent_scripts(mfilename, 'OutFolder', figure08Dir);
-    else
-        archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
     end
 end
 

@@ -76,7 +76,7 @@ alignToSelectedDefault = false; % don't align to selected by default
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -241,17 +241,13 @@ function [lineHandles, idxInLine, indMatchedSelected] = ...
                 match_each_line_with_a_selected (lineHandles, selectedHandles)
 %% Matches each line object with a selected object
 
-% Initialize output
-idxInLine = nan(size(lineHandles));
-indMatchedSelected = nan(size(lineHandles));
-
 % Extract x and y data from line objects
 [xLines, yLines] = ...
     extract_fields(lineHandles, {'XData', 'YData'}, 'UniformOutput', false);
 
 % Extract x and y data from selected objects
 [xSelected, ySelected] = ...
-    extract_fields(selectedHandles, {'XData', 'YData'}, 'UniformOutput', false);
+    extract_fields(selectedHandles, {'XData', 'YData'}, 'UniformOutput', true);
 
 % For each line object, find the first matching selected object by data overlap 
 indMatchedSelectedByData = ...
