@@ -69,6 +69,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/m3ha_find_decision_point.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_simulate_population.ms
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m

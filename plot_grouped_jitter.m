@@ -1,6 +1,6 @@
 function handles = plot_grouped_jitter (data, varargin)
 %% Plots a jitter plot colored by group from data (uses plotSpread)
-% Usage: handles = plot_grouped_jitter (data, varargin)
+% Usage: handles = plot_grouped_jitter (data, grouping (opt), varargin)
 % Explanation:
 %       TODO
 %
@@ -25,6 +25,11 @@ function handles = plot_grouped_jitter (data, varargin)
 %                           the parameter
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
+%       grouping    - (opt) group assignment for each data point
+%                   must be an array of one the following types:
+%                       'cell', 'string', numeric', 'logical', 
+%                           'datetime', 'duration'
+%                   default == the column number for a 2D array
 %       varargin    - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -176,7 +181,10 @@ if isempty(xLimits)
     xLimits = [0.5, nConditions + 0.5];
 end
 
-% Decide on the color map
+% Decide on the color map, using the lines map by default
+if isempty(colorMap)
+    colorMap = @lines;
+end
 colorMap = decide_on_colormap(colorMap, nGroups, 'ForceCellOutput', true);
 
 % Set legend location based on number of subplots
@@ -184,7 +192,8 @@ colorMap = decide_on_colormap(colorMap, nGroups, 'ForceCellOutput', true);
 if strcmpi(legendLocation, 'auto')
     if nGroups > 1 && nGroups <= maxNGroupsForInnerLegend
         legendLocation = 'northeast';
-    elseif nGroups > maxNGroupsForInnerLegend && nGroups <= maxNGroupsForOuterLegends
+    elseif nGroups > maxNGroupsForInnerLegend && ...
+            nGroups <= maxNGroupsForOuterLegends
         legendLocation = 'eastoutside';
     else
         legendLocation = 'suppress';

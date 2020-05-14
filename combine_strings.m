@@ -6,6 +6,8 @@ function finalString = combine_strings (varargin)
 %
 % Example(s):
 %       combine_strings
+%       combine_strings({'a', 'b'})
+%       combine_strings('Substrings', 'b')
 %       combine_strings('Substrings', {'_yes__', '_no_'})
 %       combine_strings('Substrings', {'_yes__', '_no_'}, 'ForceClean', false)
 %       combine_strings('Substrings', {'', 'test', ''})
@@ -19,7 +21,7 @@ function finalString = combine_strings (varargin)
 %
 %
 % Arguments:
-%       strs     - (opt) either 'Substrings' or 'NameValuePairs'
+%       strs        - (opt) either 'Substrings' or 'NameValuePairs'
 %       varargin    - 'Delimiter': delimiter used
 %                   must be a string scalar or a character vector
 %                   default == '_'
@@ -57,6 +59,7 @@ function finalString = combine_strings (varargin)
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_violin.m
+%       cd/test_difference.m
 %       /media/adamX/RTCl/raster_plot.m
 
 % File History:
@@ -65,7 +68,7 @@ function finalString = combine_strings (varargin)
 % 2019-11-28 Now accepts a cell array of strings for parts
 % 2019-11-28 Added 'ForceClean' as an optional argument 
 %           (default == true), where the delimiter is checked not to be repeated
-% TODO Modify the optional argument 'strs' that could be 
+% 2020-05-14 Now the optional argument 'strs' could be 
 %               interpreted as either 'Substrings' or 'NameValuePairs'
 % TODO: Change specification of NameValuePairs to just one cell array
 %       or a structure and use struct2arglist.m
@@ -90,7 +93,7 @@ iP.FunctionName = mfilename;
 
 % Add optional arguments to the input Parser
 addOptional(iP, 'strs', strsDefault, ...
-    @(x) validateattributes(x, {'cell'}, {'2d'}));
+    @(x) assert(iscell(x), 'Use the ''Substrings'' option instead!'));
 
 % Add parameter-value pairs to the input Parser
 addParameter(iP, 'Delimiter', delimiterDefault, ...
@@ -119,14 +122,13 @@ endWithDelimiter = iP.Results.EndWithDelimiter;
 substrings = iP.Results.Substrings;
 nameValuePairs = iP.Results.NameValuePairs;
 
-%% Determine what the first argument is
+%% Determine what the optional argument is
 if ~isempty(strs)
-    substrings = strs;
-    % if iscellstr(strs) || TODO
-    %     substrings = strs;
-    % else
-    %     nameValuePairs = strs;
-    % end
+    if numel(strs) == 2 && ~istext(strs(2))
+        nameValuePairs = strs;
+    else
+        substrings = strs;
+    end
 end
 
 %% Find all substrings

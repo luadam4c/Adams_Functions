@@ -35,7 +35,6 @@ function result = apply_iteratively (myFunction, array, varargin)
 %
 % Used by:
 %       cd/compute_axis_limits.m
-%       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
 %       cd/identify_channels.m
 %       cd/m3ha_plot_figure07.m

@@ -35,6 +35,7 @@ function varargout = array_fun (myFunc, varargin)
 % Used by:
 %       cd/align_vectors_by_index.m
 %       cd/argfun.m
+%       cd/extract_vars.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/check_fullpath.m
 %       cd/combine_param_tables.m

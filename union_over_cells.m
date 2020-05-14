@@ -65,11 +65,11 @@ parse(iP, cellArray, varargin{:});
 setOrder = validatestring(iP.Results.SetOrder, validSetOrders);
 
 % Keep unmatched arguments for the union() function
-otherArguments = struct2arglist(iP.Unmatched);
+otherArguments = iP.Unmatched;
 
 %% Do the job
 unionOfContents = apply_over_cells(@union, cellArray, 'OptArg', setOrder, ...
-                                    otherArguments{:});
+                                    otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

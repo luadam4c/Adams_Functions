@@ -53,7 +53,6 @@ function varargout = create_default_grouping (varargin)
 %                   default == false
 %                   
 % Requires:
-%       cd/apply_iteratively.m
 %       cd/convert_to_rank.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
@@ -83,6 +82,7 @@ function varargout = create_default_grouping (varargin)
 % 2019-10-04 Made uniqueGroupValues the second argument
 % 2020-04-18 Now accepts cell arrays of cell arrays or numeric arrays
 % 2020-04-18 Added 'ToLinearize' as an optional argument
+% 2020-05-14 Fixed infinite loop
 
 %% Hard-coded parameters
 % TODO: Make these optional arguments
@@ -147,10 +147,24 @@ toLinearize = iP.Results.ToLinearize;
 % If data and grouping is a cell array of cell arrays, reformat
 if iscell(stats) && iscell(stats{1})
     if isempty(grouping)
-        [grouping, ~, ~, stats] = ...
+        [groupingReorg, ~, ~, statsReorg] = ...
             cellfun(@(x) create_default_grouping('Stats', x, ...
-                                                'ToLinearize', true), ...
+                                'Counts', counts, ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray, ...
+                                'ToLinearize', true), ...
                     stats, 'UniformOutput', false);
+
+        [varargout{1:nargout}] = ...
+            create_default_grouping('Grouping', groupingReorg, ...
+                                'Stats', statsReorg, ...
+                                'GroupingLabels', groupingLabels, ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray, ...
+                                'ToLinearize', toLinearize);
+        return
     else
         error('Not implemented yet!');
     end
@@ -219,10 +233,10 @@ if nargout >= 2
         uniqueGroupValues = 1:nVectors;
     else
         % Get all group values
-        allGroupValues = apply_iteratively(@union_over_cells, grouping);
+        allGroupValues = union_over_cells(grouping);
 
         % Get all unique grouping values
-        uniqueGroupValues = unique(allGroupValues);
+        uniqueGroupValues = unique_custom(allGroupValues, 'IgnoreNaN', true);
     end
 end
 

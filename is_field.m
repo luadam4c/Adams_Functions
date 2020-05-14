@@ -26,6 +26,7 @@ function isField = is_field (genStruct, candName, varargin)
 %
 % Used by:
 %       cd/extract_fields.m
+%       cd/extract_vars.m
 %       cd/first_matching_field.m
 %       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_simulate_population.m

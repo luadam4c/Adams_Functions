@@ -36,8 +36,10 @@ function varExtracted = extract_vars (tableOrPath, varNames, varargin)
 %
 % Requires:
 %       cd/arglist2struct.m
+%       cd/array_fun.m
 %       cd/compute_combined_trace.m
 %       cd/create_error_for_nargin.m
+%       cd/is_field.m
 %       cd/ismember_custom.m
 %       cd/ispositiveintegervector.m
 %
@@ -163,15 +165,20 @@ end
 % Extract variable
 if (iscellstr(varNames) || isstring(varNames)) && ...
         (numel(varNames) > 1 || forceCellOutput)
-    if iscell(varNames)
-        varExtracted = cellfun(@(x) tableOfVars{:, x}, varNames, ...
-                                'UniformOutput', false);
-    else
-        varExtracted = arrayfun(@(x) tableOfVars{:, x}, varNames, ...
-                                'UniformOutput', false);
-    end
+    varExtracted = array_fun(@(x) extract_var_if_present(tableOfVars, x), ...
+                            varNames, 'UniformOutput', false);
 else
-    varExtracted = tableOfVars{:, varNames};
+    varExtracted = extract_var_if_present(tableOfVars, varNames);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function varValue = extract_var_if_present(table, varName)
+
+if ~is_field(table, varName)
+    error('%s does not exist yet!', varName);
+else
+    varValue = table{:, varName};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

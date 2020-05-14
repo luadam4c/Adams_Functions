@@ -111,10 +111,17 @@ function statsStruct = test_difference (data, varargin)
 %                   - 'DisplayAnova': whether to display ANOVA table
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'SaveFlag': whether to save results in a text file
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'FileBase': file base name for saving
+%                   must be a string scalar or a character vector
+%                   default == combine_strings(groupNames)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
 %       cd/argfun.m
+%       cd/combine_strings.m
 %       cd/compute_stats.m
 %       cd/convert_to_char.m
 %       cd/count_samples.m
@@ -123,6 +130,7 @@ function statsStruct = test_difference (data, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
 %       cd/force_data_as_matrix.m
+%       cd/print_structure.m
 %       cd/test_normality.m
 %       cd/unique_groups.m
 %
@@ -142,6 +150,8 @@ function statsStruct = test_difference (data, varargin)
 % 2020-02-23 diffValue is now the negative of before
 % 2020-02-23 Added stderrDiff, lowerDiff, upperDiff
 % 2020-03-10 Added symbol, alphaTwoStars, alphaThreeStars
+% 2020-05-14 Added 'SaveFlag' as an optional argument
+% 2020-05-14 Added 'FileBase' as an optional argument
 % TODO: 2020-03-10 Added alternative tests
 
 %% Hard-coded parameters
@@ -150,6 +160,8 @@ nullMedian = 0;                 % null hypothesis median for one-sample test
 diffDelimiter = '_minus_';
 ranovaTimeVar = 'Time';
 ranovaRowOfInterest = ['(Intercept):', ranovaTimeVar];
+outSuffix = 'stats';
+outExtension = 'txt';
 
 %% Default values for optional arguments
 groupingDefault  = [];          % set later
@@ -161,6 +173,8 @@ alphaTwoStarsDefault = 0.01;    % significance level for two stars
 alphaThreeStarsDefault = 0.001; % significance level for three stars
 isPairedDefault = false;        % data is not paired by default
 displayAnovaDefault = true;     % display ANOVA table by default
+saveFlagDefault = false;        % don't save results by default
+fileBaseDefault = '';           % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -199,6 +213,10 @@ addParameter(iP, 'IsPaired', isPairedDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'DisplayAnova', displayAnovaDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'FileBase', fileBaseDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
@@ -211,6 +229,8 @@ alphaTwoStars = iP.Results.AlphaTwoStars;
 alphaThreeStars = iP.Results.AlphaThreeStars;
 isPaired = iP.Results.IsPaired;
 displayAnova = iP.Results.DisplayAnova;
+saveFlag = iP.Results.SaveFlag;
+fileBase = iP.Results.FileBase;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = iP.Unmatched;
@@ -755,6 +775,27 @@ for iGroup = 1:nNormGroups
     statsStruct.(pNormLillStrs{iGroup}) = pNormLill(iGroup);
     statsStruct.(pNormAdStrs{iGroup}) = pNormAd(iGroup);
     statsStruct.(pNormJbStrs{iGroup}) = pNormJb(iGroup);
+end
+
+%% Save results
+% Construct output file path
+if saveFlag
+    % Set default file base
+    if ~isempty(fileBase)
+        fileBase = combine_strings(groupNames);
+    end
+
+    % Construct full path
+    filePath = strcat(fileBase, '_', outSuffix, '.', outExtension);
+
+    % Open file for writing
+    fid = fopen(filePath, 'w');
+
+    % Print the structure
+    print_structure(statsStruct, 'FileID', fid);
+
+    % Close the file
+    fclose(fid);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

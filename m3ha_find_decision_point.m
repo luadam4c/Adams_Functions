@@ -33,6 +33,10 @@ function [indDecision, slopeValues] = ...
 %                                               for LTS region
 %                   must be a numeric vector
 %                   default == 1e-7
+%                   - 'OnlyIfReached': whether to return NaN if decision point 
+%                                       is not reached
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/apply_to_all_cells.m
@@ -55,7 +59,7 @@ function [indDecision, slopeValues] = ...
 
 % File History:
 % 2020-05-13 Adapted from code in m3ha_plot_simulated_traces.m
-% 
+% 2020-05-14 Added 'OnlyIfReached' as an optional argument
 
 %% Hard-coded parameters
 
@@ -65,6 +69,7 @@ tVecsDefault = [];              % set later
 filtWidthMsDefault = 30;            % default filter width is 30 ms
 itm2hDiffLowerLimitDefault = 1e-9;
 itm2hDiffLeftBoundDefault = 1e-7;
+onlyIfReachedDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -99,6 +104,8 @@ addParameter(iP, 'Itm2hDiffLowerLimit', itm2hDiffLowerLimitDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'Itm2hDiffLeftBound', itm2hDiffLeftBoundDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'OnlyIfReached', onlyIfReachedDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, itm2hDiff, varargin{:});
@@ -107,6 +114,7 @@ tVecs = iP.Results.tVecs;
 filtWidthMs = iP.Results.FiltWidthMs;
 itm2hDiffLowerLimit = iP.Results.Itm2hDiffLowerLimit;
 itm2hDiffLeftBound = iP.Results.Itm2hDiffLeftBound;
+onlyIfReached = iP.Results.OnlyIfReached;
 
 %% Preparation
 % Count the number of samples for each vector
@@ -145,7 +153,7 @@ peakParams = vecfun(@(x) parse_peaks(x, 'ParseMode', 'maxOfAll', ...
 % Find the decision point in each LTS region
 [indDecisionRise, slopeValues] = ...
     m3ha_find_decision_point_helper(tVecsRise, itm2hDiffRise, ...
-                                    filtWidthMs, siMs);
+                                    filtWidthMs, siMs, onlyIfReached);
 
 % Convert to the original index
 indDecision = idxPeakStart - 1 + indDecisionRise;
@@ -154,7 +162,7 @@ indDecision = idxPeakStart - 1 + indDecisionRise;
 
 function [indDecision, slopeValues] = ...
                 m3ha_find_decision_point_helper (tVecs, itm2hDiff, ...
-                                                    filtWidthMs, siMs)
+                                            filtWidthMs, siMs, onlyIfReached)
 
 % Compute x = the logarithm of m2hDiff
 logItm2hDiff = apply_to_all_cells(@log10, itm2hDiff);
@@ -201,8 +209,12 @@ ind2LastZeroBeforeMaxConcavityBeforeMax = ...
 %               before maximum of x 
 %               or the maximum of d2x/dt2 before maximum of x
 %                   if the former doesn't exist
-ind2Decision = min([ind2MaxConcavityBeforeMax, ...
-                    ind2LastZeroBeforeMaxConcavityBeforeMax], [], 2);
+if onlyIfReached
+    ind2Decision = ind2LastZeroBeforeMaxConcavityBeforeMax;
+else
+    ind2Decision = min([ind2MaxConcavityBeforeMax, ...
+                        ind2LastZeroBeforeMaxConcavityBeforeMax], [], 2);
+end
 
 % Find the corresponding indices in x and dx/dt
 ind1Decision = ind2Decision;

@@ -29,8 +29,9 @@ function print_structure (structure, varargin)
 %
 % Used by:
 %       cd/find_passive_params.m
-%       cd/m3ha_simulate_population.m
-%
+%       cd/test_difference.m
+
+% File History:
 % 2016-11-02 Created
 % 2018-06-21 Added comments and input parser
 % 2018-06-21 Added cell string and now uses print_cellstr.m
