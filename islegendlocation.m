@@ -34,6 +34,7 @@ function [results, legendLocations] = islegendlocation (candidates, varargin)
 %       cd/plot_bar.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 

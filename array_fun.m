@@ -40,6 +40,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/check_fullpath.m
 %       cd/combine_param_tables.m
 %       cd/compute_combined_trace.m
+%       cd/compute_confidence_ellipse.m
 %       cd/compute_rms_error.m
 %       cd/compute_weighted_average.m
 %       cd/count_samples.m

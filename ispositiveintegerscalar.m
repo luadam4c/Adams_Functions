@@ -27,6 +27,7 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 %       cd/match_positions.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_struct.m
 %       cd/plot_traces.m
 %       cd/read_line_from_file.m

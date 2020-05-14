@@ -31,6 +31,7 @@ function isEmpty = isemptycell (cellArray)
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_traces.m
 %       cd/remove_empty.m
 %       cd/set_axes_properties.m

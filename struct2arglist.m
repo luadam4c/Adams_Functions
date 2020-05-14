@@ -41,6 +41,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_jitter.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_histogram.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/solve_function_at_value.m

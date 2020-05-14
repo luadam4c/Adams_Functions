@@ -75,6 +75,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_iox.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_histogram.m
 %       cd/save_params.m
 %       cd/test_var_difference.m

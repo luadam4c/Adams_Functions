@@ -35,7 +35,7 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/plot_grouped_scatter.m
+%       cd/compute_confidence_ellipse.m
 %       cd/ZG_plot_grouped_scatter.m
 
 % File History:

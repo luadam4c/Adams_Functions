@@ -14,8 +14,11 @@ function varargout = create_default_grouping (varargin)
 %       [v, u, l, s] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
 %
 % Outputs:
-%       grouping        - final numeric group assignment for each data entry
-%       groupingLabels  - final group labels
+%       grouping            - final numeric group assignment for each data entry
+%       uniqueGroupValues   - unique grouping values
+%       groupingLabels      - final group labels
+%       stats               - reorganized stats array 
+%                               that is the same dimesions as grouping
 %
 % Arguments:
 %       varargin    - 'Grouping': group assignment for each data point

@@ -781,7 +781,7 @@ end
 % Construct output file path
 if saveFlag
     % Set default file base
-    if ~isempty(fileBase)
+    if isempty(fileBase)
         fileBase = combine_strings(groupNames);
     end
 

@@ -1304,10 +1304,12 @@ pathBaseEachCell = strcat(pathBase, '_', cellNames);
 twoGroupsEachCell = regroup_cell_of_cells(twoGroupsByCell);
 
 % Test for differences
+%{
 cellfun(@(twoGroups, pathBase) ...
             test_difference(twoGroups, 'IsPaired', false, ...
                         'SaveFlag', true, 'FileBase', pathBase), ...
-        twoGroupsEachCell, pathBaseEachCell);
+        twoGroupsEachCell, pathBaseEachCell, 'UniformOutput', false);
+%}
 
 % Plot violin plots
 cellfun(@(twoGroups, pathBase, figTitle) ...

@@ -8,6 +8,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %           1. The bar() function is actually used for the main histogram
 %           2. To compute just the histogram counts, 
 %               use compute_grouped_histcounts.m
+%
 % Example(s):
 %       randVec = randn(100, 1);
 %       stats1 = [randVec, randVec + 1, randVec - 1];
@@ -127,8 +128,12 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
 %       cd/force_matrix.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
+%       cd/isfigtype.m
+%       cd/save_all_figtypes.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -287,9 +292,6 @@ if plotOnly
     legendLocation = 'suppress';
 end
 
-% Decide on the figure to plot on
-fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
-
 % Return if there is nothing to plot
 if isempty(stats) && (isempty(counts) || isempty(edges))
     fprintf('Both counts and edges must be provided if stats is empty!\n');
@@ -306,7 +308,7 @@ end
 [stats, grouping] = argfun(@force_matrix, stats, grouping);
 
 % Decide on the grouping vector and possibly labels
-[grouping, groupValues, groupingLabels] = ...
+[grouping, groupValues, groupingLabels, stats] = ...
     create_default_grouping('Stats', stats, 'Counts', counts, ...
                         'Grouping', grouping, 'GroupingLabels', groupingLabels);
 
@@ -335,14 +337,14 @@ switch style
         error('style is unrecognized!!');
 end
 
-% Set the default x-axis labels
+% Set the default x-axis label
 if isempty(xLabel)
     xLabel = strcat('Value (', xUnits, ')');
 end
 
 % Set the default figure title
 if isempty(figTitle)
-    figTitle = ['Distribution of ', xLabel];
+    figTitle = replace(['Distribution of ', xLabel], '_', '\_');
 end
 
 % If the figure name is not a full path, create full path
@@ -368,20 +370,19 @@ if strcmpi(style, 'overlapped')
 end
 
 %% Plot and save histogram
-% Store hold status
-wasHold = ishold;
+% Decide on the figure to plot on
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
+% Store hold status and hold on
+wasHold = hold_on;
+
+% Plot bars
 if strcmpi(style, 'overlapped')
-    % Hold on
-    hold on;
-
-    % Plot bars
-    bars = arrayfun(@(x, y) bar(binCenters, counts(:, x), ...
+    bars = arrayfun(@(x) bar(binCenters, counts(:, x), ...
                         barWidth, barStyle, 'FaceAlpha', faceAlpha, ...
                         'EdgeAlpha', edgeAlpha, otherArguments{:}), ...
-                    transpose(1:nGroups), groupingLabels);
+                    transpose(1:nGroups));
 else
-    % Plot bars
     bars = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
 end
 
@@ -392,7 +393,8 @@ arrayfun(@(x) set(bars(x), 'FaceColor', colorMap(x, :)), 1:nGroups);
 arrayfun(@(x) set(bars(x), 'DisplayName', groupingLabels{x}), 1:nGroups);
 
 % Set x axis limits
-if ~strcmpi(xLimits, 'suppress')
+if ~isempty(xLimits) && xLimits(1) ~= xLimits(2) && ...
+        ~strcmpi(xLimits, 'suppress')
     xlim(xLimits);
 end
 
@@ -466,9 +468,7 @@ end
 set(gca, 'box', 'off');
 
 % Hold off if it was originally so
-if ~wasHold
-    hold off
-end
+hold_off(wasHold);
 
 % Save the figure
 if ~isempty(figName)

@@ -56,6 +56,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %       cd/parse_multiunit.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_cfit_pulse_response.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_pulse.m
 %       cd/plot_pulse_response.m
 %       cd/plot_pulse_response_with_stimulus.m
