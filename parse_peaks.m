@@ -54,6 +54,7 @@ function parsedParams = parse_peaks (vec, varargin)
 % File History:
 % 2020-04-20 Created by Adam Lu
 % 2020-04-22 Added 'maxOfAll' as a valid parseMode
+% 2020-05-13 Now makes the entire vector a peak if no peaks are found
 
 %% Hard-coded parameters
 validParseModes = {'all', 'max', 'maxOfAll', 'first'};
@@ -153,13 +154,13 @@ switch outputMode
                             'VariableNames', parsedParamsVariableNames, ...
                             'VariableTypes', parsedParamsVariableTypes);
      case 'struct'
-    parsedParams.peakNum = NaN;
-    parsedParams.idxPeak = NaN;
-    parsedParams.peakAmp = NaN;
-    parsedParams.peakWidth = NaN;
-    parsedParams.peakProm = NaN;
-    parsedParams.idxPeakStart = NaN;
-    parsedParams.idxPeakEnd = NaN;
+        parsedParams.peakNum = NaN;
+        parsedParams.idxPeak = NaN;
+        parsedParams.peakAmp = NaN;
+        parsedParams.peakWidth = NaN;
+        parsedParams.peakProm = NaN;
+        parsedParams.idxPeakStart = NaN;
+        parsedParams.idxPeakEnd = NaN;
      otherwise
          % Do nothing
 end
@@ -178,6 +179,12 @@ end
 
 % Return if empty
 if isempty(peakAmp)
+    [parsedParams.peakAmp, parsedParams.idxPeak] = max(vec);
+    parsedParams.peakNum = 1;
+    parsedParams.peakWidth = NaN;
+    parsedParams.peakProm = NaN;
+    parsedParams.idxPeakStart = 1;
+    parsedParams.idxPeakEnd = nSamples;
     return
 end
 

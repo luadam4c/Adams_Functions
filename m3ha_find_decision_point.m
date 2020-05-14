@@ -35,6 +35,7 @@ function [indDecision, slopeValues] = ...
 %                   default == 1e-7
 %
 % Requires:
+%       cd/apply_to_all_cells.m
 %       cd/argfun.m
 %       cd/compute_derivative_trace.m
 %       cd/count_samples.m
@@ -43,13 +44,14 @@ function [indDecision, slopeValues] = ...
 %       cd/extract_fields.m
 %       cd/extract_subvectors.m
 %       cd/find_zeros.m
-%       cd/force_column_cell.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
 %       cd/parse_peaks.m
+%       cd/restrict_values.m
 %
 % Used by:
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2020-05-13 Adapted from code in m3ha_plot_simulated_traces.m
@@ -120,9 +122,9 @@ end
 
 %% Prepare itm2hDiff
 % Force itm2hDiff to be above itm2hDiffLowerLimit
-itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
+itm2hDiff = restrict_values(itm2hDiff, 'LowerBound', itm2hDiffLowerLimit);
 
-%% Find the LTS region
+%% Find the rising phase of the LTS
 % Parse maximum peak (considering all peaks) from itm2hDiff, 
 %   using itm2hDiffLeftBound as the peak lower bound
 peakParams = vecfun(@(x) parse_peaks(x, 'ParseMode', 'maxOfAll', ...
@@ -130,38 +132,32 @@ peakParams = vecfun(@(x) parse_peaks(x, 'ParseMode', 'maxOfAll', ...
                     itm2hDiff, 'UniformOutput', true);
 
 % Extract index peak starts and ends
-[idxPeakStart, idxPeakEnd] = argfun(@(x) extract_fields(peakParams, x), ...
+[idxPeakStart, idxPeak] = argfun(@(x) extract_fields(peakParams, x), ...
                                     'idxPeakStart', 'idxPeak');
 
-% Place endpoints together
-endPointsPeak = transpose([idxPeakStart, idxPeakEnd]);
-
-% Restrict to just the LTS region
-[tVecsLts, itm2hDiffLts] = ...
-    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsPeak), ...
+% Restrict to just the rising phase of the LTS
+[tVecsRise, itm2hDiffRise] = ...
+    argfun(@(x) extract_subvectors(x, 'IndexStart', idxPeakStart, ...
+                                    'IndexEnd', idxPeak), ...
             tVecs, itm2hDiff);
 
 %% Find the decision point
 % Find the decision point in each LTS region
-[indDecisionLts, slopeValues] = ...
-    m3ha_find_decision_point_helper(tVecsLts, itm2hDiffLts);
+[indDecisionRise, slopeValues] = ...
+    m3ha_find_decision_point_helper(tVecsRise, itm2hDiffRise, ...
+                                    filtWidthMs, siMs);
 
 % Convert to the original index
-indDecision = idxPeakStart - 1 + indDecisionLts;
+indDecision = idxPeakStart - 1 + indDecisionRise;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [indDecision, slopeValues] = ...
-                m3ha_find_decision_point_helper (tVecsLts, itm2hDiffLts)
-
-% Force as column cell arrays
-itm2hDiffCell = force_column_cell(itm2hDiff);
-
-% Compute the logarithm
-logItm2hDiff = cellfun(@log10, itm2hDiffCell, 'UniformOutput', false);
+                m3ha_find_decision_point_helper (tVecs, itm2hDiff, ...
+                                                    filtWidthMs, siMs)
 
 % Compute x = the logarithm of m2hDiff
-logItm2hDiff = log10(itm2hDiffLts);
+logItm2hDiff = apply_to_all_cells(@log10, itm2hDiff);
 
 % Smooth x over filtWidthMs
 logItm2hDiffSmooth = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
@@ -213,7 +209,7 @@ ind1Decision = ind2Decision;
 indDecision = ind2Decision + 1;
 
 % Extract the slope value at the decision point
-slopeValues = extract_elements(dxdtVecs, 'Index', indDecision);
+slopeValues = extract_elements(dxdtVecs, 'specific', 'Index', ind1Decision);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -23,6 +23,7 @@ function indices = create_indices (varargin)
 %       create_indices([1, NaN])
 %       create_indices([])
 %       create_indices([], 'Vectors', (1:5)')
+%       create_indices([NaN, NaN], 'Vectors', (1:5)')
 %       create_indices('Vectors', 1:5, 'IndexEnd', 4)
 %       create_indices('Vectors', (1:5)', 'IndexEnd', 4)
 %       create_indices('Vectors', magic(5), 'IndexEnd', 4)
@@ -131,6 +132,8 @@ function indices = create_indices (varargin)
 % 2019-09-10 Fixed bug when start and end indices are both empty
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % 2020-04-20 Fixed bug when start and end indices out of vector range
+% 2020-05-13 Now makes create_indices([NaN; NaN], 'Vectors', vecs) 
+%               to be full index range
 % TODO: Added 'spanboth', 'spanleft' and 'spanright' as align methods
 % TODO: Use argument 'ForcePositive' as false where necessary
 
@@ -308,9 +311,9 @@ if ~isempty(vectors) && ...
     candidatesStart = match_and_combine_vectors(idxStart, 1);
     candidatesEnd = match_and_combine_vectors(idxEnd, nSamples);
     idxStart = compute_maximum_trace(candidatesStart, ...
-                            'TreatRowAsMatrix', true, 'IgnoreNaN', false);
+                            'TreatRowAsMatrix', true, 'IgnoreNaN', true);
     idxEnd = compute_minimum_trace(candidatesEnd, ...
-                            'TreatRowAsMatrix', true, 'IgnoreNaN', false);
+                            'TreatRowAsMatrix', true, 'IgnoreNaN', true);
 
     % Make sure endpoint indices are in range, step 2
     idxStart(idxStart > nSamples) = NaN;
@@ -379,7 +382,7 @@ function indices = create_one_indices (idxStart, idxEnd, maxNum, ...
 
 % Force the starting index to be positive if requested
 %   and not the special case where idxStart == idxEnd == 0
-if forcePositive && idxStart < 1 && ~(isnan(idxStart) && isnan(idxEnd == 0))
+if forcePositive && idxStart < 1 && ~(isnan(idxStart) && isnan(idxEnd))
     idxStart = 1;
 end
 

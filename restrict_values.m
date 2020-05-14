@@ -1,78 +1,91 @@
-function [output1] = restrict_values (reqarg1, varargin)
-%% TODO: A summary of what the function does (must be a single unbreaked line)
-% Usage: [output1] = restrict_values (reqarg1, varargin)
+function values = restrict_values (values, varargin)
+%% Restrict values
+% Usage: values = restrict_values (values, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       restrict_values(magic(3), 'LowerBound', 5)
+%       restrict_values({6:9, 1:3}, 'UpperBound', 4)
 %
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       values      - restricted values
+%                   specified as an array
 %
 % Arguments:
-%       reqarg1     - TODO: Description of reqarg1
-%                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - Any other parameter-value pair for TODO()
+%       values      - original values
+%                   must be an array
+%       varargin    - 'LowerBound': lower bound of values
+%                   must be a numeric scalar
+%                   default == []
+%                   - 'UpperBound': upper bound of values
+%                   must be a numeric scalar
+%                   default == []
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/create_error_for_nargin.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_find_decision_point.m
 
 % File History:
-% 2020-XX-XX Created by TODO or Adapted from TODO
+% 2020-05-13 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+lowerBoundDefault = [];
+upperBoundDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'reqarg1');
+addRequired(iP, 'values');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'LowerBound', lowerBoundDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'UpperBound', upperBoundDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Read from the Input Parser
-parse(iP, reqarg1, varargin{:});
-param1 = iP.Results.param1;
-
-% Keep unmatched arguments for the TODO() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
-
-%% Preparation
-% TODO
+parse(iP, values, varargin{:});
+lowerBound = iP.Results.LowerBound;
+upperBound = iP.Results.UpperBound;
 
 %% Do the job
-% TODO
+if iscell(values)
+    values = cellfun(@(x) restrict_values_helper(x, lowerBound, upperBound), ...
+                    values, 'UniformOutput', false);
+else
+    values = restrict_values_helper(values, lowerBound, upperBound);
+end
 
-%% Output results
-% TODO
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function values = restrict_values_helper (values, lowerBound, upperBound)
+%% Restrict values in a non-cell array
+
+% Replace values with lower bound
+if ~isempty(lowerBound)
+    values(values < lowerBound) = lowerBound;
+end
+
+% Replace values with upper bound
+if ~isempty(upperBound)
+    values(values > upperBound) = upperBound;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

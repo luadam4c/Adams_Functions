@@ -26,6 +26,7 @@ function outputs = apply_to_all_cells (myFunction, inputs, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/m3ha_find_decision_point.m
 %       cd/convert_units.m
 
 % File History:

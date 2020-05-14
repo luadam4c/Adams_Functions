@@ -42,6 +42,7 @@
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_extract_sweep_name.m
+%       cd/m3ha_find_decision_point.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_load_sweep_info.m
@@ -97,6 +98,11 @@ plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
+% logOpdStr = 'openProbabilityDiscrepancy';
+% logOpdStr = 'm2hMaxLogRatio';
+% logOpdStr = 'm2hLogMaxError';
+logOpdStr = 'm2hDiffSlopeAtDecision';
+
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
 useCvode = false;       % whether to use variable integration time steps
@@ -133,7 +139,6 @@ ltsParamsSuffix = 'ltsParams';
 simLtsParamsSuffix = strcat(simStr, '_', ltsParamsSuffix);
 simSwpInfoSuffix = strcat(simStr, '_swpInfo');
 simCellInfoSuffix = strcat(simStr, '_cellInfo');
-openProbSuffix = strcat(simStr, '_openProbabilityDiscrepancy_vs_hasLTS');
 simOutExtension = 'out';
 
 TIME_COL_REC = 1;
@@ -597,13 +602,14 @@ if computeOpenProbabilityFlag
     m2hRmsError = compute_rms_error(m2h, minf2hinf, ...
                                     'ForceColumnOutput', true);
 
+    % Compute the difference vector between m2h and minf2hinf
+    m2hDiff = m2h - minf2hinf;
+
     % Compute the maximum absolute error between m2h and minf2hinf
-    m2hMaxAbsError = ...
-        force_column_vector(max(abs(m2h - minf2hinf), [], 1));
+    m2hMaxAbsError = force_column_vector(max(abs(m2hDiff), [], 1));
 
     % Compute the maximum error between m2h and minf2hinf
-    m2hMaxError = ...
-        force_column_vector(max(m2h - minf2hinf, [], 1));
+    m2hMaxError = force_column_vector(max(m2hDiff, [], 1));
 
     % Compute the maximum ratio between m2h and minf2hinf
     m2hRatioRaw = m2h ./ minf2hinf;
@@ -620,6 +626,12 @@ if computeOpenProbabilityFlag
     m2hLogMaxError = log10(m2hMaxError);
     m2hLogMaxAbsError = log10(m2hMaxAbsError);
 
+    % Compute the slope of discrepancy at the decision point
+    [~, m2hDiffSlopeAtDecision] = m3ha_find_decision_point(m2hDiff, ...
+                        'tVecs', tVecsRec, 'FiltWidthMs', filtWidthMs, ...
+                        'Itm2hDiffLowerLimit', itm2hDiffLowerLimit, ...
+                        'Itm2hDiffLeftBound', itm2hDiffLeftBound);
+
     % Add or update variable
     simSwpInfo = updatevars(simSwpInfo, m2hRmsError);
     simSwpInfo = updatevars(simSwpInfo, m2hMaxAbsError);
@@ -629,6 +641,7 @@ if computeOpenProbabilityFlag
     simSwpInfo = updatevars(simSwpInfo, m2hLogMaxError);
     simSwpInfo = updatevars(simSwpInfo, m2hLogMaxAbsError);
     simSwpInfo = updatevars(simSwpInfo, m2hMaxLogRatio);
+    simSwpInfo = updatevars(simSwpInfo, m2hDiffSlopeAtDecision);
 
     % Resave the simulated sweep info table
     writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
@@ -646,6 +659,9 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
 
     % Create a rank string
     rankStrOP = ['rank', create_label_from_sequence(rankNumsOpenProbability)];
+
+    % Decide on the suffix
+    openProbSuffix = strcat(simStr, '_', logOpdStr, '_vs_hasLTS');
 
     % Construct figure paths
     openProbPathBase = fullfile(outFolder, ...
@@ -682,9 +698,8 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hRmsError;
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxAbsError;
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxRatio;
-        % logOpenProbabilityDiscrepancy = simSwpInfoOP.m2hMaxLogRatio;
         % openProbabilityDiscrepancy = simSwpInfoOP.m2hMaxError;
-        logOpenProbabilityDiscrepancy = simSwpInfoOP.m2hLogMaxError;
+        logOpenProbabilityDiscrepancy = simSwpInfoOP.(logOpdStr);
     end
 
     % Set infinite values as NaN
