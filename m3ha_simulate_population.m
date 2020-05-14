@@ -337,6 +337,10 @@ opdThreshold = 1e-2;
 logOpdThreshold = log10(opdThreshold);
 figTypes = {'png', 'epsc'};
 
+filtWidthMs = 30;
+itm2hDiffLowerLimit = 1e-9;
+itm2hDiffLeftBound = 1e-7;
+
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
 
