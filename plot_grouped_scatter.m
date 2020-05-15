@@ -302,6 +302,9 @@ end
     create_default_grouping('Stats', yValues, 'Grouping', grouping, ...
                             'GroupingLabels', groupingLabels, ...
                             'ToLinearize', true);
+                        
+% Force as a column cell array
+groupingLabels = force_column_cell(groupingLabels);
 
 % Make sure the grouping vectors match
 if ~isequal(groupingFromX, groupingFromY)
@@ -312,7 +315,7 @@ end
 
 % Create ellipse labels
 if plotEllipse
-    ellipseLabels = strcat(groupingLabels, 'Ellipse');
+    ellipseLabels = strcat(groupingLabels, '-Ellipse');
 end
 
 % Linearize y values as well
@@ -388,27 +391,6 @@ if ~isempty(markerLineWidth)
     set(dots, 'LineWidth', markerLineWidth);
 end
 
-% Update x and y axis scales
-set(gca, 'XScale', xScale, 'YScale', yScale);
-
-% Set x axis limits
-if ~isempty(xLimits) && xLimits(1) ~= xLimits(2) && ...
-        ~strcmpi(xLimits, 'suppress')
-    xlim(xLimits);
-end
-
-% Set y axis limits
-if ~isempty(yLimits) && yLimits(1) ~= yLimits(2) && ...
-        ~strcmpi(yLimits, 'suppress')
-    ylim(yLimits);
-end
-
-% Generate a legend if there is more than one group
-if ~strcmpi(legendLocation, 'suppress')
-    lgd = legend('Location', legendLocation);
-    set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
-end
-
 % Plot a 95% confidence ellipse for each group
 if plotEllipse
     % Decide on the ellipses to plot
@@ -426,6 +408,27 @@ if plotEllipse
                                 'DisplayName', d), ...
                 xEllipses(toPlot), yEllipses(toPlot), ...
                 colorMapCell(toPlot), ellipseLabels(toPlot));
+end
+
+% Update x and y axis scales
+set(gca, 'XScale', xScale, 'YScale', yScale);
+
+% Set x axis limits
+if ~isempty(xLimits) && xLimits(1) ~= xLimits(2) && ...
+        ~strcmpi(xLimits, 'suppress')
+    xlim(xLimits);
+end
+
+% Set y axis limits
+if ~isempty(yLimits) && yLimits(1) ~= yLimits(2) && ...
+        ~strcmpi(yLimits, 'suppress')
+    ylim(yLimits);
+end
+
+% Generate a legend if there is more than one group
+if ~strcmpi(legendLocation, 'suppress')
+    lgd = legend(dots, 'Location', legendLocation);
+    set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
 end
 
 % Generate an x-axis label
@@ -486,12 +489,15 @@ uniqueGroupValues = unique_custom(grouping, 'IgnoreNaN', true);
 %   in a bivariate Gaussian fit, to compute the center, 
 %   half lengths, and angles of the confidenceLevel % confidence ellipse
 [sampleMeans, sampleCovariances, eigenValues, eigenVectors, ...
-        halfLengths, angles, xEllipses, yEllipses] = ...
+        halfLengths, anglesCell, xEllipses, yEllipses] = ...
     array_fun(@(groupValue) compute_confidence_ellipse_helper(...
                             xValues(grouping == groupValue, :), ...
                             yValues(grouping == groupValue, :), ...
                             xScale, yScale, criticalValue, ellipseNPoints), ...
             uniqueGroupValues, 'UniformOutput', false);
+
+% Convert cell arrays of scalars to arrays
+angles = cell2num(anglesCell);
 
 %% Return outputs in a table
 ellipseTable = table(sampleMeans, sampleCovariances, ...
@@ -501,7 +507,7 @@ ellipseTable = table(sampleMeans, sampleCovariances, ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [sampleMeans, sampleCovariances, eigenValues, eigenVectors, ...
-            halfLengths, angles, xEllipses, yEllipses] = ...
+            halfLengths, angle, xEllipses, yEllipses] = ...
                 compute_confidence_ellipse_helper (xValues, yValues, ...
                                 xScale, yScale, criticalValue, ellipseNPoints)
 % Computes a confidence ellipse from data
@@ -522,6 +528,11 @@ end
 xScaled = xScaled(:);
 yScaled = yScaled(:);
 
+% Remove NaN or Inf values
+toRemove = isnan(xScaled) | isnan(yScaled) | isinf(xScaled) | isinf(yScaled);
+xScaled(toRemove) = [];
+yScaled(toRemove) = [];
+
 % Place data in two columns
 twoColumns = [xScaled, yScaled];
 
@@ -530,6 +541,17 @@ sampleMeans = nanmean(twoColumns);
 
 % Compute the sample covariance for non-NaN data
 sampleCovariances = nancov(twoColumns);
+
+% Return if any covariance data is NaN
+if any(isnan(sampleCovariances))
+    eigenValues = [NaN; NaN];
+    eigenVectors = [];
+    halfLengths = [NaN; NaN];
+    angle = NaN;
+    xEllipses = [];
+    yEllipses = [];
+    return
+end
 
 % Compute the eigenvalues of the covariance matrix
 eigenValues = eig(sampleCovariances);
@@ -555,16 +577,16 @@ if length(eigenValues) >= 2 && all(eigenValues> 0)
 
     % Compute the angle of rotation in radians
     %   This is the angle between the x axis and the first eigenvector
-    angles = atan(eigenVectors(2, 1) / eigenVectors(1, 1));
+    angle = atan(eigenVectors(2, 1) / eigenVectors(1, 1));
 end
 
 % Find the x and y values for the ellipse
 if length(sampleMeans) >= 2 && ~isempty(halfLengths) && ...
-        ~isempty(angles)
+        ~isempty(angle)
     % Obtain the x and y values of the ellipse on the scaled plot
     [~, xPlot, yPlot] = ...
         plot_ellipse(sampleMeans, halfLengths, ...
-                    angles, 'NPoints', ellipseNPoints, ...
+                    angle, 'NPoints', ellipseNPoints, ...
                     'ToPlot', false);
 
     % Convert back to original scale

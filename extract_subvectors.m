@@ -15,6 +15,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       subVecs8 = extract_subvectors({1:5, 2:6}, 'EndPoints', [2, 4], 'PadRemaining', true)
 %       extract_subvectors(3:3:18, 'Indices', [])
 %       extract_subvectors(3:3:18, 'Indices', [], 'AcceptEmptyIndices', true)
+%       extract_subvectors(3:3:18, 'Indices', {[], [2, 4]})
 %       extract_subvectors(3:3:18, 'Indices', [2.5, 5.5])
 %       extract_subvectors(3:3:18, 'Indices', {3.5; [2.5, 5.5]})
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'odd')
@@ -315,32 +316,33 @@ if isempty(vecs) || ...
     return
 end
 
-% Find end points if not provided and needed
-if isempty(indices) && isempty(endPoints) 
-    if ~isempty(windows)
-        % Check if the input has the right type
-        if ~isnumeric(vecs) && ~iscellnumeric(vecs)
-            error('Input expected to be numeric when windows are provided!\n');
-        end
-
-        % TODO: Also check if vecs are nondecreasing. 
-        %   If not, ask for endPoints or indices to be passed
-
-        % Extract the start and end indices of the vectors for fitting
-        endPoints = find_window_endpoints(windows, vecs, 'WarnFlag', false);
-    else
-        % Count the number of elements in each vector
-        nSamples = count_samples(vecs, 'TreatCellAsArray', treatCellAsArray, ...
-                                'TreatCellNumAsArray', treatCellNumAsArray, ...
-                                'TreatCellStrAsArray', treatCellStrAsArray);
-
-        % Construct end points
-        endPoints = create_default_endpoints(nSamples);
-    end
-end
-
-% Create indices if not provided
+% Create indices if not provided and needed
 if isempty(indices) && ~acceptEmptyIndices
+    % Find end points if not provided
+    if isempty(endPoints) 
+        if ~isempty(windows)
+            % Check if the input has the right type
+            if ~isnumeric(vecs) && ~iscellnumeric(vecs)
+                error('Input expected to be numeric when windows are provided!\n');
+            end
+
+            % TODO: Also check if vecs are nondecreasing. 
+            %   If not, ask for endPoints or indices to be passed
+
+            % Extract the start and end indices of the vectors for fitting
+            endPoints = find_window_endpoints(windows, vecs, 'WarnFlag', false);
+        else
+            % Count the number of elements in each vector
+            nSamples = count_samples(vecs, 'TreatCellAsArray', treatCellAsArray, ...
+                                    'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                    'TreatCellStrAsArray', treatCellStrAsArray);
+
+            % Construct end points
+            endPoints = create_default_endpoints(nSamples);
+        end
+    end
+
+    % Create indices
     if isnumeric(endPoints) || iscellnumericvector(endPoints)
         indices = create_indices(endPoints, 'Vectors', vecs, ...
                             'IndexStart', indexStart, ...

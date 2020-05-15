@@ -24,6 +24,10 @@ function values = restrict_values (values, varargin)
 %                   - 'Inf2NaN': convert all infinite values to NaN
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ReplaceWithNaN': whether to replace out-of-bounds 
+%                                       values with NaN instead of the bounds
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -35,6 +39,7 @@ function values = restrict_values (values, varargin)
 % File History:
 % 2020-05-13 Created by Adam Lu
 % 2020-05-14 Added 'Inf2NaN' as an optional argument
+% 2020-05-15 Added 'ReplaceWithNaN' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -43,6 +48,7 @@ function values = restrict_values (values, varargin)
 lowerBoundDefault = [];
 upperBoundDefault = [];
 inf2NaNDefault = false;
+replaceWithNaNDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -66,37 +72,48 @@ addParameter(iP, 'UpperBound', upperBoundDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'Inf2NaN', inf2NaNDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ReplaceWithNaN', replaceWithNaNDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, values, varargin{:});
 lowerBound = iP.Results.LowerBound;
 upperBound = iP.Results.UpperBound;
 inf2NaN = iP.Results.Inf2NaN;
+replaceWithNaN = iP.Results.ReplaceWithNaN;
 
 %% Do the job
 if iscell(values)
     values = cellfun(@(x) restrict_values_helper(x, lowerBound, upperBound, ...
-                                    inf2NaN), ...
+                                    inf2NaN, replaceWithNaN), ...
                     values, 'UniformOutput', false);
 else
     values = restrict_values_helper(values, lowerBound, upperBound, ...
-                                    inf2NaN);
+                                    inf2NaN, replaceWithNaN);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function values = restrict_values_helper (values, lowerBound, upperBound, ...
-                                            inf2NaN)
+                                            inf2NaN, replaceWithNaN)
 %% Restrict values in a non-cell array
 
-% Replace values with lower bound
+% Replace values with lower bound or NaN
 if ~isempty(lowerBound)
-    values(values < lowerBound) = lowerBound;
+    if replaceWithNaN
+        values(values < lowerBound) = NaN;
+    else
+        values(values < lowerBound) = lowerBound;
+    end
 end
 
-% Replace values with upper bound
+% Replace values with upper bound or NaN
 if ~isempty(upperBound)
-    values(values > upperBound) = upperBound;
+    if replaceWithNaN
+        values(values > upperBound) = NaN;
+    else
+        values(values > upperBound) = upperBound;
+    end
 end
 
 % Replace infinite values with NaN

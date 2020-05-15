@@ -108,7 +108,7 @@ archiveScriptsFlag = true;
 % logOpdLabel = 'max(m^2h / m_{inf}^2h_{inf})';
 % logOpdLabel = 'max(log(m^2h / m_{inf}^2h_{inf}))';
 % logOpdStr = 'openProbabilityDiscrepancy';
-% averageMethod = 'arithmetic';
+% averageMethod = 'geometric';
 % logOpdStr = 'm2hMaxLogRatio';
 % onlyIfReached = true;
 
@@ -119,12 +119,12 @@ ltsPeakTimeStr = 'ltsPeakTime';
 concavityStr = 'm2hDiffConcavityAtDecision';
 logOpdMeasureStrs = {'m2hLogMaxError'; 'vSlopeAtDecision'; ...
                     'm2hDiffSlopeAtDecision'};
-logOpdLabels = {'max(log(m^2h - m_{inf}^2h_{inf}))'; ...
+logOpdLabels = {'Maximum Open Probability Discrepancy'; ...
                 'Voltage Slope at Decision Point'; ...
                 'Discrepancy Slope at Decision Point'};
 logOpdLimits = {[-4.5, 0.5]; [0, 0.35]; [0, 0.08]};
 logOpdThresholds = {logOpdThreshold; []; []};
-averageMethod = 'geometric';
+averageMethod = 'arithmetic';
 
 % logOpdStr = 'm2hDiffSlopeAtDecision';
 % logOpdLabel = 'Discrepancy Slope at Decision Point';
@@ -742,6 +742,10 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     % Read the open probability discrepancy measures
     opdMeasureValues = extract_vars(simSwpInfoOP, logOpdMeasureStrs);
 
+    % Set negative slope values as NaN
+    opdMeasureValues(2:3) = restrict_values(opdMeasureValues(2:3), ...
+                            'LowerBound', 0, 'ReplaceWithNaN', true);
+
     % Set infinite values as NaN
     opdMeasureValues = restrict_values(opdMeasureValues, 'Inf2NaN', true);
 
@@ -1299,8 +1303,8 @@ concavityGroupsAllTraces = {concavityWithNoLTSAllTraces; ...
                             concavityWithLTSAllTraces};
 
 % Test for differences
-opdMeasureDifferences = test_difference(logOpdGroups, 'IsPaired', true, ...
-                                        'SaveFlag', true, 'FileBase', pathBase);
+test_difference(logOpdGroups, 'IsPaired', true, ...
+                'SaveFlag', true, 'FileBase', pathBase);
 
 % Contruct path base for all traces plot
 pathBaseAllTraces = [pathBase, '_all_traces'];
@@ -1354,12 +1358,14 @@ cellfun(@(logOpdGroups, pathBase, figTitle) ...
 %}
 
 % Plot scatter plots
+%{
 cellfun(@(logOpdGroups, pathBase, figTitle, concavityGroups) ...
             plot_open_probability_discrepancy(logOpdGroups, 'scatter', ...
                     pathBase, figTitle, figWidth, figHeight, 'png', ...
                     threshold, logOpdLimits, logOpdLabel, {}, concavityGroups), ...
         logOpdGroupsEachCell, pathBaseEachCell, ...
         cellNames, concavityGroupsEachCell);
+%}
 
 end
 
@@ -1373,7 +1379,10 @@ function plot_open_probability_discrepancy (logOpdGroups, plotType, ...
 % Hard-coded parameters
 xTickLabels = {'No LTS', 'With LTS'};
 colorMapLts = {'Black', 'DarkGreen'};
-concavityLabel = {'Concavity of Discrepancy'};
+concavityLabel = 'Discrepancy Concavity at Decision Point';
+logOpdScale = 'linear';
+concavityScale = 'linear';
+concavityLimits = [-0.001, 0.001];
 
 % Create figure
 fig = set_figure_properties('AlwaysNew', true);
@@ -1396,19 +1405,30 @@ switch plotType
 
         % Plot groups as a grouped scatter plot
         handles = plot_grouped_scatter(logOpdGroups, concavityGroups, ...
+                        'FigHandle', fig, 'PlotEllipse', false, ...
                         'XLabel', logOpdLabel, 'YLabel', concavityLabel, ...
+                        'XScale', logOpdScale, 'YScale', concavityScale, ...
                         'ColorMap', colorMapLts, 'GroupingLabels', xTickLabels);
     otherwise
         error('plotType unrecognized!');
 end
 
-% Set y axis limits
+% Set axis limits
 if ~isempty(logOpdLimits)
     switch plotType
         case {'violin', 'byCell'}
             ylim(logOpdLimits);
         case 'scatter'
             xlim(logOpdLimits);
+    end
+end
+
+if ~isempty(concavityLimits)
+    switch plotType
+        case {'violin', 'byCell'}
+            % Do nothing
+        case 'scatter'
+            ylim(concavityLimits);
     end
 end
 
