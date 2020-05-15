@@ -408,6 +408,8 @@ if plotEllipse
                                 'DisplayName', d), ...
                 xEllipses(toPlot), yEllipses(toPlot), ...
                 colorMapCell(toPlot), ellipseLabels(toPlot));
+else
+    ellipses = plot([], []);
 end
 
 % Update x and y axis scales

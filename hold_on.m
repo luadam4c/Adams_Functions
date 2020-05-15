@@ -25,6 +25,7 @@ function wasHold = hold_on
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_vertical_line.m
 
 % File History:
 % 2019-10-02 Created by Adam Lu

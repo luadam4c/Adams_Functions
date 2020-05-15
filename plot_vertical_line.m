@@ -45,6 +45,8 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/force_column_cell.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
@@ -162,10 +164,8 @@ colorMapCell = arrayfun(@(x) repmat(colorMap(x, :), nLinesEachX(x), 1), ...
 colorMapExpanded = vertcat(colorMapCell{:});
 
 %% Do the job
-% Hold on if plotting more than one line
-if nLines > 1
-    hold on;
-end
+% Hold on
+wasHold = hold_on;
 
 % Plot all lines
 if horizontalInstead
@@ -181,6 +181,9 @@ else
                                 otherArguments), ...
                 xValueAll, yLimitsAll, num2cell(transpose(1:nLines)));
 end
+
+% Hold off
+hold_off(wasHold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
