@@ -335,6 +335,9 @@ case 'spikes&special'
     analyzeSpikes = 1;
 end
 
+% For speed
+plotSpikes = 0;
+
 % Code not fixed yet
 plotTuning = 0;
 
