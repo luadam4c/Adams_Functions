@@ -60,7 +60,6 @@ function [indDecision, slopeAtDecision, concavityAtDecision, maxConcavity] = ...
 % File History:
 % 2020-05-13 Adapted from code in m3ha_plot_simulated_traces.m
 % 2020-05-14 Added 'OnlyIfReached' as an optional argument
-% 2020-05-15 Updated algorithm
 
 %% Hard-coded parameters
 
@@ -129,9 +128,41 @@ else
         match_time_info(tVecs, siMs, nSamples, 'TimeUnits', 'ms');
 end
 
-%% Prepare vectors
+%% Prepare itm2hDiff
 % Force itm2hDiff to be above itm2hDiffLowerLimit
 itm2hDiff = restrict_values(itm2hDiff, 'LowerBound', itm2hDiffLowerLimit);
+
+%% Find the rising phase of the LTS
+% Parse maximum peak (considering all peaks) from itm2hDiff, 
+%   using itm2hDiffLeftBound as the peak lower bound
+peakParams = vecfun(@(x) parse_peaks(x, 'ParseMode', 'maxOfAll', ...
+                        'PeakLowerBound', itm2hDiffLeftBound), ...
+                    itm2hDiff, 'UniformOutput', true);
+
+% Extract index peak starts and ends
+[idxPeakStart, idxPeak] = argfun(@(x) extract_fields(peakParams, x), ...
+                                    'idxPeakStart', 'idxPeak');
+
+% Restrict to just the rising phase of the LTS
+[tVecsRise, itm2hDiffRise] = ...
+    argfun(@(x) extract_subvectors(x, 'IndexStart', idxPeakStart, ...
+                                    'IndexEnd', idxPeak), ...
+            tVecs, itm2hDiff);
+
+%% Find the decision point
+% Find the decision point in each LTS region
+[indDecisionRise, slopeAtDecision, concavityAtDecision, maxConcavity] = ...
+    m3ha_find_decision_point_helper(tVecsRise, itm2hDiffRise, ...
+                                    filtWidthMs, siMs, onlyIfReached);
+
+% Convert to the original index
+indDecision = idxPeakStart - 1 + indDecisionRise;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [indDecision, slopeAtDecision, concavityAtDecision, maxConcavity] = ...
+                m3ha_find_decision_point_helper (tVecs, itm2hDiff, ...
+                                            filtWidthMs, siMs, onlyIfReached)
 
 % Compute x = the logarithm of m2hDiff
 logItm2hDiff = apply_to_all_cells(@log10, itm2hDiff);
@@ -146,119 +177,44 @@ logItm2hDiffSmooth = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
 dxdtVecs = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
 
 % Compute d2x/dt2
-[d2xdt2Vecs, t2Vecs] = compute_derivative_trace(dxdtVecs, t1Vecs);
+d2xdt2Vecs = compute_derivative_trace(dxdtVecs, t1Vecs);
 
 % Smooth d2x/dt2 over filtWidthMs
 d2xdt2Vecs = movingaveragefilter(d2xdt2Vecs, filtWidthMs, siMs);
 
-%% Restrict to the rising phase of the maximum peak of itm2hDiff
-% Parse maximum peak (considering all peaks) from itm2hDiff, 
-%   using itm2hDiffLeftBound as the peak lower bound
-peakParams = vecfun(@(x) parse_peaks(x, 'ParseMode', 'maxOfAll', ...
-                        'PeakLowerBound', itm2hDiffLeftBound), ...
-                    itm2hDiff, 'UniformOutput', true);
+% Compute index of maximum concavity for logItm2hDiff 
+%   before the maximum of logItm2hDiff
+% Extract the index of maximum value for logItm2hDiff 
+[~, indMaxValue] = extract_elements(logItm2hDiff, 'max');
 
-% Extract index peak starts and ends
-[idxPeakStart, idxPeak] = argfun(@(x) extract_fields(peakParams, x), ...
-                                    'idxPeakStart', 'idxPeak');
+% Restrict to the part of logItm2hDiff before the maximum is reached
+d2xdt2VecsLeft1 = extract_subvectors(d2xdt2Vecs, ...
+                                    'IndexEnd', indMaxValue - 1);
 
-% Restrict to just the rising phase of the maximum peak
-[tRise, t1Rise, t2Rise, logItm2hDiffRise, dxdtRise, d2xdt2Rise] = ...
-    argfun(@(x) extract_subvectors(x, 'IndexStart', idxPeakStart, ...
-                                    'IndexEnd', idxPeak), ...
-            tVecs, t1Vecs, t2Vecs, logItm2hDiff, dxdtVecs, d2xdt2Vecs);
+% Extract the index of maximum concavity before the maximum of logItm2hDiff
+[maxConcavity, ind2MaxConcavityBeforeMax] = ...
+    extract_elements(d2xdt2VecsLeft1, 'max');
 
-%% Find the decision point
-% Find the decision point in each LTS region
-[indDecisionRise, slopeAtDecision, concavityAtDecision, maxConcavity] = ...
-    m3ha_find_decision_point_helper(logItm2hDiffRise, dxdtRise, ...
-                                    d2xdt2Rise, onlyIfReached);
-
-% Convert to the original index
-indDecision = idxPeakStart - 1 + indDecisionRise;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [indDecision, slopeAtDecision, concavityAtDecision, maxConcavity] = ...
-                m3ha_find_decision_point_helper (xVecs, dxdtVecs, ...
-                                                d2xdt2Vecs, onlyIfReached)
-
-%% Compute index of the maximum value of x 
-% Extract the index of maximum value for x 
-[~, indMaxValue] = extract_elements(xVecs, 'max');
-
-%% Compute index of the first minimum concavity for x 
-%   before the maximum of x
-
-% Restrict to the part of d2xdt2Vecs until the maximum of x is reached
-d2xdt2VecsLeft1 = extract_subvectors(d2xdt2Vecs, 'IndexEnd', indMaxValue - 1);
-
-% Extract the index of the first minimum concavity 
-%   before the maximum of x is reached
-troughParams = cellfun(@(v) parse_peaks(-v, 'ParseMode', 'first'), ...
-                        d2xdt2VecsLeft1);
-ind2FirstMinConcavityBeforeMax = extract_fields(troughParams, 'idxPeak');
-minConcavityBeforeMax = -extract_fields(troughParams, 'peakAmp');
-
-%% Compute index of the maximum concavity of x 
-%   between the first minimum concavity of x and the the maximum of x
-
-% Restrict to the part of d2xdt2Vecs after the first minimum
-d2xdt2VecsMiddle = extract_subvectors(d2xdt2VecsLeft1, ...
-                        'IndexStart', ind2FirstMinConcavityBeforeMax);
-
-% Extract the index of maximum concavity before the maximum of x
-%   but before the first minimum concavity
-[maxConcavity, ind3MaxConcavityBeforeMax] = ...
-    extract_elements(d2xdt2VecsMiddle, 'max');
-
-% Convert to original index
-ind2MaxConcavityBeforeMax = ...
-    (ind2FirstMinConcavityBeforeMax - 1) + ind3MaxConcavityBeforeMax;
-
-%% Compute index of the last zero concavity of x 
-% Compute the index of zero concavity for x 
-%   between the first minimum concavity of x 
-%       and the maximum concavity of x before the maximum of x
-
+% Compute index of zero concavity for logItm2hDiff 
+%   before the maximum concavity of logItm2hDiff
 % Restrict to the part before the maximum is reached
-d2xdt2VecsRise = extract_subvectors(d2xdt2VecsMiddle, ...
-                    'IndexEnd', ind3MaxConcavityBeforeMax);
+d2xdt2VecsLeft2 = extract_subvectors(d2xdt2Vecs, ...
+                    'IndexEnd', ind2MaxConcavityBeforeMax);
 
-% Find the last index with d2x/dt2 closest to zero (but positive)
-%   between the first minimum concavity of x 
-%       and the maximum concavity of x before the maximum of x
-ind3LastZeroBeforeMaxConcavityBeforeMax = ...
-    find_zeros(d2xdt2VecsRise, 1, 'last', 'IndexChoice', 'positive');
-
-% Convert to original index
+% Find the last index with d2x/dt2 closest to zero 
+%   before the maximum is reached
 ind2LastZeroBeforeMaxConcavityBeforeMax = ...
-    (ind2FirstMinConcavityBeforeMax - 1) + ...
-        ind3LastZeroBeforeMaxConcavityBeforeMax;
+    find_zeros(d2xdt2VecsLeft2, 1, 'last');
 
-%% Decide on the decision point
-% The decision point is either:
-%   (1) The last zero before the maximum of d2x/dt2 before the maximum of x
-%               or 
-%   (2) The first minimum of d2x/dt2 before the maximum of x
-%          if this minimum is nonnegative
-%               or
-%   (3) The maximum of d2x/dt2 before the maximum of x otherwise
-%           (not reached)
-
-% If concavity before the maximum reaches negative, 
-%   don't use the first minimum as a decision point
-ind2FirstMinConcavityBeforeMax(minConcavityBeforeMax < 0) = NaN;
-
-% Use the minimum function 
-%   Note: NaN will be ignored unless all are NaN
+% The decision point is the last zero before the maximum of d2x/dt2 
+%               before maximum of x 
+%               or the maximum of d2x/dt2 before maximum of x
+%                   if the former doesn't exist
 if onlyIfReached
-    ind2Decision = min([ind2LastZeroBeforeMaxConcavityBeforeMax, ...
-                        ind2FirstMinConcavityBeforeMax], [], 2);
+    ind2Decision = ind2LastZeroBeforeMaxConcavityBeforeMax;
 else
-    ind2Decision = min([ind2LastZeroBeforeMaxConcavityBeforeMax, ...
-                        ind2FirstMinConcavityBeforeMax, ...
-                        ind2MaxConcavityBeforeMax], [], 2);
+    ind2Decision = min([ind2MaxConcavityBeforeMax, ...
+                        ind2LastZeroBeforeMaxConcavityBeforeMax], [], 2);
 end
 
 % Find the corresponding indices in x and dx/dt

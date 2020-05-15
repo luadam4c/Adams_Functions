@@ -13,7 +13,14 @@ function parsedParams = parse_peaks (vec, varargin)
 %       parsedParams = parse_peaks(avSpots, 'ParseMode', 'first')
 %
 % Outputs:
-%       parsedParams    - parsed scalars
+%       parsedParams    - parsed scalars, with fields or columns:
+%                           peakNum     - peak number
+%                           idxPeak     - peak index
+%                           peakAmp     - peak amplitude
+%                           peakWidth   - peak width
+%                           peakProm    - peak prominence
+%                           idxPeakStart- index of peak region start
+%                           idxPeakEnd  - index of peak region end
 %                       specified as a table or struct array
 %
 % Arguments:

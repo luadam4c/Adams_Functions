@@ -25,6 +25,14 @@ function indZeros = find_zeros (vecs, varargin)
 %       varargin    - 'ReturnNan': Return NaN instead of empty if nothing found
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'IndexChoice': choice for index
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'closest'   - use index with value closest to 0
+%                       'later'     - always use the later index
+%                       'earlier'   - always use the earlier index
+%                       'positive'  - use index with positive value
+%                       'negative'  - use index with negative value
+%                   default == 'closest'
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -38,15 +46,18 @@ function indZeros = find_zeros (vecs, varargin)
 % File History:
 % 2020-04-15 Created by Adam Lu
 % 2020-04-22 Added n and direction as optional arguments
+% 2020-05-15 Added 'IndexChoice' as an optional argument
 
 %% Hard-coded parameters
 validDirections = {'first', 'last'};
+validIndexChoices = {'closest', 'later', 'earlier', 'positive', 'negative'};
 
 %% Default values for optional arguments
 nDefault = [];              % default number of nonzero elements to find
 directionDefault = 'first'; % default search direction
 returnNanDefault = [];      % whether to return NaN instead of empty 
                             %   if nothing found by default
+indexChoiceDefault = 'closest';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -76,12 +87,16 @@ addOptional(iP, 'direction', directionDefault, ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ReturnNan', returnNanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'IndexChoice', indexChoiceDefault, ...
+    @(x) any(validatestring(x, validIndexChoices)));
+
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
 n = iP.Results.n;
 direction = validatestring(iP.Results.direction, validDirections);
 returnNan = iP.Results.ReturnNan;
+indexChoice = validatestring(iP.Results.IndexChoice, validIndexChoices);;
 
 %% Preparation
 % Force as column vectors
@@ -95,15 +110,17 @@ returnNan = set_default_flag(returnNan, uniformOutput);
 
 %% Do the job
 if iscell(vecs)
-    indZeros = cellfun(@(x) find_zeros_helper(x, n, direction, returnNan), ...
+    indZeros = cellfun(@(x) find_zeros_helper(x, n, direction, ...
+                                            returnNan, indexChoice), ...
                         vecs, 'UniformOutput', uniformOutput);
 else
-    indZeros = find_zeros_helper(vecs, n, direction, returnNan);
+    indZeros = find_zeros_helper(vecs, n, direction, ...
+                                returnNan, indexChoice);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indZeros = find_zeros_helper(vec, n, direction, returnNan)
+function indZeros = find_zeros_helper(vec, n, direction, returnNan, indexChoice)
 
 % Find the left and right of each consecutive pair of sample points
 vecLeft = vec(1:end-1);
@@ -125,9 +142,25 @@ end
 % Get the next index
 indRightZeros = indLeftZeros + 1;
 
-% Choose the index closest to zero
-indZeros = arrayfun(@(a, b) choose_closest_to_value(vec, a, b, 0), ...
-                    indLeftZeros, indRightZeros);
+% Choose the index
+switch indexChoice
+    case 'closest'
+        % Choose the index closest to zero
+        indZeros = arrayfun(@(a, b) choose_closest_to_value(vec, a, b, 0), ...
+                            indLeftZeros, indRightZeros);
+    case 'earlier'
+        % Use the earlier index
+        indZeros = indLeftZeros;
+    case 'later'
+        % Use the later index
+        indZeros = indRightZeros;
+    case {'positive', 'negative'}
+        % Choose the index with the correct sign for the value
+        indZeros = arrayfun(@(a, b) choose_sign(vec, a, b, indexChoice), ...
+                            indLeftZeros, indRightZeros);
+    otherwise
+        error('indexChoice unrecognized!');
+end
 
 % Restrict to the number of desired zeros
 if ~isempty(n) && n < numel(indZeros)
@@ -146,6 +179,17 @@ end
 function idx = choose_closest_to_value (vec, idx1, idx2, value)
 
 if abs(vec(idx1) - value) <= abs(vec(idx2) - value)
+    idx = idx1;
+else
+    idx = idx2;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function idx = choose_sign (vec, idx1, idx2, desiredSign)
+
+if vec(idx1) >= 0 && strcmp(desiredSign, 'positive') || ...
+        vec(idx1) < 0 && strcmp(desiredSign, 'negative')
     idx = idx1;
 else
     idx = idx2;

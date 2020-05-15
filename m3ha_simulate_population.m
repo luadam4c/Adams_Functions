@@ -91,8 +91,8 @@
 updateScriptsFlag = false; %true;
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
-combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
+combineFeatureTablesFlag = true;
+computeOpenProbabilityFlag = true;
 plotIndividualFlag = false; %true;
 plotEssentialFlag = false; %true;
 plotOpenProbabilityFlag = true;
@@ -117,19 +117,15 @@ logOpdThreshold = log10(opdThreshold);
 onlyIfReached = false;
 ltsPeakTimeStr = 'ltsPeakTime';
 concavityStr = 'm2hDiffConcavityAtDecision';
+averageMethod = 'arithmetic';
 logOpdMeasureStrs = {'m2hLogMaxError'; 'vSlopeAtDecision'; ...
-                    'm2hDiffSlopeAtDecision'};
+                    'm2hDiffSlopeAtDecision'; 'm2hDiffMaxConcavity'};
 logOpdLabels = {'Maximum Open Probability Discrepancy'; ...
                 'Voltage Slope at Decision Point'; ...
-                'Discrepancy Slope at Decision Point'};
-logOpdLimits = {[-4.5, 0.5]; [0, 0.35]; [0, 0.08]};
-logOpdThresholds = {logOpdThreshold; []; []};
-averageMethod = 'arithmetic';
-
-% logOpdStr = 'm2hDiffSlopeAtDecision';
-% logOpdLabel = 'Discrepancy Slope at Decision Point';
-% logOpdLimits = [];
-% logOpdThreshold = [];
+                'Discrepancy Slope at Decision Point'; ...
+                'Maximum Open Probability Concavity'};
+logOpdLimits = {[-4.5, 0.5]; [0, 0.35]; [0, 0.08]; []};
+logOpdThresholds = {logOpdThreshold; []; []; []};
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -669,7 +665,8 @@ if computeOpenProbabilityFlag
     m2hLogMaxAbsError = log10(m2hMaxAbsError);
 
     % Compute the slope of discrepancy at the decision point
-    [indDecision, m2hDiffSlopeAtDecision, m2hDiffConcavityAtDecision] = ...
+    [indDecision, m2hDiffSlopeAtDecision, ...
+            m2hDiffConcavityAtDecision, m2hDiffMaxConcavity] = ...
         m3ha_find_decision_point(m2hDiff, 'tVecs', tVecs, ...
                                 'FiltWidthMs', filtWidthMs, ...
                                 'Itm2hDiffLowerLimit', itm2hDiffLowerLimit, ...
@@ -691,6 +688,7 @@ if computeOpenProbabilityFlag
     simSwpInfo = updatevars(simSwpInfo, m2hMaxLogRatio);
     simSwpInfo = updatevars(simSwpInfo, m2hDiffSlopeAtDecision);
     simSwpInfo = updatevars(simSwpInfo, m2hDiffConcavityAtDecision);
+    simSwpInfo = updatevars(simSwpInfo, m2hDiffMaxConcavity);
     simSwpInfo = updatevars(simSwpInfo, vSlopeAtDecision);
 
     % Resave the simulated sweep info table
@@ -740,11 +738,14 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     concavityValues = extract_vars(simSwpInfoOP, concavityStr);
 
     % Read the open probability discrepancy measures
-    opdMeasureValues = extract_vars(simSwpInfoOP, logOpdMeasureStrs);
+    opdMeasureValues = extract_vars(simSwpInfoOP, logOpdMeasureStrs, ...
+                                    'ForceCellOutput', true);
 
     % Set negative slope values as NaN
-    opdMeasureValues(2:3) = restrict_values(opdMeasureValues(2:3), ...
-                            'LowerBound', 0, 'ReplaceWithNaN', true);
+    noNegative = contains(logOpdMeasureStrs, 'Slope');
+    opdMeasureValues(noNegative) = ...
+        restrict_values(opdMeasureValues(noNegative), ...
+                        'LowerBound', 0, 'ReplaceWithNaN', true);
 
     % Set infinite values as NaN
     opdMeasureValues = restrict_values(opdMeasureValues, 'Inf2NaN', true);
