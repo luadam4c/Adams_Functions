@@ -18,56 +18,56 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %
 % Arguments:
 %       xValues     - xValues
-%                   sampleMeanst be an array
+%                   must be an array
 %       yValues     - yValues
-%                   sampleMeanst be an array
+%                   must be an array
 %       grouping    - (opt) group assignment for each data point
-%                   sampleMeanst be an array
+%                   must be an array
 %                   default == the column number for a 2D array
 %       varargin    - 'PlotOnly': whether to plot the scatters only
-%                   sampleMeanst be numeric/logical 1 (true) or 0 (false)
+%                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotEllipse': whether to plot 95% condifence ellipses
-%                   sampleMeanst be numeric/logical 1 (true) or 0 (false)
+%                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %       TODO
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
-%                   sampleMeanst be 'suppress' or a 2-element increasing numeric vector
+%                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == 'suppress'
 %                   - 'YLimits': limits of y axis, 
 %                               suppress by setting value to 'suppress'
-%                   sampleMeanst be 'suppress' or a 2-element increasing numeric vector
+%                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == 'suppress'
 %                   - 'XUnits': x-axis units
-%                   sampleMeanst be a string scalar or a character vector 
+%                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == 'unit'
 %                   - 'XLabel': label for the x axis, 
 %                               suppress by setting value to 'suppress'
-%                   sampleMeanst be a string scalar or a character vector 
+%                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == strcat('XValue (', xUnits, ')')
 %                   - 'YUnits': y-axis units
-%                   sampleMeanst be a string scalar or a character vector 
+%                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == 'unit'
 %                   - 'YLabel': label for the y axis, 
 %                               suppress by setting value to 'suppress'
-%                   sampleMeanst be a string scalar or a character vector 
+%                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == strcat('YValue (', yUnits, ')')
 %                   - 'GroupingLabels': labels for the groupings, 
 %                               suppress by setting value to 'suppress'
-%                   sampleMeanst be a string scalar or a character vector 
+%                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == {'Group #1', 'Group #2', ...}
 %                   - 'ColorMap': a color map that provides a different
 %                                   color for each group
-%                   sampleMeanst be a numeric array with 3 columns
+%                   must be a numeric array with 3 columns
 %                   default == set in decide_on_colormap.m
 %                   - 'LegendLocation': location for legend
-%                   sampleMeanst be an unambiguous, case-insensitive match to one of: 
+%                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
 %                       'suppress'  - no legend
 %                       anything else recognized by the legend() function
@@ -75,21 +75,21 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %                               'northeast' if nGroups is 2~9
 %                               'eastoutside' if nGroups is 10+
 %                   - 'FigTitle': title for the figure
-%                   sampleMeanst be a string scalar or a character vector
+%                   must be a string scalar or a character vector
 %                   default == strcat(yLabel, ' vs. ', xLabel)
 %                   - 'FigHandle': figure handle for created figure
-%                   sampleMeanst be a empty or a figure object handle
+%                   must be a empty or a figure object handle
 %                   default == []
 %                   - 'FigNumber': figure number for creating figure
-%                   sampleMeanst be a positive integer scalar
+%                   must be a positive integer scalar
 %                   default == []
 
 %                   - 'OutFolder': directory to save figure, 
 %                                   e.dots. 'output'
-%                   sampleMeanst be a string scalar or a character vector
+%                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'FigName': figure name for saving
-%                   sampleMeanst be a string scalar or a character vector
+%                   must be a string scalar or a character vector
 %                   default == ''
 %                   - 'FigTypes': figure type(s) for saving; 
 %                               e.dots., 'png', 'fig', or {'png', 'fig'}, etc.
@@ -103,6 +103,7 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       cd/compute_axis_limits.m
 %       cd/compute_confidence_ellipse.m
 %       cd/construct_fullpath.m
+%       cd/create_default_grouping.m
 %       cd/hold_off.m
 %       cd/hold_on.m
 %       cd/isemptycell.m
@@ -113,7 +114,7 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%
+%       cd/m3ha_simulate_population.m
 %
 
 % File History:
@@ -212,7 +213,7 @@ addParameter(iP, 'FigTitle', figTitleDefault, ...
 addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
-                'FigNumber sampleMeanst be a empty or a positive integer scalar!'));
+                'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -290,11 +291,24 @@ if ~isempty(figName)
     figName = construct_fullpath(figName, 'Directory', outFolder);
 end
 
-% Decide on the grouping vector and possibly labels
-[grouping, groupValues, groupingLabels, xValues] = ...
+% Decide on the grouping vector from the xValues
+[groupingFromX, ~, ~, xValues] = ...
     create_default_grouping('Stats', xValues, 'Grouping', grouping, ...
                             'GroupingLabels', groupingLabels, ...
                             'ToLinearize', true);
+
+% Decide on the grouping vector and possibly labels from the yValues
+[groupingFromY, groupValues, groupingLabels, yValues] = ...
+    create_default_grouping('Stats', yValues, 'Grouping', grouping, ...
+                            'GroupingLabels', groupingLabels, ...
+                            'ToLinearize', true);
+
+% Make sure the grouping vectors match
+if ~isequal(groupingFromX, groupingFromY)
+    error('xValues and yValues don''t match!');
+else
+    grouping = groupingFromY;
+end
 
 % Create ellipse labels
 if plotEllipse

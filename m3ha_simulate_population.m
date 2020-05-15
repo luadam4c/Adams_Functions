@@ -32,6 +32,7 @@
 %       cd/create_label_from_sequence.m
 %       cd/extract_columns.m
 %       cd/extract_elements.m
+%       cd/extract_subvectors.m
 %       cd/extract_vars.m
 %       cd/find_matching_files.m
 %       cd/force_column_vector.m
@@ -50,6 +51,8 @@
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
+%       cd/plot_grouped_jitter.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_violin.m
 %       cd/print_cellstr.m
@@ -100,25 +103,32 @@ plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
-% yLabelLogOpd = 'rms(m^2h - m_{inf}^2h_{inf})';
-% yLabelLogOpd = 'max(abs(m^2h - m_{inf}^2h_{inf}))';
-% yLabelLogOpd = 'max(m^2h / m_{inf}^2h_{inf})';
-% yLabelLogOpd = 'max(log(m^2h / m_{inf}^2h_{inf}))';
+% logOpdLabel = 'rms(m^2h - m_{inf}^2h_{inf})';
+% logOpdLabel = 'max(abs(m^2h - m_{inf}^2h_{inf}))';
+% logOpdLabel = 'max(m^2h / m_{inf}^2h_{inf})';
+% logOpdLabel = 'max(log(m^2h / m_{inf}^2h_{inf}))';
 % logOpdStr = 'openProbabilityDiscrepancy';
+% averageMethod = 'arithmetic';
 % logOpdStr = 'm2hMaxLogRatio';
+% onlyIfReached = true;
+
 opdThreshold = 1e-2;
 logOpdThreshold = log10(opdThreshold);
-
-opdMeasureStrs = {'m2hLogMaxError'; 'vSlopeAtDecision'; 'm2hDiffSlopeAtDecision'};
-yLabelsOpd = {'max(log(m^2h - m_{inf}^2h_{inf}))'; ...
+onlyIfReached = false;
+ltsPeakTimeStr = 'ltsPeakTime';
+concavityStr = 'm2hDiffConcavityAtDecision';
+logOpdMeasureStrs = {'m2hLogMaxError'; 'vSlopeAtDecision'; ...
+                    'm2hDiffSlopeAtDecision'};
+logOpdLabels = {'max(log(m^2h - m_{inf}^2h_{inf}))'; ...
                 'Voltage Slope at Decision Point'; ...
                 'Discrepancy Slope at Decision Point'};
-yLimitsOpd = {[-4.5, 0.5]; [0, 0.35]; [0, 0.08]};
-opdThresholds = {logOpdThreshold; []; []};
+logOpdLimits = {[-4.5, 0.5]; [0, 0.35]; [0, 0.08]};
+logOpdThresholds = {logOpdThreshold; []; []};
+averageMethod = 'geometric';
 
 % logOpdStr = 'm2hDiffSlopeAtDecision';
-% yLabelLogOpd = 'Discrepancy Slope at Decision Point';
-% yLimitsOpd = [];
+% logOpdLabel = 'Discrepancy Slope at Decision Point';
+% logOpdLimits = [];
 % logOpdThreshold = [];
 
 % Simulation parameters
@@ -659,12 +669,12 @@ if computeOpenProbabilityFlag
     m2hLogMaxAbsError = log10(m2hMaxAbsError);
 
     % Compute the slope of discrepancy at the decision point
-    [indDecision, m2hDiffSlopeAtDecision] = ...
+    [indDecision, m2hDiffSlopeAtDecision, m2hDiffConcavityAtDecision] = ...
         m3ha_find_decision_point(m2hDiff, 'tVecs', tVecs, ...
-                        'FiltWidthMs', filtWidthMs, ...
-                        'Itm2hDiffLowerLimit', itm2hDiffLowerLimit, ...
-                        'Itm2hDiffLeftBound', itm2hDiffLeftBound, ...
-                        'OnlyIfReached', true);
+                                'FiltWidthMs', filtWidthMs, ...
+                                'Itm2hDiffLowerLimit', itm2hDiffLowerLimit, ...
+                                'Itm2hDiffLeftBound', itm2hDiffLeftBound, ...
+                                'OnlyIfReached', onlyIfReached);
 
     % Extract the slope value at the decision point
     vSlopeAtDecision = extract_elements(dvdtSmoothed, 'specific', ...
@@ -680,6 +690,7 @@ if computeOpenProbabilityFlag
     simSwpInfo = updatevars(simSwpInfo, m2hLogMaxAbsError);
     simSwpInfo = updatevars(simSwpInfo, m2hMaxLogRatio);
     simSwpInfo = updatevars(simSwpInfo, m2hDiffSlopeAtDecision);
+    simSwpInfo = updatevars(simSwpInfo, m2hDiffConcavityAtDecision);
     simSwpInfo = updatevars(simSwpInfo, vSlopeAtDecision);
 
     % Resave the simulated sweep info table
@@ -700,21 +711,21 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     rankStrOP = ['rank', create_label_from_sequence(rankNumsOpenProbability)];
 
     % Decide on the suffix
-    openProbSuffixes = strcat(simStr, '_', opdMeasureStrs, '_vs_hasLTS');
+    openProbSuffixes = strcat(simStr, '_', logOpdMeasureStrs, '_vs_hasLTS');
 
     % Construct figure paths
     openProbPathBases = fullfile(outFolder, strcat(prefix, '_', rankStrOP, ...
                                                     '_', openProbSuffixes));
 
     % Extract the corresponding cell names
-    cellNamesOP = ...
+    cellNamesByRank = ...
         extract_from_rank_numbers(rankNumsOpenProbability, rankDirectory);
 
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
     % Restrict to the cells of interest
-    simSwpInfoOP = simSwpInfo(contains(simSwpInfo.fileBase, cellNamesOP), :);
+    simSwpInfoOP = simSwpInfo(contains(simSwpInfo.fileBase, cellNamesByRank), :);
 
     % Read file bases 
     fileBasesOP = simSwpInfoOP.fileBase;
@@ -723,10 +734,13 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     cellNamesEachFile = m3ha_extract_cell_name(fileBasesOP);
 
     % Read the LTS peak times
-    ltsPeakTime = extract_vars(simSwpInfoOP, 'ltsPeakTime');
+    ltsPeakTime = extract_vars(simSwpInfoOP, ltsPeakTimeStr);
+
+    % Read the concavity values
+    concavityValues = extract_vars(simSwpInfoOP, concavityStr);
 
     % Read the open probability discrepancy measures
-    opdMeasureValues = extract_vars(simSwpInfoOP, opdMeasureStrs);
+    opdMeasureValues = extract_vars(simSwpInfoOP, logOpdMeasureStrs);
 
     % Set infinite values as NaN
     opdMeasureValues = restrict_values(opdMeasureValues, 'Inf2NaN', true);
@@ -776,13 +790,13 @@ if plotOpenProbabilityFlag
     fprintf('Plotting open probability discrepancies ... \n');
 
     % Compute and plot all open probability discrepancy measures
-    cellfun(@(values, pathBase, threshold, yLimits, yLabel) ...
-                compute_and_plot_opd(values, noLts, ...
-                        cellNamesEachFile, cellNamesOP, pathBase, prefix, ...
-                        openProbFigWidth, openProbFigHeight, figTypes, ...
-                        threshold, yLimits, yLabel), ...
+    cellfun(@(values, pathBase, threshold, limits, label) ...
+                compute_and_plot_opd(values, noLts, concavityValues, ...
+                    cellNamesEachFile, cellNamesByRank, pathBase, prefix, ...
+                    openProbFigWidth, openProbFigHeight, figTypes, ...
+                    threshold, limits, label, averageMethod), ...
             opdMeasureValues, openProbPathBases, ...
-            opdThresholds, yLimitsOpd, yLabelsOpd);
+            logOpdThresholds, logOpdLimits, logOpdLabels);
 end 
 
 %% Find and copy special cases
@@ -1045,8 +1059,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function m3ha_plot_essential (simOutPath, xLimits, ...
-                                yLimits, yTickLocs, opdThreshold)
+function m3ha_plot_essential (simOutPath, xLimits, yLimits, ...
+                                yTickLocs, opdThreshold)
 %% Plot an essential plot for a simulation
 
 % Extract the sweep name
@@ -1235,33 +1249,39 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function compute_and_plot_opd (opdMeasure, noLts, ...
+function compute_and_plot_opd (opdMeasureValues, noLts, concavityValues, ...
                     cellNamesEachFile, cellNames, pathBase, ...
                     prefix, figWidth, figHeight, figTypes, ...
-                    threshold, yLimits, yLabel)
+                    threshold, logOpdLimits, logOpdLabel, averageMethod)
 
 % Find the indices for each cell with or without LTS
 [indEachCellWithLTS, indEachCellWithNoLTS] = ...
     argfun(@(condition) ...
-                cellfun(@(c) condition & strcmp(cellNamesEachFile, c), ...
+                cellfun(@(c) find(condition & strcmp(cellNamesEachFile, c)), ...
                         cellNames, 'UniformOutput', false), ...
             ~noLts, noLts);
 
 % Group by cell
 [logOpdByCellWithLTS, logOpdByCellWithNoLTS] = ...
-    argfun(@(indEachCell) cellfun(@(ind) opdMeasure(ind), indEachCell, ...
-                                'UniformOutput', false), ...
+    argfun(@(ind) extract_subvectors(opdMeasureValues, 'Indices', ind, ...
+                                        'AcceptEmptyIndices', true), ...
+            indEachCellWithLTS, indEachCellWithNoLTS);
+[concavityByCellWithLTS, concavityByCellWithNoLTS] = ...
+    argfun(@(ind) extract_subvectors(concavityValues, 'Indices', ind, ...
+                                        'AcceptEmptyIndices', true), ...
             indEachCellWithLTS, indEachCellWithNoLTS);
 
 % Extract the log open probability discrepancy for all traces
 [logOpdWithLTSAllTraces, logOpdWithNoLTSAllTraces] = ...
-    argfun(@(ind) opdMeasure(ind), ...
-            ~noLts, noLts);
+    argfun(@(ind) opdMeasureValues(ind), ~noLts, noLts);
 
-% averageFun = @(x) compute_weighted_average(x, 'AverageMethod', 'geometric', ...
-%                                             'IgnoreNan', true);
-averageFun = @(x) compute_weighted_average(x, 'AverageMethod', 'arithmetic', ...
-                                            'IgnoreNan', true);
+% Extract the concavity values for all traces
+[concavityWithLTSAllTraces, concavityWithNoLTSAllTraces] = ...
+    argfun(@(ind) concavityValues(ind), ~noLts, noLts);
+
+% Function for computing weighted average
+averageFun = @(x) compute_weighted_average(x, 'IgnoreNan', true, ...
+                                            'AverageMethod', averageMethod);
 
 % Compute the average (arithmetic mean) log open probability discrepancy
 %   for each cell with or without LTS
@@ -1270,12 +1290,16 @@ averageFun = @(x) compute_weighted_average(x, 'AverageMethod', 'arithmetic', ...
             logOpdByCellWithLTS, logOpdByCellWithNoLTS);
 
 % Separate into two groups
-twoGroups = {logOpdWithNoLTS; logOpdWithLTS};
-twoGroupsByCell = {logOpdByCellWithNoLTS; logOpdByCellWithLTS};
-twoGroupsAllTraces = {logOpdWithNoLTSAllTraces; logOpdWithLTSAllTraces};
+logOpdGroups = {logOpdWithNoLTS; logOpdWithLTS};
+logOpdGroupsByCell = {logOpdByCellWithNoLTS; logOpdByCellWithLTS};
+logOpdGroupsAllTraces = {logOpdWithNoLTSAllTraces; logOpdWithLTSAllTraces};
+
+concavityGroupsByCell = {concavityByCellWithNoLTS; concavityByCellWithLTS};
+concavityGroupsAllTraces = {concavityWithNoLTSAllTraces; ...
+                            concavityWithLTSAllTraces};
 
 % Test for differences
-opdMeasureDifferences = test_difference(twoGroups, 'IsPaired', true, ...
+opdMeasureDifferences = test_difference(logOpdGroups, 'IsPaired', true, ...
                                         'SaveFlag', true, 'FileBase', pathBase);
 
 % Contruct path base for all traces plot
@@ -1283,52 +1307,73 @@ pathBaseAllTraces = [pathBase, '_all_traces'];
 
 %{
 % Plot violin plots
-plot_open_probability_discrepancy(twoGroups, 'violin', ...
+plot_open_probability_discrepancy(logOpdGroups, 'violin', ...
                 pathBase, prefix, figWidth, figHeight, figTypes, ...
-                threshold, yLimits, yLabel, {});
-plot_open_probability_discrepancy(twoGroupsAllTraces, 'violin', ...
+                threshold, logOpdLimits, logOpdLabel, {}, {});
+plot_open_probability_discrepancy(logOpdGroupsAllTraces, 'violin', ...
                 pathBaseAllTraces, prefix, figWidth, figHeight, figTypes, ...
-                threshold, yLimits, yLabel, {});
+                threshold, logOpdLimits, logOpdLabel, {}, {});
 
 % Plot jitter plots
-plot_open_probability_discrepancy(twoGroupsByCell, 'byCell', ...
+plot_open_probability_discrepancy(logOpdGroupsByCell, 'byCell', ...
                 pathBaseAllTraces, prefix, figWidth, figHeight, figTypes, ...
-                threshold, yLimits, yLabel, cellNames);
+                threshold, logOpdLimits, logOpdLabel, cellNames, {});
 %}
+
+% Plot scatter plots
+plot_open_probability_discrepancy(logOpdGroupsAllTraces, 'scatter', ...
+                pathBaseAllTraces, prefix, figWidth, figHeight, figTypes, ...
+                threshold, logOpdLimits, logOpdLabel, ...
+                {}, concavityGroupsAllTraces);
+
+
 
 %% Do this for each cell
 % Contruct path base for traces from each cell
 pathBaseEachCell = strcat(pathBase, '_', cellNames);
 
 % Reorganize cell arrays
-twoGroupsEachCell = regroup_cell_of_cells(twoGroupsByCell);
+[logOpdGroupsEachCell, concavityGroupsEachCell] = ...
+    argfun(@regroup_cell_of_cells, logOpdGroupsByCell, concavityGroupsByCell);
 
 % Test for differences
 %{
-cellfun(@(twoGroups, pathBase) ...
-            test_difference(twoGroups, 'IsPaired', false, ...
+cellfun(@(logOpdGroups, pathBase) ...
+            test_difference(logOpdGroups, 'IsPaired', false, ...
                         'SaveFlag', true, 'FileBase', pathBase), ...
-        twoGroupsEachCell, pathBaseEachCell, 'UniformOutput', false);
+        logOpdGroupsEachCell, pathBaseEachCell, 'UniformOutput', false);
 %}
 
 % Plot violin plots
-cellfun(@(twoGroups, pathBase, figTitle) ...
-            plot_open_probability_discrepancy(twoGroups, 'violin', ...
+%{
+cellfun(@(logOpdGroups, pathBase, figTitle) ...
+            plot_open_probability_discrepancy(logOpdGroups, 'violin', ...
                     pathBase, figTitle, figWidth, figHeight, 'png', ...
-                    threshold, yLimits, yLabel, {}), ...
-        twoGroupsEachCell, pathBaseEachCell, cellNames);
+                    threshold, logOpdLimits, logOpdLabel, {}, {}), ...
+        logOpdGroupsEachCell, pathBaseEachCell, cellNames);
+%}
+
+% Plot scatter plots
+cellfun(@(logOpdGroups, pathBase, figTitle, concavityGroups) ...
+            plot_open_probability_discrepancy(logOpdGroups, 'scatter', ...
+                    pathBase, figTitle, figWidth, figHeight, 'png', ...
+                    threshold, logOpdLimits, logOpdLabel, {}, concavityGroups), ...
+        logOpdGroupsEachCell, pathBaseEachCell, ...
+        cellNames, concavityGroupsEachCell);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_open_probability_discrepancy (twoGroups, plotType, ...
+function plot_open_probability_discrepancy (logOpdGroups, plotType, ...
                         pathBase, figTitle, figWidth, figHeight, figTypes, ...
-                        logOpdThreshold, yLimits, yLabel, cellLabels)
+                        logOpdThreshold, logOpdLimits, logOpdLabel, ...
+                        cellLabels, concavityGroups)
 
 % Hard-coded parameters
 xTickLabels = {'No LTS', 'With LTS'};
-colorMapViolin = {'Black', 'DarkGreen'};
+colorMapLts = {'Black', 'DarkGreen'};
+concavityLabel = {'Concavity of Discrepancy'};
 
 % Create figure
 fig = set_figure_properties('AlwaysNew', true);
@@ -1336,28 +1381,42 @@ fig = set_figure_properties('AlwaysNew', true);
 % Plot violin plot
 switch plotType
     case 'violin'
-        violins = plot_violin(twoGroups, 'ColorMap', colorMapViolin, ...
-                            'XTickLabels', xTickLabels, 'YLabel', yLabel);
+        handles = plot_violin(logOpdGroups, 'ColorMap', colorMapLts, ...
+                            'XTickLabels', xTickLabels, 'YLabel', logOpdLabel);
     case 'byCell'
         % Add to path base
         pathBase = [pathBase, '_byCell'];
 
         % Plot groups as a grouped jitter plot
-        jitters = plot_grouped_jitter(twoGroups, 'XTickLabels', xTickLabels, ...
-                            'YLabel', yLabel, 'GroupingLabels', cellLabels);
+        handles = plot_grouped_jitter(logOpdGroups, 'XTickLabels', xTickLabels, ...
+                            'YLabel', logOpdLabel, 'GroupingLabels', cellLabels);
+    case 'scatter'
+        % Add to path base
+        pathBase = [pathBase, '_vs_concavity'];
+
+        % Plot groups as a grouped scatter plot
+        handles = plot_grouped_scatter(logOpdGroups, concavityGroups, ...
+                        'XLabel', logOpdLabel, 'YLabel', concavityLabel, ...
+                        'ColorMap', colorMapLts, 'GroupingLabels', xTickLabels);
     otherwise
         error('plotType unrecognized!');
 end
 
 % Set y axis limits
-if ~isempty(yLimits)
-    ylim(yLimits);
+if ~isempty(logOpdLimits)
+    switch plotType
+        case {'violin', 'byCell'}
+            ylim(logOpdLimits);
+        case 'scatter'
+            xlim(logOpdLimits);
+    end
 end
 
 % Plot threshold
 if ~isempty(logOpdThreshold)
     hold on
-    plot_horizontal_line(logOpdThreshold, 'ColorMap', 'r', 'LineWidth', 2);
+    handles.threshold = ...
+        plot_horizontal_line(logOpdThreshold, 'ColorMap', 'r', 'LineWidth', 2);
 end
 
 % Create a title
@@ -1412,10 +1471,10 @@ swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
             cellNamesToFit, 'UniformOutput', false);
 
 % Separate into two groups
-twoGroups = {logOpenProbabilityDiscrepancy(noLts); ...
+logOpdGroups = {logOpenProbabilityDiscrepancy(noLts); ...
                 logOpenProbabilityDiscrepancy(~noLts)};
 
-logOpenProbabilityDiscrepancyDifferences = test_difference(twoGroups);
+logOpenProbabilityDiscrepancyDifferences = test_difference(logOpdGroups);
 
 % Compute the average (geometric mean) open probability discrepancy
 %   for each cell with or without LTS
@@ -1431,7 +1490,7 @@ logOpenProbabilityDiscrepancyDifferences = test_difference(twoGroups);
 [logOpdWithLTS, logOpdWithNoLTS] = ...
     argfun(@(indEachCell) ...
             cellfun(@(ind) compute_weighted_average(...
-                    opdMeasure(ind), ...
+                    opdMeasureValues(ind), ...
                     'AverageMethod', 'arithmetic', ...
                     'IgnoreNan', true), indEachCell), ...
             indEachCellWithLTS, indEachCellWithNoLTS);

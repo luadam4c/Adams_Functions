@@ -7,12 +7,14 @@ function subVecs = extract_subvectors (vecs, varargin)
 % Example(s):
 %       subVecs1 = extract_subvectors({1:5, 2:6}, 'EndPoints', [1, 3])
 %       subVecs2 = extract_subvectors({1:5, 2:6}, 'EndPoints', {[1, 3], [2, 4]})
-%       subVecs3 = extract_subvectors(1:5, 'EndPoints', {[1, 3], [2, 4]})
+%       subVecs3 = extract_subvectors((1:5)', 'EndPoints', {[1, 3], [2, 4]})
 %       subVecs4 = extract_subvectors({1:5, 2:6}, 'Windows', [2.5, 6.5])
-%       subVecs5 = extract_subvectors(magic(3), 'EndPoints', {[1,Inf], [2,Inf], [3,Inf]})
+%       subVecs5 = extract_subvectors(magic(3), 'EndPoints', {[1, Inf], [2, Inf], [3, Inf]})
 %       subVecs6 = extract_subvectors({{1:5, 2:6}, {1:2}}, 'TreatCellNumAsArray', true)
 %       subVecs7 = extract_subvectors(magic(3), 'EndPoints', [1, 1, 1; 2, 2, 2])
 %       subVecs8 = extract_subvectors({1:5, 2:6}, 'EndPoints', [2, 4], 'PadRemaining', true)
+%       extract_subvectors(3:3:18, 'Indices', [])
+%       extract_subvectors(3:3:18, 'Indices', [], 'AcceptEmptyIndices', true)
 %       extract_subvectors(3:3:18, 'Indices', [2.5, 5.5])
 %       extract_subvectors(3:3:18, 'Indices', {3.5; [2.5, 5.5]})
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'odd')
@@ -45,7 +47,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == create_indices(endPoints)
+%                   default == create_indices(endPoints, 'Vectors', vecs)
 %                   - 'EndPoints': endpoints for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
@@ -75,6 +77,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       'none'        - no alignment/truncation
 %                   default == 'none'
 %                   - 'PadRemaining': whether to pad remaining indices with NaN
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'AcceptEmptyIndices': whether to accept empty indices
+%                                               as optional indices
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'TreatCellAsArray': whether to treat a cell array
@@ -108,6 +114,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/force_column_vector.m
 %       cd/get_var_name.m
 %       cd/iscellnumeric.m
+%       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/ispositiveintegerarray.m
 %       cd/match_format_vector_sets.m
@@ -137,6 +144,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_simulate_population.m
 %       cd/match_positions.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
@@ -179,6 +187,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2020-01-01 Now returns original vectors if no custom inputs
 % 2020-02-04 Improved create_empty_match
 % 2020-05-12 Added 'PadRemaining' as an optional argument
+% 2020-05-15 Added 'AcceptEmptyIndices' as an optional argument
+% 2020-05-15 Fixed redundancy
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -197,6 +207,7 @@ maxNumDefault = Inf;            % no limit by default
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
 padRemainingDefault = false;    % don't pad remaining with NaN by default
+acceptEmptyIndicesDefault = false;  % find default indices by default 
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
                                     %   as many arrays by default
@@ -247,6 +258,8 @@ addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
 addParameter(iP, 'PadRemaining', padRemainingDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AcceptEmptyIndices', acceptEmptyIndicesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
@@ -267,18 +280,11 @@ maxNum = iP.Results.MaxNum;
 windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 padRemaining = iP.Results.PadRemaining;
+acceptEmptyIndices = iP.Results.AcceptEmptyIndices;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 forceCellOutput = iP.Results.ForceCellOutput;
-
-% If none of indices, endPoints or windows provided, return original vectors
-if strcmpi(pattern, 'auto') && isempty(indices) && isempty(endPoints) && ...
-        isempty(indexStart) && isempty(indexEnd) && isinf(maxNum) && ...
-        isempty(windows) && ~need_to_align(alignMethod, vecs)
-    subVecs = vecs;
-    return
-end
 
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
@@ -296,11 +302,12 @@ end
 % TODO: check if all endpoints have 2 elements
 
 %% Preparation
-% If vecs is empty, or if all options are empty, return vecs
+% If vecs is empty, or if all options are default, return vecs
 if isempty(vecs) || ...
-        isempty(indices) && isempty(endPoints) && isempty(windows) && ...
-            isempty(indexStart) && isempty(indexEnd) && ...
-            strcmpi('AlignMethod', 'none')
+        isempty(indices) && ~acceptEmptyIndices && isempty(endPoints) && ...
+            isempty(windows) && strcmpi(pattern, 'auto') && ...
+            isempty(indexStart) && isempty(indexEnd) && isinf(maxNum) && ...
+            ~need_to_align(alignMethod, vecs)
     subVecs = vecs;
     if forceCellOutput
         subVecs = force_column_cell(subVecs);
@@ -308,8 +315,8 @@ if isempty(vecs) || ...
     return
 end
 
-% Find end points if not provided
-if isempty(endPoints)
+% Find end points if not provided and needed
+if isempty(indices) && isempty(endPoints) 
     if ~isempty(windows)
         % Check if the input has the right type
         if ~isnumeric(vecs) && ~iscellnumeric(vecs)
@@ -333,21 +340,21 @@ if isempty(endPoints)
 end
 
 % Create indices if not provided
-if isempty(indices)
+if isempty(indices) && ~acceptEmptyIndices
     if isnumeric(endPoints) || iscellnumericvector(endPoints)
         indices = create_indices(endPoints, 'Vectors', vecs, ...
-                                'IndexStart', indexStart, ...
-                                'IndexEnd', indexEnd, 'MaxNum', maxNum, ...
-                                'TreatCellAsArray', treatCellAsArray, ...
-                                'TreatCellNumAsArray', treatCellNumAsArray, ...
-                                'TreatCellStrAsArray', treatCellStrAsArray);
+                            'IndexStart', indexStart, ...
+                            'IndexEnd', indexEnd, 'MaxNum', maxNum, ...
+                            'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellNumAsArray', treatCellNumAsArray, ...
+                            'TreatCellStrAsArray', treatCellStrAsArray);
     else
         indices = cellfun(@(x, y) create_indices(x, 'Vectors', y, ...
-                                'IndexStart', indexStart, ...
-                                'IndexEnd', indexEnd, 'MaxNum', maxNum, ...
-                                'TreatCellAsArray', treatCellAsArray, ...
-                                'TreatCellNumAsArray', treatCellNumAsArray, ...
-                                'TreatCellStrAsArray', treatCellStrAsArray), ...
+                            'IndexStart', indexStart, ...
+                            'IndexEnd', indexEnd, 'MaxNum', maxNum, ...
+                            'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellNumAsArray', treatCellNumAsArray, ...
+                            'TreatCellStrAsArray', treatCellStrAsArray), ...
                             endPoints, vecs, 'UniformOutput', false);
     end
 end
@@ -382,10 +389,12 @@ end
 
 %% Do the job
 if isempty(indices)
-    % If no indices are found, return empty match
+    % If no indices are found, return empty array(s)
     if iscell(vecs)
+        % Return a cell array of empty arrays
         subVecs = create_empty_match(vecs);
     else
+        % Return an empty array
         subVecs = [];
     end
 else
@@ -619,7 +628,6 @@ case {'leftAdjustPad', 'rightAdjustPad'}
     end
 case 'none'
     % Do nothing
-    nSamplesTarget = NaN;
 otherwise
     error_unrecognized(get_var_name(alignMethod), alignMethod, mfilename);
 end

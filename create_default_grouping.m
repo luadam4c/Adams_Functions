@@ -75,6 +75,7 @@ function varargout = create_default_grouping (varargin)
 %       cd/compute_psth.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_jitter.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_swd_histogram.m
 
 % File History:
