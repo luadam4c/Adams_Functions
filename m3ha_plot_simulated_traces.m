@@ -28,6 +28,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                       'm2h'           - m2h plot
 %                       'voltageVsOpd1'
 %                       'voltageVsOpd2'
+%                       'voltageVsOpd3'
 %                   default == 'individual'
 %                   - 'BuildMode': TC neuron build mode
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -170,6 +171,9 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-05-04 Distinguished between voltageVsOpd1 and voltageVsOpd2 plots
 % 2020-05-05 Added voltageVsOpd3 plot
 % 2020-05-06 Added 'PlotSelected' as an optional argument
+% 2020-05-15 Now matches file bases in an exact manner
+% 2020-05-16 Now matches to recorde time points for voltageVsOpd plots 
+% 2020-05-16 Changed filtWidthMs for voltageVsOpd plots from 30 ms to 5 ms
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -183,6 +187,7 @@ validSimModes = {'', 'active', 'passive'};
 maxRowsWithOneOnly = 8;
 lineWidthParallel = 1;
 lineWidthIndividual = 0.5;
+defaultVoltageVsOpdSiMs = 1;    % in ms
 
 % Note: The following must be consistent with m3ha_neuron_run_and_analyze.m
 importedSuffix = 'imported_files';
@@ -334,9 +339,10 @@ switch plotType
         toImportRecorded = set_default_flag([], compareWithRecorded);
     case {'essential', 'somaVoltage',...
             'allTotalCurrents', 'allComponentCurrents', ...
-            'allITproperties', 'dend2ITproperties', 'm2h', ...
-            'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
+            'allITproperties', 'dend2ITproperties', 'm2h'}
         toImportRecorded = false;
+    case {'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
+        toImportRecorded = set_default_flag([], isempty(tVecs));
 end
 
 % Use the present working directory for both inputs and output by default
@@ -483,6 +489,9 @@ if isempty(simParamsTable)
     % Load the simulation parameters table
     simParamsTable = readtable(simParamsPath);
 
+    % Extract file bases
+    fileBases = extract_fileparts(fileNames, 'base');
+    
     % Restrict table to match with file names
     if contains(expStr, 'sim')
         % Restrict to the simulation number
@@ -491,7 +500,8 @@ if isempty(simParamsTable)
     else
         % Restrict to the output file names
         simOutPaths = simParamsTable.(simOutPathStr);
-        rowsToUse = find_first_match(fileNames, simOutPaths);
+        simOutBases = extract_fileparts(simOutPaths, 'base');
+        rowsToUse = find_first_match(fileBases, simOutBases, 'MatchMode', 'exact');
     end
     simParamsTable = simParamsTable(rowsToUse, :);
 end
@@ -1248,10 +1258,14 @@ itm2hDiffThreshold = 1e-2;
 markerSizeSelected = 6;
 stimStartMs = 3000;
 barRelValue = 0.95;
-filtWidthMs = 30;            % in ms
+filtWidthMs = 15;               % in ms
 
 itmYLimits = [1e-7, 1];
 ithYLimits = [1e-7, 1];
+
+if isempty(xLimits)
+    xLimits = [1e-7, 1];
+end
 
 % Legends
 itmLegendLocation = 'northeast';
@@ -1433,11 +1447,15 @@ otherXVecsLabel = 'Slope of Open Probability Discrepancy';
 otherXVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
 % otherXLimits = [-0.05, 0.05];
 % otherXLimits = [-0.01, 0.05];
+% otherXLimits = [];
 otherXLimits = [0, 0.03];
 % otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
 otherYVecsLabel = 'Concavity of Open Probability Discrepancy';
 otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
                 nan(1, size(d2xdt2VecsSmoothed, 2))];
+% otherYLimits = [-0.001, 0.001];
+% otherYLimits = [-0.5, 0.5];
+% otherYLimits = [];
 otherYLimits = [-0.001, 0.001];
 
 % figTitle7 = sprintf('d2(log(m2hdiff))/dt2 vs dV/dt');
@@ -1445,12 +1463,14 @@ figTitle7 = sprintf('Discrepancy Concavity vs. Voltage Slope');
 % other2XVecsLabel = 'dV/dt';
 other2XVecsLabel = 'Slope of Voltage';
 other2XVecs = [nan(1, size(dvdtVecsSmoothed, 2)); dvdtVecsSmoothed];
-other2XLimits = [0, 0.2];
+other2XLimits = [];
+% other2XLimits = [0, 0.2];
 % other2YVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
 other2YVecsLabel = 'Concavity of Open Probability Discrepancy';
 other2YVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
                 nan(1, size(d2xdt2VecsSmoothed, 2))];
-other2YLimits = [-0.001, 0.001];
+other2YLimits = [];
+% other2YLimits = [-0.001, 0.001];
 
 %% Replace specific values with NaNs
 % Find indices corresponding to out-of-view m2hDiff values

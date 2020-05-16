@@ -182,7 +182,12 @@ if nSamples == 0
 end
 
 % Find all peaks
-[peakAmp, idxPeak, peakWidth, peakProm] = findpeaks(vec, otherArguments{:});
+if numel(vec) >= 3
+    [peakAmp, idxPeak, peakWidth, peakProm] = ...
+        findpeaks(vec, otherArguments{:});
+else
+    peakAmp = [];
+end
 
 % Return if empty
 if isempty(peakAmp)

@@ -23,7 +23,7 @@ function varargout = vecfun (myFunction, inVecs, varargin)
 %                                       as non-cell arrays if the input
 %                                       is a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == true
 %                   - Any other parameter-value pair for array_fun()
 %
 % Requires:
@@ -46,11 +46,12 @@ function varargout = vecfun (myFunction, inVecs, varargin)
 % 2020-04-16 Now forces array outputs as column vectors by default
 % 2020-04-16 Now tries uniform output first
 % 2020-04-16 Now allows multiple outputs
+% 2020-05-16 Default UniformOutput is now true
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-uniformOutputDefault = [];             % default TODO: Description of uniformOutput
+uniformOutputDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

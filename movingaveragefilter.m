@@ -1,6 +1,6 @@
 function vecsFilt = movingaveragefilter (vecs, varargin)
 %% Applies a moving average filter to vectors
-% Usage: vecsFilt = movingaveragefilter (vecs, filtWidth, si, varargin)
+% Usage: vecsFilt = movingaveragefilter (vecs, filtWidth (opt), si (opt), varargin)
 % Explanation:
 %       Same as smooth() but with option of using a window in time units
 %

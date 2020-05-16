@@ -124,7 +124,7 @@ logOpdLabels = {'Maximum Open Probability Discrepancy'; ...
                 'Voltage Slope at Decision Point'; ...
                 'Discrepancy Slope at Decision Point'; ...
                 'Maximum Open Probability Concavity'};
-logOpdLimits = {[-4.5, 0.5]; [0, 0.35]; [0, 0.08]; []};
+logOpdLimits = {[-6, 0]; [0, 0.3]; [-0.01, 0.08]; [-0.0008, 0.0020]};
 logOpdThresholds = {logOpdThreshold; []; []; []};
 
 % Simulation parameters
@@ -358,10 +358,12 @@ rankNumsOpenProbability = 1:31;
 % rankNumsToUse = 1:31;
 % rankNumsOpenProbability = 1:31;
 
+% filtWidthMs = 30;
+
 prefix = '';
 figTypes = {'png', 'epsc'};
 
-filtWidthMs = 30;
+filtWidthMs = 15;
 itm2hDiffLowerLimit = 1e-9;
 itm2hDiffLeftBound = 1e-7;
 
@@ -742,10 +744,10 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
                                     'ForceCellOutput', true);
 
     % Set negative slope values as NaN
-    noNegative = contains(logOpdMeasureStrs, 'Slope');
-    opdMeasureValues(noNegative) = ...
-        restrict_values(opdMeasureValues(noNegative), ...
-                        'LowerBound', 0, 'ReplaceWithNaN', true);
+    % noNegative = contains(logOpdMeasureStrs, 'Slope');
+    % opdMeasureValues(noNegative) = ...
+    %     restrict_values(opdMeasureValues(noNegative), ...
+    %                     'LowerBound', 0, 'ReplaceWithNaN', true);
 
     % Set infinite values as NaN
     opdMeasureValues = restrict_values(opdMeasureValues, 'Inf2NaN', true);
@@ -1329,8 +1331,6 @@ plot_open_probability_discrepancy(logOpdGroupsAllTraces, 'scatter', ...
                 threshold, logOpdLimits, logOpdLabel, ...
                 {}, concavityGroupsAllTraces);
 
-
-
 %% Do this for each cell
 % Contruct path base for traces from each cell
 pathBaseEachCell = strcat(pathBase, '_', cellNames);
@@ -1378,7 +1378,8 @@ colorMapScatter = {'Red', 'Green'};
 concavityLabel = 'Discrepancy Concavity at Decision Point';
 logOpdScale = 'linear';
 concavityScale = 'linear';
-concavityLimits = [-0.001, 0.001];
+% concavityLimits = [-0.001, 0.001];
+concavityLimits = [-0.0008, 0.0003];
 
 % Create figure
 fig = set_figure_properties('AlwaysNew', true);

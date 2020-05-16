@@ -25,7 +25,7 @@ function [indDecision, slopeAtDecision, concavityAtDecision, maxConcavity] = ...
 %                   default == created from siMs and iVecs
 %                   - 'FiltWidthMs': filter window width in ms
 %                   must be a numeric vector
-%                   default == 30 ms
+%                   default == 15 ms
 %                   - 'Itm2hDiffLowerLimit': lower limit of discrepancy
 %                   must be a numeric vector
 %                   default == 1e-9
@@ -61,13 +61,14 @@ function [indDecision, slopeAtDecision, concavityAtDecision, maxConcavity] = ...
 % 2020-05-13 Adapted from code in m3ha_plot_simulated_traces.m
 % 2020-05-14 Added 'OnlyIfReached' as an optional argument
 % 2020-05-15 Updated algorithm
+% 2020-05-16 Changed default filtWidthMs from 30 ms to 15 ms
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 siMsDefault = [];               % set later
 tVecsDefault = [];              % set later
-filtWidthMsDefault = 30;            % default filter width is 30 ms
+filtWidthMsDefault = 15;        % default filter width is 15 ms
 itm2hDiffLowerLimitDefault = 1e-9;
 itm2hDiffLeftBoundDefault = 1e-7;
 onlyIfReachedDefault = false;
@@ -195,7 +196,7 @@ d2xdt2VecsLeft1 = extract_subvectors(d2xdt2Vecs, 'IndexEnd', indMaxValue - 1);
 
 % Extract the index of the first minimum concavity 
 %   before the maximum of x is reached
-troughParams = cellfun(@(v) parse_peaks(-v, 'ParseMode', 'first'), ...
+troughParams = vecfun(@(v) parse_peaks(-v, 'ParseMode', 'first'), ...
                         d2xdt2VecsLeft1);
 ind2FirstMinConcavityBeforeMax = extract_fields(troughParams, 'idxPeak');
 minConcavityBeforeMax = -extract_fields(troughParams, 'peakAmp');

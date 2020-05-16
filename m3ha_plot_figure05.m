@@ -43,8 +43,8 @@ plotEssential = false; %true;
 plotM2hFig5 = false; %true;
 plotM2hFig6 = false; %true;
 
-plotVoltageVsOpdFig5 = true;
-plotVoltageVsOpdFig6 = false; %true;
+plotVoltageVsOpdFig5 = false; %true;
+plotVoltageVsOpdFig6 = true;
 
 createPlotMovieFig5 = false; %true;
 createPlotMovieTauh = false;
