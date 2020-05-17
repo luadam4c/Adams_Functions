@@ -68,6 +68,7 @@ function varargout = array_fun (myFunc, varargin)
 % 2020-01-02 Fixed to work with 2D arrays
 % 2020-03-09 Added RenewParpool as an optional argument
 % 2020-04-26 Fixed bug when nArgOut is 0
+% 2020-05-16 Fixed concatenation using parfor when uniform output
 % TODO: Convert all arguments to a cell array (with num2cell) 
 %       if any argument is a cell array
 
@@ -216,7 +217,7 @@ else
         varargout = outputCells;
     else
         % Try to concatenate outputs as non-cell arrays
-        varargout = cellfun(@cell2num, outputCells, 'UniformOutput', false);
+        varargout = cellfun(@cell2num_custom, outputCells, 'UniformOutput', false);
     end
 end
 
@@ -246,6 +247,18 @@ else
     myFunc(argList{:});
     outputList = {};
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function array = cell2num_custom (cellArray)
+%% Converts a cell array to a non-cell array by concatenation
+% TODO: Pull out as its own function
+
+% List all contents and concatenate
+array = [cellArray{:}];
+
+% Reshape as original dimensions
+array = reshape(array, size(cellArray));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
