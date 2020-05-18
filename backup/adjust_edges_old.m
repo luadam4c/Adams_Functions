@@ -8,9 +8,8 @@ function [edgesNew, isUpdated] = adjust_edges (edgesOld, varargin)
 %       adjust_edges(linspace(-5.3, 5.3, 12), 'FixedEdges', 0)
 %       adjust_edges(linspace(-5.3, 5.3, 12), 'FixedEdges', [0, 3])
 %       adjust_edges(linspace(-5.3, 5.3, 12), 'FixedEdges', [0, 3, -5])
-%       adjust_edges(linspace(-5.3, 5.3, 11), 'FixedEdges', [0, 3, -5])
-%       adjust_edges(linspace(-5.3, 4.7, 11), 'FixedEdges', -10)
-%       adjust_edges(linspace(-5.3, 4.7, 11), 'FixedEdges', [-10, 10])
+%       adjust_edges(linspace(-5.3, 5.3, 11), 'FixedEdges', [0, 3, -5]) TODO
+%       adjust_edges(linspace(-5.3, 5.3, 12), 'FixedEdges', -10)
 %
 % Outputs:
 %       edgesNew    - new edges
@@ -40,9 +39,6 @@ function [edgesNew, isUpdated] = adjust_edges (edgesOld, varargin)
 % 2019-09-08 Created by Adam Lu
 % 2019-09-08 Renamed as adjust_edges.m
 % 2019-09-08 Now accepts up to three values for 'FixedEdges'
-% 2020-05-17 Fixed the case when 'FixedEges' are outside the range of
-%               original edges
-% 
 
 %% Hard-coded parameters
 
@@ -90,11 +86,17 @@ fixedEdges = unique_custom(fixedEdges, 'sorted', 'IgnoreNaN', true);
 % Force as column vectors
 [edgesOld, fixedEdges] = argfun(@force_column_vector, edgesOld, fixedEdges);
 
-% Add fixed edges to the edges to include and sort in ascending order
-edgesToInclude = sort([edgesOld; fixedEdges], 'ascend');
+% Add fixed edges to the edges to include
+edgesToInclude = sort([edgesOld; fixedEdges]);
 
 % Get the center fixed edge
 fixedCenter = extract_elements(fixedEdges, 'center');
+
+% Count the number of edges greater than the center fixed edge
+nEdgesRight = length(find(edgesToInclude > fixedCenter));
+
+% Count the number of edges less than the center fixed edge
+nEdgesLeft = length(find(edgesToInclude < fixedCenter));
 
 % Extract the average bin width from the old bins
 binWidthOld = nanmean(diff(edgesOld));
@@ -133,15 +135,9 @@ else
     binWidthRight = binWidthOld;        
 end
 
-% Count the number of edges needed less than the center fixed edge
-nEdgesNeededLeft = ceil((fixedCenter - edgesToInclude(1)) / binWidthLeft);
-
-% Count the number of edges needed greater than the center fixed edge
-nEdgesNeededRight = ceil((edgesToInclude(end) - fixedCenter) / binWidthRight);
-
 % Compute the new bin limits
-minEdge = fixedCenter - nEdgesNeededLeft * binWidthLeft;
-maxEdge = fixedCenter + nEdgesNeededRight * binWidthRight;
+minEdge = fixedCenter - nEdgesLeft * binWidthLeft;
+maxEdge = fixedCenter + nEdgesRight * binWidthRight;
 
 % Compute the new bin edges
 edgesNew = [minEdge:binWidthLeft:fixedCenter, ...
@@ -155,6 +151,28 @@ isUpdated = true;
 
 %{
 OLD CODE:
+
+% Count the number of bins in between left and center
+nBinsLeftToCenter = length(find(edgesToInclude >= fixedLeft & ...
+                                edgesToInclude < fixedCenter));
+
+% Count the number of bins in between left and center
+nBinsCenterToRight = length(find(edgesToInclude > fixedCenter & ...
+                                edgesToInclude <= fixedRight));
+
+% Compute the bin width on either side
+if nBinsLeftToCenter ~= 0
+    binWidthLeft = (fixedCenter - fixedLeft) / nBinsLeftToCenter;
+end
+if nBinsCenterToRight ~= 0
+    binWidthRight = (fixedRight - fixedCenter) / nBinsCenterToRight;
+end
+if nBinsLeftToCenter == 0
+    binWidthLeft = binWidthRight;
+end
+if nBinsCenterToRight == 0
+    binWidthRight = binWidthLeft;
+end
 
 %}
 

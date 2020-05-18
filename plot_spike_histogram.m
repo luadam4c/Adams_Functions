@@ -58,6 +58,11 @@ function handles = plot_spike_histogram (spHistData, spHistParams, varargin)
 %% Hard-coded parameters
 minNXTicks = 5;
 
+% TODO: Make optional arguments
+xLabel = 'Time (seconds)';
+yLabel = '';
+figTitle = '';
+
 %% Default values for optional arguments
 xLimitsDefault = [];            % set later
 yLimitsDefault = [];            % set later
@@ -153,6 +158,17 @@ if isempty(yLimits)
     yLimits = [0, largestSpikeCount * 1.2];
 end
 
+% Decide on y axis label
+if isempty(yLabel)
+    binWidthMs = spHistParams.binWidthMs;
+    yLabel = ['Spike Count per ', num2str(binWidthMs), ' ms'];
+end
+
+% Decide on figure title
+if isempty(figTitle)
+    figTitle = ['Spike histogram for ', figTitleBase];
+end
+
 %% Plot histogram
 % Hold on
 wasHold = hold_on;
@@ -161,9 +177,8 @@ wasHold = hold_on;
 [histBars, histFig] = ...
     plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSec, ...
                     'XLimits', xLimits, 'YLimits', yLimits, ...
-                    'XTickLocs', xTickLocs, 'XLabel', 'Time (seconds)', ...
-                    'YLabel', 'Spike Count per 10 ms', ...
-                    'FigTitle', ['Spike histogram for ', figTitleBase], ...
+                    'XTickLocs', xTickLocs, 'XLabel', xLabel, ...
+                    'YLabel', yLabel, 'FigTitle', figTitle, ...
                     otherArguments);
 
 % Show oscillation duration

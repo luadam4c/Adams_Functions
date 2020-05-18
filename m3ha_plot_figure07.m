@@ -56,18 +56,18 @@ plotIpscComparison = false; %true;
 plot2CellEssential = false; %true;
 plot2CellM2h = false; %true;
 
-analyze2CellSpikes = false; %true;
+analyze2CellSpikes = true;
 plotAnalysis2Cell = false; %true;
-backupPrevious2Cell = false; %true;
-combine2CellPopulation = false; %true;
-plot2CellViolins = false; %true;
+backupPrevious2Cell = true;
+combine2CellPopulation = true;
+plot2CellViolins = true;
 
 plot200CellExamples = false; %true;
 plotHeteroExamples = false; %true;
 
 analyze200CellSpikes = false; %true;
-plotAnalysis200Cell = false;
-backupPrevious200Cell = false;
+plotAnalysis200Cell = false; %true;
+backupPrevious200Cell = false; %true;
 combine200CellPopulation = false; %true;
 plot200CellViolins = false; %true;
 
@@ -115,6 +115,8 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 % exampleIterName200Cell = '20200408_using_bestparams_20200203_manual_singleneuronfitting0-102';
 % exampleSeedDirName200Cell = 'seedNumber_21';      % Use seed number 21 (TCepas = -70)
+% popIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+% popIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 
 exampleIterName2Cell = '20200501_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
 exampleSeedDirName2Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
@@ -122,8 +124,8 @@ popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfittin
 exampleIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 exampleIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 exampleSeedDirName200Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
-popIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
-popIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
+popIterName200Cell = '20200516_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+popIterNameHetero = '20200516_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 

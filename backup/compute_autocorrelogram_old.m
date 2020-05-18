@@ -55,14 +55,9 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 %                   - 'FilterWidthMs': filter width (ms) for moving average filter
 %                   must be a positive scalar
 %                   default == 100 ms
-%                   - 'MinRelProm': minimum prominence relative to primary peak
-%                                   for all other peaks
+%                   - 'MinRelProm': minimum relative prominence
 %                   must be a positive scalar
 %                   default == 0.02
-%                   - 'MinRelSecProm': minimum prominence relative to 
-%                                   secondary peak for all other peaks
-%                   must be a positive scalar
-%                   default == 0
 %                   - 'SpikeHistParams': spike histogram parameters
 %                   must be empty or a numeric vector
 %                   default == use compute_spike_histogram(spikeTimesMs)
@@ -89,7 +84,6 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 % 2020-01-08 Changed default maxInterBurstIntervalMs from 1000 to 2000
 % 2020-05-17 Now makes sures parameters come from spike histogram
 %               if the histogram is passed in
-% 2020-05-17 Added 'MinRelSecProm' as an optional argument
 % TODO: allow input to be non-event data as well
 % 
 
@@ -109,7 +103,6 @@ minSpikeRateInBurstHzDefault = 100; % bursts must have a spike rate of
                                     %   at least 100 Hz by default
 filterWidthMsDefault = 100;
 minRelPromDefault = 0.02;
-minRelSecPromDefault = 0;
 spikeHistParamsDefault = [];        % set later
 spikeHistDataDefault = [];          % set later
 
@@ -149,8 +142,6 @@ addParameter(iP, 'FilterWidthMs', filterWidthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MinRelProm', minRelPromDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'MinRelSecProm', minRelSecPromDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'SpikeHistParams', spikeHistParamsDefault, ...
     @(x) validateattributes(x, {'numeric', 'struct'}, {'2d'}));
 addParameter(iP, 'SpikeHistData', spikeHistDataDefault, ...
@@ -166,7 +157,6 @@ maxInterBurstIntervalMs = iP.Results.MaxInterBurstIntervalMs;
 minSpikeRateInBurstHz = iP.Results.MinSpikeRateInBurstHz;
 filterWidthMs = iP.Results.FilterWidthMs;
 minRelProm = iP.Results.MinRelProm;
-minRelSecProm = iP.Results.MinRelSecProm;
 spikeHistParams = iP.Results.SpikeHistParams;
 spikeHistData = iP.Results.SpikeHistData;
 
@@ -209,7 +199,6 @@ binWidthSec = binWidthMs ./ MS_PER_S;
 autoCorrParams = spikeHistParams;
 autoCorrParams.filterWidthMs = filterWidthMs;
 autoCorrParams.minRelProm = minRelProm;
-autoCorrParams.minRelSecProm = minRelSecProm;
 
 %% Do the job
 if isempty(spikeTimesMs)
@@ -230,7 +219,6 @@ if isempty(spikeTimesMs)
     autoCorrData.indTroughs = [];
     autoCorrData.ampPeaks = [];
     autoCorrData.ampTroughs = [];
-    autoCorrData.promPeaks = [];
     autoCorrData.halfPeriodsToMultiple = [];
     return
 end
@@ -262,37 +250,16 @@ acfFilteredOfInterest = acfFiltered(1:maxBinOfInterest);
 
 % Find the index and amplitude of peaks within oscillation duration
 if numel(acfFilteredOfInterest) > 3
-    [peakAmp, peakInd, ~, peakProm] = ...
+    [peakAmp, peakInd] = ...
         findpeaks(acfFilteredOfInterest, ...
                     'MinPeakProminence', minRelProm * ampPeak1);
 
     % Record all peak indices and amplitudes
     indPeaks = [1; peakInd];
     ampPeaks = [ampPeak1; peakAmp];
-    promPeaks = [ampPeak1; peakProm];
 else
     indPeaks = 1;
     ampPeaks = ampPeak1;
-    promPeaks = ampPeak1;
-end
-
-% Filter peaks by relative prominence to secondary peak
-if minRelSecProm > 0 && numel(indPeaks) > 2
-    % Find the peak with maximum amplitude other than the primary peak
-    %   call this the "secondary peak"
-    [~, iPeakSecTemp] = max(ampPeaks(2:end));
-    iPeakSec = iPeakSecTemp + 1;
-
-    % Compute the minimum prominence
-    minProm = minRelSecProm * promPeaks(iPeakSec);
-
-    % Find peaks with prominence less than minRelSecProm of the secondary peak
-    toRemove = promPeaks < minProm;
-
-    % Remove those peaks
-    indPeaks(toRemove) = [];
-    ampPeaks(toRemove) = [];
-    promPeaks(toRemove) = [];
 end
 
 % Compute the number of peaks
@@ -317,7 +284,7 @@ if nPeaks <= 1
     maxOscPeriod2Bins = 0;
 else
     % Compute the oscillation period version 1
-    %   Note: The lag between the primary peak and the first secondary peak
+    %   Note: The lag between the primary peak and the second peak
     oscPeriod1Bins = indPeaks(2) - indPeaks(1);
 
     % Compute the oscillation period version 2
@@ -423,15 +390,14 @@ else
 
     % Find the peak with maximum amplitude other than the primary peak
     %   call this the "secondary peak"
-    [~, iPeakSecTemp] = max(ampPeaks(2:end));
-    iPeakSec = iPeakSecTemp + 1;
+    [~, iSecPeak] = max(ampPeaks(2:end));
 
     % Get the amplitude of the "secondary peak"
-    secPeakAmp = ampPeaks(iPeakSec);
+    secPeakAmp = ampPeaks(iSecPeak + 1);
 
     % Get the minimum trough amplitude between the primary peak
     %   and the secondary peak
-    troughAmp = min(ampTroughs(1:(iPeakSec-1)));
+    troughAmp = min(ampTroughs(1:iSecPeak));
 
     % The oscillatory index is the ratio between 
     %   the difference of maximum peak to trough in between
@@ -457,7 +423,6 @@ autoCorrData.indPeaks = indPeaks;
 autoCorrData.indTroughs = indTroughs;
 autoCorrData.ampPeaks = ampPeaks;
 autoCorrData.ampTroughs = ampTroughs;
-autoCorrData.promPeaks = promPeaks;
 autoCorrData.halfPeriodsToMultiple = halfPeriodsToMultiple;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

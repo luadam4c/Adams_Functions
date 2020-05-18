@@ -43,7 +43,7 @@ function [percentActivated, timeBins] = compute_activation_profile (cellIds, spi
 
 % File History:
 % 2020-04-08 Created by Adam Lu
-% 
+% 2020-05-18 Now returns all zeros if there are no spikes
 
 %% Hard-coded parameters
 binWidthMs = 500;
@@ -79,16 +79,22 @@ timeBins = iP.Results.TimeBins;
 nCells = iP.Results.NCells;
 
 %% Preparation
-% Force as column cell arrays of numeric vectors
-[cellIds, spikeTimes] = match_format_vector_sets(cellIds, spikeTimes, ...
-                                                'ForceCellOutput', true);
-
 % Construct time bins if not provided
 if isempty(timeBins)
     nBins = floor(stimEndMs/binWidthMs);
     timeBins = create_time_vectors(nBins, 'SamplingIntervalMs', binWidthMs, ...
                                     'TimeUnits', 'ms');
 end
+
+% Return all zeros if there are no spikes
+if isempty(spikeTimes)
+    percentActivated = zeros(size(timeBins));
+    return
+end
+
+% Force as column cell arrays of numeric vectors
+[cellIds, spikeTimes] = match_format_vector_sets(cellIds, spikeTimes, ...
+                                                'ForceCellOutput', true);
 
 % Decide on number of cells if not provided
 if isempty(nCells)
