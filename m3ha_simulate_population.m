@@ -95,14 +95,28 @@ combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotIndividualFlag = false; %true;
 plotEssentialFlag = false; %true;
-plotOpenProbabilityFlag = false; %true;
-plotEachCellFlag = false; %true;
+plotOpenProbabilityFlag = true;
+% ltsDefinition = 'original';
+ltsDefinition = 'maxConcavity';
+plotEachCellFlag = true;
 findSpecialCasesFlag = false; %true;
 computeCellInfoTableFlag = false; %true;
 plotCorrelationsFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
+
+
+switch ltsDefinition
+    case 'original'
+        hasLtsStr = 'hasLTS';
+        xTickLabels = {'No LTS', 'With LTS'};
+    case 'maxConcavity'
+        hasLtsStr = 'maxConcavity';
+        xTickLabels = {'Concave Down', 'Concave Up'};
+    otherwise
+        error('ltsDefinition unrecognized!');
+end
 
 % logOpdLabel = 'rms(m^2h - m_{inf}^2h_{inf})';
 % logOpdLabel = 'max(abs(m^2h - m_{inf}^2h_{inf}))';
@@ -115,9 +129,12 @@ archiveScriptsFlag = true;
 
 opdThreshold = 1e-2;
 logOpdThreshold = log10(opdThreshold);
+discrepancySlopeThreshold = 0.01;
+maxConcavityThreshold = 0.0005;
 onlyIfReached = false;
 ltsPeakTimeStr = 'ltsPeakTime';
 concavityStr = 'm2hDiffConcavityAtDecision';
+maxConcavityStr = 'm2hDiffMaxConcavity';
 averageMethod = 'arithmetic';
 logOpdMeasureStrs = {'m2hLogMaxError'; 'vSlopeAtDecision'; ...
                     'm2hDiffSlopeAtDecision'; 'm2hDiffMaxConcavity'};
@@ -128,7 +145,15 @@ logOpdLabels = {'Maximum Open Probability Discrepancy'; ...
 % logOpdLimits = {[-6, 0]; [0, 0.3]; [-0.01, 0.08]; [-0.0008, 0.0020]};
 % logOpdLimits = {[]; []; []; []};
 logOpdLimits = {[-6, 0]; [-0.006, 0.25]; [-0.005, 0.05]; [-0.001, 0.007]};
-logOpdThresholds = {logOpdThreshold; []; []; []};
+logOpdThresholds = {logOpdThreshold; []; ...
+                    discrepancySlopeThreshold; maxConcavityThreshold};
+
+if strcmp(ltsDefinition, 'maxConcavity')
+    logOpdMeasureStrs = logOpdMeasureStrs(1:3);
+    logOpdLabels = logOpdLabels(1:3);
+    logOpdLimits = logOpdLimits(1:3);
+    logOpdThresholds = logOpdThresholds(1:3);
+end
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -714,7 +739,8 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     rankStrOP = ['rank', create_label_from_sequence(rankNumsOpenProbability)];
 
     % Decide on the suffix
-    openProbSuffixes = strcat(simStr, '_', logOpdMeasureStrs, '_vs_hasLTS');
+    openProbSuffixes = strcat(simStr, '_', logOpdMeasureStrs, ...
+                                '_vs_', hasLtsStr);
 
     % Construct figure paths
     openProbPathBases = fullfile(outFolder, strcat(prefix, '_', rankStrOP, ...
@@ -742,6 +768,9 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     % Read the concavity values
     concavityValues = extract_vars(simSwpInfoOP, concavityStr);
 
+    % Read the maximal concavity values
+    maxConcavityValues = extract_vars(simSwpInfoOP, maxConcavityStr);
+
     % Read the open probability discrepancy measures
     opdMeasureValues = extract_vars(simSwpInfoOP, logOpdMeasureStrs, ...
                                     'ForceCellOutput', true);
@@ -754,9 +783,6 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
 
     % Set infinite values as NaN
     opdMeasureValues = restrict_values(opdMeasureValues, 'Inf2NaN', true);
-
-    % Determine whether each sweep has an LTS
-    noLts = isnan(ltsPeakTime);
 end
 
 %% Plot all individual plots
@@ -800,12 +826,14 @@ if plotOpenProbabilityFlag
     fprintf('Plotting open probability discrepancies ... \n');
 
     % Compute and plot all open probability discrepancy measures
-    cellfun(@(values, pathBase, threshold, limits, label) ...
-                compute_and_plot_opd(values, noLts, concavityValues, ...
+    cellfun(@(values, pathBase, logOpdThreshold, limits, label) ...
+                compute_and_plot_opd(values, ltsDefinition, ...
+                    ltsPeakTime, concavityValues, maxConcavityValues, ...
                     cellNamesEachFile, cellNamesByRank, pathBase, prefix, ...
                     openProbFigWidth, openProbFigHeight, figTypes, ...
-                    threshold, limits, label, averageMethod, ...
-                    plotEachCellFlag), ...
+                    logOpdThreshold, maxConcavityThreshold, ...
+                    limits, label, xTickLabels, ...
+                    averageMethod, plotEachCellFlag), ...
             opdMeasureValues, openProbPathBases, ...
             logOpdThresholds, logOpdLimits, logOpdLabels);
 end 
@@ -1260,11 +1288,22 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function compute_and_plot_opd (opdMeasureValues, noLts, concavityValues, ...
-                    cellNamesEachFile, cellNames, pathBase, ...
-                    prefix, figWidth, figHeight, figTypes, ...
-                    threshold, logOpdLimits, logOpdLabel, ...
-                    averageMethod, plotEachCellFlag)
+function compute_and_plot_opd (opdMeasureValues, ltsDefinition, ltsPeakTime, ...
+                concavityValues, maxConcavityValues, cellNamesEachFile, ...
+                cellNames, pathBase, prefix, figWidth, figHeight, figTypes, ...
+                logOpdThreshold, maxConcavityThreshold, logOpdLimits, ...
+                logOpdLabel, xTickLabels, averageMethod, plotEachCellFlag)
+
+switch ltsDefinition
+    case 'original'
+        % Determine whether each sweep has an LTS
+        noLts = isnan(ltsPeakTime);
+    case 'maxConcavity'
+        % Determine whether each sweep crosses the concavity threshold
+        noLts = maxConcavityValues < maxConcavityThreshold;
+    otherwise
+        error('ltsDefinition unrecognized!');
+end
 
 % Find the indices for each cell with or without LTS
 [indEachCellWithLTS, indEachCellWithNoLTS] = ...
@@ -1320,21 +1359,24 @@ pathBaseAllTraces = [pathBase, '_all_traces'];
 % Plot violin plots
 plot_open_probability_discrepancy(logOpdGroups, 'violin', ...
                 pathBase, prefix, figWidth, figHeight, figTypes, ...
-                threshold, logOpdLimits, logOpdLabel, {}, {});
+                logOpdThreshold, logOpdLimits, logOpdLabel, ...
+                xTickLabels, {}, {});
 plot_open_probability_discrepancy(logOpdGroupsAllTraces, 'violin', ...
                 pathBaseAllTraces, prefix, figWidth, figHeight, figTypes, ...
-                threshold, logOpdLimits, logOpdLabel, {}, {});
+                logOpdThreshold, logOpdLimits, logOpdLabel, ...
+                xTickLabels, {}, {});
 
 % Plot jitter plots
 plot_open_probability_discrepancy(logOpdGroupsByCell, 'byCell', ...
                 pathBaseAllTraces, prefix, figWidth, figHeight, figTypes, ...
-                threshold, logOpdLimits, logOpdLabel, cellNames, {});
+                logOpdThreshold, logOpdLimits, logOpdLabel, ...
+                xTickLabels, cellNames, {});
 
 % Plot scatter plots
 plot_open_probability_discrepancy(logOpdGroupsAllTraces, 'scatter', ...
                 pathBaseAllTraces, prefix, figWidth, figHeight, figTypes, ...
-                threshold, logOpdLimits, logOpdLabel, ...
-                {}, concavityGroupsAllTraces);
+                logOpdThreshold, logOpdLimits, logOpdLabel, ...
+                xTickLabels, {}, concavityGroupsAllTraces);
 
 %% Do this for each cell
 if plotEachCellFlag
@@ -1343,7 +1385,8 @@ if plotEachCellFlag
 
     % Reorganize cell arrays
     [logOpdGroupsEachCell, concavityGroupsEachCell] = ...
-        argfun(@regroup_cell_of_cells, logOpdGroupsByCell, concavityGroupsByCell);
+        argfun(@regroup_cell_of_cells, ...
+                logOpdGroupsByCell, concavityGroupsByCell);
 
     % Test for differences
     %{
@@ -1357,16 +1400,16 @@ if plotEachCellFlag
     cellfun(@(logOpdGroups, pathBase, figTitle) ...
                 plot_open_probability_discrepancy(logOpdGroups, 'violin', ...
                         pathBase, figTitle, figWidth, figHeight, 'png', ...
-                        threshold, logOpdLimits, logOpdLabel, ...
-                        {}, {}), ...
+                        logOpdThreshold, logOpdLimits, logOpdLabel, ...
+                        xTickLabels, {}, {}), ...
             logOpdGroupsEachCell, pathBaseEachCell, cellNames);
 
     % Plot scatter plots
     cellfun(@(logOpdGroups, pathBase, figTitle, concavityGroups) ...
                 plot_open_probability_discrepancy(logOpdGroups, 'scatter', ...
                         pathBase, figTitle, figWidth, figHeight, 'png', ...
-                        threshold, logOpdLimits, logOpdLabel, ...
-                        {}, concavityGroups), ...
+                        logOpdThreshold, logOpdLimits, logOpdLabel, ...
+                        xTickLabels, {}, concavityGroups), ...
             logOpdGroupsEachCell, pathBaseEachCell, ...
             cellNames, concavityGroupsEachCell);
 end
@@ -1378,10 +1421,9 @@ end
 function plot_open_probability_discrepancy (logOpdGroups, plotType, ...
                         pathBase, figTitle, figWidth, figHeight, figTypes, ...
                         logOpdThreshold, logOpdLimits, logOpdLabel, ...
-                        cellLabels, concavityGroups)
+                        xTickLabels, cellLabels, concavityGroups)
 
 % Hard-coded parameters
-xTickLabels = {'No LTS', 'With LTS'};
 colorMapViolin = {'Black', 'DarkGreen'};
 colorMapScatter = {'Red', 'Green'};
 concavityLabel = 'Discrepancy Concavity at Decision Point';

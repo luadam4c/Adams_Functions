@@ -56,10 +56,10 @@ plotIpscComparison = false; %true;
 plot2CellEssential = false; %true;
 plot2CellM2h = false; %true;
 
-analyze2CellSpikes = true;
+analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
-backupPrevious2Cell = true;
-combine2CellPopulation = true;
+backupPrevious2Cell = false; %true;
+combine2CellPopulation = false; %true;
 plot2CellViolins = true;
 
 plot200CellExamples = false; %true;
@@ -69,13 +69,13 @@ analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false; %true;
 backupPrevious200Cell = false; %true;
 combine200CellPopulation = false; %true;
-plot200CellViolins = false; %true;
+plot200CellViolins = true;
 
 analyzeHeteroSpikes = false; %true;
 plotAnalysisHetero = false; %true;
 backupPreviousHetero = false; %true;
 combineHeteroPopulation = false; %true;
-plotHeteroViolins = false; %true;
+plotHeteroViolins = true;
 
 plot200CellGroupByCellJitters = false; %true;
 plotHeteroGroupByCellJitters = false; %true;
@@ -1189,6 +1189,7 @@ gIncrStr = 'gIncr';
 pharmStr = 'pCond';
 epasStr = 'TCepas';
 hasOscStr = 'hasOscillation';
+measuresOnlyIfOsc = {'oscPeriod2Ms', 'oscIndex4', 'halfActiveLatencyMsTC'};
 dclamp2NetworkAmpRatio = 12;
 
 %% Do the job
@@ -1226,8 +1227,9 @@ popTableOfInterest = popDataTable(toUse, colsOfInterest);
 
 % Compute statistics for each measure of interest
 [allValues, pharmCondition, uniqueGroupValues] = ...
-    cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, seedNumStr, ...
-                                        pharmStr, groupNameStr, x, method), ...
+    cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, method, x, ...
+                                        seedNumStr, pharmStr, groupNameStr, ...
+                                        hasOscStr, measuresOnlyIfOsc), ...
                     measureStrOrig, 'UniformOutput', false);
 
 % Convert times from ms to seconds
@@ -1262,13 +1264,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [allValuesEachPharm, pharmCondition, uniqueGroupValues] = ...
-                m3ha_network_stats_helper (popDataTable, seedNumStr, ...
-                                    pharmStr, groupNameStr, measureStr, method)
+                m3ha_network_stats_helper (popDataTable, method, measureStr, ...
+                                        seedNumStr, pharmStr, groupNameStr, ...
+                                        hasOscStr, measuresOnlyIfOsc)
 %% Computes the statistics for one measure
-
-%% Hard-coded parameters
-hasOscStr = 'hasOscillation';
-measuresOnlyIfOsc = {'oscPeriod2Ms', 'oscIndex4', 'halfActiveLatencyMsTC'};
 
 %% Do the job
 % Extract from table

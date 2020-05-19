@@ -50,6 +50,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %       cd/argfun.m
 %       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
+%       cd/decide_on_colormap.m
 %       cd/extract_fields.m
 %       cd/extract_fileparts.m
 %       cd/force_matrix.m
@@ -227,6 +228,9 @@ xTickAngle = 320;
 % Construct the pharm group names
 pharmNames = extractAfter(pharmLabels, '}');
 
+% Decide on the color map
+colorMap = decide_on_colormap([], numel(pharmLabels));
+
 % Test whether groups are different
 diffStruct = test_difference(allValues, 'GroupNames', pharmNames, ...
                                 'IsPaired', true, 'DisplayAnova', false);
@@ -264,7 +268,7 @@ end
 % Plot groups as a violin plot
 violins = plot_violin(allValues, 'XTickLabels', pharmLabels, ...
                         'RelativeBandWidth', relativeBandWidth, ...
-                        'MedianColor', medianColor, ...
+                        'ColorMap', colorMap, 'MedianColor', medianColor, ...
                         'XTickAngle', xTickAngle, 'YLabel', measureTitle, ...
                         otherArguments);
 % TODO: plot_jitter.m

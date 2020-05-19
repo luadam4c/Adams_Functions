@@ -56,13 +56,16 @@ switch measureTitle
     case 'Oscillation Probability'
         yLimits = [0, 1];
     case 'Oscillation Period (sec)'
-        yLimits = [0.1, 1];
+        % yLimits = [0.1, 1];
+        yLimits = [0.3, 1.3];
     case 'Oscillatory Index'
-        yLimits = [0.1, 0.8];
+        % yLimits = [0.1, 0.8];
+        yLimits = [0.3, 1];
     case {'Active Cells (%)', 'Active TC Cells (%)'}
         yLimits = [0, 100];
     case 'Half Activation Time (sec)'
-        yLimits = [0, 10];
+        % yLimits = [0, 10];
+        yLimits = [0, 9];
     case 'Oscillation Duration (sec)'
         yLimits = [0, 30];
     otherwise
