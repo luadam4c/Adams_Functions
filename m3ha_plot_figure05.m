@@ -45,15 +45,15 @@ plotM2hFig6 = false; %true;
 
 plotVoltageVsOpdFig5 = false; %true;
 plotVoltageVsOpdTauh = false; %true;
-plotVoltageVsOpdGabab = true;
+plotVoltageVsOpdGabab = false; %true;
 
 createPlotMovieFig5 = false; %true;
 createPlotMovieTauh = false;
 createPlotMovieGabab = false; %true;
 
-createPhasePlotOnlyMovieFig5 = false; %true;
+createPhasePlotOnlyMovieFig5 = true;
 createPhasePlotOnlyMovieTauh = false;
-createPhasePlotOnlyMovieGabab = false; %true;
+createPhasePlotOnlyMovieGabab = true;
 
 simulateNoITSoma = false; %true;
 
@@ -79,13 +79,13 @@ exampleCellNames = {'D101310'};
 % exampleCellNames = {'D101310'; 'G101310'};
 
 % Must be consistent with m3ha_compute_gabab_ipsc.m
-gababIpscSheetBases = {'gababipsc_gat3_vary_amp2', ...
-                        'gababipsc_gat3_vary_amp', ...
+gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
                         'gababipsc_dual_vary_amp', ...
                         'gababipsc_gat3_vary_tau', ...
                         'gababipsc_dual_vary_tau', ...
                         'gababipsc_vary_dual_to_gat3_to_gat1', ...
-                        'gababipsc_original'};
+                        'gababipsc_original', ...
+                        'gababipsc_gat3_vary_amp2'};
 % gababIpscSheetBases = {'gababipsc_dual_vary_amp'};
 
 % Simulation settings
@@ -140,7 +140,8 @@ allComponentCurrentsYLimits = {[-15, 5], [-10, 5], [-10, 5], [-10, 5], ...
                             [-5, 15], [-5, 10], [-5, 10], [-5, 10]};
 dend2ITpropertiesYLimits = {[-10, 5], [0, 1], [0, 1], [0, 1], ...
                             [0, 1], [1e-7, 1e0], [1e-7, 1e0], ...
-                            [1e-8, 1e0], [1e-8, 1e0], [1e-1, 1e2]};
+                            [1e-8, 1e0], [1e-8, 1e0], [1e-1, 1e2], ...
+                            [0, 0.03], [-0.001, 0.001]};
 somaVoltageYLimits = {[-95, -25], [1e-8, 1e0]};
 essentialYLimits = {[-110, -40], [0, 10], [-0.5, 0.1], ...
                             [-20, 5], [1e-8, 1e0]};
@@ -153,7 +154,8 @@ allComponentCurrentsYTickLocs = {-10:5:5, -5:5:5, -5:5:5, -5:5:5, ...
                             -5:5:10, -5:5:5, -5:5:5, -5:5:5};
 dend2ITpropertiesYTickLocs = {-5:5:5, 0:0.5:1, 0:0.5:1, 0:0.5:1, ...
                             0:0.5:1, [1e-6, 1e-1], [1e-6, 1e-1], ...
-                            [1e-6, 1e-2], [1e-6, 1e-2], [1e0, 1e1]};
+                            [1e-6, 1e-2], [1e-6, 1e-2], [1e0, 1e1], ...
+                            [], []};
 somaVoltageYTickLocs = {-90:20:-50, [1e-6, 1e-2]};
 essentialYTickLocs = {-90:20:-50, 0:5:10, -0.4:0.2:0, ...
                             -15:5:0, [1e-6, 1e-2]};
@@ -734,7 +736,6 @@ case 'voltageVsOpd1'
     save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpdCompressed, ...
                         figTypes);
 case {'voltageVsOpd2', 'voltageVsOpd3'}
-%{
     % Create the figure
     figMovie1 = set_figure_properties('AlwaysNew', true);
 
@@ -757,7 +758,6 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
 
     % Create movie
     create_plot_movie(figMovie1, fiSeconds, 'FileBase', fileBase);
-%}
 
     % Create the figure
     figMovie2 = set_figure_properties('AlwaysNew', true);

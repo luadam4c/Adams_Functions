@@ -34,13 +34,15 @@ function values = restrict_values (values, varargin)
 %
 % Used by:
 %       cd/m3ha_find_decision_point.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_simulate_population.m
 
 % File History:
 % 2020-05-13 Created by Adam Lu
 % 2020-05-14 Added 'Inf2NaN' as an optional argument
 % 2020-05-15 Added 'ReplaceWithNaN' as an optional argument
-% 
+% TODO: Create replace_values.m
+% TODO: Add indices as an optional argument
 
 %% Hard-coded parameters
 

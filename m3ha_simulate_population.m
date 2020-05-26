@@ -85,6 +85,8 @@
 % 2020-04-13 Fixed bugs in plotEssential and findSpecialCases
 % 2020-04-27 Added plotIndividualFlag
 % 2019-04-28 Changed timeToStabilize from 2000 to 3000
+% 2020-05-18 Added ltsDefinition
+% 2020-05-19 Changed implementation of onlyIfReached
 
 %% Hard-coded parameters
 % Flags
@@ -96,9 +98,10 @@ computeOpenProbabilityFlag = false; %true;
 plotIndividualFlag = false; %true;
 plotEssentialFlag = false; %true;
 plotOpenProbabilityFlag = true;
-% ltsDefinition = 'original';
-ltsDefinition = 'maxConcavity';
-plotEachCellFlag = true;
+ltsDefinition = 'original';
+% ltsDefinition = 'maxConcavity';
+onlyIfReached = false; %true;
+plotEachCellFlag = false; %true;
 findSpecialCasesFlag = false; %true;
 computeCellInfoTableFlag = false; %true;
 plotCorrelationsFlag = false; %true;
@@ -125,13 +128,11 @@ end
 % logOpdStr = 'openProbabilityDiscrepancy';
 % averageMethod = 'geometric';
 % logOpdStr = 'm2hMaxLogRatio';
-% onlyIfReached = true;
 
 opdThreshold = 1e-2;
 logOpdThreshold = log10(opdThreshold);
 discrepancySlopeThreshold = 0.01;
 maxConcavityThreshold = 0.0005;
-onlyIfReached = false;
 ltsPeakTimeStr = 'ltsPeakTime';
 concavityStr = 'm2hDiffConcavityAtDecision';
 maxConcavityStr = 'm2hDiffMaxConcavity';
@@ -141,10 +142,15 @@ logOpdMeasureStrs = {'m2hLogMaxError'; 'vSlopeAtDecision'; ...
 logOpdLabels = {'Maximum Open Probability Discrepancy'; ...
                 'Voltage Slope at Decision Point'; ...
                 'Discrepancy Slope at Decision Point'; ...
-                'Maximum Open Probability Concavity'};
-% logOpdLimits = {[-6, 0]; [0, 0.3]; [-0.01, 0.08]; [-0.0008, 0.0020]};
+                'Maximum Discrepancy Concavity'};
 % logOpdLimits = {[]; []; []; []};
-logOpdLimits = {[-6, 0]; [-0.006, 0.25]; [-0.005, 0.05]; [-0.001, 0.007]};
+
+% Limits best for phase plots
+% logOpdLimits = {[-6, 0]; [-0.006, 0.25]; [-0.005, 0.05]; [-0.001, 0.007]};
+
+% Limits best for violin plots
+logOpdLimits = {[-5, 0]; [0, 0.15]; [-0.005, 0.04]; [-0.002, 0.007]};
+
 logOpdThresholds = {logOpdThreshold; []; ...
                     discrepancySlopeThreshold; maxConcavityThreshold};
 
@@ -700,8 +706,7 @@ if computeOpenProbabilityFlag
         m3ha_find_decision_point(m2hDiff, 'tVecs', tVecs, ...
                                 'FiltWidthMs', filtWidthMs, ...
                                 'Itm2hDiffLowerLimit', itm2hDiffLowerLimit, ...
-                                'Itm2hDiffLeftBound', itm2hDiffLeftBound, ...
-                                'OnlyIfReached', onlyIfReached);
+                                'Itm2hDiffLeftBound', itm2hDiffLeftBound);
 
     % Extract the slope value at the decision point
     vSlopeAtDecision = extract_elements(dvdtSmoothed, 'specific', ...
@@ -774,6 +779,18 @@ if plotOpenProbabilityFlag || findSpecialCasesFlag
     % Read the open probability discrepancy measures
     opdMeasureValues = extract_vars(simSwpInfoOP, logOpdMeasureStrs, ...
                                     'ForceCellOutput', true);
+
+    % Make values for those traces that haven't reached 
+    %   the decision point NaN
+    if onlyIfReached
+        % Whether decision is reached for each trace
+        hasReachedDecision = concavityValues >= 0;
+
+        % Replace values with NaN
+        opdMeasureValues = ...
+            cellfun(@(x) make_nan(x, ~hasReachedDecision), ...
+                    opdMeasureValues, 'UniformOutput', false);
+    end
 
     % Set negative slope values as NaN
     % noNegative = contains(logOpdMeasureStrs, 'Slope');
@@ -1501,6 +1518,15 @@ update_figure_for_corel(fig, 'Units', 'centimeters', ...
 
 % Save figure
 save_all_figtypes(fig, pathBase, figTypes);
+
+end 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vec = make_nan(vec, ind)
+% TODO: Merge with replace_values.m
+
+vec(ind) = NaN;
 
 end 
 

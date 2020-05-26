@@ -133,6 +133,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/plot_traces.m
 %       cd/plot_window_boundaries.m
 %       cd/read_lines_from_file.m
+%       cd/restrict_values.m
 %       cd/set_default_flag.m
 %       cd/sscanf_full.m
 %       cd/unique_custom.m
@@ -339,7 +340,7 @@ switch plotType
         toImportRecorded = set_default_flag([], compareWithRecorded);
     case {'essential', 'somaVoltage',...
             'allTotalCurrents', 'allComponentCurrents', ...
-            'allITproperties', 'dend2ITproperties', 'm2h'}
+            'allITproperties', 'm2h', 'dend2ITproperties'}
         toImportRecorded = false;
     case {'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
         toImportRecorded = set_default_flag([], isempty(tVecs));
@@ -810,6 +811,7 @@ INAP_M_DEND2 = 61;
 INAP_H_DEND2 = 62;
 
 itm2hDiffLowerLimit = 1e-9;
+filtWidthMs = 15;               % in ms
 
 %% Preparation
 % Initialize handles
@@ -958,9 +960,30 @@ gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
 itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
 itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
 itm2hDiffDend2 = itm2hDend2 - itminf2hinfDend2;
-itm2hDiffDend2(itm2hDiffDend2 < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
+itm2hDiffDend2 = restrict_values(itm2hDiffDend2, ...
+                                'LowerBound', itm2hDiffLowerLimit);
 itm2hAbsDiffDend2 = abs(itm2hDend2 - itminf2hinfDend2);
 itm2hRatioDend2 = itm2hDend2 ./ itminf2hinfDend2;
+
+% Compute x = the logarithm of m2hDiff
+logItm2hDiff = log10(itm2hDiffDend2);
+
+% Compute sampling interval
+siMs = compute_sampling_interval(tVecs);
+
+% Compute filter width in samples
+filtWidthSamples = filtWidthMs ./ siMs;
+
+% Smooth x over filtWidthMs
+logItm2hDiffSmoothed = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
+
+% Compute dx/dt smoothed over filtWidthMs
+[dxdtVecs, t1Vecs] = compute_derivative_trace(logItm2hDiffSmoothed, tVecs, ...
+                                    'FiltWidthSamples', filtWidthSamples);
+
+% Compute d2x/dt2 smoothed over filtWidthMs
+[d2xdt2Vecs, t2Vecs] = compute_derivative_trace(dxdtVecs, t1Vecs, ...
+                                    'FiltWidthSamples', filtWidthSamples);
 
 % List all possible items to plot
 if strcmpi(buildMode, 'passive')
@@ -978,7 +1001,8 @@ else
                 itmDend1; itminfDend1; ithDend1; ithinfDend1; ...
                 itmDend2; itminfDend2; ithDend2; ithinfDend2; ...
                 itm2hDend2; itminf2hinfDend2; itm2hAbsDiffDend2; ...
-                itm2hDiffDend2; itm2hRatioDend2};
+                itm2hDiffDend2; itm2hRatioDend2; ...
+                dxdtVecs; d2xdt2Vecs};
 end
 
 % List corresponding labels
@@ -1004,14 +1028,15 @@ else
                 'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'; ...
                 '|m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}|'; ...
                 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}'; ...
-                'm_{T}^2h_{T} / m_{\infty,T}^2h_{\infty,T}'};
+                'm_{T}^2h_{T} / m_{\infty,T}^2h_{\infty,T}'; ...
+                'Slope of Discrepancy'; 'Concavity of Discrepancy'};
 end
 
 % List whether y axis should be log scaled
 if strcmpi(buildMode, 'passive')
     yIsLogAll = zeros(9, 1);
 else
-    yIsLogAll = [zeros(33, 1); ones(5, 1)];
+    yIsLogAll = [zeros(33, 1); ones(5, 1); zeros(2, 1)];
 end
 
 % List indices
@@ -1053,9 +1078,11 @@ IDX_MINF2HINF_DEND2 = 35;
 IDX_M2HABSDIFF_DEND2 = 36;
 IDX_M2HDIFF_DEND2 = 37;
 IDX_M2HRATIO_DEND2 = 38;
+IDX_M2HDIFFSLOPE_DEND2 = 39;
+IDX_M2HDIFFCONCAVITY_DEND2 = 40;
 
 % Error check
-if numel(labelsAll) ~= IDX_M2HRATIO_DEND2
+if numel(labelsAll) ~= IDX_M2HDIFFCONCAVITY_DEND2
     error('Index numbers needs to be updated!');
 end
 
@@ -1118,9 +1145,9 @@ else
             indToPlot = [IDX_IT, IDX_IT_SOMA:IDX_IT_DEND2, ...
                             IDX_IA, IDX_IA_SOMA:IDX_IA_DEND2];
         case 'allITproperties'
-            indToPlot = IDX_MT_SOMA:IDX_M2HRATIO_DEND2;
+            indToPlot = IDX_MT_SOMA:IDX_M2HDIFFCONCAVITY_DEND2;
         case 'dend2ITproperties'
-            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_M2HRATIO_DEND2];
+            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_M2HDIFFCONCAVITY_DEND2];
         otherwise
             error('plotType unrecognized!');
     end
@@ -1132,6 +1159,10 @@ end
 
 % Construct matching time vectors
 tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
+if strcmp(plotType, 'dend2ITproperties')
+    tVecsForOverlapped{end-1} = t1Vecs;
+    tVecsForOverlapped{end} = t2Vecs;    
+end
 
 % Decide on figure title and file name
 figTitle = sprintf('Simulated traces for Experiment %s', expStrForTitle);
@@ -1368,7 +1399,7 @@ endPointsForPlots = find_window_endpoints(timeLimits, tVecs);
 itm2h = (itmVecsSim .^ 2) .* ithVecsSim;
 itminf2hinf = (itminfVecsSim .^ 2) .* ithinfVecsSim;
 itm2hDiff = itm2h - itminf2hinf;
-itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
+itm2hDiff = restrict_values(itm2hDiff, 'LowerBound', itm2hDiffLowerLimit);
 
 % Compute x = the logarithm of m2hDiff
 logItm2hDiff = log10(itm2hDiff);
@@ -1376,26 +1407,23 @@ logItm2hDiff = log10(itm2hDiff);
 % Compute sampling interval
 siMs = compute_sampling_interval(tVecs);
 
+% Compute filter width in samples
+filtWidthSamples = filtWidthMs ./ siMs;
+
 % Smooth x over filtWidthMs
 logItm2hDiffSmoothed = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
 
-% Compute dx/dt
-[dxdtVecs, t1Vecs] = compute_derivative_trace(logItm2hDiffSmoothed, tVecs);
+% Compute dx/dt smoothed over filtWidthMs
+[dxdtVecs, t1Vecs] = compute_derivative_trace(logItm2hDiffSmoothed, tVecs, ...
+                                    'FiltWidthSamples', filtWidthSamples);
 
-% Smooth dx/dt over filtWidthMs
-dxdtVecsSmoothed = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
+% Compute d2x/dt2 smoothed over filtWidthMs
+[d2xdt2Vecs, t2Vecs] = compute_derivative_trace(dxdtVecs, t1Vecs, ...
+                                    'FiltWidthSamples', filtWidthSamples);
 
-% Compute d2x/dt2
-[d2xdt2Vecs, t2Vecs] = compute_derivative_trace(dxdtVecsSmoothed, t1Vecs);
-
-% Smooth d2x/dt2 over filtWidthMs
-d2xdt2VecsSmoothed = movingaveragefilter(d2xdt2Vecs, filtWidthMs, siMs);
-
-% Compute dv/dt
-[dvdtVecs, t1Vecs] = compute_derivative_trace(vVecsSim, tVecs);
-
-% Smooth dx/dt over filtWidthMs
-dvdtVecsSmoothed = movingaveragefilter(dvdtVecs, filtWidthMs, siMs);
+% Compute dv/dt smoothed over filtWidthMs
+[dvdtVecs, t1Vecs] = compute_derivative_trace(vVecsSim, tVecs, ...
+                                    'FiltWidthSamples', filtWidthSamples);
 
 %% Determine whether each vector crosses threshold
 aboveThreshold = transpose(max(itm2hDiff, [], 1) >= itm2hDiffThreshold);
@@ -1426,7 +1454,7 @@ colorMapPrePost2 = colorMapFaded2;
 % otherXVecs = tVecs;
 % otherXLimits = timeLimits;
 % otherYVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
-% otherYVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
+% otherYVecs = [nan(1, size(dxdtVecs, 2)); dxdtVecs];
 % otherYLimits = [-0.1, 0.1];
 % otherYLimits = [-0.05, 0.05];
 
@@ -1436,23 +1464,23 @@ colorMapPrePost2 = colorMapFaded2;
 % otherXVecs = tVecs;
 % otherXLimits = timeLimits;
 % otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
-% otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
-%                 nan(1, size(d2xdt2VecsSmoothed, 2))];
+% otherYVecs = [nan(1, size(d2xdt2Vecs, 2)); d2xdt2Vecs; ...
+%                 nan(1, size(d2xdt2Vecs, 2))];
 % otherYLimits = [-0.001, 0.001];
 
 % figTitle6 = sprintf('d2(log(m2hdiff))/dt2 vs d(log(m2hdiff))/dt');
 figTitle6 = sprintf('Discrepancy Concavity vs. Discrepancy Slope');
 % otherXVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
 otherXVecsLabel = 'Slope of Open Probability Discrepancy';
-otherXVecs = [nan(1, size(dxdtVecsSmoothed, 2)); dxdtVecsSmoothed];
+otherXVecs = [nan(1, size(dxdtVecs, 2)); dxdtVecs];
 % otherXLimits = [-0.05, 0.05];
 % otherXLimits = [-0.01, 0.05];
 % otherXLimits = [];
 otherXLimits = [0, 0.03];
 % otherYVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
 otherYVecsLabel = 'Concavity of Open Probability Discrepancy';
-otherYVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
-                nan(1, size(d2xdt2VecsSmoothed, 2))];
+otherYVecs = [nan(1, size(d2xdt2Vecs, 2)); d2xdt2Vecs; ...
+                nan(1, size(d2xdt2Vecs, 2))];
 % otherYLimits = [-0.001, 0.001];
 % otherYLimits = [-0.5, 0.5];
 % otherYLimits = [];
@@ -1462,13 +1490,13 @@ otherYLimits = [-0.001, 0.001];
 figTitle7 = sprintf('Discrepancy Concavity vs. Voltage Slope');
 % other2XVecsLabel = 'dV/dt';
 other2XVecsLabel = 'Slope of Voltage';
-other2XVecs = [nan(1, size(dvdtVecsSmoothed, 2)); dvdtVecsSmoothed];
+other2XVecs = [nan(1, size(dvdtVecs, 2)); dvdtVecs];
 other2XLimits = [];
 % other2XLimits = [0, 0.2];
 % other2YVecsLabel = 'd^2(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt^2';
 other2YVecsLabel = 'Concavity of Open Probability Discrepancy';
-other2YVecs = [nan(1, size(d2xdt2VecsSmoothed, 2)); d2xdt2VecsSmoothed; ...
-                nan(1, size(d2xdt2VecsSmoothed, 2))];
+other2YVecs = [nan(1, size(d2xdt2Vecs, 2)); d2xdt2Vecs; ...
+                nan(1, size(d2xdt2Vecs, 2))];
 other2YLimits = [];
 % other2YLimits = [-0.001, 0.001];
 

@@ -21,15 +21,16 @@ function [dydxVec, xVecNew] = compute_derivative_trace (yVec, xVec, varargin)
 %                   must be a TODO
 %       xVec        - x vector(s)
 %                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'FiltWidthSamples': moving average filter width in sample
+%                   must be a numeric vector
+%                   default == no filter
 %
 % Requires:
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
+%       cd/movingaveragefilter.m
 %
 % Used by:
 %       cd/m3ha_find_decision_point.m
@@ -37,12 +38,12 @@ function [dydxVec, xVecNew] = compute_derivative_trace (yVec, xVec, varargin)
 
 % File History:
 % 2020-04-15 Created by Adam Lu
-% 
+% 2020-05-19 Added 'FiltWidthSamples' as an optional argument
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+filtWidthSamplesDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,11 +62,12 @@ addRequired(iP, 'yVec');
 addRequired(iP, 'xVec');
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'FiltWidthSamples', filtWidthSamplesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Read from the Input Parser
 parse(iP, yVec, xVec, varargin{:});
-% param1 = iP.Results.param1;
+filtWidthSamples = iP.Results.FiltWidthSamples;
 
 %% Preparation
 % Force as matrix
@@ -81,6 +83,11 @@ xVecNew = (xVec(1:end-1, :) + xVec(2:end, :)) / 2;
 
 % Compute the instantaneous derivative
 dydxVec = diff(yVec) ./ diff(xVec);
+
+%% Filter if requested
+if ~isempty(filtWidthSamples)
+    dydxVec = movingaveragefilter(dydxVec, filtWidthSamples);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
