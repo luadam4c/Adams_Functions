@@ -1313,15 +1313,15 @@ itmLabel = 'Activation Gate';
 ithLabel = 'Inactivation Gate';
 % itm2hDiffLabel = 'm_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}';
 itm2hDiffLabel = 'Open Probability Discrepancy';
-figTitleVVsT = sprintf('Somatic Voltage');
+figTitleVVsT = sprintf('A. Somatic Voltage');
 % figTitleMVsT = sprintf('m and minf vs. time');
-figTitleMVsT = sprintf('Activation Gate (Instantaneous vs Steady State)');
+figTitleMVsT = sprintf('B. Activation Gate (Instantaneous vs Steady State)');
 % figTitleHVsT = sprintf('h and hinf vs. time');
-figTitleHVsT = sprintf('Inactivation Gate (Instantaneous vs Steady State)');
+figTitleHVsT = sprintf('C. Inactivation Gate (Instantaneous vs Steady State)');
 % figTitleXVsT = sprintf('m2hdiff vs. time');
-figTitleXVsT = sprintf('Open Probability Discrepancy');
+figTitleXVsT = sprintf('D. Open Probability Discrepancy');
 % figTitleVVsX = sprintf('Voltage vs. m2hdiff');
-figTitleVVsX = sprintf('Voltage vs. Open Probability Discrepancy');
+figTitleVVsX = sprintf('E. Voltage vs. Open Probability Discrepancy');
 
 % Only do this for active mode
 if strcmpi(buildMode, 'passive')
@@ -1362,9 +1362,11 @@ flankColorMap = decide_on_colormap(barColorMap, 'OriginalNColors', true, ...
 % Decide on the color map and marker sizes for hinf and minf
 if strcmpi(plotType, 'voltageVsOpd1')
     colorMapToCompare = colorMap;
+    colorMapPrePostToCompare = colorMapFaded;
     markerSizeToCompare = 3;
 else
     colorMapToCompare = colorMapFaded;
+    colorMapPrePostToCompare = colorMapFaded;
     markerSizeToCompare = 6;
 end
 
@@ -1469,7 +1471,7 @@ colorMapPrePost2 = colorMapFaded2;
 % otherYLimits = [-0.001, 0.001];
 
 % figTitle6 = sprintf('d2(log(m2hdiff))/dt2 vs d(log(m2hdiff))/dt');
-figTitle6 = sprintf('Discrepancy Concavity vs. Discrepancy Slope');
+figTitle6 = sprintf('F. Discrepancy Concavity vs. Slope');
 % otherXVecsLabel = 'd(log(m_{T}^2h_{T} - m_{\infty,T}^2h_{\infty,T}))/dt';
 otherXVecsLabel = 'Slope of Open Probability Discrepancy';
 otherXVecs = [nan(1, size(dxdtVecs, 2)); dxdtVecs];
@@ -1487,7 +1489,7 @@ otherYVecs = [nan(1, size(d2xdt2Vecs, 2)); d2xdt2Vecs; ...
 otherYLimits = [-0.001, 0.001];
 
 % figTitle7 = sprintf('d2(log(m2hdiff))/dt2 vs dV/dt');
-figTitle7 = sprintf('Discrepancy Concavity vs. Voltage Slope');
+figTitle7 = sprintf('G. Discrepancy Concavity vs. Voltage Slope');
 % other2XVecsLabel = 'dV/dt';
 other2XVecsLabel = 'Slope of Voltage';
 other2XVecs = [nan(1, size(dvdtVecs, 2)); dvdtVecs];
@@ -1749,7 +1751,7 @@ if ~plotPhasePlotsOnly
             plot_traces(tVecsPre, itminfPre, ...
                 'Marker', '.', 'LineStyle', 'none', 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
-                'PlotOnly', true, 'ColorMap', colorMapPrePost, ...
+                'PlotOnly', true, 'ColorMap', colorMapPrePostToCompare, ...
                 'MarkerSize', markerSizePrePost);
         handles.ax2Stuff.tracesPost = ...
             plot_traces(tVecsPost, itmPost, ...
@@ -1761,7 +1763,7 @@ if ~plotPhasePlotsOnly
             plot_traces(tVecsPost, itminfPost, ...
                 'Marker', '.', 'LineStyle', 'none', 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
-                'PlotOnly', true, 'ColorMap', colorMapPrePost, ...
+                'PlotOnly', true, 'ColorMap', colorMapPrePostToCompare, ...
                 'MarkerSize', markerSizePrePost);
     end
     handles.ax2Stuff.traces = ...
@@ -1795,7 +1797,8 @@ if ~plotPhasePlotsOnly
     % Create a legend
     firstTwoLines = [handles.ax2Stuff.traces.plotsData(1), ...
                     handles.ax2Stuff.tracesToCompare.plotsData(1)];
-    legend(firstTwoLines, itmLegendLabels, 'Location', itmLegendLocation);
+    legend(firstTwoLines, itmLegendLabels, 'Location', itmLegendLocation, ...
+            'AutoUpdate', 'off');
 
     % Set y axis limits
     ylim(itmYLimits);
@@ -1815,7 +1818,7 @@ if ~plotPhasePlotsOnly
             plot_traces(tVecsPre, ithinfPre, ...
                 'Marker', '.', 'LineStyle', 'none', 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
-                'PlotOnly', true, 'ColorMap', colorMapPrePost, ...
+                'PlotOnly', true, 'ColorMap', colorMapPrePostToCompare, ...
                 'MarkerSize', markerSizePrePost);
         handles.ax3Stuff.tracesPost = ...
             plot_traces(tVecsPost, ithPost, ...
@@ -1827,7 +1830,7 @@ if ~plotPhasePlotsOnly
             plot_traces(tVecsPost, ithinfPost, ...
                 'Marker', '.', 'LineStyle', 'none', 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
-                'PlotOnly', true, 'ColorMap', colorMapPrePost, ...
+                'PlotOnly', true, 'ColorMap', colorMapPrePostToCompare, ...
                 'MarkerSize', markerSizePrePost);
     end
     handles.ax3Stuff.traces = ...
@@ -1861,7 +1864,8 @@ if ~plotPhasePlotsOnly
     % Create a legend
     firstTwoLines = [handles.ax3Stuff.traces.plotsData(1), ...
                     handles.ax3Stuff.tracesToCompare.plotsData(1)];
-    legend(firstTwoLines, ithLegendLabels, 'Location', ithLegendLocation);
+    legend(firstTwoLines, ithLegendLabels, 'Location', ithLegendLocation, ...
+            'AutoUpdate', 'off');
 
     % Set y axis limits
     ylim(ithYLimits);
@@ -2007,9 +2011,64 @@ if plotSupTitle
     suptitle(expStrForTitle);
 end
 
+%% Special cases
+% For D101310_aft_ipscr movies only
+if contains(expStr, 'D101310_aft_ipscr')
+    % Annotate 'LTS'
+    a(1) = annotation('textarrow', [0.4, 0.37], [0.95, 0.95], ...
+                        'String', 'LTS');
+
+    % Annotate 'No LTS'
+    a(2) = annotation('textarrow', [0.42, 0.37], [0.92, 0.885], ...
+                        'String', 'No LTS');
+
+    % Annotate 'Positive Concavity'
+    a(3) = annotation('textarrow', [0.33, 0.34], [0.205, 0.17], ...
+                        'String', 'Positive Concavity');
+
+    % Annotate 'Negative Concavity'
+    a(4) = annotation('textarrow', [0.35, 0.36], [0.08, 0.14], ...
+                        'String', 'Negative Concavity');
+
+    % Move legend location
+    lgds = findobj(gcf, 'Type', 'Legend');
+    set(lgds(3), 'Location', 'northwest');
+end
+
+% For dual_vary_tau movies only
+if contains(expStr, 'dual_vary_tau')
+    % Annotate 'LTS'
+    a(1) = annotation('textarrow', [0.35, 0.33], [0.94, 0.94], ...
+                        'String', 'LTS');
+
+    % Annotate 'No LTS'
+    a(2) = annotation('textarrow', [0.37, 0.34], [0.91, 0.9], ...
+                        'String', 'No LTS');
+
+    % Annotate 'Positive Concavity'
+    a(3) = annotation('textarrow', [0.315, 0.315], [0.2, 0.18], ...
+                        'String', 'Positive Concavity');
+
+    % Annotate 'Negative Concavity'
+    a(4) = annotation('textarrow', [0.36, 0.34], [0.17, 0.16], ...
+                        'String', 'Negative Concavity');
+
+    % Plot color bar
+    subplot(ax(5)); hold on;
+    colormap(decide_on_colormap(colorMap));
+    colorTickLocs = [0, 0.25, 0.5, 0.75, 1];
+    colorTickLabels = convert_to_char([0.1, 0.2, 0.5, 1.5, 2.5]);
+    colorBar = colorbar('south', 'Ticks', colorTickLocs, ...
+                        'TickLabels', colorTickLabels);
+    colorBar.Label.String = 'GABA_B IPSC Time Constant (seconds)';
+end
+
 %% Return handles
 handles.ax = ax;
 handles.fig = fig;
+
+%% Draw now
+drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

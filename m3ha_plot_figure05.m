@@ -6,8 +6,11 @@
 %       cd/check_dir.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_time_vectors.m
+%       cd/decide_on_colormap.m
+%       cd/convert_to_char.m
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
+%       cd/ismember_custom.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_plot_simulated_traces.m
@@ -47,13 +50,13 @@ plotVoltageVsOpdFig5 = false; %true;
 plotVoltageVsOpdTauh = false; %true;
 plotVoltageVsOpdGabab = false; %true;
 
-createPlotMovieFig5 = false; %true;
+createPlotMovieFig5 = true;
 createPlotMovieTauh = false;
-createPlotMovieGabab = false; %true;
+createPlotMovieGabab = true;
 
-createPhasePlotOnlyMovieFig5 = true;
+createPhasePlotOnlyMovieFig5 = false; %true;
 createPhasePlotOnlyMovieTauh = false;
-createPhasePlotOnlyMovieGabab = true;
+createPhasePlotOnlyMovieGabab = false; %true;
 
 simulateNoITSoma = false; %true;
 
@@ -79,14 +82,14 @@ exampleCellNames = {'D101310'};
 % exampleCellNames = {'D101310'; 'G101310'};
 
 % Must be consistent with m3ha_compute_gabab_ipsc.m
-gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
-                        'gababipsc_dual_vary_amp', ...
-                        'gababipsc_gat3_vary_tau', ...
-                        'gababipsc_dual_vary_tau', ...
-                        'gababipsc_vary_dual_to_gat3_to_gat1', ...
-                        'gababipsc_original', ...
-                        'gababipsc_gat3_vary_amp2'};
-% gababIpscSheetBases = {'gababipsc_dual_vary_amp'};
+% gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
+%                         'gababipsc_dual_vary_amp', ...
+%                         'gababipsc_gat3_vary_tau', ...
+%                         'gababipsc_dual_vary_tau', ...
+%                         'gababipsc_vary_dual_to_gat3_to_gat1', ...
+%                         'gababipsc_original', ...
+%                         'gababipsc_gat3_vary_amp2'};
+gababIpscSheetBases = {'gababipsc_dual_vary_tau'};
 
 % Simulation settings
 dataModeIpscr = 2;                  % data mode for IPSC response
@@ -181,6 +184,15 @@ voltageVsOpdFig6XLimits = [1e-7, 1e0];
 voltageVsOpdFig6YLimits = [-95, -45];
 voltageVsOpdFig6YTickLocs = [];
 voltageVsOpdFig6ToAnnotate = false;
+
+pharmLabelsLong = {'{\it s}Control'; '{\it s}GAT1-Block'; ...
+                    '{\it s}GAT3-Block'; '{\it s}Dual-Block'};
+traceLabelsFig5 = pharmLabelsLong;
+traceLabelsTauh = pharmLabelsLong;
+traceLabelsGabab = {};
+legendLocationFig5 = 'southeast';
+legendLocationTauh = 'southeast';
+legendLocationGabab = 'suppress';
 
 figTypes = {'png', 'epsc'};
 
@@ -433,7 +445,8 @@ if createPlotMovieFig5
                     voltageVsOpdTimeLimits2, voltageVsOpdSiMs, ...
                     voltageVsOpdFig5XLimits, voltageVsOpdFig5YLimits, ...
                     voltageVsOpdFig5YTickLocs, voltageVsOpdFig5ToAnnotate, ...
-                    colorMapPharm, 'voltageVsOpd2'), ...
+                    colorMapPharm, 'voltageVsOpd2', ...
+                    traceLabelsFig5, legendLocationFig5), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 if createPlotMovieTauh
@@ -443,7 +456,8 @@ if createPlotMovieTauh
                     voltageVsOpdTimeLimits2, voltageVsOpdSiMs, ...
                     voltageVsOpdFig6XLimits, voltageVsOpdFig6YLimits, ...
                     voltageVsOpdFig6YTickLocs, voltageVsOpdFig6ToAnnotate, ...
-                    colorMapPharm, 'voltageVsOpd2'), ...
+                    colorMapPharm, 'voltageVsOpd2', ...
+                    traceLabelsTauh, legendLocationTauh), ...
                 exampleLabelsModeAll{iMode}, outFoldersModeAll{iMode});
     end
 end
@@ -454,7 +468,8 @@ if createPlotMovieGabab
                     voltageVsOpdTimeLimits2, voltageVsOpdSiMs, ...
                     voltageVsOpdFig6XLimits, voltageVsOpdFig6YLimits, ...
                     voltageVsOpdFig6YTickLocs, voltageVsOpdFig6ToAnnotate, ...
-                    colorMapVary, 'voltageVsOpd2'), ...
+                    colorMapVary, 'voltageVsOpd2', ...
+                    traceLabelsGabab, legendLocationGabab), ...
                 exampleLabelsVaryAll{iSheet}, outFoldersVaryAll{iSheet});
     end
 end
@@ -466,7 +481,8 @@ if createPhasePlotOnlyMovieFig5
                     voltageVsOpdTimeLimits2, voltageVsOpdSiMs, ...
                     voltageVsOpdFig5XLimits, voltageVsOpdFig5YLimits, ...
                     voltageVsOpdFig5YTickLocs, voltageVsOpdFig5ToAnnotate, ...
-                    colorMapPharm, 'voltageVsOpd3'), ...
+                    colorMapPharm, 'voltageVsOpd3', ...
+                    traceLabelsFig5, legendLocationFig5), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 if createPhasePlotOnlyMovieTauh
@@ -476,7 +492,8 @@ if createPhasePlotOnlyMovieTauh
                     voltageVsOpdTimeLimits2, voltageVsOpdSiMs, ...
                     voltageVsOpdFig6XLimits, voltageVsOpdFig6YLimits, ...
                     voltageVsOpdFig6YTickLocs, voltageVsOpdFig6ToAnnotate, ...
-                    colorMapPharm, 'voltageVsOpd3'), ...
+                    colorMapPharm, 'voltageVsOpd3', ...
+                    traceLabelsTauh, legendLocationTauh), ...
                 exampleLabelsModeAll{iMode}, outFoldersModeAll{iMode});
     end
 end
@@ -487,7 +504,8 @@ if createPhasePlotOnlyMovieGabab
                     voltageVsOpdTimeLimits2, voltageVsOpdSiMs, ...
                     voltageVsOpdFig6XLimits, voltageVsOpdFig6YLimits, ...
                     voltageVsOpdFig6YTickLocs, voltageVsOpdFig6ToAnnotate, ...
-                    colorMapVary, 'voltageVsOpd3'), ...
+                    colorMapVary, 'voltageVsOpd3', ...
+                    traceLabelsGabab, legendLocationGabab), ...
                 exampleLabelsVaryAll{iSheet}, outFoldersVaryAll{iSheet});
     end
 end
@@ -665,7 +683,8 @@ end
 function plot_voltage_vs_opd (expStr, directory, outFolder, figTypes, ...
                                 figWidth, figHeight, timeLimits, siMs, ...
                                 xLimits, yLimits, yTickLocs, ...
-                                toAnnotate, colorMap, plotType)
+                                toAnnotate, colorMap, plotType, ...
+                                traceLabels, legendLocation)
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -683,12 +702,15 @@ figPathBaseVoltVsOpdOrig = [figPathBaseVoltVsOpd, '_orig'];
 figPathBaseVoltVsOpdCompressed = [figPathBaseVoltVsOpd, '_compressed'];
 figPathBaseVoltVsOpdMovie = [figPathBaseVoltVsOpd, '_movie'];
 figPathBaseVoltVsOpdAligned = [figPathBaseVoltVsOpd, '_movie_aligned'];
+figPathBaseVoltVsOpdSimple = [figPathBaseVoltVsOpd, '_movie_simple'];
 figPathBaseConcavityVsSlope = ...
     fullfile(outFolder, [expStr, '_concavityVsSlope']);
 figPathBaseConcavityVsSlopeMovie = ...
     [figPathBaseConcavityVsSlope, '_movie'];
 figPathBaseConcavityVsSlopeAligned = ...
     [figPathBaseConcavityVsSlope, '_movie_aligned'];
+figPathBaseConcavityVsSlopeSimple = ...
+    [figPathBaseConcavityVsSlope, '_movie_simple'];
 
 % Create and save plot
 switch plotType
@@ -736,6 +758,7 @@ case 'voltageVsOpd1'
     save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpdCompressed, ...
                         figTypes);
 case {'voltageVsOpd2', 'voltageVsOpd3'}
+%{
     % Create the figure
     figMovie1 = set_figure_properties('AlwaysNew', true);
 
@@ -746,7 +769,8 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
                     'XLimits', xLimits, 'YLimits', yLimits, ...
                     'ColorMap', colorMap, 'LineStyle', 'none', ...
                     'tVecs', tVecToMatch, 'Marker', '.', ...
-                    'PlotSelected', true);
+                    'PlotSelected', true, 'LegendLocation', legendLocation, ...
+                    'TraceLabels', traceLabels);
 
     % Decide on movie file base
     switch plotType
@@ -758,6 +782,7 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
 
     % Create movie
     create_plot_movie(figMovie1, fiSeconds, 'FileBase', fileBase);
+%}
 
     % Create the figure
     figMovie2 = set_figure_properties('AlwaysNew', true);
@@ -769,7 +794,8 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
                     'XLimits', xLimits, 'YLimits', yLimits, ...
                     'ColorMap', colorMap, 'LineStyle', 'none', ...
                     'tVecs', tVecToMatch, 'Marker', '.', ...
-                    'PlotSelected', true);
+                    'PlotSelected', true, 'LegendLocation', legendLocation, ...
+                    'TraceLabels', traceLabels);
 
     % Decide on movie file base
     switch plotType
@@ -778,10 +804,83 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
     case 'voltageVsOpd3'
         fileBase = figPathBaseConcavityVsSlopeAligned;
     end
-
+    
     % Create movie
     create_plot_movie(figMovie2, fiSeconds, 'FileBase', fileBase, ...
                         'AlignToSelected', true);
+
+    % Create the figure
+    figMovie3 = set_figure_properties('AlwaysNew', true);
+
+    % Plot traces
+    handles = m3ha_plot_simulated_traces('Directory', directory, ...
+                    'ExpStr', expStr, 'PlotType', plotType, ...
+                    'FigHandle', figMovie3, 'TimeLimits', timeLimits, ...
+                    'XLimits', xLimits, 'YLimits', yLimits, ...
+                    'ColorMap', colorMap, 'LineStyle', 'none', ...
+                    'tVecs', tVecToMatch, 'Marker', '.', ...
+                    'PlotSelected', true, 'LegendLocation', legendLocation, ...
+                    'TraceLabels', traceLabels);
+
+    % Decide on movie file base
+    switch plotType
+    case 'voltageVsOpd2'
+        fileBase = figPathBaseVoltVsOpdSimple;
+    case 'voltageVsOpd3'
+        fileBase = figPathBaseConcavityVsSlopeSimple;
+    end
+
+    % Remove line objects
+    lines = findobj(figMovie3, 'Type', 'Line');
+    colors = extract_fields(lines, 'Color');
+    if contains(expStr, 'D101310_aft_ipscr') || ...
+            contains(expStr, 'dual_vary_tau')
+        toSkip = false;
+        if contains(expStr, 'D101310_aft_ipscr')
+            nColors = 4;
+            iColorsToKeep = 3:4;
+        else
+            nColors = 17;
+            iColorsToKeep = 15:16;
+        end
+        colorMapOrig = decide_on_colormap(colorMap, nColors, ...
+                            'ForceCellOutput', true);
+        colorMapFaded = decide_on_colormap(colorMap, nColors, ...
+                            'FadePercentage', 30, 'ForceCellOutput', true);
+        toRemove = ~ismember_custom(colors, [colorMapOrig(iColorsToKeep); ...
+                                            colorMapFaded(iColorsToKeep)]);
+
+        if contains(expStr, 'D101310_aft_ipscr')
+            % Set pharm legend to autoupdate
+            lgds = findobj(gcf, 'Type', 'Legend');
+            set(lgds(1), 'AutoUpdate', 'on');
+        end
+
+        delete(lines(toRemove));
+
+        if contains(expStr, 'dual_vary_tau')
+            % Remove color bar
+            colorBar = findobj(gcf, 'Type', 'ColorBar');
+            delete(colorBar);
+
+            % Create new legend
+            traces = handles.ax5Stuff.traces.plotsData;
+            legend(traces(iColorsToKeep), ...
+                    {'\tau = 2.0 sec', '\tau = 2.3 sec'}, ...
+                    'Location', 'southeast');
+        end
+
+        drawnow;
+    else
+        toSkip = true;
+    end
+
+    % Create movie
+    if ~toSkip
+        create_plot_movie(figMovie3, fiSeconds, 'FileBase', fileBase, ...
+                            'AlignToSelected', true);
+    end
+
 otherwise
     error('plotType unrecognized!')
 end

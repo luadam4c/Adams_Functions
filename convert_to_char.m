@@ -41,6 +41,7 @@ function strs = convert_to_char (data, varargin)
 %       cd/ispositiveintegerscalar.m
 %
 % Used by:
+%       cd/m3ha_plot_figure05.m
 %       cd/create_labels_from_numbers.m
 %       cd/m3ha_plot_figure07.m.
 %       cd/m3ha_rank_neurons.m

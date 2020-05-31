@@ -1180,11 +1180,16 @@ case {'overlapped', 'staggered'}
 
     % Generate a legend if there is more than one trace
     if ~strcmpi(legendLocation, 'suppress')
+        % Decide on the plot handles for the legend
         if ~isempty(dataToCompareThis)
-            legend(ax, [plotsData, plotsDataToCompare], 'location', legendLocation);
+            plotsForLegend = [plotsData, plotsDataToCompare];
         else
-            legend(ax, plotsData, 'location', legendLocation);
+            plotsForLegend = plotsData;
         end
+
+        % Show legend
+        legend(ax, plotsForLegend, 'location', legendLocation, ...
+                'AutoUpdate', 'off');
     end
 
     hold_off(wasHold);
@@ -1343,7 +1348,7 @@ case 'parallel'
 
         % Generate a legend
         if ~strcmpi(legendLocation, 'suppress')
-            legend(axThis, p, 'location', legendLocation);
+            legend(axThis, p, 'location', legendLocation, 'AutoUpdate', 'off');
         end
 
         % Remove x ticks if too many columns

@@ -60,6 +60,7 @@ function varargout = ismember_custom (cand, list, varargin)
 %       cd/extract_vars.m
 %       cd/find_first_match.m
 %       cd/is_on_path.m
+%       cd/m3ha_plot_figure05.m
 
 % File History:
 % 2019-01-10 Modified from find_in_strings.m

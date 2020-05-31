@@ -175,6 +175,10 @@ indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 windows = iP.Results.Windows;
 
+%% Preparation
+% Validate strings
+statName = validatestring(statName, validStatNames);
+
 %% Do the job
 % Extract subvectors
 subVecs = extract_subvectors(vecs, 'Indices', indices, ...
