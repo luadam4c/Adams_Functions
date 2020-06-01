@@ -33,6 +33,10 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 %                   - 'AlignToSelected': whether to align to selected points
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ObjectFrameStartPair': pair of objects and 
+%                                   frame numbers to begin showing each object
+%                   must be a cell array with two elements
+%                   default == {}
 %                   - Any other parameter-value pair for create_empty_frames()
 %
 % Requires:
@@ -51,13 +55,15 @@ function plotFrames = create_plot_movie (figHandle, varargin)
 %       cd/write_frames.m
 %
 % Used by:
-%       cd/create_plot_movie.m
+%       cd/create_trace_plot_movie.m
+%       cd/m3ha_plot_figure05.m
 
 % File History:
 % 2020-05-04 Moved from create_plot_movie.m
 % 2020-05-04 Added 'FileBase' as an optional argument
 % 2020-05-04 Added 'PlotLeadPoints' as an optional argument
 % 2020-05-06 Added 'AlignToSelected' as an optional argument
+% 2020-05-31 Added 'ObjectFrameStartPair' as an optional argument
 
 %% Hard-coded constants
 MS_PER_S = 1000;
@@ -71,6 +77,7 @@ frameTimesDefault = [];     % set later
 fileBaseDefault = '';       % don't save by default
 plotLeadPointsDefault = true;   % plot leading points by default
 alignToSelectedDefault = false; % don't align to selected by default
+objectFrameStartPairDefault = {};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -103,6 +110,8 @@ addParameter(iP, 'PlotLeadPoints', plotLeadPointsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlignToSelected', alignToSelectedDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ObjectFrameStartPair', objectFrameStartPairDefault, ...
+    @(x) validateattributes(x, {'cell'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, figHandle, varargin{:});
@@ -111,6 +120,7 @@ frameTimes = iP.Results.FrameTimes;
 fileBase = iP.Results.FileBase;
 plotLeadPoints = iP.Results.PlotLeadPoints;
 alignToSelected = iP.Results.AlignToSelected;
+objectFrameStartPair = iP.Results.ObjectFrameStartPair;
 
 % Keep unmatched arguments for the create_empty_frames() function
 otherArguments = iP.Unmatched;
@@ -173,6 +183,15 @@ if ~isempty(legends)
     set(legends, 'AutoUpdate', 'off');
 end
 
+% Decide whether to remove texts
+if ~isempty(objectFrameStartPair) 
+    toRemoveObjects = true;
+    objects = objectFrameStartPair{1};
+    frameStarts = objectFrameStartPair{2};
+else
+    toRemoveObjects = false;
+end
+
 % Loop through all frame times in reverse
 for iPlotFrame = nPlotFrames:-1:1
     % Get the current plot frame time
@@ -197,6 +216,15 @@ for iPlotFrame = nPlotFrames:-1:1
         generate_previous_frame(lineHandles, leadPointHandles, ...
                                 selectedHandles, removeLastPoints, ...
                                 plotLeadPoints, markerExpansionRatio);
+
+    % Remove objects up to a specific frame if requested
+    if toRemoveObjects && ismember(iPlotFrame, frameStarts)
+        if numel(frameStarts) > 1
+            delete(objects(ismember(frameStarts, iPlotFrame)));
+        else
+            delete(objects);
+        end
+    end
 end
 
 % Write frames to a movie file if requested

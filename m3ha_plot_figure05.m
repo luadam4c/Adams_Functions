@@ -5,6 +5,7 @@
 %       cd/archive_dependent_scripts.m
 %       cd/check_dir.m
 %       cd/create_labels_from_numbers.m
+%       cd/create_plot_movie.m
 %       cd/create_time_vectors.m
 %       cd/decide_on_colormap.m
 %       cd/convert_to_char.m
@@ -804,10 +805,21 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
     case 'voltageVsOpd3'
         fileBase = figPathBaseConcavityVsSlopeAligned;
     end
+
+    textArrows = handles.textArrows;
+    if contains(expStr, 'D101310_aft_ipscr')
+        frameNumForTexts = 740 * ones(size(textArrows));
+    elseif contains(expStr, 'dual_vary_tau')
+        frameNumForTexts = 680 * ones(size(textArrows));
+    else
+        frameNumForTexts = [];
+    end
+    objectFrameStartPair = {textArrows, frameNumForTexts};
     
     % Create movie
     create_plot_movie(figMovie2, fiSeconds, 'FileBase', fileBase, ...
-                        'AlignToSelected', true);
+                        'AlignToSelected', true, ...
+                        'ObjectFrameStartPair', objectFrameStartPair);
 
     % Create the figure
     figMovie3 = set_figure_properties('AlwaysNew', true);
@@ -835,7 +847,6 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
     colors = extract_fields(lines, 'Color');
     if contains(expStr, 'D101310_aft_ipscr') || ...
             contains(expStr, 'dual_vary_tau')
-        toSkip = false;
         if contains(expStr, 'D101310_aft_ipscr')
             nColors = 4;
             iColorsToKeep = 3:4;
@@ -870,17 +881,24 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
                     'Location', 'southeast');
         end
 
+        textArrows = handles.textArrows;
+        if contains(expStr, 'D101310_aft_ipscr')
+            frameNumForTexts = 740 * ones(size(textArrows));
+        elseif contains(expStr, 'dual_vary_tau')
+            frameNumForTexts = 660 * ones(size(textArrows));
+        else
+            frameNumForTexts = [];
+        end
+        objectFrameStartPair = {textArrows, frameNumForTexts};
+
+        % Draw now
         drawnow;
-    else
-        toSkip = true;
-    end
 
-    % Create movie
-    if ~toSkip
+        % Create movie
         create_plot_movie(figMovie3, fiSeconds, 'FileBase', fileBase, ...
-                            'AlignToSelected', true);
+                            'AlignToSelected', true, ...
+                            'ObjectFrameStartPair', objectFrameStartPair);
     end
-
 otherwise
     error('plotType unrecognized!')
 end

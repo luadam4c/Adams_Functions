@@ -2015,20 +2015,20 @@ end
 % For D101310_aft_ipscr movies only
 if contains(expStr, 'D101310_aft_ipscr')
     % Annotate 'LTS'
-    a(1) = annotation('textarrow', [0.4, 0.37], [0.95, 0.95], ...
-                        'String', 'LTS');
+    textArrows(1) = annotation('textarrow', [0.4, 0.37], [0.95, 0.95], ...
+                                'String', 'LTS');
 
     % Annotate 'No LTS'
-    a(2) = annotation('textarrow', [0.42, 0.37], [0.92, 0.885], ...
-                        'String', 'No LTS');
+    textArrows(2) = annotation('textarrow', [0.42, 0.37], [0.92, 0.885], ...
+                                'String', 'No LTS');
 
     % Annotate 'Positive Concavity'
-    a(3) = annotation('textarrow', [0.33, 0.34], [0.205, 0.17], ...
-                        'String', 'Positive Concavity');
+    textArrows(3) = annotation('textarrow', [0.33, 0.34], [0.205, 0.17], ...
+                                'String', 'Positive Concavity');
 
     % Annotate 'Negative Concavity'
-    a(4) = annotation('textarrow', [0.35, 0.36], [0.08, 0.14], ...
-                        'String', 'Negative Concavity');
+    textArrows(4) = annotation('textarrow', [0.35, 0.36], [0.08, 0.14], ...
+                                'String', 'Negative Concavity');
 
     % Move legend location
     lgds = findobj(gcf, 'Type', 'Legend');
@@ -2038,20 +2038,20 @@ end
 % For dual_vary_tau movies only
 if contains(expStr, 'dual_vary_tau')
     % Annotate 'LTS'
-    a(1) = annotation('textarrow', [0.35, 0.33], [0.94, 0.94], ...
-                        'String', 'LTS');
+    textArrows(1) = annotation('textarrow', [0.35, 0.33], [0.94, 0.94], ...
+                                'String', 'LTS');
 
     % Annotate 'No LTS'
-    a(2) = annotation('textarrow', [0.37, 0.34], [0.91, 0.9], ...
-                        'String', 'No LTS');
+    textArrows(2) = annotation('textarrow', [0.37, 0.34], [0.91, 0.9], ...
+                                'String', 'No LTS');
 
     % Annotate 'Positive Concavity'
-    a(3) = annotation('textarrow', [0.315, 0.315], [0.2, 0.18], ...
-                        'String', 'Positive Concavity');
+    textArrows(3) = annotation('textarrow', [0.315, 0.315], [0.2, 0.18], ...
+                                'String', 'Positive Concavity');
 
     % Annotate 'Negative Concavity'
-    a(4) = annotation('textarrow', [0.36, 0.34], [0.17, 0.16], ...
-                        'String', 'Negative Concavity');
+    textArrows(4) = annotation('textarrow', [0.36, 0.34], [0.17, 0.16], ...
+                                'String', 'Negative Concavity');
 
     % Plot color bar
     subplot(ax(5)); hold on;
@@ -2066,6 +2066,10 @@ end
 %% Return handles
 handles.ax = ax;
 handles.fig = fig;
+
+if contains(expStr, 'D101310_aft_ipscr') || contains(expStr, 'dual_vary_tau')
+    handles.textArrows = textArrows;
+end
 
 %% Draw now
 drawnow;
