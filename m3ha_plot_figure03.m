@@ -50,6 +50,10 @@ estimatePassiveParams = false; %true;
 plotCurveFit = false; %true;
 plotGeometry = false; %true;
 
+% Simulation conditions
+useHH = true;
+useCvode = false;
+
 % Other Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
@@ -77,11 +81,11 @@ fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 %                     'backup-20200430-useCvode-true-useHH-true');
 % paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
-useHH = true;
-useCvode = false;
-figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
-                    'backup-20200430-useCvode-false-useHH-true');
-paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+% useHH = true;
+% useCvode = false;
+% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03', ...
+%                     'backup-20200430-useCvode-false-useHH-true');
+% paramsDir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 
 % Files
 sweepInfoFile = 'dclampdatalog_take4.csv';

@@ -55,9 +55,9 @@ createPlotMovieFig5 = true;
 createPlotMovieTauh = false;
 createPlotMovieGabab = true;
 
-createPhasePlotOnlyMovieFig5 = false; %true;
+createPhasePlotOnlyMovieFig5 = true;
 createPhasePlotOnlyMovieTauh = false;
-createPhasePlotOnlyMovieGabab = false; %true;
+createPhasePlotOnlyMovieGabab = true;
 
 simulateNoITSoma = false; %true;
 
@@ -83,14 +83,14 @@ exampleCellNames = {'D101310'};
 % exampleCellNames = {'D101310'; 'G101310'};
 
 % Must be consistent with m3ha_compute_gabab_ipsc.m
-% gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
-%                         'gababipsc_dual_vary_amp', ...
-%                         'gababipsc_gat3_vary_tau', ...
-%                         'gababipsc_dual_vary_tau', ...
-%                         'gababipsc_vary_dual_to_gat3_to_gat1', ...
-%                         'gababipsc_original', ...
-%                         'gababipsc_gat3_vary_amp2'};
-gababIpscSheetBases = {'gababipsc_dual_vary_tau'};
+gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
+                        'gababipsc_dual_vary_amp', ...
+                        'gababipsc_gat3_vary_tau', ...
+                        'gababipsc_dual_vary_tau', ...
+                        'gababipsc_vary_dual_to_gat3_to_gat1', ...
+                        'gababipsc_original', ...
+                        'gababipsc_gat3_vary_amp2'};
+% gababIpscSheetBases = {'gababipsc_dual_vary_tau'};
 
 % Simulation settings
 dataModeIpscr = 2;                  % data mode for IPSC response
@@ -759,7 +759,6 @@ case 'voltageVsOpd1'
     save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpdCompressed, ...
                         figTypes);
 case {'voltageVsOpd2', 'voltageVsOpd3'}
-%{
     % Create the figure
     figMovie1 = set_figure_properties('AlwaysNew', true);
 
@@ -783,7 +782,6 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
 
     % Create movie
     create_plot_movie(figMovie1, fiSeconds, 'FileBase', fileBase);
-%}
 
     % Create the figure
     figMovie2 = set_figure_properties('AlwaysNew', true);
@@ -806,15 +804,17 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
         fileBase = figPathBaseConcavityVsSlopeAligned;
     end
 
-    textArrows = handles.textArrows;
-    if contains(expStr, 'D101310_aft_ipscr')
-        frameNumForTexts = 740 * ones(size(textArrows));
-    elseif contains(expStr, 'dual_vary_tau')
-        frameNumForTexts = 680 * ones(size(textArrows));
+    if contains(expStr, 'D101310_aft_ipscr') || contains(expStr, 'dual_vary_tau')
+        textArrows = handles.textArrows;
+        if contains(expStr, 'D101310_aft_ipscr')
+            frameNumForTexts = 740 * ones(size(textArrows));
+        else
+            frameNumForTexts = 680 * ones(size(textArrows));
+        end
+        objectFrameStartPair = {textArrows, frameNumForTexts};
     else
-        frameNumForTexts = [];
+        objectFrameStartPair = {};
     end
-    objectFrameStartPair = {textArrows, frameNumForTexts};
     
     % Create movie
     create_plot_movie(figMovie2, fiSeconds, 'FileBase', fileBase, ...
@@ -845,8 +845,7 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
     % Remove line objects
     lines = findobj(figMovie3, 'Type', 'Line');
     colors = extract_fields(lines, 'Color');
-    if contains(expStr, 'D101310_aft_ipscr') || ...
-            contains(expStr, 'dual_vary_tau')
+    if contains(expStr, 'D101310_aft_ipscr') || contains(expStr, 'dual_vary_tau')
         if contains(expStr, 'D101310_aft_ipscr')
             nColors = 4;
             iColorsToKeep = 3:4;
@@ -884,10 +883,8 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
         textArrows = handles.textArrows;
         if contains(expStr, 'D101310_aft_ipscr')
             frameNumForTexts = 740 * ones(size(textArrows));
-        elseif contains(expStr, 'dual_vary_tau')
-            frameNumForTexts = 660 * ones(size(textArrows));
         else
-            frameNumForTexts = [];
+            frameNumForTexts = 660 * ones(size(textArrows));
         end
         objectFrameStartPair = {textArrows, frameNumForTexts};
 

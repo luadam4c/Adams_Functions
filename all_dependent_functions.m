@@ -7,7 +7,6 @@ function varargout = all_dependent_functions (mFileName, varargin)
 %       all_dependent_functions('parse_pulse')
 %       all_dependent_functions('parse_pulse.m')
 %       [fTable, pTable] = all_dependent_functions('parse_pulse')
-%       TODO:
 %       [fList, pList] = all_dependent_functions('parse_pulse', 'OriginalOutput', true)
 %
 % Outputs:
