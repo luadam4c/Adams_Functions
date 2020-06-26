@@ -36,7 +36,7 @@ function [results, sheettypes] = issheettype (candidates, varargin)
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
 %       cd/read_params.m
-%       cd/load_swd_sheets.m
+%       cd/read_swd_sheets.m
 %       cd/parse_all_abfs.m
 %       cd/parse_all_swds.m
 %       cd/parse_assyst_swd.m

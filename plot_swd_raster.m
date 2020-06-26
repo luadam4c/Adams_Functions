@@ -69,7 +69,7 @@ function [fig, lines] = plot_swd_raster (varargin)
 %       cd/find_in_strings.m
 %       cd/islinestyle.m
 %       cd/issheettype.m
-%       cd/load_swd_sheets.m
+%       cd/read_swd_sheets.m
 %       cd/parse_all_swds.m
 %       cd/plot_raster.m
 %       cd/print_or_show_message.m
@@ -197,7 +197,7 @@ if isempty(swdTables)
 
     % Load all tables from either paths or folder
     [swdTables, swdSheetPaths] = ...
-        load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
+        read_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
                         'Directory', swdFolder, 'SheetType', sheetType);
 else
     % Display warning message?
@@ -512,12 +512,12 @@ fig = figure(15342);
 if ~isempty(swdSheetPaths)
     % Use full paths if provided
     [swdTables, swdSheetPaths] = ...
-        load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
+        read_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
                         'SheetType', sheetType);
 else
     % Otherwise look in the swdFolder
     [swdTables, swdSheetPaths] = ...
-        load_swd_sheets('Verbose', verbose, 'Directory', swdFolder, ...
+        read_swd_sheets('Verbose', verbose, 'Directory', swdFolder, ...
                         'SheetType', sheetType);
 end
 

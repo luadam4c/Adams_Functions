@@ -1,6 +1,6 @@
-function [swdTables, filePaths] = load_swd_sheets (varargin)
+function [swdTables, filePaths] = read_swd_sheets (varargin)
 %% Loads SWD tables from SWD spreadsheets
-% Usage: [swdTables, filePaths] = load_swd_sheets (varargin)
+% Usage: [swdTables, filePaths] = read_swd_sheets (varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -45,7 +45,7 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 
 % File History:
 % 2018-11-27 Created by Adam Lu
-% TODO: Combine and rename as read_swd_sheets.m
+% TODO: Combine with read_swd_sheet.m
 
 %% Hard-coded parameters
 

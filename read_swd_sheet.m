@@ -13,7 +13,7 @@ function swdTable = read_swd_sheet (filePath)
 %                   must be a string scalar or a character vector
 %
 % Used by:
-%       cd/load_swd_sheets.m
+%       cd/read_swd_sheets.m
 
 % File History:
 % 2018-11-27 Created by Adam Lu

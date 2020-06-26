@@ -65,7 +65,7 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %       cd/extract_common_suffix.m
 %       cd/extract_distinct_fileparts.m
 %       cd/force_matrix.m
-%       cd/load_swd_sheets.m
+%       cd/read_swd_sheets.m
 %       cd/plot_histogram.m
 %       cd/plot_vertical_line.m
 %       cd/set_figure_properties.m
@@ -162,7 +162,7 @@ end
 if isempty(swdTables)
     % Load all tables from either paths or folder
     [swdTables, swdSheetPaths] = ...
-        load_swd_sheets('Verbose', verbose, 'Recursive', recursive, ...
+        read_swd_sheets('Verbose', verbose, 'Recursive', recursive, ...
                         'FilePaths', swdSheetPaths, 'Directory', swdFolder, ...
                         'SheetType', sheetType, 'Suffix', suffix);
 
