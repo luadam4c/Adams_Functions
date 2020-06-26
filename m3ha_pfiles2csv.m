@@ -30,7 +30,7 @@ function sheetPaths = m3ha_pfiles2csv (varargin)
 % Requires:
 %       cd/all_files.m
 %       cd/create_error_for_nargin.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/save_params.m
 %       cd/struct2arglist.m
 %
@@ -107,7 +107,7 @@ sheetPaths = replace(fileNames, '.p', '.csv');
 
 %% Do the job
 % Load the parameter tables
-paramsTables = cellfun(@load_params, fileNames, 'UniformOutput', false);
+paramsTables = cellfun(@read_params, fileNames, 'UniformOutput', false);
 
 % Write the parameter tables
 cellfun(@(x, y) save_params(x, 'FileName', y, otherArguments{:}), ...

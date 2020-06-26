@@ -19,7 +19,7 @@ function arrayNew = force_logical (arrayOld, varargin)
 %       cd/isbinaryarray.m
 %
 % Used by:
-%       cd/load_params.m
+%       cd/read_params.m
 
 % File History:
 % 2018-12-11 Created by Adam Lu

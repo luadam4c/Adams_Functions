@@ -1,8 +1,8 @@
 function [paramNames, paramValues, paramLBs, paramUBs] = ...
-                load_params (sheetName, varargin)
+                read_params (sheetName, varargin)
 %% Loads parameters to a spreadsheet file
 % Usage: [paramNames, paramValues, paramLBs, paramUBs] = ...
-%               load_params (sheetName, varargin)
+%               read_params (sheetName, varargin)
 % Explanation:
 %       TODO
 % Example(s):

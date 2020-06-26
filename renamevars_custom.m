@@ -47,7 +47,7 @@ function table = renamevars_custom (table, prevNames, newNames, varargin)
 % Used by:
 %       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_measures.m
 

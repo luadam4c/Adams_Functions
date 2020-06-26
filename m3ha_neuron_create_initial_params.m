@@ -85,7 +85,7 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %       cd/find_first_match.m
 %       cd/force_column_vector.m
 %       cd/istext.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/m3ha_neuron_create_default_params.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_locate_homedir.m
@@ -248,7 +248,7 @@ toLoadTables = ~isempty(customInitFiles) && isempty(customInitTables) && ...
 
 % Load the parameters tables from the custom files if needed
 if toLoadTables
-    customInitTables = load_params(customInitFiles);
+    customInitTables = read_params(customInitFiles);
 end
 
 % Determine whether it's necessary to read in parameter names and values

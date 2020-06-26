@@ -15,7 +15,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, ...
 %       cd/find_in_strings.m
 %       cd/find_matching_files.m
 %       cd/force_column_vector.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_change_params.m
@@ -1032,7 +1032,7 @@ candidateNamesUsed = match_positions(allCandNames, allIds, candidateIDsUsed);
                                     'ForceCellOutput', true);
 
 % Import NEURON parameters
-TCparamTables = load_params(candidatePaths);
+TCparamTables = read_params(candidatePaths);
 
 % Test if any parameters table is missing
 if any(isemptycell(TCparamTables))

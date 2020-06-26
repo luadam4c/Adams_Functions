@@ -10,7 +10,7 @@
 %       cd/extract_param_values.m
 %       cd/find_matching_files.m
 %       cd/find_passive_params.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/m3ha_correct_unbalanced_bridge.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_parse_mat.m
@@ -398,7 +398,7 @@ m = matfile(passiveLogPath);
 passiveParams = m.passiveParams;
 
 % Load fitted NEURON params
-fittedParamsTable = load_params(fittedParamsFile);
+fittedParamsTable = read_params(fittedParamsFile);
 
 % Extract parameter values as a structure
 fittedParamsStruct = extract_param_values(fittedParamsTable);

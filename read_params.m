@@ -1,6 +1,6 @@
-function paramTables = load_params (fileNames, varargin)
+function paramTables = read_params (fileNames, varargin)
 %% Loads parameters from file(s) into a table
-% Usage: paramTables = load_params (fileNames, varargin)
+% Usage: paramTables = read_params (fileNames, varargin)
 % Explanation:
 %       TODO
 %
@@ -43,7 +43,6 @@ function paramTables = load_params (fileNames, varargin)
 % 2018-10-22 Now reads in .p files too
 % 2018-10-22 Now standardizes the variable names
 % 2019-12-04 Added default extension
-% TODO: Rename as read_params.m
 
 %% Hard-coded parameters
 defaultExtension = 'csv';
@@ -95,15 +94,15 @@ end
 
 %% Do the job
 if iscell(fullPaths)
-    paramTables = cellfun(@load_params_helper, fullPaths, ...
+    paramTables = cellfun(@read_params_helper, fullPaths, ...
                             'UniformOutput', false);
 else
-    paramTables = load_params_helper(fullPaths);
+    paramTables = read_params_helper(fullPaths);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function paramTable = load_params_helper (fullPath)
+function paramTable = read_params_helper (fullPath)
 %% Loads a file into a table
 
 % Get the file extension
@@ -195,7 +194,7 @@ paramsCell = mFile.(varNames{1});
 
 paramTable = cell(size(fullPath));
 parfor iFile = 1:numel(fullPath)
-    paramTable{iFile} = load_params_helper(fullPath{iFile});
+    paramTable{iFile} = read_params_helper(fullPath{iFile});
 end
 
 paramTable = renamevars_custom(paramTable, 'val', 'Value', ...

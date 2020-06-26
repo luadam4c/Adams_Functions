@@ -330,7 +330,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/find_window_endpoints.m
 %       cd/force_matrix.m
 %       cd/load_neuron_outputs.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/log_arraytext.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_neuron_create_sim_params.m
@@ -915,7 +915,7 @@ expStr = prefix;
 % Parse first argument
 if istext(neuronParamsTableOrFile)
     % Read in the table
-    neuronParamsTable = load_params(neuronParamsTableOrFile);
+    neuronParamsTable = read_params(neuronParamsTableOrFile);
 
     % Look for a cell name
     cellName = m3ha_extract_cell_name(neuronParamsTableOrFile, ...

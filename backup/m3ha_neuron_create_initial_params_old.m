@@ -76,7 +76,7 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %       cd/extract_substrings.m
 %       cd/force_column_vector.m
 %       cd/istext.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/m3ha_locate_homedir.m
 %       cd/print_cellstr.m
 %       cd/save_params.m
@@ -349,7 +349,7 @@ toLoadTables = ~isempty(customInitFiles) && isempty(customInitTables) && ...
 
 % Load the parameters tables from the custom files if needed
 if toLoadTables
-    customInitTables = load_params(customInitFiles);
+    customInitTables = read_params(customInitFiles);
 end
 
 % Determine whether it's necessary to read in parameter names and values

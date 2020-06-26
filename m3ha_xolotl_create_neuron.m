@@ -25,7 +25,7 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/print_cellstr.m
 %
 % Used by:
@@ -127,7 +127,7 @@ if ischar(neuronParamsTableOrFile) || isstring(neuronParamsTableOrFile) || ...
     end
 
     % Load the parameters table
-    neuronParamsTable = load_params(neuronParamsTableOrFile);
+    neuronParamsTable = read_params(neuronParamsTableOrFile);
 else
     % Already the parameters table
     neuronParamsTable = neuronParamsTableOrFile;

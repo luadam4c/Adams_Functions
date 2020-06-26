@@ -43,7 +43,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/extract_substrings.m
 %       cd/isemptycell.m
 %       cd/istext.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/set_fields_zero.m
 %
@@ -119,7 +119,7 @@ end
 
 % Load parameters if necessary
 if isempty(candParamsTables)
-    candParamsTables = cellfun(@load_params, candParamsTablesOrFiles, ...
+    candParamsTables = cellfun(@read_params, candParamsTablesOrFiles, ...
                                 'UniformOutput', false);
 end
 

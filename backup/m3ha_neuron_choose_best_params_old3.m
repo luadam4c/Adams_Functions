@@ -68,7 +68,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/force_matrix.m
 %       cd/isemptycell.m
 %       cd/istext.m
-%       cd/load_params.m
+%       cd/read_params.m
 %       cd/match_format_vector_sets.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
@@ -256,7 +256,7 @@ end
 
 % Load parameters if necessary
 if isempty(candParamsTables)
-    candParamsTables = cellfun(@load_params, candParamsTablesOrFiles, ...
+    candParamsTables = cellfun(@read_params, candParamsTablesOrFiles, ...
                                 'UniformOutput', false);
 end
 
