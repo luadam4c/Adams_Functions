@@ -28,6 +28,10 @@ function violins = plot_violin (data, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == [0.5, nGroups + 0.5]
+%                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == uses compute_axis_limits.m
 %                   - 'XTickLabels': x tick labels in place of parameter values
 %                   must be a cell array of character vectors/strings
 %                   default == {}
@@ -62,7 +66,7 @@ function violins = plot_violin (data, varargin)
 
 % File History:
 % 2019-12-30 Moved from m3ha_plot_violin.m
-% 
+% 2020-06-26 Added 'YLimits' as an optional argument
 
 %% Hard-coded parameters
 % Note: The following must be consistent with violinplot.m
@@ -71,6 +75,7 @@ function violins = plot_violin (data, varargin)
 %% Default values for optional arguments
 relativeBandWidthDefault = 0.1;
 xLimitsDefault = [];            % set later
+yLimitsDefault = [];            % set later
 xTickLabelsDefault = {};        % set later
 xTickAngleDefault = [];         % set later
 yLabelDefault = '';             % no y label by default
@@ -110,6 +115,9 @@ addParameter(iP, 'RelativeBandWidth', relativeBandWidthDefault, ...
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'XTickLabels', xTickLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'XTickAngle', xTickAngleDefault, ...
@@ -123,6 +131,7 @@ addParameter(iP, 'MedianColorMap', medianColorMapDefault);
 parse(iP, data, varargin{:});
 relativeBandWidth = iP.Results.RelativeBandWidth;
 xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
 xTickLabels = iP.Results.XTickLabels;
 xTickAngle = iP.Results.XTickAngle;
 yLabel = iP.Results.YLabel;
@@ -160,6 +169,11 @@ end
 % Decide on x axis limits
 if isempty(xLimits)
     xLimits = [0.5, nGroups + 0.5];
+end
+
+% Decide on y axis limits
+if isempty(yLimits)
+    yLimits = compute_axis_limits(dataValues, 'y');
 end
 
 % Decide on the color map
@@ -211,6 +225,11 @@ end
 % Modify x limits
 if ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
     xlim(xLimits);
+end
+
+% Modify y limits
+if ~(ischar(yLimits) && strcmpi(yLimits, 'suppress'))
+    ylim(yLimits);
 end
 
 % Modify x tick angle

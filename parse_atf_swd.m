@@ -30,9 +30,14 @@ function [swdManualTable, swdManualCsvFile] = ...
 %                   could be anything recognised by the readtable() function 
 %                   (see issheettype.m under Adams_Functions)
 %                   default == 'csv'
+%                   - 'ParseFeatures': whether to parse SWD features
+%                                       such as peakFrequency
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/argfun.m
+%       cd/array_fun.m
 %       cd/atf2sheet.m
 %       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
@@ -56,6 +61,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %               for constructing sheet file name
 % 2019-09-09 Updated the construction of trace file paths
 % 2019-09-24 Added check for overlapping windows
+% 2020-06-26 Added 'ParseFeatures' as an optional argument
 % 
 
 %% Hard-coded constants
@@ -68,6 +74,7 @@ varNames = {'startTime', 'endTime', 'duration', 'tracePath', 'pathExists'};
 traceFileNameDefault = '';      % set later
 outFolderDefault = '';          % set later
 sheetTypeDefault = 'csv';       % default spreadsheet type
+parseFeaturesDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -92,12 +99,15 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
+addParameter(iP, 'ParseFeatures', parseFeaturesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, originalEventFile, varargin{:});
 traceFileName = iP.Results.TraceFileName;
 outFolder = iP.Results.OutFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
+parseFeatures = iP.Results.ParseFeatures;
 
 %% Preparation
 % Decide what file type the first input is
@@ -214,6 +224,12 @@ traceFileExt = extract_fileparts(traceFileName{1}, 'ext');
 swdManualCsvFile = ...
     fullfile(outFolder, [traceFileBase, '_Manual_SWDs.', sheetType]);
 
+%% Parse SWD features if requested
+if parseFeatures
+    [peakFrequency] = ...
+        parse_swd_features(startTime, endTime, tracePath, pathExists);
+end
+
 %% Correct the start and end times if the data comes from an ATF file
 if strcmpi(traceFileExt, '.atf')
     % Note: The scored atf file itself also has the info, 
@@ -236,16 +252,23 @@ if strcmpi(traceFileExt, '.atf')
 
     % Extract the start time of the trace
     traceStartTimeSeconds = traceStartTimeMs / MS_PER_S;
-
-    % Modify the start and end times
-    startTime = traceStartTimeSeconds + startTime;
-    endTime = traceStartTimeSeconds + endTime;
+else
+    traceStartTimeSeconds = 0;
 end
+
+% Modify the start and end times
+startTime = traceStartTimeSeconds + startTime;
+endTime = traceStartTimeSeconds + endTime;
 
 %% Output results
 % Create a table for the parsed SWDs
 swdManualTable = table(startTime, endTime, duration, ...
                         tracePath, pathExists, 'VariableNames', varNames);
+
+% Add features to the table
+if parseFeatures
+    addvars(swdManualTable, peakFrequency, 'After', 'duration');
+end
 
 % Write the table to a file
 writetable(swdManualTable, swdManualCsvFile);
@@ -264,6 +287,40 @@ nLinesToSkip = sscanf(line2, '%d', 1);
 
 % This number should be zero for a scored ATF file
 isScoredAtf = nLinesToSkip == 0;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [peakFrequency] = ...
+                parse_swd_features (startTime, endTime, tracePath, pathExists)
+%% Extracts SWD features from a trace path
+
+[peakFrequency] = ...
+    array_fun(@parse_features_helper, ...
+                num2cell(startTime), num2cell(endTime), ...
+                tracePath, num2cell(pathExists));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [peakFrequency] = ...
+                parse_features_helper (startTime, endTime, tracePath, pathExists)
+%% Extracts SWD features from one SWD
+
+% Make sure path exists
+if ~pathExists
+    peakFrequency = NaN;
+    return
+end
+
+% Extract SWD data
+if contains(tracePath, '.abf')
+    % TODO
+elseif contains(tracePath, '.atf')
+    % TODO: read_data_atf.m
+    traceData = read_data_atf()
+end
+
+% Extract SWD features
+peakFrequency = 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

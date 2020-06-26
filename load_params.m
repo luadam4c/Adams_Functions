@@ -43,6 +43,7 @@ function paramTables = load_params (fileNames, varargin)
 % 2018-10-22 Now reads in .p files too
 % 2018-10-22 Now standardizes the variable names
 % 2019-12-04 Added default extension
+% TODO: Rename as read_params.m
 
 %% Hard-coded parameters
 defaultExtension = 'csv';

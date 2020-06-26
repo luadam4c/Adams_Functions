@@ -12,12 +12,9 @@ function handles = compare_events_pre_post_stim (varargin)
 %                   specified as a TODO
 %
 % Arguments:
-%       varargin    - 'PlotType': type of plot
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       'raster'    - event raster
-%                       'psth'      - peri-stimulus time histogram
-%                       'chevron'   - chevron plot
-%                   default == 'raster'
+%       varargin    - 'PropertyName': property name to compare
+%                   must be a string scalar or a character vector
+%                   default == 'duration'
 %                   - 'StimIndices': stimulation indices to restrict to
 %                   must be a positive integer array or string recognized by
 %                        the 'Pattern' option of extract_subvectors.m
@@ -37,19 +34,6 @@ function handles = compare_events_pre_post_stim (varargin)
 %                   - 'RelativeTimeWindowMin': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
-%                   - 'StimDurationMin': stimulus duration for plotting
-%                                       (stim always occur at 0)
-%                   must be a positive scalar
-%                   default == [] (not plotted)
-%                   - 'YLimits': limits of y axis, 
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == uses compute_axis_limits.m
-%                   - 'YLimitsLog2Ratio': limits of y axis 
-%                                           for the log2 ratio plot
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == uses compute_axis_limits.m
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == TODO
@@ -68,15 +52,15 @@ function handles = compare_events_pre_post_stim (varargin)
 %       cd/argfun.m
 %       cd/apply_to_all_cells.m
 %       cd/compute_relative_event_times.m
+%       cd/create_label_from_sequence.m
 %       cd/extract_subvectors.m
-%       cd/load_matching_sheets.m
-%       cd/plot_violin.m
-%   TODO
 %       cd/hold_on.m
 %       cd/hold_off.m
-%       cd/create_label_from_sequence.m
-%       cd/set_figure_properties.m
+%       cd/load_matching_sheets.m
+%       cd/plot_violin.m
 %       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
+%       cd/test_difference.m
 %
 % Used by:
 %       /home/Matlab/plethR01/plethR01_analyze.m
@@ -87,27 +71,14 @@ function handles = compare_events_pre_post_stim (varargin)
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
-validPlotTypes = {'raster', 'psth', 'chevron'};
-plotLog2Ratio = true;
-
-% TODO: Make optional arguments
-stimStartLineColor = [0.5, 0.5, 0.5];
-stimStartLineWidth = 1;
-pathBase = '';
-sheetType = 'csv';
-figSuffix = '';
-labels = {};
 
 %% Default values for optional arguments
-plotTypeDefault = 'raster';
+propertyNameDefault = 'duration';
 stimIndicesDefault = [];        % take all stims by default
 eventTableSuffixDefault = '_SWDs';
 stimTableSuffixDefault = '_pulses';
 directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
-stimDurationMinDefault = [];
-yLimitsDefault = [];            % set later
-yLimitsLog2RatioDefault = [];  % set later
 figTitleDefault = '';           % set later
 figNameDefault = '';            % set later
 figTypesDefault = {'png', 'epsc2'};
@@ -121,8 +92,8 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'PlotType', plotTypeDefault, ...
-    @(x) any(validatestring(x, validPlotTypes)));
+addParameter(iP, 'PropertyName', propertyNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'StimIndices', stimIndicesDefault, ...
     @(x) validateattributes(x, {'numeric', 'char'}, {'2d'}));
 addParameter(iP, 'EventTableSuffix', eventTableSuffixDefault, ...
@@ -133,14 +104,6 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'RelativeTimeWindowMin', relativeTimeWindowMinDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'StimDurationMin', stimDurationMinDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'YLimits', yLimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
-        isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'YLimitsLog2Ratio', yLimitsLog2RatioDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
-        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -150,15 +113,12 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-plotType = validatestring(iP.Results.PlotType, validPlotTypes);
+propertyName = iP.Results.PropertyName;
 stimIndices = iP.Results.StimIndices;
 eventTableSuffix = iP.Results.EventTableSuffix;
 stimTableSuffix = iP.Results.StimTableSuffix;
 directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
-avgStimDurationMin = iP.Results.StimDurationMin;
-yLimits = iP.Results.YLimits;
-yLimitsLog2Ratio = iP.Results.YLimitsLog2Ratio;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -175,58 +135,64 @@ if isempty(directory)
     directory = pwd;
 end
 
+% Decide on property label
+switch propertyName
+    case 'duration'
+        propertyLabel = 'Event Duration (sec)';
+    case 'peakFrequency'
+        propertyLabel = 'Peak Frequency (Hz)';
+    otherwise
+        propertyLabel = propertyName;
+end
+
 % Set default figure title
 if isempty(figTitle)
     if isempty(stimIndices)
-        figTitle = 'Event property around all stims';
+        figTitle = [propertyLabel, ' around all stims'];
     elseif isnumeric(stimIndices)
-        figTitle = ['Event property around stims ', ...
+        figTitle = [propertyLabel, ' around stims #', ...
                     create_label_from_sequence(stimIndices)];
     elseif ischar(stimIndices)
-        figTitle = ['Event property around ', stimIndices, ' stims'];
+        figTitle = [propertyLabel ' around ', stimIndices, ' stims'];
     end
 end
 
 %% Get relative event times
 % Load matching stimulus and event tables
-[stimTables, swdTables, distinctParts] = ...
+[stimTables, eventTables, distinctParts] = ...
     load_matching_sheets(stimTableSuffix, eventTableSuffix, ...
                         'Directory', directory);
 
-% Set default labels for each raster
-if isempty(labels)
-    labels = distinctParts;
-end
-
 % Extract all start times in seconds
-[stimStartTimesSec, swdStartTimesSec] = ...
+[stimStartTimesSec, eventStartTimesSec] = ...
     argfun(@(x) cellfun(@(y) y.startTime, x, 'UniformOutput', false), ...
-            stimTables, swdTables);
+            stimTables, eventTables);
 
-% Extract durations in seconds
-[stimDurationsSec, swdDurationsSec] = ...
-    argfun(@(x) cellfun(@(y) y.duration, x, 'UniformOutput', false), ...
-            stimTables, swdTables);
+% Extract event properties
+if ~is_field(eventTables{1}, propertyName)
+    fprintf('There is no column named ''%s''!!\n', propertyName);
+    handles = struct;
+    return
+else
+    eventProperties = ...
+        cellfun(@(y) y.(propertyName), eventTables, 'UniformOutput', false);
+end
 
 % Restrict to certain stimulation windows if requested
 if isempty(stimIndices)
     % Do nothing
 elseif isnumeric(stimIndices)
-    [stimStartTimesSec, stimDurationsSec] = ...
-        argfun(@(x) extract_subvectors(x, 'Indices', stimIndices), ...
-                stimStartTimesSec, stimDurationsSec);
+    stimStartTimesSec = ...
+        extract_subvectors(stimStartTimesSec, 'Indices', stimIndices);
 elseif ischar(stimIndices)
-    [stimStartTimesSec, stimDurationsSec] = ...
-        argfun(@(x) extract_subvectors(x, 'Pattern', stimIndices), ...
-                stimStartTimesSec, stimDurationsSec);
+    stimStartTimesSec = ...
+        extract_subvectors(stimStartTimesSec, 'Pattern', stimIndices);
 end
 
 % Convert to minutes
-[stimStartTimesMin, stimDurationsMin, ...
-        swdStartTimesMin, swdDurationsMin] = ...
+[stimStartTimesMin, swdStartTimesMin] = ...
     argfun(@(x) cellfun(@(y) y / SEC_PER_MIN, x, 'UniformOutput', false), ...
-            stimStartTimesSec, stimDurationsSec, ...
-            swdStartTimesSec, swdDurationsSec);
+            stimStartTimesSec, eventStartTimesSec);
 
 %% Classify events
 % Extract events of interest and compute the relative event times
@@ -239,25 +205,25 @@ end
                             'ForceMatrixOutput', true);
 
 % Extract event information for the events of interest
-eventDurationsSec = extract_subvectors(swdDurationsSec, 'Indices', origInd);
+eventProperties = extract_subvectors(eventProperties, 'Indices', origInd);
 
 % Determine whether each event is after the stimulus
 isAfterStim = apply_to_all_cells(@(x) x > 0, relEventTimesMin);
 
 % Pool all events together
-[isAfterStimPooled, relEventTimesMinPooled, eventDurationsSecPooled] = ...
+[isAfterStimPooled, relEventTimesMinPooled, eventPropertiesPooled] = ...
     argfun(@(x) apply_over_cells(@vertcat, x), ...
-            isAfterStim, relEventTimesMin, eventDurationsSec);
+            isAfterStim, relEventTimesMin, eventProperties);
 
 % Extract events before stim
-[relEventTimesMinBefore, eventDurationsSecBefore] = ...
+[relEventTimesMinBefore, eventPropertiesBefore] = ...
     argfun(@(x) x(~isAfterStimPooled), ...
-            relEventTimesMinPooled, eventDurationsSecPooled);
+            relEventTimesMinPooled, eventPropertiesPooled);
 
 % Extract events after stim
-[relEventTimesMinAfter, eventDurationsSecAfter] = ...
+[relEventTimesMinAfter, eventPropertiesAfter] = ...
     argfun(@(x) x(isAfterStimPooled), ...
-            relEventTimesMinPooled, eventDurationsSecPooled);
+            relEventTimesMinPooled, eventPropertiesPooled);
 
 %% Compare event properties
 % Create figure
@@ -269,18 +235,24 @@ end
 wasHold = hold_on;
 
 % Place groups together
-twoGroups = {eventDurationsSecBefore, eventDurationsSecAfter};
+twoGroups = {eventPropertiesBefore, eventPropertiesAfter};
 xTickLabels = {'Before', 'After'};
 
 % Plot violin plot
-violins = plot_violin({eventDurationsSecBefore, eventDurationsSecAfter}, ...
-                'XTickLabels', xTickLabels, 'YLabel', 'Event Duration (sec)');
+violins = plot_violin({eventPropertiesBefore, eventPropertiesAfter}, ...
+                'XTickLabels', xTickLabels, 'YLabel', propertyLabel, ...
+                otherArguments);
 
 % Update y axis limits to include 0
-yLimitsOrig = get(gca, 'YLim');
-yLimitsNew = yLimitsOrig;
-yLimitsNew(1) = 0;
-set(gca, 'YLim', yLimitsNew);
+switch propertyName
+    case 'duration'
+        yLimitsOrig = get(gca, 'YLim');
+        yLimitsNew = yLimitsOrig;
+        yLimitsNew(1) = 0;
+        set(gca, 'YLim', yLimitsNew);
+    otherwise
+        % Do nothing
+end
 
 % TODO: plot_significance.m
 % Test difference
@@ -290,8 +262,6 @@ pValue = statsStruct.pValue;
 testFunction = statsStruct.testFunction;
 
 % Plot text for difference
-xLimitsOrig = get(gca, 'XLim');
-yLimitsOrig = get(gca, 'YLim');
 text(0.5, 0.9, symbol, 'Units', 'normalized', 'HorizontalAlignment', 'center');
 text(0.5, 0.85, sprintf('p_{%s} = %g', testFunction, pValue), ...
     'Units', 'normalized', 'HorizontalAlignment', 'center');

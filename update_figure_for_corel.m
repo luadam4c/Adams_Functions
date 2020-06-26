@@ -137,10 +137,6 @@ function figHandle = update_figure_for_corel (varargin)
 BLACK = [0, 0, 0];
 
 % TODO: Make optional parameters
-labelsFontSize = 8;
-axisFontSize = 7; 
-textFontSize = 7;
-rulerLineWidth = 1;
 units = 'inches';
 tickLengthsInches = [0.025, 0.025];
 annotationLineWidth = 1; % TODO

@@ -1,6 +1,6 @@
-function swdTable = read_swd_sheet(filePath)
+function swdTable = read_swd_sheet (filePath)
 %% Read in an SWD table from a spreadsheet file
-% Usage: swdTable = read_swd_sheet(filePath)
+% Usage: swdTable = read_swd_sheet (filePath)
 % Explanation:
 %       TODO
 % Example(s):

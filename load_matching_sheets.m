@@ -37,7 +37,7 @@ function [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suff
 % File History:
 % 2019-09-11 Created by Adam Lu
 % 2019-10-09 Now removes suffix1 before finding files for suffix2
-% 
+% TODO: Rename as read_matching_sheets.m
 
 % TODO: Make optional arguments
 pathBase = '';

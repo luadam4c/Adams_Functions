@@ -45,7 +45,7 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 
 % File History:
 % 2018-11-27 Created by Adam Lu
-% 
+% TODO: Combine and rename as read_swd_sheets.m
 
 %% Hard-coded parameters
 

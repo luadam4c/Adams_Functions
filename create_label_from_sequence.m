@@ -31,6 +31,7 @@ function label = create_label_from_sequence (integers, varargin)
 %       cd/convert_to_char.m
 %
 % Used by:
+%       cd/compare_events_pre_post_stim.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure07.m

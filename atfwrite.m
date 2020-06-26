@@ -54,8 +54,8 @@ function atfwrite (dataMatrix, varargin)
 % 2019-09-06 Added 'TimeStart' as an optional argument
 % 2019-09-06 Added 'SignalUnits' as an optional argument
 % 2019-09-08 Now computes nDecimals instead of nSigFig
+% TODO: Rename as write_data_atf.m
 % TODO: Add 'TextMarks' somehow
-% 
 
 %% Hard-coded parameters
 maxNSamplesAtf = 1e6;

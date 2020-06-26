@@ -64,6 +64,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % 2020-01-31 Added 'ForceCellOutput' as an optional argument
 % 2020-02-18 Added 'TimeWindows' as an optional argument
 % 2020-04-24 Now loads and processes output within array_fun
+% TODO: Rename as read_neuron_outputs.m
 
 %% Hard-coded parameters
 outputExtension = '.out';

@@ -60,6 +60,7 @@ function fig = set_figure_properties (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/compare_events_pre_post_stim.m
 %       cd/create_subplots.m
 %       cd/isemptycell.m
 %       cd/m3ha_compute_gabab_ipsc.m

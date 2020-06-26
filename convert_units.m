@@ -7,7 +7,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 % Example(s):
 %       convert_units(magic(3), 'mQ', 'nQ')
 %       convert_units(magic(3), 'ms', 's')
-%       TODO: convert_units(magic(3), 'hours', 'mins')
+%       TODO: convert_units(magic(3), 'hour', 'min')
 %
 % Outputs:
 %       newValues   - new numeric values
@@ -40,6 +40,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 % File History:
 % 2020-01-22 Created by Adam Lu
 % TODO: Use transform_vectors.m?
+% TODO: Convert between time units
 
 %% Hard-coded parameters
 
