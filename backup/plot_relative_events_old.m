@@ -60,7 +60,7 @@ function handles = plot_relative_events (varargin)
 %       cd/create_label_from_sequence.m
 %       cd/extract_elements.m
 %       cd/extract_fileparts.m
-%       cd/load_matching_sheets.m
+%       cd/read_matching_sheets.m
 %       cd/plot_raster.m
 %
 % Used by:
@@ -72,7 +72,7 @@ function handles = plot_relative_events (varargin)
 % 2019-09-15 Added 'StimTableSuffix' and 'EventTableSuffix' 
 %               as optional arguments
 % 2019-09-25 Finished the raster plot code
-% 2019-09-30 Now uses load_matching_sheets.m
+% 2019-09-30 Now uses read_matching_sheets.m
 % 
 
 %% Hard-coded parameters
@@ -190,7 +190,7 @@ end
 %% Get relative event times
 % Load matching stimulus and event tables
 [stimTables, swdTables, distinctParts] = ...
-    load_matching_sheets(stimTableSuffix, eventTableSuffix);
+    read_matching_sheets(stimTableSuffix, eventTableSuffix);
 
 % Set default labels for each raster
 if isempty(labels)

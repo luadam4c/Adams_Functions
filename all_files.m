@@ -81,7 +81,7 @@ function varargout = all_files (varargin)
 %       cd/create_pleth_EEG_movies.m
 %       cd/find_matching_files.m
 %       cd/force_string_start.m
-%       cd/load_matching_sheets.m
+%       cd/read_matching_sheets.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_single_neuron.m

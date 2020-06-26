@@ -82,7 +82,7 @@ function handles = plot_relative_events (varargin)
 %       cd/create_subplots.m
 %       cd/extract_subvectors.m
 %       cd/extract_fileparts.m
-%       cd/load_matching_sheets.m
+%       cd/read_matching_sheets.m
 %       cd/plot_chevron.m
 %       cd/plot_psth.m
 %       cd/plot_raster.m
@@ -96,7 +96,7 @@ function handles = plot_relative_events (varargin)
 % 2019-09-15 Added 'StimTableSuffix' and 'EventTableSuffix' 
 %               as optional arguments
 % 2019-09-25 Finished the raster plot code
-% 2019-09-30 Now uses load_matching_sheets.m
+% 2019-09-30 Now uses read_matching_sheets.m
 % 2019-10-04 Added 'StimIndices' as an optional arguments
 % 2019-10-06 Added 'YLimits' as an optional argument
 % 2019-10-06 Now plots SWD count ratio instead of percentage
@@ -256,7 +256,7 @@ end
 %% Get relative event times
 % Load matching stimulus and event tables
 [stimTables, swdTables, distinctParts] = ...
-    load_matching_sheets(stimTableSuffix, eventTableSuffix, ...
+    read_matching_sheets(stimTableSuffix, eventTableSuffix, ...
                         'Directory', directory);
 
 % Set default labels for each raster

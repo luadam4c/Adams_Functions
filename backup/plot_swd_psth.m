@@ -48,7 +48,7 @@ function handles = plot_swd_psth (varargin)
 
 % File History:
 % 2019-09-10 Created by Adam Lu
-% TODO: Use load_matching_sheets.m
+% TODO: Use read_matching_sheets.m
 % 
 
 %% Hard-coded parameters

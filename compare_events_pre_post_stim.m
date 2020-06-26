@@ -56,7 +56,7 @@ function handles = compare_events_pre_post_stim (varargin)
 %       cd/extract_subvectors.m
 %       cd/hold_on.m
 %       cd/hold_off.m
-%       cd/load_matching_sheets.m
+%       cd/read_matching_sheets.m
 %       cd/plot_violin.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -160,7 +160,7 @@ end
 %% Get relative event times
 % Load matching stimulus and event tables
 [stimTables, eventTables, distinctParts] = ...
-    load_matching_sheets(stimTableSuffix, eventTableSuffix, ...
+    read_matching_sheets(stimTableSuffix, eventTableSuffix, ...
                         'Directory', directory);
 
 % Extract all start times in seconds
