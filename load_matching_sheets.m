@@ -31,6 +31,7 @@ function [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suff
 %       cd/find_matching_files.m
 %
 % Used by:
+%       cd/compare_events_pre_post_stim.m
 %       cd/plot_relative_events.m
 
 % File History:

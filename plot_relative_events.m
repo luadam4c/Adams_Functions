@@ -176,7 +176,7 @@ eventTableSuffix = iP.Results.EventTableSuffix;
 stimTableSuffix = iP.Results.StimTableSuffix;
 directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
-stimDurationMin = iP.Results.StimDurationMin;
+avgStimDurationMin = iP.Results.StimDurationMin;
 yLimits = iP.Results.YLimits;
 yLimitsLog2Ratio = iP.Results.YLimitsLog2Ratio;
 figTitle = iP.Results.FigTitle;
@@ -291,7 +291,7 @@ end
             stimStartTimesSec, stimDurationsSec, swdStartTimesSec);
 
 % Compute default stimulation duration in minutes
-if isempty(stimDurationMin)
+if isempty(avgStimDurationMin)
     % Find the minimum and maximum stimulation duration in minutes
     minStimDurationMin = apply_iteratively(@min, stimDurationsMin);
     maxStimDurationMin = apply_iteratively(@max, stimDurationsMin);
@@ -303,9 +303,9 @@ if isempty(stimDurationMin)
                     'are more than 5%% apart, ', ...
                     'so stimulus duration will be plotted as 0!\n'], ...
                     maxStimDurationMin, minStimDurationMin);
-        stimDurationMin = 0;
+        avgStimDurationMin = 0;
     else
-        stimDurationMin = mean([maxStimDurationMin, minStimDurationMin]);
+        avgStimDurationMin = mean([maxStimDurationMin, minStimDurationMin]);
     end
 end
 
@@ -384,7 +384,7 @@ case 'psth'
                         'YLimits', yLimits, ...
                         'XLabel', 'Time (min)', ...
                         'RelativeTimeWindow', relTimeWindowMin, ...
-                        'StimDuration', stimDurationMin, ...
+                        'StimDuration', avgStimDurationMin, ...
                         'FigTitle', figTitle, ...
                         'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);

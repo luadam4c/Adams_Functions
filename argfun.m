@@ -33,6 +33,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_derivative_trace.m
+%       cd/compare_events_pre_post_stim.m
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m

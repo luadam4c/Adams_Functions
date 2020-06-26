@@ -26,8 +26,9 @@ function outputs = apply_to_all_cells (myFunction, inputs, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/m3ha_find_decision_point.m
+%       cd/compare_events_pre_post_stim.m
 %       cd/convert_units.m
+%       cd/m3ha_find_decision_point.m
 
 % File History:
 % 2020-01-22 Created by Adam Lu

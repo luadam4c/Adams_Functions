@@ -1,7 +1,7 @@
-function [relEventTimes, relativeTimeWindow] = ...
+function [relEventTimes, relativeTimeWindow, origInd] = ...
                 compute_relative_event_times (eventTimes, stimTimes, varargin)
 %% Computes the relative event times from event times and stimulus times
-% Usage: [relEventTimes, relativeTimeWindow] = ...
+% Usage: [relEventTimes, relativeTimeWindow, origInd] = ...
 %               compute_relative_event_times (eventTimes, stimTimes, varargin)
 % Explanation:
 %       Computes the relative event times around stimulus times
@@ -33,6 +33,12 @@ function [relEventTimes, relativeTimeWindow] = ...
 %                       specified as a numeric vector,
 %                           a cell array of numeric vectors or
 %                           a cell array of cell arrays of numeric vectors
+%       relativeTimeWindow - relative time window used
+%                       specified as a numeric vector
+%       origInd         - original indices of the extracted relative event times
+%                       specified as a numeric vector,
+%                           a cell array of numeric vectors or
+%                           a cell array of cell arrays of numeric vectors
 %
 % Arguments:
 %       eventTimes  - event times
@@ -58,6 +64,7 @@ function [relEventTimes, relativeTimeWindow] = ...
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compare_events_pre_post_stim.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
 %       cd/force_column_vector.m
@@ -75,6 +82,7 @@ function [relEventTimes, relativeTimeWindow] = ...
 % 2019-09-15 Now returns relative event time window used
 % 2019-10-10 Added 'StimIndices' as an optional argument
 % 2019-10-10 Added 'ForceMatrixOutput' as an optional argument
+% 2020-06-26 Added 'origInd' as an output
 % TODO: Add option to shift relative event times by stimDelay
 % 
 
@@ -170,7 +178,7 @@ end
 
 %% Do the job
 % Extract relative event times for each window
-relEventTimesCellCell = ...
+[relEventTimesCellCell, origIndCellCell] = ...
     cellfun(@(x, y) compute_relative_event_times_helper(x, y, ...
                                                     relativeTimeWindow), ...
             eventTimesCell, stimTimesCell, 'UniformOutput', false);
@@ -181,11 +189,14 @@ if ~iscell(eventTimes) && ~iscell(stimTimes)
     %   and one set of stim times
     if numel(relEventTimesCellCell) == 1
         relEventTimesCell = relEventTimesCellCell{1};
+        origIndCell = origIndCellCell{1};
 
         if numel(relEventTimesCell) == 1
             relEventTimes = relEventTimesCell{1};
+            origInd = origIndCell{1};
         else
             relEventTimes = relEventTimesCell;
+            origInd = origIndCell;
         end
     else
         error('Not implemented yet!')
@@ -195,10 +206,12 @@ else
         % Put the event time arrays in a cell matrix
         %   Note: Each column is a file
         %         Each row is a stim
-        relEventTimes = force_matrix(relEventTimesCellCell, ...
-                                    'TreatCellNumAsArray', true);
+        [relEventTimes, origInd] = ...
+            argfun(@(x) force_matrix(x, 'TreatCellNumAsArray', true), ...
+                    relEventTimesCellCell, origIndCellCell);
     else
         relEventTimes = relEventTimesCellCell;
+        origInd = origIndCellCell;
     end
 end
 
@@ -221,7 +234,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function relEventTimes = ...
+function [relEventTimes, origInd] = ...
                 compute_relative_event_times_helper(eventTimes, stimTimes, ...
                                                             relativeTimeWindow)
 %% Computes the relative event times from event times and stimulus times
@@ -230,8 +243,8 @@ function relEventTimes = ...
 windows = compute_time_windows(stimTimes, relativeTimeWindow);
 
 % Extract the event times corresponding to each time window
-eventTimesEachWindow = extract_subvectors(eventTimes, 'Windows', windows, ...
-                                                    'ForceCellOutput', true);
+[eventTimesEachWindow, origInd] = ...
+    extract_subvectors(eventTimes, 'Windows', windows, 'ForceCellOutput', true);
 
 % Compute the relative event times for each time window
 relEventTimes = cellfun(@(x, y) subtract(x, y), eventTimesEachWindow, ...

@@ -1,6 +1,6 @@
-function subVecs = extract_subvectors (vecs, varargin)
+function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %% Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
-% Usage: subVecs = extract_subvectors (vecs, varargin)
+% Usage: [subVecs, indices] = extract_subvectors (vecs, varargin)
 % Explanation:
 %       TODO
 %
@@ -32,6 +32,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       subVecs     - subvectors extracted
 %                   specified as a numeric array 
 %                       or a cell array of numeric vectors
+%       indices     - indices in the original vectors
+%                   specified as a numeric array 
+%                       or a cell array of numeric vectors
+%
 % Arguments:
 %       vecs        - vectors to extract
 %                   must be a numeric array 
@@ -123,6 +127,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/unique_custom.m
 %
 % Used by:
+%       cd/compare_events_pre_post_stim.m
 %       cd/compute_lts_errors.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
@@ -190,6 +195,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2020-05-12 Added 'PadRemaining' as an optional argument
 % 2020-05-15 Added 'AcceptEmptyIndices' as an optional argument
 % 2020-05-15 Fixed redundancy
+% 2020-06-26 Added 'indices' as the second output
 % TODO: check if all endpoints have 2 elements
 % 
 

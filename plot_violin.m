@@ -56,6 +56,7 @@ function violins = plot_violin (data, varargin)
 %       ~/Downloaded_Functions/Violinplot/violinplot.m
 %
 % Used by:
+%       cd/compare_events_pre_post_stim.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_simulate_population.m
 
