@@ -45,7 +45,7 @@ function handles = m3ha_network_plot_gabab (varargin)
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
-%       cd/load_neuron_outputs.m
+%       cd/read_neuron_outputs.m
 %       cd/m3ha_load_gabab_ipsc_params.m
 %       cd/plot_traces.m
 %       cd/set_figure_properties.m
@@ -166,7 +166,7 @@ end
 
 %% Do the job
 % Load simulated data
-simData = load_neuron_outputs('FileNames', dataPaths);
+simData = read_neuron_outputs('FileNames', dataPaths);
 
 % Extract vectors from simulated data
 [tVecsMs, gCmdSimUs] = extract_columns(simData, [TIME_COL_SIM, GGABAB_COL_SIM]);

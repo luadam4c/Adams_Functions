@@ -1,6 +1,6 @@
-function [outputs, fullPaths] = load_neuron_outputs (varargin)
+function [outputs, fullPaths] = read_neuron_outputs (varargin)
 %% Loads .out files created by NEURON into a cell array
-% Usage: [outputs, fullPaths] = load_neuron_outputs (varargin)
+% Usage: [outputs, fullPaths] = read_neuron_outputs (varargin)
 % Explanation:
 %       TODO
 % Example(s):

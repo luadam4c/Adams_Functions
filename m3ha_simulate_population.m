@@ -38,7 +38,7 @@
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/is_field.m
-%       cd/load_neuron_outputs.m
+%       cd/read_neuron_outputs.m
 %       cd/m3ha_compute_and_plot_violin.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
@@ -646,7 +646,7 @@ if computeOpenProbabilityFlag
     %   interpolate simulated data to match the time points of recorded data
     % Note: This is necessary because CVODE (variable time step method) 
     %       is applied in NEURON
-    simData = load_neuron_outputs('FileNames', simOutPaths, ...
+    simData = read_neuron_outputs('FileNames', simOutPaths, ...
                                     'tVecs', tVecsRec, ...
                                     'TimeWindow', fitWindowIpscr);
 

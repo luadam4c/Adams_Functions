@@ -38,7 +38,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %       cd/create_subplots.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
-%       cd/load_neuron_outputs.m
+%       cd/read_neuron_outputs.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_spike_histogram.m
 %       cd/renamevars_custom.m
@@ -160,7 +160,7 @@ simNumber = oscParams.(simNumberStr);
 
 % Load simulated data
 [spikesDataRT, spikesDataTC] = ...
-    argfun(@(x) load_neuron_outputs('FileNames', x), spiPathsRT, spiPathsTC);
+    argfun(@(x) read_neuron_outputs('FileNames', x), spiPathsRT, spiPathsTC);
 
 
 

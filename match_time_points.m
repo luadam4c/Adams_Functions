@@ -17,7 +17,7 @@ function dataNew = match_time_points (dataOld, timeNew)
 %       cd/print_or_show_message.m
 %
 % Used by:
-%       cd/load_neuron_outputs.m
+%       cd/read_neuron_outputs.m
 
 %
 % File History:

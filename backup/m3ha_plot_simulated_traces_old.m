@@ -80,7 +80,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
 %       cd/isemptycell.m
-%       cd/load_neuron_outputs.m
+%       cd/read_neuron_outputs.m
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/plot_traces.m
@@ -360,7 +360,7 @@ end
 %   interpolate simulated data to match the time points of recorded data
 % Note: This is necessary because CVODE (variable time step method) 
 %       is applied in NEURON
-simData = load_neuron_outputs('FileNames', fileNames, 'tVecs', tVecs);
+simData = read_neuron_outputs('FileNames', fileNames, 'tVecs', tVecs);
 
 % Extract vectors from simulated data
 [tVecs, vVecsSim, gCmdSim, iExtSim, vVecsDend1, vVecsDend2] = ...

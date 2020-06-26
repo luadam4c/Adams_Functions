@@ -50,7 +50,7 @@ function handles = m3ha_network_plot_essential (varargin)
 %       cd/convert_units.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
-%       cd/load_neuron_outputs.m
+%       cd/read_neuron_outputs.m
 %       cd/plot_traces.m
 %       cd/plot_window_boundaries.m
 %       cd/set_default_flag.m
@@ -261,9 +261,9 @@ stimWindow = [stimStartMs, stimStartMs + stimDurMs];
 
 % Load simulated data
 if loadRT
-    simDataRT = load_neuron_outputs('FileNames', dataPathRT);
+    simDataRT = read_neuron_outputs('FileNames', dataPathRT);
 end
-simDataTC = load_neuron_outputs('FileNames', dataPathTC);
+simDataTC = read_neuron_outputs('FileNames', dataPathTC);
 
 % Convert the table to a structure array
 tcParamsStructArray = table2struct(tcParamsTable);

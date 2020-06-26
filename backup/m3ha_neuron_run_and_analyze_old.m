@@ -329,7 +329,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_matrix.m
-%       cd/load_neuron_outputs.m
+%       cd/read_neuron_outputs.m
 %       cd/read_params.m
 %       cd/log_arraytext.m
 %       cd/m3ha_extract_cell_name.m
@@ -1264,7 +1264,7 @@ expStrForTitle = strrep(expStr, '_', '\_');
 %   interpolate simulated data to match the time points of recorded data
 % Note: This is necessary because CVODE (variable time step method) 
 %       is applied in NEURON
-simData = load_neuron_outputs('FileNames', outFilePath, 'tVecs', tVecs, ...
+simData = read_neuron_outputs('FileNames', outFilePath, 'tVecs', tVecs, ...
                                 'RemoveAfterLoad', ~saveSimOutFlag);
 
 % Extract vectors from simulated data
