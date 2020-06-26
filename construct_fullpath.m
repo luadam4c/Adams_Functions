@@ -66,7 +66,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
-%       cd/atfwrite.m
+%       cd/write_data_atf.m
 %       cd/check_dir.m
 %       cd/combine_swd_sheets.m
 %       cd/locate_dir.m

@@ -27,7 +27,7 @@ function nSigFig = compute_sigfig(number, varargin)
 %       varargin    - TODO
 %
 % Used by:
-%       cd/atfwrite.m
+%       cd/write_data_atf.m
 
 % File History:
 % 2018-02-14 Created by Adam Lu

@@ -58,7 +58,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/atfwrite.m
+%       cd/write_data_atf.m
 %       cd/compute_sampsizepwr.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_create_initial_params.m

@@ -35,7 +35,7 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       cd/atfwrite.m
+%       cd/write_data_atf.m
 %       cd/create_error_for_nargin.m
 %       cd/dlmwrite_with_header.m
 %       cd/force_matrix.m
@@ -136,7 +136,7 @@ switch textType
                     spike2MatPath);
 
         % Write to ATF file(s)
-        atfwrite(channelMatrix, 'SignalNames', channelNames, ...
+        write_data_atf(channelMatrix, 'SignalNames', channelNames, ...
               'SignalUnits', channelUnits, ...
               'SamplingIntervalSeconds', siSeconds, ...
               'TimeStart', timeStart, 'FileName', textPath, ...

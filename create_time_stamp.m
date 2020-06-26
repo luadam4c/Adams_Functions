@@ -19,7 +19,7 @@ function timeStamp = create_time_stamp (varargin)
 %
 % Used by:    
 %       cd/archive_dependent_scripts.m
-%       cd/atfwrite.m
+%       cd/write_data_atf.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m

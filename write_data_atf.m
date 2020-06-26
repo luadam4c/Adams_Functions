@@ -1,12 +1,12 @@
-function atfwrite (dataMatrix, varargin)
+function write_data_atf (dataMatrix, varargin)
 %% Writes a data matrix to an Axon Text File formatted text file (.atf)
-% Usage: atfwrite (dataMatrix, varargin)
+% Usage: write_data_atf (dataMatrix, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       load_examples;
-%       atfwrite(myRandomSignals1);
+%       write_data_atf(myRandomSignals1);
 %
 % Arguments:
 %       dataMatrix  - data matrix where each column is a vector
@@ -54,7 +54,6 @@ function atfwrite (dataMatrix, varargin)
 % 2019-09-06 Added 'TimeStart' as an optional argument
 % 2019-09-06 Added 'SignalUnits' as an optional argument
 % 2019-09-08 Now computes nDecimals instead of nSigFig
-% TODO: Rename as write_data_atf.m
 % TODO: Add 'TextMarks' somehow
 
 %% Hard-coded parameters
@@ -207,20 +206,20 @@ if nSamples > maxNSamplesAtf
         commentThis = [comment, ', piece', num2str(iFile)];
 
         % Create the .atf file
-        atfwrite_helper(dataMatrix(rowsThis, :), siSeconds, ...
+        write_data_atf_helper(dataMatrix(rowsThis, :), siSeconds, ...
                         signalNames, signalUnits, ...
                         timeStartThis, commentThis, ...
                         precision, filePaths{iFile});
     end
 else
     % Create the .atf file
-    atfwrite_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
+    write_data_atf_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
                     timeStart, comment, precision, filePath);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function atfwrite_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
+function write_data_atf_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
                             timeStart, comment, precision, filePath)
 %% Writes one .atf file
 % TODO: Construct the header text beforehand and pass it in

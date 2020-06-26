@@ -61,7 +61,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %
 % Used by:
 %       cd/array_fun.m
-%       cd/atfwrite.m
+%       cd/write_data_atf.m
 %       cd/all_dependent_functions.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_param_tables.m

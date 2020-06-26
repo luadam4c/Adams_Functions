@@ -48,7 +48,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/match_dimensions.m
 %
 % Used by:
-%       cd/atfwrite.m
+%       cd/write_data_atf.m
 %       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_all_pulse_responses.m

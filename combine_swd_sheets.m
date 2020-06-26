@@ -59,7 +59,7 @@ function [outTables, outPaths] = combine_swd_sheets (varargin)
 % 
 
 %% Hard-coded parameters
-% The following must be consistent with atfwrite.m
+% The following must be consistent with write_data_atf.m
 pieceStr = '_piece';            % string in file names that separate pieces
 
 %% Default values for optional arguments
