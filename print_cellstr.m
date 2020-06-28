@@ -58,7 +58,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/write_data_atf.m
+%       cd/all_files.m
 %       cd/compute_sampsizepwr.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_create_initial_params.m
@@ -69,6 +69,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/print_or_show_message.m
 %       cd/print_and_show_message.m
 %       cd/print_structure.m
+%       cd/write_data_atf.m
 
 % File History:
 % 2018-01-31 Modified from code in find_data_files.m by Mira

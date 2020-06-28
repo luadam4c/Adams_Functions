@@ -3,17 +3,20 @@ function [swdTables, filePaths] = read_swd_sheets (varargin)
 % Usage: [swdTables, filePaths] = read_swd_sheets (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       swdTables   - TODO: Description of swdTables
 %                   specified as a TODO
 %       filePaths   - TODO: Description of filePaths
 %                   specified as a TODO
+%
 % Arguments:
 %       varargin    - 'Recursive': whether to search recursively
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == true
 %                   - 'Directory': directory to look for SWD table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -35,7 +38,7 @@ function [swdTables, filePaths] = read_swd_sheets (varargin)
 %                   
 % Requires:
 %       cd/all_swd_sheets.m
-%       cd/check_fullpath.m
+%       cd/construct_and_check_fullpath.m
 %       cd/issheettype.m
 %       cd/read_swd_sheet.m
 %
@@ -89,6 +92,9 @@ suffix = iP.Results.Suffix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Preparation
+% Initialize output
+swdTables = {};
+
 % Decide on the files to use
 if isempty(filePaths)
     % Decide on the directory if not provided
@@ -104,10 +110,9 @@ if isempty(filePaths)
                                     'Suffix', suffix, ...
                                     'SheetType', sheetType);
 
-    % Return usage message if no .out files found
+    % Return usage message if no files found
     if isempty(filePaths)
         fprintf('Type ''help %s'' for usage\n', mfilename);
-        swdTables = {};
         return
     end
 elseif ischar(filePaths)
@@ -115,16 +120,16 @@ elseif ischar(filePaths)
     filePaths = {filePaths};
 end
 
-%% Do the job
 % Check if each path exists
-pathExists = check_fullpath(filePaths);
+[filePaths, pathExists] = ...
+    construct_and_check_fullpath(filePaths, 'Directory', directory);
 
 % Return if not all paths exist
 if ~all(pathExists)
-    swdTables = {};
     return
 end
 
+%% Do the job
 % Read in the tables from the files
 if iscell(filePaths)
     swdTables = cellfun(@read_swd_sheet, filePaths, 'UniformOutput', false);

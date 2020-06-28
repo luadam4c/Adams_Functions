@@ -71,6 +71,29 @@ end
 %{
 OLD CODE:
 
+swdTable.startTimeOrig = ...
+    cellfun(@(x) textscan(x, dateTimeFormatSpec), swdTable.startTimeOrig);
+
+startTimeOrigDateTime = ...
+    cellfun(@(x) datetime(x, 'InputFormat', dateTimePattern), ...
+            swdTable.startTimeOrig);
+
+startTimeOrigDateTime = ...
+    datetime(swdTable.startTimeOrig, 'InputFormat', dateTimePattern);
+
+swdTable = addvars(swdTable, startTimeOrigDateTime, 'before', 'startTimeOrig');
+
+swdTable = removevars(swdTable, 'startTimeOrig');
+
+swdTable.Properties.VariableNames{'startTimeOrigDateTime'} = 'startTimeOrig';
+
+if any(strcmpi(varNames, 'durationOrig'))
+    swdTable.durationOrig = ...
+        duration(swdTable.durationOrig, 'InputFormat', durationPattern);    
+end
+
+durationPattern = 'hh:mm:ss.SSS';
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

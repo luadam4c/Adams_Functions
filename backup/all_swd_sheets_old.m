@@ -17,7 +17,16 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 %       swdSheetPaths   - full path(s) to the SWD spreadheet files
 %                       specified as a column cell array of character vectors
 % Arguments:
-%       varargin    - 'Suffix': suffix the file name must have
+%       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'Recursive': whether to search recursively
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Directory': directory to look for SWD table files
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'Suffix': suffix the file name must have
 %                   must be a string scalar or a character vector
 %                   default == '_SWDs'
 %                   - 'SheetType': sheet type;
@@ -30,6 +39,7 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 % Requires:
 %       cd/all_files.m
 %       cd/issheettype.m
+%       cd/print_or_show_message.m
 %
 % Used by:
 %       cd/combine_swd_sheets.m
@@ -39,12 +49,14 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 % 2018-11-27 Moved from plot_swd_raster.m
 % 2018-12-27 Added 'Suffix' as an optional argument
 % 2019-10-04 Added 'Recursive' as an optional argument
-% 2020-06-28 Moved printing message to all_files.m
 
 %% Hard-coded parameters
 swdStr = '_SWDs';               % string in file names for SWD spreadsheets
 
 %% Default values for optional arguments
+verboseDefault = true;
+recursiveDefault = true;        % search recursively by default
+directoryDefault = '';          % set later
 suffixDefault = '';             % set later
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
@@ -57,6 +69,12 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Recursive', recursiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Suffix', suffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
@@ -64,6 +82,9 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+verbose = iP.Results.Verbose;
+recursive = iP.Results.Recursive;
+directory = iP.Results.Directory;
 suffix = iP.Results.Suffix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
@@ -78,8 +99,22 @@ end
 
 % Find all SWD spreadsheet files in the directory
 [swdSheetFiles, swdSheetPaths] = ...
-    all_files('Suffix', suffix, 'Extension', sheetType, ...
+    all_files('Verbose', verbose, 'Recursive', recursive, ...
+                'Directory', directory, ...
+                'Suffix', suffix, 'Extension', ['.', sheetType], ...
                 otherArguments);
+
+% Exit function if no spreadsheet files are found
+if isempty(swdSheetPaths)
+    message = sprintf(['There are no SWD spreadsheets of the', ...
+                        ' ending %s.%s in the directory: %s'], ...
+                        suffix, sheetType, directory);
+    mTitle = 'No SWD spreadsheets found warning';
+    icon = 'warn';
+    print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
+                            'MessageMode', 'show', 'Verbose', verbose, ...
+                            'CreateMode', 'replace');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

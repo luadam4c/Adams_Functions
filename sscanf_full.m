@@ -28,6 +28,7 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 %       cd/m3ha_plot_figure07.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_atf_swd.m
+%       cd/read_data_atf.m
 %       /media/adamX/m3ha/data_dclamp/CountSweeps.m
 %       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
 

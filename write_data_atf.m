@@ -1,12 +1,17 @@
-function write_data_atf (dataMatrix, varargin)
+function filePaths = write_data_atf (dataMatrix, varargin)
 %% Writes a data matrix to an Axon Text File formatted text file (.atf)
-% Usage: write_data_atf (dataMatrix, varargin)
+% Usage: filePaths = write_data_atf (dataMatrix, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       load_examples;
 %       write_data_atf(myRandomSignals1);
+%
+% Outputs:
+%       filePaths   - paths to created files
+%                   specified as a character vector
+%                       or a cell array of character vectors
 %
 % Arguments:
 %       dataMatrix  - data matrix where each column is a vector
@@ -59,7 +64,7 @@ function write_data_atf (dataMatrix, varargin)
 %% Hard-coded parameters
 maxNSamplesAtf = 1e6;
 
-% The following must be consistent with combine_swd_sheets.m
+% The following must be consistent with read_data_atf.m
 pieceStr = '_piece';            % string in file names that separate pieces
 
 %% Default values for optional arguments
@@ -212,6 +217,9 @@ if nSamples > maxNSamplesAtf
                         precision, filePaths{iFile});
     end
 else
+    % Oonly one file to be created
+    filePaths = filePath;
+
     % Create the .atf file
     write_data_atf_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
                     timeStart, comment, precision, filePath);

@@ -71,8 +71,6 @@ function varargout = all_files (varargin)
 % Requires:
 %       cd/construct_and_check_fullpath.m
 %       cd/extract_fullpaths.m
-%       cd/print_cellstr.m
-%       cd/print_or_show_message.m
 %
 % Used by:
 %       cd/all_subdirs.m
@@ -102,7 +100,6 @@ function varargout = all_files (varargin)
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_traces_EEG.m
-%       cd/read_data_atf.m
 %       cd/update_file_base_in_matfiles.m
 %       ~/plethR01/plethR01_analyze.m
 %       ~/FluoroSNNAP/FluroSNNAP.m
@@ -324,18 +321,12 @@ directoryStr = print_cellstr(directory, 'OmitNewline', true, ...
                             'OmitBraces', true, 'OmitQuotes', true, ...
                             'ToPrint', false);
 if nFiles == 0 && warnFlag
-    message = sprintf('No %s with pattern %s found in %s!!\n', ...
-                        detectType, regExp, directoryStr);
-    mTitle = 'No files found warning';
-    icon = 'warn';
-    print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
-                            'MessageMode', 'show', 'Verbose', verbose, ...
-                            'CreateMode', 'replace');
+    fprintf('No %s with pattern %s found in %s!!\n', ...
+            detectType, regExp, directoryStr);
 elseif verbose
     fprintf('%d %s with pattern %s found in %s!\n', ...
             nFiles, detectType, regExp, directoryStr);
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -44,6 +44,7 @@ function lineStrs = read_lines_from_file (filePath, varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_atf_swd.m
 %       cd/parse_iox.m
+%       cd/read_data_atf.m
 
 % File History:
 % 2019-09-08 Created by Adam Lu
@@ -124,8 +125,7 @@ if ~isempty(lineNumber)
 end
 
 %% Do the job
-% if isunix
-if false
+if isunix
     if ~isempty(lineNumber)
         [~, unixOut] = unix(sprintf('sed -n ''%dp'' %s', lineNumber, filePath));
     else

@@ -27,7 +27,6 @@ function pathExists = check_fullpath (fullPath, varargin)
 %
 % Used by:    
 %       cd/construct_and_check_fullpath.m
-%       cd/read_swd_sheets.m
 %       cd/plot_traces_abf.m
 
 % File History:

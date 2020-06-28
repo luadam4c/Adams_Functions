@@ -45,7 +45,7 @@ function print_or_show_message (message, varargin)
 %
 % Used by:
 %       cd/abf2mat.m
-%       cd/all_swd_sheets.m
+%       cd/all_files.m
 %       cd/check_dir.m
 %       cd/combine_sweeps.m
 %       cd/create_input_file.m
