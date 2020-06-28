@@ -125,6 +125,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       cd/compute_oscillation_duration.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/parse_all_abfs.m
+%       cd/parse_atf_swd.m
 %       cd/parse_current_family.m
 %       cd/plot_traces_abf.m
 %       cd/plot_traces_EEG.m

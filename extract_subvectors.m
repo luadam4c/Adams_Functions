@@ -152,6 +152,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_simulate_population.m
 %       cd/match_positions.m
+%       cd/parse_atf_swd.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/parse_phase_info.m

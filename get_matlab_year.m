@@ -5,7 +5,7 @@ function matlabYear = get_matlab_year (varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       get_matlab_year
 %
 % Outputs:
 %       matlabYear  - year of current MATLAB version
@@ -20,7 +20,7 @@ function matlabYear = get_matlab_year (varargin)
 % Requires:
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       /home/Matlab/function_template.m
 
 % File History:
 % 2020-06-28 Created by Adam Lu

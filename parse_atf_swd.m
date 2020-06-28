@@ -33,7 +33,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %                   - 'ParseFeatures': whether to parse SWD features
 %                                       such as peakFrequency
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %
 % Requires:
 %       cd/argfun.m
@@ -43,15 +43,19 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/create_error_for_nargin.m
 %       cd/create_label_from_sequence.m
 %       cd/extract_fileparts.m
+%       cd/extract_subvectors.m
 %       cd/force_column_cell.m
 %       cd/is_overlapping.m
 %       cd/issheettype.m
 %       cd/match_dimensions.m
+%       cd/parse_abf.m
+%       cd/read_data_atf.m
 %       cd/read_lines_from_file.m
 %       cd/sscanf_full.m
 %
 % Used by:
 %       cd/parse_all_swds.m
+%       cd/parse_psd.m
 %       cd/plot_traces_EEG.m
 
 % File History:
@@ -74,7 +78,7 @@ varNames = {'startTime', 'endTime', 'duration', 'tracePath', 'pathExists'};
 traceFileNameDefault = '';      % set later
 outFolderDefault = '';          % set later
 sheetTypeDefault = 'csv';       % default spreadsheet type
-parseFeaturesDefault = true;
+parseFeaturesDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -226,7 +230,7 @@ swdManualCsvFile = ...
 
 %% Parse SWD features if requested
 if parseFeatures
-    [peakFrequency] = ...
+    [peakFrequency, secondFrequency, thirdFrequency] = ...
         parse_swd_features(startTime, endTime, tracePath, pathExists);
 end
 
@@ -267,7 +271,8 @@ swdManualTable = table(startTime, endTime, duration, ...
 
 % Add features to the table
 if parseFeatures
-    addvars(swdManualTable, peakFrequency, 'After', 'duration');
+    addvars(swdManualTable, peakFrequency, secondFrequency, ...
+            thirdFrequency, 'After', 'duration');
 end
 
 % Write the table to a file
@@ -290,37 +295,82 @@ isScoredAtf = nLinesToSkip == 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [peakFrequency] = ...
+function [peakFrequency, secondFrequency, thirdFrequency] = ...
                 parse_swd_features (startTime, endTime, tracePath, pathExists)
 %% Extracts SWD features from a trace path
 
-[peakFrequency] = ...
+[peakFrequency, secondFrequency, thirdFrequency] = ...
     array_fun(@parse_features_helper, ...
                 num2cell(startTime), num2cell(endTime), ...
                 tracePath, num2cell(pathExists));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [peakFrequency] = ...
+function [peakFrequency, secondFrequency, thirdFrequency] = ...
                 parse_features_helper (startTime, endTime, tracePath, pathExists)
 %% Extracts SWD features from one SWD
 
+%% Hard-coded parameters
+% Note: For pleth experiments done in the Guyunet lab
+signalName = 'WIC#2';
+
+%% Preparation
 % Make sure path exists
 if ~pathExists
     peakFrequency = NaN;
     return
 end
 
-% Extract SWD data
+% Construct time window
+timeWindow = [startTime; endTime];
+
+%% Do the job
+% Extract signal containing SWD data
 if contains(tracePath, '.abf')
-    % TODO
+    % Read from the ABF file
+    [abfParams, abfData] = parse_abf(tracePath, 'TimeUnits', 's');
+
+    % Read the sampling interval in seconds
+    siSeconds = abfParams.siSeconds;
+
+    % Read time vector in seconds
+    timeVec = abfData.tVec;
+
+    % Read data vector
+    traceData = abfData.vVecs;
 elseif contains(tracePath, '.atf')
-    % TODO: read_data_atf.m
-    traceData = read_data_atf()
+    % Read from the ATF file
+    [atfData, atfParams] = read_data_atf(tracePath);
+
+    % Read the sampling interval in seconds
+    siSeconds = atfParams.siSeconds;
+
+    % Read time vector in seconds
+    timeVec = atfData.Time;
+
+    % Read data vector
+    traceData = atfData.(signalName);
 end
 
-% Extract SWD features
-peakFrequency = 
+% Find the SWD time window endpoints
+endPoints = find_window_endpoints(timeWindow, timeVec);
+
+% Restrict to SWD region
+dataSwd = extract_subvectors(traceData, 'EndPoints', endPoints);
+
+% Compute the power spectral density over the SWD region
+[~, psdData] = parse_psd(dataSwd, 'SamplingFrequency', 1/siSeconds, ...
+                                    'FilterWindow', filterWIndwo);
+freqSorted = psdData.freqSorted;
+
+% Extract the peak frequency of the SWD
+peakFrequency = freqSorted(1);
+secondFrequency = freqSorted(2);
+thirdFrequency = freqSorted(3);
+
+% % Compute the spectrogram for the SWD
+% [spectData, freqHz, timeInstantsSeconds] = ...
+%     compute_spectrogram (traceData, siSeconds);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

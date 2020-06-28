@@ -1,6 +1,6 @@
-function [dataTable, metaData] = read_data_atf (varargin)
-%% Writes a data matrix to an Axon Text File formatted text file (.atf)
-% Usage: [dataTable, metaData] = read_data_atf (varargin)
+function [dataTable, atfParams] = read_data_atf (varargin)
+%% Reads the data table from an Axon Text File formatted text file (.atf)
+% Usage: [dataTable, atfParams] = read_data_atf (varargin)
 % Explanation:
 %       TODO
 %
@@ -10,9 +10,9 @@ function [dataTable, metaData] = read_data_atf (varargin)
 %       dataTable = read_data_atf('FilePaths', filePaths);
 %
 % Outputs:
-%       dataTable  - data matrix where each column is a vector
-%                   specified as a numeric 2D array or a cell array of them
-%       metaData    - structure of metadata with fields:
+%       dataTable  - data table where each column is a vector
+%                   specified as a 2D table or a cell array of them
+%       atfParams    - structure of metadata with fields:
 %                       samplingIntervalSeconds
 %                       signalNames
 %                       signalUnits
@@ -41,7 +41,7 @@ function [dataTable, metaData] = read_data_atf (varargin)
 %       cd/sscanf_full.m
 %
 % Used by:
-%       TODO
+%       cd/parse_atf_swd.m
 
 % File History:
 % 2020-06-28 Modified from write_data_atf.m
@@ -81,7 +81,7 @@ filePaths = iP.Results.FilePaths;
 %% Preparation
 % Initialize output
 dataTable = [];
-metaData = struct;
+atfParams = struct;
 
 % Decide on the files to use
 if isempty(filePaths)
@@ -114,18 +114,18 @@ end
 %% Do the job
 % Read in each file
 if iscell(filePaths)
-    [dataTable, metaData] = ...
+    [dataTable, atfParams] = ...
         cellfun(@read_data_atf_helper, filePaths, 'UniformOutput', false);
 
     % Concatenate the structures
-    metaData = apply_over_cells(@vertcat, metaData);
+    atfParams = apply_over_cells(@vertcat, atfParams);
 else
-    [dataTable, metaData] = read_data_atf_helper(filePaths);
+    [dataTable, atfParams] = read_data_atf_helper(filePaths);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [dataTable, metaData] = read_data_atf_helper(filePath)
+function [dataTable, atfParams] = read_data_atf_helper(filePath)
 %% Reads one .atf file
 
 %% Hard-coded parameters
@@ -167,11 +167,19 @@ dataTable = readtable(filePath, 'FileType', 'text', ...
 % Fix the column names
 dataTable.Properties.VariableNames = signalNames;
 
-metaData.acquisitionMode = acquisitionMode;
-metaData.comment = comment;
-metaData.timeStartSec = timeStartSec;
-metaData.signalNames = signalNames;
-metaData.signalUnits = signalUnits;
+% Extract time column if exists
+timeVec = dataTable.Time;
+
+% Compute sampling interval in seconds
+siSeconds = compute_sampling_interval(timeVec)
+
+% Save parameters
+atfParams.acquisitionMode = acquisitionMode;
+atfParams.comment = comment;
+atfParams.timeStartSec = timeStartSec;
+atfParams.siSeconds = siSeconds;
+atfParams.signalNames = signalNames;
+atfParams.signalUnits = signalUnits;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
