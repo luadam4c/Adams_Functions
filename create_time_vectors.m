@@ -58,7 +58,6 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/match_reciprocals.m
 %
 % Used by:
-%       cd/write_data_atf.m
 %       cd/compute_activation_profile.m
 %       cd/compute_lts_errors.m
 %       cd/compute_single_neuron_errors.m
@@ -72,10 +71,12 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/m3ha_plot_figure05.m.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_time_info.m
+%       cd/parse_atf_swd.m
 %       cd/parse_gas_trace.m
 %       cd/parse_multiunit.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_traces_spike2_mat.m
+%       cd/write_data_atf.m
 
 % File History:
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions

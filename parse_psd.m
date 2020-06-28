@@ -17,10 +17,10 @@ function [parsedParams, parsedData] = parse_psd (dataVec, varargin)
 %       dataVec     - TODO: Description of dataVec
 %                   must be a TODO
 %       varargin    - 'SamplingFrequencyHz': sampling frequency in Hz
-%                   must be a numeric scalar
+%                   must be a positive scalar
 %                   default == 1 Hz
 %                   - 'FilterWindowHz': filter window for PSD in Hz
-%                   must be a numeric scalar
+%                   must be a positive scalar
 %                   default == 2 Hz
 %                   - Any other parameter-value pair for TODO()
 %
@@ -58,9 +58,9 @@ addRequired(iP, 'dataVec');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SamplingFrequencyHz', samplingFrequencyHzDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'FilterWindowHz', filterWindowHzDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Read from the Input Parser
 parse(iP, dataVec, varargin{:});
@@ -203,6 +203,8 @@ parsedData.psd = psd;
 parsedData.psdFiltered = psdFiltered;
 parsedData.psdSmoothed = psdSmoothed;
 parsedData.freqVec = freqVec;
+parsedData.freqSelected = freqSelected;
+parsedData.idxSelected = idxSelected;
 parsedData.freqSorted = freqSorted;
 parsedData.idxSorted = idxSorted;
 

@@ -35,6 +35,7 @@ function [dataTable, atfParams] = read_data_atf (varargin)
 % Requires:
 %       cd/all_files.m
 %       cd/apply_over_cells.m
+%       cd/compute_sampling_interval.m
 %       cd/construct_and_check_fullpath.m
 %       cd/convert_units.m
 %       cd/read_lines_from_file.m
@@ -171,7 +172,7 @@ dataTable.Properties.VariableNames = signalNames;
 timeVec = dataTable.Time;
 
 % Compute sampling interval in seconds
-siSeconds = compute_sampling_interval(timeVec)
+siSeconds = compute_sampling_interval(timeVec);
 
 % Save parameters
 atfParams.acquisitionMode = acquisitionMode;
@@ -185,14 +186,6 @@ atfParams.signalUnits = signalUnits;
 
 %{
 OLD CODE:
-
-% Read in the matrix data
-if get_matlab_year >= 2019
-    dataTable = readmatrix(filePath, 'FileType', 'text', ...
-                            'NumHeaderLines', nHeaderLines);
-else
-    dataTable = dlmread(filePath, delimiter, nHeaderLines, 0);
-end
 
 %}
 

@@ -44,6 +44,8 @@ function [swdTables, swdSheetPaths, ...
 %                   could be anything recognised by the readtable() function 
 %                   (see issheettype.m under Adams_Functions)
 %                   default == 'csv'
+%                   - Any other parameter-value pair for parse_atf_swd() 
+%                       or parse_assyst_swd()
 %
 % Requires:
 %       cd/all_files.m
@@ -122,7 +124,7 @@ sayliFolder = iP.Results.SayliFolder;
 assystFolder = iP.Results.AssystFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
-% Keep unmatched arguments for the TODO function
+% Keep unmatched arguments for parse_atf_swd() or parse_assyst_swd()
 otherArguments = iP.Unmatched;
 
 %% Preparation
@@ -139,13 +141,13 @@ end
 
 % Find all .atf files in the manualFolder
 [manualFiles, manualPaths] = ...
-    all_files('Verbose', verbose, 'Recursive', recursive, ...
+    all_files('Verbose', verbose, 'Recursive', recursive, 'WarnFlag', false, ...
                 'ForceCellOutput', true, 'Directory', manualFolder, ...
                 'Extension', '.atf');
 
 % Find all Assyst output files in the assystFolder
 [assystFiles, assystPaths] = ...
-    all_files('Verbose', verbose, 'Recursive', recursive, ...
+    all_files('Verbose', verbose, 'Recursive', recursive, 'WarnFlag', false, ...
                 'ForceCellOutput', true, 'Directory', assystFolder, ...
                 'Suffix', assystStr, 'Extension', '.txt');
 
@@ -157,10 +159,11 @@ nAssystPaths = numel(assystPaths);
 % Apply parse_atf_swd.m to each .atf file
 swdManualTables = cell(nManualPaths, 1);
 swdManualCsvFiles = cell(nManualPaths, 1);
-parfor iFile = 1:nManualPaths
+% parfor iFile = 1:nManualPaths
+for iFile = 1:nManualPaths
     [swdManualTables{iFile}, swdManualCsvFiles{iFile}] = ...
         parse_atf_swd(manualPaths{iFile}, 'OutFolder', outFolder, ...
-                        'SheetType', sheetType);
+                        'SheetType', sheetType, otherArguments);
 end
 
 %% Parse all scored Assyst output file
@@ -170,7 +173,7 @@ swdAssystCsvFiles = cell(nAssystPaths, 1);
 parfor iFile = 1:nAssystPaths
     [swdAssystTables{iFile}, swdAssystCsvFiles{iFile}] = ...
         parse_assyst_swd(assystPaths{iFile}, 'OutFolder', outFolder, ...
-                        'SheetType', sheetType);
+                        'SheetType', sheetType, otherArguments);
 end
 
 %% Combine SWD sheets
@@ -218,3 +221,5 @@ OLD CODE:
             assystPaths, 'UniformOutput', false);
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

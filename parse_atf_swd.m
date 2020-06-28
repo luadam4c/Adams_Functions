@@ -42,6 +42,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
 %       cd/create_label_from_sequence.m
+%       cd/create_time_vectors.m
 %       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
 %       cd/force_column_cell.m
@@ -188,10 +189,12 @@ startTime = startTimesMs / MS_PER_S;
 endTime = endTimesMs / MS_PER_S;
 
 % Make sure none of the windows overlap
-[isOverlapping, ~, indOverlapPrev] = is_overlapping(transpose([startTime, endTime]));
+[isOverlapping, ~, indOverlapPrev] = ...
+    is_overlapping(transpose([startTime, endTime]));
 if isOverlapping
     fprintf(['The file %s cannot be parsed because the following ', ...
-                'window numbers overlap:\n'], originalEventFile);
+                'window numbers overlap with the next one:\n'], ...
+                originalEventFile);
     fprintf('\t%s\n', create_label_from_sequence(indOverlapPrev));
     fprintf('\n');
     return
@@ -271,8 +274,9 @@ swdManualTable = table(startTime, endTime, duration, ...
 
 % Add features to the table
 if parseFeatures
-    addvars(swdManualTable, peakFrequency, secondFrequency, ...
-            thirdFrequency, 'After', 'duration');
+    swdManualTable = ...
+        addvars(swdManualTable, peakFrequency, secondFrequency, ...
+                thirdFrequency, 'After', 'duration');
 end
 
 % Write the table to a file
@@ -303,6 +307,10 @@ function [peakFrequency, secondFrequency, thirdFrequency] = ...
     array_fun(@parse_features_helper, ...
                 num2cell(startTime), num2cell(endTime), ...
                 tracePath, num2cell(pathExists));
+% [peakFrequency, secondFrequency, thirdFrequency] = ...
+%     cellfun(@parse_features_helper, ...
+%                 num2cell(startTime), num2cell(endTime), ...
+%                 tracePath, num2cell(pathExists));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -311,8 +319,13 @@ function [peakFrequency, secondFrequency, thirdFrequency] = ...
 %% Extracts SWD features from one SWD
 
 %% Hard-coded parameters
+filterWindow = 2;
+
 % Note: For pleth experiments done in the Guyunet lab
 signalName = 'WIC#2';
+
+% Note: For pleth experiments done in the Beenhakker lab
+signalNumber = 1;
 
 %% Preparation
 % Make sure path exists
@@ -321,8 +334,9 @@ if ~pathExists
     return
 end
 
-% Construct time window
-timeWindow = [startTime; endTime];
+% Construct relative time window from start of file
+%   Note: this is the times recorded by the scored ATF files
+timeWindowRel = [startTime; endTime];
 
 %% Do the job
 % Extract signal containing SWD data
@@ -336,11 +350,12 @@ if contains(tracePath, '.abf')
     % Read time vector in seconds
     timeVec = abfData.tVec;
 
-    % Read data vector
-    traceData = abfData.vVecs;
+    % Choose data vector
+    vVecs = abfData.vVecs;
+    traceData = vVecs(:, signalNumber);
 elseif contains(tracePath, '.atf')
     % Read from the ATF file
-    [atfData, atfParams] = read_data_atf(tracePath);
+    [atfData, atfParams] = read_data_atf('FilePaths', tracePath);
 
     % Read the sampling interval in seconds
     siSeconds = atfParams.siSeconds;
@@ -348,25 +363,51 @@ elseif contains(tracePath, '.atf')
     % Read time vector in seconds
     timeVec = atfData.Time;
 
-    % Read data vector
+    % Choose data vector
     traceData = atfData.(signalName);
+elseif contains(tracePath, '.txt')
+    % Note: This is for old pleth data scored by Katie
+    % Read in the matrix data
+    if get_matlab_year >= 2019
+        textData = readmatrix(tracePath, 'FileType', 'text');
+    else
+        textData = csvread(tracePath);
+    end
+
+    % Read the sampling interval in seconds
+    siSeconds = 0.005;
+
+    % Count the number of samples
+    nSamples = size(textData, 1);
+
+    % Read time vector in seconds
+    timeVec = create_time_vectors(nSamples, 'TimeUnits', 's', ...
+                                    'SamplingIntervalSeconds', siSeconds);
+
+    % Choose data vector
+    traceData = textData(:, signalNumber);
+else
+    error('The trace path %s is unrecognized!', tracePath);
 end
 
+% Find the relative time vector
+timeVecRel = timeVec - timeVec(1);
+
 % Find the SWD time window endpoints
-endPoints = find_window_endpoints(timeWindow, timeVec);
+endPoints = find_window_endpoints(timeWindowRel, timeVecRel);
 
 % Restrict to SWD region
 dataSwd = extract_subvectors(traceData, 'EndPoints', endPoints);
 
 % Compute the power spectral density over the SWD region
 [~, psdData] = parse_psd(dataSwd, 'SamplingFrequency', 1/siSeconds, ...
-                                    'FilterWindow', filterWIndwo);
-freqSorted = psdData.freqSorted;
+                                    'FilterWindow', filterWindow);
+freqSelected = psdData.freqSelected;
 
 % Extract the peak frequency of the SWD
-peakFrequency = freqSorted(1);
-secondFrequency = freqSorted(2);
-thirdFrequency = freqSorted(3);
+peakFrequency = freqSelected(1);
+secondFrequency = freqSelected(2);
+thirdFrequency = freqSelected(3);
 
 % % Compute the spectrogram for the SWD
 % [spectData, freqHz, timeInstantsSeconds] = ...
