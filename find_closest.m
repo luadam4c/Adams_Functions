@@ -1,5 +1,5 @@
 function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
-%% Finds the element(s) in monotonic numeric vector(s) closest to target(s)
+%% Finds the element(s) in numeric vector(s) closest to target(s)
 % Usage: [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 % Explanation:
 %       TODO
@@ -24,7 +24,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %                   specified as a numeric vector
 %
 % Arguments:
-%       vecs        - monotonic vector(s)
+%       vecs        - vector(s)
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
@@ -51,15 +51,16 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 % Used by:
 %       cd/compute_gabab_conductance.m
 %       cd/detect_spikes_multiunit.m
+%       cd/parse_atf_swd.m
+%       cd/parse_ipsc.m
 %       cd/parse_phase_info.m
 %       cd/parse_stim.m
-%       cd/parse_ipsc.m
 
 % File History:
 % 2019-11-14 Created by Adam Lu
 % 2019-11-25 Added 'none' as a direction
 % 2020-01-03 Improved performance
-% 
+% 2020-06-29 Now does not require imput to be monotonic
 
 %% Hard-coded parameters
 validDirections = {'nearest', 'down', 'up', 'none'};
@@ -106,6 +107,10 @@ vecs = force_column_vector(vecs, 'IgnoreNonVectors', true);
 [vecs, target] = ...
     match_format_vector_sets(vecs, target, 'TreatRowVecAsOne', false);
 
+% Sort the values in descending order
+%   Note: Must be descending for 'nearest' to work
+[vecs, origInd] = apply_to_all_cells(@(x) sort(x, 'descend'), vecs);
+
 %% Do the job
 % Create "time windows"
 if iscell(target)
@@ -127,16 +132,24 @@ valsClosest = extract_subvectors(vecs, 'Indices', indClosest);
 
 % Decide on the closest
 if iscell(target)
-    [idxClosest, valClosest] = ...
+    [idxClosestSorted, valClosest] = ...
         array_fun(@(x, y, z) find_closest_helper(x, y, z, direction), ...
                     target, valsClosest, indClosest);
 else
-    [idxClosest, valClosest] = ...
+    [idxClosestSorted, valClosest] = ...
         find_closest_helper(target, valsClosest, indClosest, direction);
 end
 
 % Force outputs as column vectors
-[idxClosest, valClosest] = argfun(@force_column_vector, idxClosest, valClosest);
+[idxClosestSorted, valClosest] = ...
+    argfun(@force_column_vector, idxClosestSorted, valClosest);
+
+% Use original indices
+if iscell(origInd)
+    idxClosest = cellfun(@(x, y) x(y), origInd, num2cell(idxClosestSorted));
+else
+    idxClosest = origInd(idxClosestSorted);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

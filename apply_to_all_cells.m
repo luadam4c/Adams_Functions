@@ -1,6 +1,6 @@
-function outputs = apply_to_all_cells (myFunction, inputs, varargin)
+function varargout = apply_to_all_cells (myFunction, inputs, varargin)
 %% Applies a function to inputs, separately to each cell if a inputs is a cell array
-% Usage: outputs = apply_to_all_cells (myFunction, inputs, varargin)
+% Usage: varargout = apply_to_all_cells (myFunction, inputs, varargin)
 % Explanation:
 %       TODO
 %
@@ -32,7 +32,7 @@ function outputs = apply_to_all_cells (myFunction, inputs, varargin)
 
 % File History:
 % 2020-01-22 Created by Adam Lu
-% 
+% 2020-06-29 Now uses varargout
 
 %% Hard-coded parameters
 
@@ -69,14 +69,15 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Do the job
 if iscell(inputs)
-    outputs = cellfun(@(x) apply_to_all_cells(myFunction, x, ...
+    [varargout{1:nargout}] = ...
+        cellfun(@(x) apply_to_all_cells(myFunction, x, ...
                                     'OptArg', optArg, otherArguments{:}), ...
                         inputs, 'UniformOutput', false);
 else
     if ~isempty(optArg)
-        outputs = myFunction(inputs, optArg, otherArguments{:});
+        [varargout{1:nargout}] = myFunction(inputs, optArg, otherArguments{:});
     else
-        outputs = myFunction(inputs, otherArguments{:});
+        [varargout{1:nargout}] = myFunction(inputs, otherArguments{:});
     end
 end
 
