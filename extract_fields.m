@@ -55,6 +55,7 @@ function varargout = extract_fields (structs, varargin)
 % 2019-12-30 Now allows the first argument to be objects or tables
 % 2020-01-02 Changed the default UniformOutput to true whenever possible
 % 2020-04-20 Now applies default UniformOutput to each field separately
+% 2020-07-07 Fixed the case when structs are in cell arrays
 % TODO: accept substrings
 % TODO: OutputMode
 % 
@@ -131,6 +132,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function field = get_field (myStruct, fieldName, returnNan)
+
+% Remove from cell array
+if iscell(myStruct)
+    myStruct = myStruct{1};
+end
 
 % Get the field or return NaN
 if is_field(myStruct, fieldName)
