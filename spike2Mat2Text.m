@@ -1,5 +1,5 @@
 function varargout = spike2Mat2Text (spike2MatPath, varargin)
-%% Converts a Spike2-exported .mat file to a text file (atf, txt or csv)
+%% Converts a Spike2-exported .mat file to a text file (.atf, .txt or .csv)
 % Usage: [textPath, parsedTable] = spike2Mat2Text (spike2MatPath, varargin)
 % Explanation:
 %       TODO

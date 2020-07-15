@@ -63,8 +63,7 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (varargin)
 % 
 
 %% Hard-coded parameters
-N_LINES_TO_SKIP = 2;            % scored atf files all seem to have 
-                                %   two irrelevant lines
+N_LINES_TO_SKIP = 2;            % scored atf files have two irrelevant lines
 
 %% Default values for optional arguments
 atfFileOrDirDefault = pwd;      % convert all .atf files in the present working 

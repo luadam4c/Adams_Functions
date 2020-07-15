@@ -54,6 +54,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/read_data_atf.m
 %       cd/read_lines_from_file.m
 %       cd/sscanf_full.m
+%       cd/union_over_cells.m
 %
 % Used by:
 %       cd/parse_all_swds.m
@@ -72,6 +73,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 
 %% Hard-coded constants
 MS_PER_S = 1000;
+N_LINES_TO_SKIP = 2;            % scored atf files have two irrelevant lines
 
 %% Hard-coded parameters
 varNames = {'startTime', 'endTime', 'duration', 'tracePath', 'pathExists'};
@@ -136,6 +138,9 @@ if isempty(outFolder)
     outFolder = fileDir;
 end
 
+% Compute the number of header lines in the scored ATF file
+nHeaderLinesAtf = N_LINES_TO_SKIP + 1;
+
 %% Do the job
 % Initialize outputs
 swdManualTable = table.empty;
@@ -185,6 +190,17 @@ else
     % Check whether each row is the same as firstSignalName
     isFirstSignal = strcmp(atfTable.Signal, firstSignalName);
 
+    % Compute the number of windows
+    nWindows = sum(isFirstSignal);
+
+    % Compute the number of rows for each window
+    switch nWindows
+         case 0
+            nRowsPerWindow = NaN;
+         otherwise
+            nRowsPerWindow = round(height(atfTable) / nWindows);
+    end 
+
     % Restrict to the entries for the first channel only
     swdManualTableOfInterest = atfTable(isFirstSignal, :);
 
@@ -200,10 +216,18 @@ else
     [isOverlapping, ~, indOverlapPrev] = ...
         is_overlapping(transpose([startTime, endTime]));
     if isOverlapping
+        toSubtract = (nRowsPerWindow - 1):-1:0;
+        rowsOverlapPrevCell = ...
+            arrayfun(@(x) nHeaderLinesAtf + x * nRowsPerWindow - toSubtract, ...
+                    indOverlapPrev, 'UniformOutput', false);
+        rowsOverlapPrev = union_over_cells(rowsOverlapPrevCell);
+
         fprintf(['The file %s cannot be parsed because the following ', ...
                     'window numbers overlap with the next one:\n'], ...
                     originalEventFile);
         fprintf('\t%s\n', create_label_from_sequence(indOverlapPrev));
+        fprintf('Please remove these lines from %s:\n', originalEventFile);
+        fprintf('\t%s\n', create_label_from_sequence(rowsOverlapPrev));
         fprintf('\n');
         return
     end
