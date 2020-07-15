@@ -41,6 +41,7 @@ figTypes = {'png', 'epsc2'};
 colorMap = [];
 
 plotOriginal = true;
+plotAmpScales = false;
 plotDualVaryWeight = false;
 plotDualVaryShapeOld = false;
 plotVaryDualtoGAT3 = false;
@@ -169,6 +170,26 @@ if plotOriginal
     pos(1,:) = defaultPosition;
     pos(1, 1) = defaultPosition(1, 1) - defaultPosition(1, 3);
     set(fig, 'Position', pos(1,:));
+end
+
+%% Plot original GABAB IPSC conductances under different amplitude scales
+if plotAmpScales
+    figPathBase = fullfile(outFolder, 'gababipsc_control_vary_amp_scale');
+    ampScales = [0.25, 0.5, 1, 2, 4, 8];
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampScales, ...
+                            tauRiseCon, tauFallFastCon, tauFallSlowCon, ...
+                            weightCon, 'SheetName', [figPathBase, '.csv']);
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, 'k');
+    legend(create_labels_from_numbers(ampScales, 'Prefix', 'scale = '));
+    title('Control GABA_B IPSC, amplitude scaled');
+    save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
+    xlim([0, 4000]);
+    update_figure_for_corel(fig, 'RemoveLegends', true, ...
+                            'LabelsFontSize', 16, 'AxisFontSize', 14, ...
+                            'TextFontSize', 14);
+    save_all_figtypes(fig, figPathBase, figTypes);
 end
 
 %% Plot as weight is varied

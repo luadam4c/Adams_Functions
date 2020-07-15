@@ -1,6 +1,8 @@
-function [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_IT(varargin)
+function [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = ...
+                m3ha_compute_and_plot_IT (varargin)
 %% Plot activation/inactivation curves for the T-type calcium current
-% Usage: [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_IT(varargin)
+% Usage: [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = ...
+%               m3ha_compute_and_plot_IT (varargin)
 %
 % Arguments:    
 %       v           (opt) voltage vector (x-values of plots)
@@ -54,6 +56,7 @@ function [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_
 %       cd/m3ha_compute_hinf_IT.m
 %       cd/m3ha_compute_taum_IT.m
 %       cd/m3ha_compute_tauh_IT.m
+%       cd/update_figure_for_corel.m
 %       /home/Matlab/Adams_Functions/compute_IMax_GHK.m
 %
 % File History:
@@ -62,6 +65,7 @@ function [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_
 % 2017-08-09 Added v as an optional argument
 % 2017-08-10 Added suffix to titles
 % 2018-03-08 Made figures invisible
+% 2020-07-09 Now uses update_figure_for_corel.m
 
 %% Fixed values for IT
 z = 2;                  % valence
@@ -181,25 +185,34 @@ fprintf("maxOpenProbability = %g\n", maxOpenProbability);
 
 % Plot and save the steady state values
 if plotInfFlag
-    hfig1 = figure('Visible', 'off');
+    hfig1 = set_figure_properties('AlwaysNew', true);
     clf(hfig1);
     hold on;
-    plot(v, minf, 'b--', 'LineWidth', 2, 'DisplayName', 'm_{\infty}');
-    plot(v, minfsq, 'b', 'LineWidth', 2, 'DisplayName', 'm_{\infty}^2');
-    plot(v, hinf, 'r', 'LineWidth', 2, 'DisplayName', 'h_{\infty}');
+    p1 = plot(v, minf, 'b--', 'LineWidth', 2, 'DisplayName', 'm_{\infty}');
+    p2 = plot(v, minfsq, 'b', 'LineWidth', 2, 'DisplayName', 'm_{\infty}^2');
+    p3 = plot(v, hinf, 'r', 'LineWidth', 2, 'DisplayName', 'h_{\infty}');
     ylim([0, 1]);
     xlim([vMin, vMax]);
     xlabel('Membrane potential (mV)');
     ylabel('Steady state value');
     % title('Steady state values for activation/inactivation of IT');
-    legend('location', 'northeast');
-    set(gca, 'FontSize', 15);
-    save_all_figtypes(hfig1, fullfile(outFolder, ['IT_minf_hinf', suffix]), figTypes);
+    legend('location', 'southwest');
+    update_figure_for_corel(hfig1, 'LabelsFontSize', 15, ...
+                            'AxisFontSize', 15, 'TextFontSize', 15);
+    save_all_figtypes(hfig1, ...
+        fullfile(outFolder, ['IT_minf_hinf', suffix]), figTypes);
+
+    delete(p1);
+    update_figure_for_corel(hfig1, 'RemoveLegends', true, ...
+                            'LabelsFontSize', 15, ...
+                            'AxisFontSize', 15, 'TextFontSize', 15);
+    save_all_figtypes(hfig1, ...
+        fullfile(outFolder, ['IT_minf_hinf_temp', suffix]), figTypes);
 end
 
 % Plot and save the time constants
 if plotTauFlag
-    hfig2 = figure('Visible', 'off');
+    hfig2 = set_figure_properties('AlwaysNew', true);
     clf(hfig2);
     hold on;
     plot(v, taum, 'b', 'LineWidth', 2, 'DisplayName', '\tau_{m}');
@@ -210,12 +223,13 @@ if plotTauFlag
     % title('Time constants for activation/inactivation of IT');
     legend('location', 'northeast');
     set(gca, 'FontSize', 15);
-    save_all_figtypes(hfig2, fullfile(outFolder, ['IT_taum_tauh', suffix]), figTypes);
+    save_all_figtypes(hfig2, ...
+        fullfile(outFolder, ['IT_taum_tauh', suffix]), figTypes);
 end
 
 % Plot and save the maximum current-voltage relationship
 if plotIVFlag
-    hfig3 = figure('Visible', 'off');
+    hfig3 = set_figure_properties('AlwaysNew', true);
     clf(hfig3);
     hold on;
     plot(v, IMax, 'k', 'LineWidth', 2, ...
@@ -230,7 +244,8 @@ if plotIVFlag
     % title(['I-V relationship of IT for ', strrep(suffix(2:end), '_', '\_')]);
     legend('location', 'southeast');
     set(gca, 'FontSize', 15);
-    save_all_figtypes(hfig3, fullfile(outFolder, ['IT_I-V', suffix]), figTypes);
+    save_all_figtypes(hfig3, ...
+        fullfile(outFolder, ['IT_I-V', suffix]), figTypes);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

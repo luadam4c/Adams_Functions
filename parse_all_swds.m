@@ -25,7 +25,7 @@ function [swdTables, swdSheetPaths, ...
 %                   default == true
 %                   - 'Recursive': whether to search recursively
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'OutFolder': the name of the directory in which 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -62,6 +62,7 @@ function [swdTables, swdSheetPaths, ...
 % 2018-12-26 Modified from plot_swd_raster.m
 % 2019-09-08 Added 'ToCombine' as an optional parameter
 % 2019-11-19 Added 'Recursive' as an optional parameter
+% 2020-07-15 Now does not search recursively by default
 % TODO: Combine SWD sheets with '_piece' in the name
 
 %% Hard-coded constants
@@ -80,7 +81,7 @@ sweepStr = '_sweep';            % string in file names that separate sweeps
 %% Default values for optional arguments
 verboseDefault = true;
 toCombineDefault = true;
-recursiveDefault = true;        % search recursively by default
+recursiveDefault = false;       % search recursively by default
 outFolderDefault = '';          % set later
 manualFolderDefault = '';       % set later
 sayliFolderDefault = '';        % set later

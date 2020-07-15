@@ -68,7 +68,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 % 2019-09-09 Updated the construction of trace file paths
 % 2019-09-24 Added check for overlapping windows
 % 2020-06-26 Added 'ParseFeatures' as an optional argument
-% 
+% 2020-07-15 Now generates an output file even there is no event recorded
 
 %% Hard-coded constants
 MS_PER_S = 1000;
@@ -169,104 +169,121 @@ end
 
 % Make sure there is an event recorded
 if height(atfTable) == 0
-    return
+    startTime = [];
+    endTime = [];
+    duration = [];
+    tracePath = {};
+    pathExists = [];
+
+    % Construct manual SWD table csv file
+    swdManualCsvFile = ...
+        replace(atfCsvFile, '_scored_atf.csv', ['_Manual_SWDs.', sheetType]);
+else
+    % Get the first channel name
+    firstSignalName = atfTable{1, 'Signal'};
+
+    % Check whether each row is the same as firstSignalName
+    isFirstSignal = strcmp(atfTable.Signal, firstSignalName);
+
+    % Restrict to the entries for the first channel only
+    swdManualTableOfInterest = atfTable(isFirstSignal, :);
+
+    % Get the start and end times in ms
+    startTimesMs = swdManualTableOfInterest.Time1_ms_;
+    endTimesMs = swdManualTableOfInterest.Time2_ms_;
+
+    % Convert to seconds
+    startTime = startTimesMs / MS_PER_S;
+    endTime = endTimesMs / MS_PER_S;
+
+    % Make sure none of the windows overlap
+    [isOverlapping, ~, indOverlapPrev] = ...
+        is_overlapping(transpose([startTime, endTime]));
+    if isOverlapping
+        fprintf(['The file %s cannot be parsed because the following ', ...
+                    'window numbers overlap with the next one:\n'], ...
+                    originalEventFile);
+        fprintf('\t%s\n', create_label_from_sequence(indOverlapPrev));
+        fprintf('\n');
+        return
+    end
+
+    % Compute duration
+    duration = endTime - startTime;
+
+    % If not provided, read in the trace file names
+    if isempty(traceFileName)
+        % Get the .abf file name for each SWD
+        traceFileName = swdManualTableOfInterest.FileName;
+    end
+
+    % Construct full path to original data file
+    %   Note: Must be (or copied to) the same directory as the original event file
+    [tracePath, pathExists] = ...
+        construct_and_check_fullpath(traceFileName, 'Directory', fileDir);
+
+    % Force as a column cell array
+    tracePath = force_column_cell(tracePath);
+
+    % Make sure the dimensions match up
+    [tracePath, pathExists] = ...
+        argfun(@(x) match_dimensions(x, size(startTime)), tracePath, pathExists);
+
+    % Extract the file base of the trace file
+    traceFileBase = extract_fileparts(traceFileName{1}, 'base');
+
+    % Extract the file extension of the trace file
+    traceFileExt = extract_fileparts(traceFileName{1}, 'ext');
+
+    % Construct manual SWD table csv file
+    swdManualCsvFile = ...
+        fullfile(outFolder, [traceFileBase, '_Manual_SWDs.', sheetType]);    
 end
-
-% Get the first channel name
-firstSignalName = atfTable{1, 'Signal'};
-
-% Check whether each row is the same as firstSignalName
-isFirstSignal = strcmp(atfTable.Signal, firstSignalName);
-
-% Restrict to the entries for the first channel only
-swdManualTableOfInterest = atfTable(isFirstSignal, :);
-
-% Get the start and end times in ms
-startTimesMs = swdManualTableOfInterest.Time1_ms_;
-endTimesMs = swdManualTableOfInterest.Time2_ms_;
-
-% Convert to seconds
-startTime = startTimesMs / MS_PER_S;
-endTime = endTimesMs / MS_PER_S;
-
-% Make sure none of the windows overlap
-[isOverlapping, ~, indOverlapPrev] = ...
-    is_overlapping(transpose([startTime, endTime]));
-if isOverlapping
-    fprintf(['The file %s cannot be parsed because the following ', ...
-                'window numbers overlap with the next one:\n'], ...
-                originalEventFile);
-    fprintf('\t%s\n', create_label_from_sequence(indOverlapPrev));
-    fprintf('\n');
-    return
-end
-
-% Compute duration
-duration = endTime - startTime;
-
-% If not provided, read in the trace file names
-if isempty(traceFileName)
-    % Get the .abf file name for each SWD
-    traceFileName = swdManualTableOfInterest.FileName;
-end
-
-% Construct full path to original data file
-%   Note: Must be (or copied to) the same directory as the original event file
-[tracePath, pathExists] = ...
-    construct_and_check_fullpath(traceFileName, 'Directory', fileDir);
-
-% Force as a column cell array
-tracePath = force_column_cell(tracePath);
-
-% Make sure the dimensions match up
-[tracePath, pathExists] = ...
-    argfun(@(x) match_dimensions(x, size(startTime)), tracePath, pathExists);
-
-% Extract the file base of the trace file
-traceFileBase = extract_fileparts(traceFileName{1}, 'base');
-
-% Extract the file extension of the trace file
-traceFileExt = extract_fileparts(traceFileName{1}, 'ext');
-
-% Construct manual SWD table csv file
-swdManualCsvFile = ...
-    fullfile(outFolder, [traceFileBase, '_Manual_SWDs.', sheetType]);
 
 %% Parse SWD features if requested
 if parseFeatures
-    [peakFrequency, secondFrequency, thirdFrequency, swdFrequency] = ...
-        parse_swd_features(startTime, endTime, tracePath, pathExists);
+    if height(atfTable) == 0
+        peakFrequency = [];
+        secondFrequency = [];
+        thirdFrequency = [];
+        swdFrequency = [];
+    else
+        [peakFrequency, secondFrequency, thirdFrequency, swdFrequency] = ...
+            parse_swd_features(startTime, endTime, tracePath, pathExists);
+    end
 end
 
 %% Correct the start and end times if the data comes from an ATF file
-if strcmpi(traceFileExt, '.atf')
-    % Note: The scored atf file itself also has the info, 
-    %   but at a weird location
+if height(atfTable) ~= 0
+    if strcmpi(traceFileExt, '.atf')
+        % Note: The scored atf file itself also has the info, 
+        %   but at a weird location
 
-    % If trace file doesn't exist, return error
-    if ~isfile(tracePath{1})
-        error('%s does not exist!', tracePath{1});
-    end
-    
-    % Read the sweep start time line
-    headerLine = read_lines_from_file(tracePath{1}, 'MaxNum', 1, ...
-                                'Keyword', 'SweepStartTimesMS');
-    if isempty(headerLine)
-        error('headerLine not found in %s', tracePath{1});
-    end
-                            
-    % Read in the start time of the trace
-    traceStartTimeMs = sscanf_full(headerLine, '%g');
+        % If trace file doesn't exist, return error
+        if ~isfile(tracePath{1})
+            error('The source ATF file %s does not exist!', tracePath{1});
+        end
 
-    % Extract the start time of the trace
-    traceStartTimeSeconds = traceStartTimeMs / MS_PER_S;
-else
-    traceStartTimeSeconds = 0;
+        % Read the sweep start time line
+        headerLine = read_lines_from_file(tracePath{1}, 'MaxNum', 1, ...
+                                    'Keyword', 'SweepStartTimesMS');
+        if isempty(headerLine)
+            error('headerLine not found in %s', tracePath{1});
+        end
+
+        % Read in the start time of the trace
+        traceStartTimeMs = sscanf_full(headerLine, '%g');
+
+        % Extract the start time of the trace
+        traceStartTimeSeconds = traceStartTimeMs / MS_PER_S;
+    else
+        traceStartTimeSeconds = 0;
+    end
+
+    % Modify the start and end times
+    startTime = traceStartTimeSeconds + startTime;
+    endTime = traceStartTimeSeconds + endTime;
 end
-
-% Modify the start and end times
-startTime = traceStartTimeSeconds + startTime;
-endTime = traceStartTimeSeconds + endTime;
 
 %% Output results
 % Create a table for the parsed SWDs

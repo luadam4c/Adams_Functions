@@ -104,6 +104,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/set_visible_off.m
 %
 % Used by:
+%       cd/m3ha_compute_and_plot_IT.m
 %       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure02.m
