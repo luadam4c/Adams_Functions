@@ -69,11 +69,17 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % 2019-09-11 Added 'ParseGas' as an optional argument
 % 2019-09-20 Added 'ParseText' as an optional argument
 % 2019-09-29 Added 'ChannelNames' as an optional argument with default {}
-% 
+% 2020-07-16 Added gasMinPulseAmplitude and set as 0.5
 
 %% Hard-coded parameters
 MS_PER_S = 1000;
 isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
+
+% TODO: Make optional arguments
+gasPulseDirection = 'auto';
+%    gasPulseDirection = 'downward';
+%    gasPulseDirection = 'upward';
+gasMinPulseAmplitude = 0.5;
 
 %% Default values for optional arguments
 parseTextDefault = false;
@@ -222,14 +228,10 @@ if any(isGasTrace) && parseGas
     % Get the sampling interval in ms
     siMs = siSeconds(isGasTrace) * MS_PER_S;
 
-    % TODO: Change this once CO2 is read as well
-%    pulseDirection = 'auto';
-%    pulseDirection = 'downward';
-    pulseDirection = 'upward';
-
     % Parse gas vectors and create pulse tables
     parse_gas_trace(gasVec, siMs, 'TraceFileName', spike2MatPath, ...
-                        'PulseDirection', pulseDirection);
+                        'PulseDirection', gasPulseDirection, ...
+                        'MinPulseAmplitude', gasMinPulseAmplitude);
 end
 
 %% Parse laser trace if it exists

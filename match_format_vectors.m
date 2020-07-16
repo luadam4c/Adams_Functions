@@ -34,6 +34,7 @@ function varargout = match_format_vectors (varargin)
 %       cd/create_time_vectors.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/parse_ipsc.m
+%       cd/parse_repetitive_pulses.m
 
 % File History:
 % 2018-12-16 Created by Adam Lu

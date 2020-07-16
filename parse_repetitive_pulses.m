@@ -46,12 +46,16 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 %                                                   in ms
 %                   must be a numeric scalar
 %                   default = 0 ms
+%                   - 'MinPulseAmplitude' - minimum pulse amplitude
+%                   must be a numeric vector
+%                   default = use 2 * compute_rms_error(vectors) by default
 %                   - 'FileBase': file base for output files
 %                   must be a string scalar or a character vector
 %                   default == match the trace file name
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
+%       cd/compute_rms_error.m
 %       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
@@ -64,6 +68,7 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 %       cd/force_column_cell.m
 %       cd/force_string_end.m
 %       cd/isemptycell.m
+%       cd/match_format_vectors.m
 %       cd/match_row_count.m
 %       cd/struct2arglist.m
 %
@@ -78,7 +83,7 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 % 2019-09-13 Added 'PulseShape' as an optional argument
 % 2019-09-14 Now applies detection of square pulses with faster algorithm
 % 2019-09-15 Added 'FileBase' as an optional argument
-% TODO: Return no stim events if nothing was recorded
+% 2019-09-15 Added 'MinPulseAmplitude' as an optional argument
 % TODO: Allow different pulse directions for different vectors
 % 
 
@@ -93,6 +98,7 @@ pulseTableSuffixDefault = '_pulses';
 pulseShapeDefault = 'square';   % detects square pulses by default
 pulseDirectionDefault = 'auto'; % automatically detect largest peak by default
 minInterPulseIntervalMsDefault = 0;
+minPulseAmplitudeDefault = [];  % use compute_rms_error.m by default
 fileBaseDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -127,6 +133,8 @@ addParameter(iP, 'PulseDirection', pulseDirectionDefault, ...
     @(x) any(validatestring(x, validPulseDirections)));
 addParameter(iP, 'MinInterPulseIntervalMs', minInterPulseIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MinPulseAmplitude', minPulseAmplitudeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
@@ -137,6 +145,7 @@ pulseTableSuffix = iP.Results.PulseTableSuffix;
 pulseShape = validatestring(iP.Results.PulseShape, validPulseShapes);
 pulseDirection = validatestring(iP.Results.PulseDirection, validPulseDirections);
 minInterPulseIntervalMs = iP.Results.MinInterPulseIntervalMs;
+minPulseAmplitude = iP.Results.MinPulseAmplitude;
 fileBase = iP.Results.FileBase;
 
 % Keep unmatched arguments for the TODO() function
@@ -207,20 +216,29 @@ minValue = extract_elements(vectors, 'min');
 %           the first value
 firstValue = extract_elements(vectors, 'first');
 [baseValue, steadyValue] = ...
-    arrayfun(@(x, y, z) decide_on_baseline_steadystate(x, y, z, pulseDirection), ...
-                    firstValue, maxValue, minValue);
+    arrayfun(@(x, y, z) decide_on_baseline_steadystate(x, y, z, ...
+                                                        pulseDirection), ...
+            firstValue, maxValue, minValue);
 
 % Compute the amplitudes
 amplitude = steadyValue - baseValue;
 
+% Compute maximum noise amplitudes if not provided
+if isempty(minPulseAmplitude)
+    minPulseAmplitude = 2 * compute_rms_error(vectors);
+else
+    minPulseAmplitude = match_format_vectors(minPulseAmplitude, amplitude);
+end
+
 %% Parse stimulus protocol
 % Create pulse tables
 [pulseTables, secEndPoints, pulseEndPoints, pulseTablePaths] = ...
-    cellfun(@(x, y, z, u, v, w) ...
-            create_pulse_tables(x, y, z, u, v, w, ...
+    cellfun(@(a, b, c, d, e, f, g) ...
+            create_pulse_tables(a, b, c, d, e, f, g, ...
                         pulseTableSuffix, pulseShape, ...
                         pulseDirection, minInterPulseIntervalMs), ...
-            timeVec, vectors, num2cell(baseValue), num2cell(amplitude), ...
+            timeVec, vectors, num2cell(baseValue), ...
+            num2cell(amplitude), num2cell(minPulseAmplitude), ...
             traceFileName, fileBase, 'UniformOutput', false);
 
 %% Output results
@@ -315,16 +333,19 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [pulseTable, secEndPoints, pulseEndPoints, pulseTablePath, handles] = ...
+function [pulseTable, secEndPoints, pulseEndPoints, ...
+                    pulseTablePath, handles] = ...
                 create_pulse_tables(timeVec, vector, baseValue, amplitude, ...
-                            traceFileName, fileBase, pulseTableSuffix, ...
+                            minPulseAmplitude, traceFileName, ...
+                            fileBase, pulseTableSuffix, ...
                             pulseShape, pulseDirection, minInterPulseIntervalMs)
 %% Create pulse tables
 % TODO: Pull out as its own function
 
-% Hard-coded parameters
+%% Hard-coded parameters
 MS_PER_S = 1000;
 
+%% Preparation
 % Create a figure suffix
 figSuffix = strcat(pulseTableSuffix, '_detection');
 
@@ -338,68 +359,106 @@ pulseTablePath = force_string_end(pulseTableBase, '.csv');
 % Compute the sampling interval in ms
 siMs = (timeVec(2) - timeVec(1)) * MS_PER_S;
 
-% Compute the minimum 
+% Compute the minimum inter-pulse interval in samples
 minInterPulseIntervalSamples = floor(minInterPulseIntervalMs / siMs);
 
-switch pulseShape
-case 'square'
-    disp('Finding endpoints for square pulses ...');
-    pulseEndPoints = find_all_pulse_endpoints(vector, baseValue, ...
-                                            amplitude, pulseDirection, ...
-                                            minInterPulseIntervalSamples);
-    secEndPoints = pulseEndPoints;
-case 'first-order'
-    % TODO: Use minInterPulseIntervalSamples
+%% Make sure a pulse exists
+% A pulse exists only if the pulse amplitude is greater than a threshold
+if abs(amplitude) > minPulseAmplitude
+    pulseExists = true;
+else
+    pulseExists = false;
 
-    % Find approximate windows for first-order responses
-    disp('Finding approximate sections that contain first-order responses ...');
-    secEndPoints = find_section_endpoints(vector, baseValue, ...
-                                            amplitude, pulseDirection);
+    % Display warning
+    fprintf('Warning: There is either too much noise or no pulse in %s\n', ...
+            traceFileName);
 
-    % Extract subvectors
-    sections = extract_subvectors(vector, 'EndPoints', secEndPoints);
-
-    % Find first-order response end points relative to each section
-    disp('Finding first-order response end points ...');
-    [idxPulseStartsRel, idxPulseEndsRel] = ...
-        find_pulse_response_endpoints(sections, siMs, 'ResponseLengthMs', 0);
-
-    % Find the relative first-order response end points
-    % TODO: Use fit_first_order_response.m directly and get amplitude and tau info
-    %       and put in pulse table
-    % Put together as end points
-    pulseEndPointsRel = transpose([idxPulseStartsRel, idxPulseEndsRel]);
-
-    % Shift the relative first-order response end points
-    %   by the section starting indices
-    pulseEndPoints = pulseEndPointsRel + repmat(secEndPoints(1, :), 2, 1) - 1;
-otherwise
-    error('pulseShape unrecognized!');
+    % Initialize outputs
+    secEndPoints = [];
+    pulseEndPoints = [];
+    startTime = [];
+    endTime = [];
+    duration = [];
+    tracePath = {};
+    pathExists = [];
+    idxStart = [];
+    idxEnd = [];
+    pulseWindows = [];
 end
 
-% Convert to pulse windows
-pulseWindows = timeVec(pulseEndPoints);
+%% Find pulse endpoints
+if pulseExists
+    switch pulseShape
+    case 'square'
+        disp('Finding endpoints for square pulses ...');
+        pulseEndPoints = find_all_pulse_endpoints(vector, baseValue, ...
+                                                amplitude, pulseDirection, ...
+                                                minInterPulseIntervalSamples);
+        secEndPoints = pulseEndPoints;
+    case 'first-order'
+        % TODO: Use minInterPulseIntervalSamples
 
-% Extract the index
-idxStart = transpose(pulseEndPoints(1, :));
-idxEnd = transpose(pulseEndPoints(2, :));
+        % Find approximate windows for first-order responses
+        disp(['Finding approximate sections that ', ...
+                'contain first-order responses ...']);
+        secEndPoints = find_section_endpoints(vector, baseValue, ...
+                                                amplitude, pulseDirection);
 
-% Extract the time
-startTime = transpose(pulseWindows(1, :));
-endTime = transpose(pulseWindows(2, :));
+        % Remove sections with less than 4 data points
+        %   Note: The fit() function requires 4 data points
+        %           to fit a first order response
+        nSamples = diff(secEndPoints, 1, 1) + 1;
+        toRemove = nSamples <= 4;
+        secEndPoints(:, toRemove) = [];
 
-% Compute the duration
-duration = endTime - startTime;
+        % Extract subvectors
+        sections = extract_subvectors(vector, 'EndPoints', secEndPoints);
 
-% Force file name as a cell array
-traceFileName = force_column_cell(traceFileName);
+        % Find first-order response end points relative to each section
+        disp('Finding first-order response end points ...');
+        [idxPulseStartsRel, idxPulseEndsRel] = ...
+            find_pulse_response_endpoints(sections, siMs, ...
+                                            'ResponseLengthMs', 0);
 
-% Match number of file names with the number of startTime
-traceFileName = match_row_count(traceFileName, size(startTime, 1));
+        % Find the relative first-order response end points
+        % TODO: Use fit_first_order_response.m directly and get amplitude and tau info
+        %       and put in pulse table
+        % Put together as end points
+        pulseEndPointsRel = transpose([idxPulseStartsRel, idxPulseEndsRel]);
 
-% Determine if the trace file exists
-[tracePath, pathExists] = construct_and_check_fullpath(traceFileName);
+        % Shift the relative first-order response end points
+        %   by the section starting indices
+        pulseEndPoints = pulseEndPointsRel + ...
+                            repmat(secEndPoints(1, :), 2, 1) - 1;
+    otherwise
+        error('pulseShape unrecognized!');
+    end
 
+    % Convert to pulse windows
+    pulseWindows = timeVec(pulseEndPoints);
+
+    % Extract the index
+    idxStart = transpose(pulseEndPoints(1, :));
+    idxEnd = transpose(pulseEndPoints(2, :));
+
+    % Extract the time
+    startTime = transpose(pulseWindows(1, :));
+    endTime = transpose(pulseWindows(2, :));
+
+    % Compute the duration
+    duration = endTime - startTime;
+
+    % Force file name as a cell array
+    traceFileName = force_column_cell(traceFileName);
+
+    % Match number of file names with the number of startTime
+    traceFileName = match_row_count(traceFileName, size(startTime, 1));
+
+    % Determine if the trace file exists
+    [tracePath, pathExists] = construct_and_check_fullpath(traceFileName);
+end
+
+%% Outputs
 % Create a pulse table
 pulseTable = table(startTime, endTime, duration, ...
                     tracePath, pathExists, idxStart, idxEnd);
@@ -455,6 +514,7 @@ indStart = indBeforeJumps(isIdxStart);
 % For each starting index after the first, 
 %   find the most recent index before fall
 if numel(indStart) > 1
+    indEnd = nan(size(indStart));
     for iStart = 2:numel(indStart)
         iTemp = find(indBeforeFalls < indStart(iStart), 1, 'last');
         if isempty(iTemp)
@@ -582,8 +642,12 @@ p = plot(timeVec, gasVec);
 hold on;
 
 % Plot the window boundaries
-shades = plot_window_boundaries(pulseWindows(:), ...
-                                'BoundaryType', 'verticalShade');
+if ~isempty(pulseWindows)
+    shades = plot_window_boundaries(pulseWindows(:), ...
+                                    'BoundaryType', 'verticalShade');
+else
+    shades = gobjects(1);
+end
 
 % Save figure if requested                            
 if ~isempty(figBase)
