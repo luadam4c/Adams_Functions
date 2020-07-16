@@ -122,6 +122,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/movingaveragefilter.m
 %       cd/nan_except.m
 %       cd/parse_peaks.m
+%       cd/parse_repetitive_pulses.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_bar.m
 %       cd/plot_cfit_pulse_response.m

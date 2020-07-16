@@ -48,7 +48,6 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/match_dimensions.m
 %
 % Used by:
-%       cd/write_data_atf.m
 %       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_all_pulse_responses.m
@@ -70,6 +69,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m
+%       cd/parse_repetitive_pulses.m
 %       cd/plot_chevron.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_jitter.m
@@ -85,6 +85,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/save_all_zooms.m
 %       cd/test_difference.m
 %       cd/transpose_table.m
+%       cd/write_data_atf.m
 
 % File History:
 % 2018-12-17 Created by Adam Lu

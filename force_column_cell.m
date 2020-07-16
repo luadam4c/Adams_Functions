@@ -93,6 +93,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/parse_repetitive_pulses.m
 %       cd/plot_all_abfs.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_measures.m

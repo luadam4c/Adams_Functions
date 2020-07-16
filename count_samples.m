@@ -88,6 +88,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/parse_phase_info.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/parse_repetitive_pulses.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_tuning_curve.m
 %       cd/select_similar_values.m

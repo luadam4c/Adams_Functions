@@ -51,6 +51,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/match_time_info.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
+%       cd/parse_repetitive_pulses.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_selected.m

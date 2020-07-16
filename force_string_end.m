@@ -51,6 +51,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %       cd/m3ha_neuron_create_sim_params.m
 %       cd/m3ha_neuron_create_sim_commands.m
 %       cd/m3ha_plot_figure04.m
+%       cd/parse_repetitive_pulses.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/save_all_zooms.m

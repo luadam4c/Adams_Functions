@@ -54,19 +54,18 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 % Requires:
 %       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_time_vectors.m
+%       cd/count_samples.m
+%       cd/count_vectors.m
+%       cd/extract_elements.m
+%       cd/extract_subvectors.m
+%       cd/force_column_vector.m
+%       cd/force_column_cell.m
+%       cd/force_string_end.m
+%       cd/isemptycell.m
+%       cd/match_row_count.m
 %       cd/struct2arglist.m
-% TODO:
-% create_labels_from_numbers
-% extract_elements
-% extract_subvectors
-% force_column_vector
-% force_column_cell
-% force_string_end
-% count_samples
-% count_vectors
-% isemptycell
-% match_row_count
 %
 % Used by:
 %       cd/parse_gas_trace.m
@@ -79,6 +78,7 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 % 2019-09-13 Added 'PulseShape' as an optional argument
 % 2019-09-14 Now applies detection of square pulses with faster algorithm
 % 2019-09-15 Added 'FileBase' as an optional argument
+% TODO: Return no stim events if nothing was recorded
 % TODO: Allow different pulse directions for different vectors
 % 
 
