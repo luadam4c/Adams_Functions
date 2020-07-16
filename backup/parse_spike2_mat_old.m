@@ -37,15 +37,6 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %                   - 'ParseLaser': whether to parse laser pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'GasPulseDirection': direction of expected gas pulse
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       'downward'  - downward peaks (e.g., hypoxia for O2)
-%                       'upward'    - upward peaks (e.g., hypercapnia for CO2)
-%                       'auto'      - no preference (whichever is largest)
-%                   default = 'auto'
-%                   - 'GasMinPulseAmplitude' - minimum gas pulse amplitude
-%                   must be a numeric vector
-%                   default = set in parse_repetitive_pulses.m
 %                   - 'ChannelNames': channel names to restrict to
 %                   must be a string array or a cell array of character vectors
 %                   default == all channels with a 'values' field and 
@@ -78,27 +69,22 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % 2019-09-11 Added 'ParseGas' as an optional argument
 % 2019-09-20 Added 'ParseText' as an optional argument
 % 2019-09-29 Added 'ChannelNames' as an optional argument with default {}
-% 2020-07-16 Added gasGasMinPulseAmplitude and set as 0.5
-% 2020-07-16 Added 'GasPulseDirection' as an optional argument
-% 2020-07-16 Added 'GasMinPulseAmplitude' as an optional argument
+% 2020-07-16 Added gasMinPulseAmplitude and set as 0.5
 
 %% Hard-coded parameters
 MS_PER_S = 1000;
 isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
-validGasPulseDirections = {'upward', 'downward', 'auto'};
 
 % TODO: Make optional arguments
-gasGasPulseDirection = 'auto';
-%    gasGasPulseDirection = 'downward';
-%    gasGasPulseDirection = 'upward';
-gasGasMinPulseAmplitude = 1;
+gasPulseDirection = 'auto';
+%    gasPulseDirection = 'downward';
+%    gasPulseDirection = 'upward';
+gasMinPulseAmplitude = 1;
 
 %% Default values for optional arguments
 parseTextDefault = false;
 parseGasDefault = false;
 parseLaserDefault = false;
-gasPulseDirectionDefault = 'auto';
-gasMinPulseAmplitudeDefault = 1;
 channelNamesDefault = {};          % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -125,10 +111,6 @@ addParameter(iP, 'ParseGas', parseGasDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ParseLaser', parseLaserDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'GasPulseDirection', gasPulseDirectionDefault, ...
-    @(x) any(validatestring(x, validGasPulseDirections)));
-addParameter(iP, 'GasMinPulseAmplitude', gasMinPulseAmplitudeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'ChannelNames', channelNamesDefault, ...
     @(x) isempty(x) || isstring(x) || iscellstr(x));
 
@@ -137,8 +119,6 @@ parse(iP, spike2MatPath, varargin{:});
 parseText = iP.Results.ParseText;
 parseGas = iP.Results.ParseGas;
 parseLaser = iP.Results.ParseLaser;
-gasPulseDirection = validatestring(iP.Results.GasPulseDirection, validGasPulseDirections);
-gasMinPulseAmplitude = iP.Results.GasMinPulseAmplitude;
 channelNamesUser = iP.Results.ChannelNames;
 
 % Keep unmatched arguments for the TODO() function
@@ -250,8 +230,8 @@ if any(isGasTrace) && parseGas
 
     % Parse gas vectors and create pulse tables
     parse_gas_trace(gasVec, siMs, 'TraceFileName', spike2MatPath, ...
-                        'GasPulseDirection', gasGasPulseDirection, ...
-                        'GasMinPulseAmplitude', gasGasMinPulseAmplitude);
+                        'PulseDirection', gasPulseDirection, ...
+                        'MinPulseAmplitude', gasMinPulseAmplitude);
 end
 
 %% Parse laser trace if it exists

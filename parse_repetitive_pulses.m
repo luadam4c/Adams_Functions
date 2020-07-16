@@ -83,7 +83,7 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 % 2019-09-13 Added 'PulseShape' as an optional argument
 % 2019-09-14 Now applies detection of square pulses with faster algorithm
 % 2019-09-15 Added 'FileBase' as an optional argument
-% 2019-09-15 Added 'MinPulseAmplitude' as an optional argument
+% 2020-07-16 Added 'MinPulseAmplitude' as an optional argument
 % TODO: Allow different pulse directions for different vectors
 % 
 
