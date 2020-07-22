@@ -51,17 +51,17 @@ plotVoltageVsOpdFig5 = false; %true;
 plotVoltageVsOpdTauh = false; %true;
 plotVoltageVsOpdGabab = false; %true;
 
-createPlotMovieFig5 = true;
+createPlotMovieFig5 = false; %true;
 createPlotMovieTauh = false;
-createPlotMovieGabab = true;
+createPlotMovieGabab = false; %true;
 
-createPhasePlotOnlyMovieFig5 = true;
+createPhasePlotOnlyMovieFig5 = false; %true;
 createPhasePlotOnlyMovieTauh = false;
-createPhasePlotOnlyMovieGabab = true;
+createPhasePlotOnlyMovieGabab = false; %true;
 
 simulateNoITSoma = false; %true;
 
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
