@@ -64,6 +64,7 @@ function [counts, edges, relativeEventTimes] = ...
 % 2019-09-08 Added 'Grouping' as an optional argument
 % 2019-09-15 Now trims the stimulus window so that 
 %               it does not exceed relativeTimeWindow
+% 2020-07-23 Now updates stats from create_default_grouping.m
 % TODO: Add option to shift relative event times by stimDelay
 
 
@@ -189,7 +190,8 @@ end
 if isempty(grouping)
     if iscell(relativeEventTimes)
         % Create a grouping vector with each file as separate groups
-        grouping = create_default_grouping('Stats', relativeEventTimes);
+        [grouping, ~, ~, relativeEventTimes] = ...
+            create_default_grouping('Stats', relativeEventTimes);
     else
         % Create a grouping vector with the pre-stimulus and post-stimulus times
         %   as separate groups

@@ -63,9 +63,6 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 % 2019-01-15 Moved from plot_grouped_histogram.m
 % 2019-10-05 Now does not adjust edges to fixed edges if edges is provided
 % 2019-10-12 Fixed bug in computing bin edges
-% 2020-07-23 Now makes sure stats and grouping vectors have
-%               the same number of elements
-% 2020-07-23 Now updates stats from create_default_grouping.m
 
 %% Hard-coded parameters
 
@@ -116,7 +113,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the grouping vector
-[grouping, uniqueGroupValues, ~, stats] = ...
+[grouping, uniqueGroupValues] = ...
     create_default_grouping('Stats', stats, 'Grouping', grouping);
 
 % Count the number of groups
@@ -130,11 +127,6 @@ nGroups = numel(uniqueGroupValues);
 % If stats and grouping are cell arrays of numeric vectors, pool them
 if iscellnumeric(stats) && iscellnumeric(grouping)
     [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
-end
-
-% Make sure stats and grouping vectors have the same number of elements
-if numel(stats) ~= numel(grouping)
-    error('stats and grouping does not have the same number of elements!');
 end
 
 %% Break up stats into a cell array of vectors
@@ -191,6 +183,24 @@ end
 
 %{
 OLD CODE:
+
+% Get all unique group values
+uniqueGroupValues = unique_custom(grouping, 'IgnoreNaN', true);
+
+% Count the number of groups
+nGroups = numel(uniqueGroupValues);
+
+% Find all unique grouping values
+if iscellnumeric(grouping)
+    % Get all unique grouping values from each vector
+    uniqueGroupValues = cellfun(@(x) unique_custom(x, 'IgnoreNaN', true), ...
+                                grouping, 'UniformOutput', false);
+
+    % Replace any empty values with a new value
+else
+    % Get unique grouping values
+    uniqueGroupValues = unique_custom(x, 'IgnoreNaN', true);
+end
 
 %}
 
