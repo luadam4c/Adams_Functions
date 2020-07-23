@@ -42,6 +42,10 @@ NS_PER_US = 1000;
 
 %% Hard-coded parameters
 validAmpUnits = {'nS', 'uS'};
+
+%% m3ha: Template parameters used for GABA-B IPSC conductance waveforms
+% Note: amp in Christine's thesis was actually for 200 % G incr
+%       This must be consistent with /media/adamX/m3ha/data_dclamp/CountSweeps.m
 ampOrig = [16.00; 24.00; 8.88; 6.32];                   % (nS)
 tauRise = [52.00; 52.00; 38.63; 39.88];                 % (ms)
 tauFallFast = [90.10; 90.10; 273.40; 65.80];            % (ms)

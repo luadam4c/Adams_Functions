@@ -45,9 +45,7 @@ function paramsTable = m3ha_network_update_dependent_params (paramsTable, vararg
 %% Hard-coded parameters
 validExperiments = {'RTCl', 'm3ha', 'noexp'};
 
-%% m3ha: Template parameters used for GABA-B IPSC conductance waveforms
-% Note: amp in Christine's thesis was actually for 200 % G incr
-%       This must be consistent with /media/adamX/m3ha/data_dclamp/CountSweeps.m
+% Maximal conductance of GABA-A receptors for 100% amp scale
 gabaaGmaxTemplate = [4.48; 6.72; 9.76; 4.48] ./ 1000;    % maximal conductance (uS)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

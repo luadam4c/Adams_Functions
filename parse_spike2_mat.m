@@ -250,8 +250,8 @@ if any(isGasTrace) && parseGas
 
     % Parse gas vectors and create pulse tables
     parse_gas_trace(gasVec, siMs, 'TraceFileName', spike2MatPath, ...
-                        'GasPulseDirection', gasGasPulseDirection, ...
-                        'GasMinPulseAmplitude', gasGasMinPulseAmplitude);
+                        'PulseDirection', gasGasPulseDirection, ...
+                        'MinPulseAmplitude', gasGasMinPulseAmplitude);
 end
 
 %% Parse laser trace if it exists

@@ -103,6 +103,7 @@ function handles = plot_relative_events (varargin)
 % 2019-10-06 Added 'YLimitsLog2Ratio' as an optional argument
 % 2019-10-08 Now plot log2 data, then change y tick labels to reflect original values
 % 2019-10-08 Now conduct t-test on log2 data
+% 2020-07-23 Added stimulation window to raster plot
 % 
 
 %% Hard-coded parameters
@@ -366,6 +367,13 @@ case 'raster'
         % Plot stim start line
         stimStartLine = plot_vertical_line(0, 'Color', stimStartLineColor, ...
                                         'LineWidth', stimStartLineWidth);
+                                    
+        % Plot stimulation window
+        if ~isempty(avgStimDurationMin)
+            stimWindow = [0, avgStimDurationMin];
+            stimWindowShade = ...
+                plot_window_boundaries(stimWindow, 'BoundaryType', 'verticalShades');
+        end
     end
 
     % Save figure
@@ -376,6 +384,7 @@ case 'raster'
     handles.ax = ax;
     handles.rasters = rasters;
     handles.stimStartLine = stimStartLine;
+    handles.stimWindowShade = stimWindowShade;
 case 'psth'
     %% Plot the peri-stimulus time histogram
     handles = plot_psth('EventTimes', swdStartTimesMin, ...
