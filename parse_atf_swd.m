@@ -70,13 +70,15 @@ function [swdManualTable, swdManualCsvFile] = ...
 % 2019-09-24 Added check for overlapping windows
 % 2020-06-26 Added 'ParseFeatures' as an optional argument
 % 2020-07-15 Now generates an output file even there is no event recorded
+% 2020-07-23 Added 'traceStartTime' in output table
 
 %% Hard-coded constants
 MS_PER_S = 1000;
 N_LINES_TO_SKIP = 2;            % scored atf files have two irrelevant lines
 
 %% Hard-coded parameters
-varNames = {'startTime', 'endTime', 'duration', 'tracePath', 'pathExists'};
+varNames = {'startTime', 'endTime', 'duration', ...
+            'tracePath', 'pathExists', 'traceStartTime'};
 
 %% Default values for optional arguments
 traceFileNameDefault = '';      % set later
@@ -179,6 +181,7 @@ if height(atfTable) == 0
     duration = [];
     tracePath = {};
     pathExists = [];
+    traceStartTimeSeconds = [];
 
     % Construct manual SWD table csv file
     swdManualCsvFile = ...
@@ -304,6 +307,10 @@ if height(atfTable) ~= 0
         traceStartTimeSeconds = 0;
     end
 
+    % Match dimensions
+    traceStartTimeSeconds = ...
+        match_dimensions(traceStartTimeSeconds, size(startTime));
+
     % Modify the start and end times
     startTime = traceStartTimeSeconds + startTime;
     endTime = traceStartTimeSeconds + endTime;
@@ -312,7 +319,8 @@ end
 %% Output results
 % Create a table for the parsed SWDs
 swdManualTable = table(startTime, endTime, duration, ...
-                        tracePath, pathExists, 'VariableNames', varNames);
+                        tracePath, pathExists, traceStartTimeSeconds, ...
+                        'VariableNames', varNames);
 
 % Add features to the table
 if parseFeatures

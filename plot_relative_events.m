@@ -86,6 +86,7 @@ function handles = plot_relative_events (varargin)
 %       cd/plot_chevron.m
 %       cd/plot_psth.m
 %       cd/plot_raster.m
+%       cd/plot_vertical_shade.m
 %
 % Used by:
 %       /home/Matlab/plethR01/plethR01_analyze.m
@@ -371,8 +372,7 @@ case 'raster'
         % Plot stimulation window
         if ~isempty(avgStimDurationMin)
             stimWindow = [0, avgStimDurationMin];
-            stimWindowShade = ...
-                plot_window_boundaries(stimWindow, 'BoundaryType', 'verticalShades');
+            stimWindowShade = plot_vertical_shade(stimWindow);
         end
     end
 
@@ -445,14 +445,14 @@ case 'chevron'
     end
 
     % Plot Chevron plot and save figure
-    plot_chevron(chevronTable, 'FigTitle', 'suppress', ...
+    plot_chevron(chevronTable, 'FigTitle', figTitle, ...
                 'ReadoutLabel', 'SWD Count', 'PTickLabels', pTickLabels, ...
                 'ReadoutLimits', yLimits, 'LegendLocation', 'northeast', ...
                 'AxesHandle', ax(1), 'FigExpansion', [], otherArguments);
 
     % Plot log2 ratio Chevron plot and save figure
     if plotLog2Ratio
-        plot_chevron(log2ratioChevronTable, 'FigTitle', 'suppress', ...
+        plot_chevron(log2ratioChevronTable, 'FigTitle', figTitleRatio, ...
                     'IsLog2Data', true, ...
                     'ReadoutLabel', 'SWD Count Ratio', ...
                     'PTickLabels', pTickLabels, ...

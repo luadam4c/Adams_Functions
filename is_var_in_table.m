@@ -27,6 +27,7 @@ function isInTable = is_var_in_table (varName, table, varargin)
 %       cd/ismatch.m
 %
 % Used by:
+%       cd/combine_swd_sheets.m
 %       cd/is_field.m
 %       cd/is_row_in_table.m
 %       cd/m3ha_network_change_params.m

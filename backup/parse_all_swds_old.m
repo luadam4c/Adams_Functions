@@ -39,15 +39,6 @@ function [swdTables, swdSheetPaths, ...
 %                   - 'AssystFolder': directory to look for Assyst output files
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'PieceStr': string in file names that separate pieces
-%                   must be a string scalar or a character vector
-%                   default == '_piece'
-%                   - 'Keyword': keyword for file prefixes
-%                   must be a string scalar or a character vector
-%                   default == ''
-%                   - 'FileStartTime': start time for the original file
-%                   must be a numeric scalar
-%                   default == [] (nothing to add)
 %                   - 'SheetType': sheet type;
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -72,7 +63,7 @@ function [swdTables, swdSheetPaths, ...
 % 2019-09-08 Added 'ToCombine' as an optional parameter
 % 2019-11-19 Added 'Recursive' as an optional parameter
 % 2020-07-15 Now does not search recursively by default
-% 2020-07-23 Made 'PieceStr' and 'Keyword' optional parameters
+% TODO: Combine SWD sheets with '_piece' in the name
 
 %% Hard-coded constants
 
@@ -83,6 +74,7 @@ assystStr = '_Assyst';          % string in file names for Assyst files
 sayliStr = '_Sayli';            % string in file names for Sayli files
 animalStr = '_rat'; %'_animal'  % string in file names for animals
 channelStr = '_channel';        % string in file names that separate channels
+pieceStr = '_piece';            % string in file names that separate pieces
 sweepStr = '_sweep';            % string in file names that separate sweeps
 %}
 
@@ -94,9 +86,6 @@ outFolderDefault = '';          % set later
 manualFolderDefault = '';       % set later
 sayliFolderDefault = '';        % set later
 assystFolderDefault = '';       % set later
-pieceStrDefault = '_piece';     % string in file names that separate pieces
-keywordDefault = '';
-fileStartTimeDefault = [];
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -122,12 +111,6 @@ addParameter(iP, 'SayliFolder', sayliFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'AssystFolder', assystFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'PieceStr', pieceStrDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'Keyword', keywordDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'FileStartTime', fileStartTimeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 
@@ -140,9 +123,6 @@ outFolder = iP.Results.OutFolder;
 manualFolder = iP.Results.ManualFolder;
 sayliFolder = iP.Results.SayliFolder;
 assystFolder = iP.Results.AssystFolder;
-pieceStr = iP.Results.PieceStr;
-keyword = iP.Results.Keyword;
-fileStartTime = iP.Results.FileStartTime;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 % Keep unmatched arguments for parse_atf_swd() or parse_assyst_swd()
@@ -164,13 +144,13 @@ end
 [manualFiles, manualPaths] = ...
     all_files('Verbose', verbose, 'Recursive', recursive, 'WarnFlag', false, ...
                 'ForceCellOutput', true, 'Directory', manualFolder, ...
-                'Keyword', keyword, 'Extension', '.atf');
+                'Extension', '.atf');
 
 % Find all Assyst output files in the assystFolder
 [assystFiles, assystPaths] = ...
     all_files('Verbose', verbose, 'Recursive', recursive, 'WarnFlag', false, ...
                 'ForceCellOutput', true, 'Directory', assystFolder, ...
-                'Keyword', keyword, 'Suffix', assystStr, 'Extension', '.txt');
+                'Suffix', assystStr, 'Extension', '.txt');
 
 % Count the number of files
 nManualPaths = numel(manualPaths);
@@ -180,7 +160,8 @@ nAssystPaths = numel(assystPaths);
 % Apply parse_atf_swd.m to each .atf file
 swdManualTables = cell(nManualPaths, 1);
 swdManualCsvFiles = cell(nManualPaths, 1);
-parfor iFile = 1:nManualPaths
+% parfor iFile = 1:nManualPaths
+for iFile = 1:nManualPaths
     [swdManualTables{iFile}, swdManualCsvFiles{iFile}] = ...
         parse_atf_swd(manualPaths{iFile}, 'OutFolder', outFolder, ...
                         'SheetType', sheetType, otherArguments);
@@ -213,9 +194,7 @@ if toCombine
     % parfor iFolder = 1:nSwdFolders
         [swdCombinedTables{iFolder}, swdCombinedCsvFiles{iFolder}] = ...
             combine_swd_sheets('Directory', allSwdFolders{iFolder}, ...
-                                'Verbose', verbose, 'SheetType', sheetType, ...
-                                'Keyword', keyword, 'PieceStr', pieceStr, ...
-                                'FileStartTime', fileStartTime);
+                                'Verbose', verbose, 'SheetType', sheetType);
     end
 else
     swdCombinedTables = table.empty;
@@ -231,6 +210,16 @@ swdSheetPaths = vertcat(swdManualCsvFiles, swdAssystCsvFiles);
 
 %{
 OLD CODE:
+
+% The following is slower:
+[swdManualTables, swdManualCsvFiles] = ...
+    cellfun(@(x) parse_atf_swd(x, 'OutFolder', outFolder, ...
+                                'SheetType', sheetType), ...
+            manualPaths, 'UniformOutput', false);
+[swdAssystTables, swdAssystCsvFiles] = ...
+    cellfun(@(x) parse_assyst_swd(x, 'OutFolder', outFolder, ...
+                                'SheetType', sheetType), ...
+            assystPaths, 'UniformOutput', false);
 
 %}
 

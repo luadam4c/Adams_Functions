@@ -1,11 +1,10 @@
 function [outTables, outPaths] = combine_swd_sheets (varargin)
-%% Combines all files ending with '_SWDs.csv' and with '_piece' in the name under a directory
+%% Combines all files ending with '_SWDs.csv' under a directory
 % Usage: [outTables, outPaths] = combine_swd_sheets (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       outTables = combine_swd_sheets;
 %       outTables = combine_swd_sheets('Keyword', 'test3AtNight_200Hz')
 %
 % Outputs:
@@ -25,15 +24,9 @@ function [outTables, outPaths] = combine_swd_sheets (varargin)
 %                       Note: These are the strings before the piece string
 %                   must be a string scalar or a character vector
 %                   default == all those detected
-%                   - 'PieceStr': string in file names that separate pieces
-%                   must be a string scalar or a character vector
-%                   default == '_piece'
 %                   - 'Keyword': keyword for file prefixes
 %                   must be a string scalar or a character vector
 %                   default == ''
-%                   - 'FileStartTime': start time for the original file
-%                   must be a numeric scalar
-%                   default == [] (nothing to add)
 %                   - 'SheetType': sheet type;
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -47,7 +40,6 @@ function [outTables, outPaths] = combine_swd_sheets (varargin)
 %       cd/force_column_cell.m
 %       cd/force_string_start.m
 %       cd/force_string_end.m
-%       cd/is_var_in_table.m
 %       cd/vertcat_spreadsheets.m
 %
 % Used by:
@@ -59,23 +51,22 @@ function [outTables, outPaths] = combine_swd_sheets (varargin)
 % 2019-09-08 Added 'Keyword' as an optional argument
 % 2019-09-10 Now combines only groups of sheets with pieceStr in the name
 % 2019-09-10 Now omits the combinedStr
-% 2020-07-23 Made 'PieceStr' an optional argument 
-% 2020-07-23 Made 'FileStartTime' an optional argument 
 % TODO: Use 'startTimeOrig', 'endTimeOrig' & 'durationOrig'
-% TODO: Detect 'FileStartTime' from corresponding abfPath
+% TODO: Add sweepStartTime to 'startTime', 'endTime' & 'duration'
+% TODO: Make 'SweepStartTime' an optional argument 
+%       and detect from corresponding abfPath
 % TODO: Make 'OutFolder' an optional argument 
 % 
 
 %% Hard-coded parameters
 % The following must be consistent with write_data_atf.m
+pieceStr = '_piece';            % string in file names that separate pieces
 
 %% Default values for optional arguments
 verboseDefault = true;
 directoryDefault = '';          % set later
 outPrefixesDefault = '';
-pieceStrDefault = '_piece';     % string in file names that separate pieces
 keywordDefault = '';
-fileStartTimeDefault = [];
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,12 +83,8 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutPrefixes', outPrefixesDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'PieceStr', pieceStrDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Keyword', keywordDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'FileStartTime', fileStartTimeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 
@@ -106,9 +93,7 @@ parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
 outPrefixes = iP.Results.OutPrefixes;
-pieceStr = iP.Results.PieceStr;
 keyword = iP.Results.Keyword;
-fileStartTime = iP.Results.FileStartTime;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Preparation
@@ -125,11 +110,7 @@ if isempty(outPrefixes)
                         'Keyword', keywordWithPiece, 'SheetType', sheetType);
 
     % Extract everything before the piece string
-    if ~isempty(pieceStr)
-        outPrefixes = extractBefore(swdSheetPaths, pieceStr);
-    else
-        outPrefixes = keyword;
-    end
+    outPrefixes = extractBefore(swdSheetPaths, pieceStr);
 end
 
 % Force as a cell array
@@ -149,7 +130,7 @@ end
 % Combine the spreadsheets
 [outTables, outPaths] = ...
     cellfun(@(x) combine_swd_sheets_helper(x, directory, sheetType, ...
-                                            pieceStr, fileStartTime, verbose), ...
+                                            pieceStr, verbose), ...
                     uniquePrefixes, 'UniformOutput', false);
 
 %% Outputs
@@ -160,8 +141,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [outTable, outPath] = ...
-                combine_swd_sheets_helper (outPrefix, directory, sheetType, ...
-                                            pieceStr, fileStartTime, verbose)
+                combine_swd_sheets_helper (outPrefix, directory, ...
+                                            sheetType, pieceStr, verbose)
 
 % Display message
 if verbose
@@ -177,7 +158,6 @@ keywordWithPieceThis = force_string_end(keywordThis, pieceStr);
 
 % Find all SWD spreadsheet files with the output prefix and piece string 
 %   in the directory, sorting by name
-%   TODO: Sorting by name is probably not ok for more than 9 pieces!
 [~, swdSheetPathsThis] = ...
     all_swd_sheets('Verbose', verbose, 'Directory', directory, ...
                     'Keyword', keywordWithPieceThis, 'SheetType', sheetType, ...
@@ -190,12 +170,7 @@ if isempty(swdSheetPathsThis)
 end
 
 % Extract a common suffix across all files
-if iscell(swdSheetPathsThis) && numel(swdSheetPathsThis) > 1
-    outSuffix = extract_fileparts(swdSheetPathsThis, 'commonsuffix');
-else
-    afterPrefix = extractAfter(swdSheetPathsThis, keywordThis);
-    outSuffix = extract_fileparts(afterPrefix, 'base');
-end
+outSuffix = extract_fileparts(swdSheetPathsThis, 'commonsuffix');
 
 % Make sure it start with '_'
 outSuffixWithUnderScore = ...
@@ -215,33 +190,32 @@ outPath = construct_fullpath(outName, 'Directory', directory);
 % Concatenate the SWD sheets
 outTable = vertcat_spreadsheets(swdSheetPathsThis);
 
-% Add corresponding fileStartTime to 'startTime', 'endTime' & 'traceStartTime'
-if ~isempty(fileStartTime)
-    outTable = add_to_var_in_table(outTable, 'startTime', fileStartTime);
-    outTable = add_to_var_in_table(outTable, 'endTime', fileStartTime);
-    outTable = add_to_var_in_table(outTable, 'traceStartTime', fileStartTime);
-end
+% TODO: Add corresponding sweepStartTime to 'startTime', 'endTime' & 'duration'
+%       based on trace file
 
 %% Save the table in a file
 writetable(outTable, outPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function myTable = add_to_var_in_table(myTable, varName, amount)
-
-% Do only if varName is in the table
-if is_var_in_table(varName, myTable)
-    % Extract old variable value
-    oldVar = myTable.(varName);
-
-    % Add amount to old variable
-    myTable.(varName) = oldVar + amount;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %{
 OLD CODE:
+
+combinedStr = '_combined';
+% Create a suffix for the combined SWD file
+%   Note: this is necessary for this output file to be distinguished 
+%           from input files
+combinedSuffix = [commonSuffix, combinedStr];
+% Create a combined SWD file name
+outPath = fullfile(directory, [outPrefixes, combinedSuffix, '.', sheetType]);
+
+if isempty(outPrefixes)
+    if ~isempty(keyword)
+        outPrefixes = keyword;
+    else
+        outPrefixes = fileparts(directory);
+    end
+end
 
 %}
 
