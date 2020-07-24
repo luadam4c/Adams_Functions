@@ -198,6 +198,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 % 2020-05-15 Added 'AcceptEmptyIndices' as an optional argument
 % 2020-05-15 Fixed redundancy
 % 2020-06-26 Added 'indices' as the second output
+% 2020-07-24 Fixed 'ForceCellOutput' for 'indices'
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -446,6 +447,7 @@ end
 % Force as cell array of column vectors if requested
 if forceCellOutput
     subVecs = force_column_cell(subVecs);
+    indices = force_column_cell(indices);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
