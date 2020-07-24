@@ -1,4 +1,4 @@
-function outputTable = vertcat_spreadsheets (inputFileNames, varargin)
+function varargout = vertcat_spreadsheets (inputFileNames, varargin)
 %% Combine spreadsheets using readtable, vertcat, then writetable
 % Usage: outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 % Explanation:
@@ -34,6 +34,7 @@ function outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 % File History:
 % 2018-05-15 Created by Adam Lu
 % 2018-12-26 Turned 'OutputFileName' into an optional argument
+% 2020-07-23 Now uses varargout
 % TODO: Use apply_over_cells.m
 
 %% Hard-coded parameters
@@ -87,6 +88,9 @@ end
 if ~isempty(outputFileName)
     writetable(outputTable, outputFileName);
 end
+
+%% Outputs
+varargout{1} = outputTable;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

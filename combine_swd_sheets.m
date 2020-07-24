@@ -41,6 +41,7 @@ function [outTables, outPaths] = combine_swd_sheets (varargin)
 %                   default == 'csv'
 %
 % Requires:
+%       cd/all_files.m
 %       cd/all_swd_sheets.m
 %       cd/construct_fullpath.m
 %       cd/extract_fileparts.m
@@ -123,6 +124,27 @@ if isempty(outPrefixes)
     [~, swdSheetPaths] = ...
         all_swd_sheets('Verbose', verbose, 'Directory', directory, ...
                         'Keyword', keywordWithPiece, 'SheetType', sheetType);
+
+
+    % Try again if empty
+    if isempty(swdSheetPaths)
+        % Construct regular expression
+        regExp = sprintf('^.*%s.*%s.*%s$', keyword, pieceStr, sheetType);
+
+        % Find all SWD spreadsheet files with the piece string in the directory
+        [~, swdSheetPaths] = ...
+            all_files('Verbose', verbose, 'Directory', directory, ...
+                        'Regexp', regExp);
+    end
+
+    % Return if nothing is found
+    if isempty(swdSheetPaths)
+        fprintf('Warning: No SWD sheets to combine with keyword %s in %s!\n', ...
+                    keywordWithPiece, directory);
+        outTables = {};
+        outPaths = {};
+        return
+    end
 
     % Extract everything before the piece string
     if ~isempty(pieceStr)
