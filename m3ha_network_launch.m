@@ -1,7 +1,12 @@
 function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, ...
                                         seedNumberNeuron, seedNumberMatlab, ...
-                                        paramsDirName, outFolderParent)
+                                        paramsDirName, outFolderParent, ...
+                                        bicucullineFlag, bicucullineRTFlag)
 %% Launches NEURON with simulation commands and plot output figures
+% Usage: m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, ...
+%                                         seedNumberNeuron, seedNumberMatlab, ...
+%                                         paramsDirName, outFolderParent, ...
+%                                         bicucullineFlag, bicucullineRTFlag)
 %
 % Requires:
 %       cd/argfun.m
@@ -71,6 +76,8 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, ...
 % 2020-03-08 Now randomizes the leak reversal potential of TC neurons 
 %               across trials but make it the same across neurons
 % 2020-04-07 Fixed TCepas for seed number 15
+% 2020-07-24 Added bicucullineRTFlag
+% 2020-07-24 Made bicucullineFlag and bicucullineRTFlag optional arguments
 
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Perform simulations to generate a linear model
@@ -97,18 +104,28 @@ homeDirName = 'network_model';
 candidateSheetName = 'candidate_cells.csv';
 
 %% Optional arguments
+if nargin <= 1
+    nCells = 100;
+end
+if nargin <= 2
+    useHH = true;
+end
 if nargin <= 3
-    savePlotMode = '';
+    candidateIDs = [2; 23; 14; 6; 7; 18; 11; 13; 16; 33; 12; 36; ...
+                    5; 4; 31; 27; 30; 34; 24; 32; 35; 19; 29; 20];
 end
 if nargin <= 4
+    savePlotMode = '';
+end
+if nargin <= 5
     seedNumberNeuron = 0;       % number to seed random number generator
                                 %   for gpas variation
 end
-if nargin <= 5
+if nargin <= 6
     seedNumberMatlab = 0;       % number to seed random number generator
                                 %   for TC template ordering
 end
-if nargin <= 6
+if nargin <= 7
     % paramsDirName = 'bestparams_20171213_singleneuronfitting16_Rivanna';
     % paramsDirName = 'bestparams_20180424_singleneuronfitting21_Rivanna';
     % paramsDirName = 'bestparams_20200103_ranked_singleneuronfitting0-94';
@@ -117,8 +134,15 @@ if nargin <= 6
     % paramsDirName = 'bestparams_20200126_singleneuronfitting101';
     paramsDirName = 'bestparams_20200203_manual_singleneuronfitting0-102';
 end
-if nargin <= 7
+if nargin <= 8
     outFolderParent = '';
+end
+if nargin <= 9
+    bicucullineFlag = true;         % whether GABA-A conductances are removed
+end
+if nargin <= 10
+    bicucullineRTFlag = false;      % whether GABA-A conductances are removed
+                                    %   in RT only
 end
 
 %% Flags
@@ -128,7 +152,6 @@ onLargeMemFlag = false;         % whether to run on large memory nodes
 onHpcFlag = false;              % whether on high-performance computing server
 saveAllVariablesFlag = false;   % whether to save variables as a .mat file
 saveStdOutFlag = false;         % whether to always save standard outputs
-bicucullineFlag = true;         % whether GABA-A conductances are removed
 loopMode = 'grid'; %cross;      % how to loop through parameters: 
                                 %   'cross' - Loop through each parameter 
                                 %               while fixing others
@@ -556,7 +579,7 @@ TCepasUB = TCepasLB;
 % Set the maximal conductance (uS) of the GABA-A receptor on RE cells
 %   Note: Sohal & Huguenard 2003 varied between 5~12.5 nS
 %       RTCl used 0.02 nS
-if bicucullineFlag
+if bicucullineFlag || bicucullineRTFlag
     REgabaGmax = 0;
 else
     REgabaGmax = 0.005;
@@ -924,6 +947,7 @@ simParamLabels = { ...
     'whether to run on large memory nodes'; ...
     'whether TC neurons are heterogeneous'; ...
     'whether GABA-A conductances are removed'; ...
+    'whether GABA-A conductances are removed in RT only'; ...
     'whether to save network topology'; 'whether to save spike data'; ...
     'whether to save all voltage data'; ...
     'whether to save all chloride concentration data'; ...
@@ -954,7 +978,7 @@ simParamNames = { ...
     'TCsp1cellID'; 'TCsp2cellID'; ...
     'act'; 'actLeft1'; 'actLeft2'; 'far'; ...
     'debugFlag'; 'seedNumberMatlab'; 'seedNumberNeuron'; ...
-    'onLargeMemFlag'; 'heteroTCFlag'; 'bicucullineFlag'; ...
+    'onLargeMemFlag'; 'heteroTCFlag'; 'bicucullineFlag'; 'bicucullineRTFlag'; ...
     'saveNetwork'; 'saveSpikes'; 'saveSomaVoltage'; ...
     'saveSomaCli'; 'saveSpecial'; ...
     'plotNetwork'; 'plotSpikes'; 'plotSingleNeuronData'; ...
@@ -981,7 +1005,7 @@ simParamsInit = [ ...
     REsp1cellID; REsp2cellID; TCsp1cellID; TCsp2cellID; ...
     act; actLeft1; actLeft2; far; ...
     debugFlag; seedNumberMatlab; seedNumberNeuron; ...
-    onLargeMemFlag; heteroTCFlag; bicucullineFlag; ...
+    onLargeMemFlag; heteroTCFlag; bicucullineFlag; bicucullineRTFlag; ...
     saveNetwork; saveSpikes; saveSomaVoltage; ...
     saveSomaCli; saveSpecial; ...
     plotNetwork; plotSpikes; plotSingleNeuronData; ...
