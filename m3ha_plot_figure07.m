@@ -48,7 +48,8 @@
 % 2020-02-06 Added plot200CellExamples and plot2CellM2h
 % 2020-03-10 Updated pharm labels
 % 2020-04-09 Added combineActivationProfiles
-% 2019-04-28 Added timeToStabilize
+% 2020-04-28 Added timeToStabilize
+% 2020-07-27 Added bicuculineRT plots
 
 %% Hard-coded parameters
 % Flags
@@ -56,26 +57,51 @@ plotIpscComparison = false; %true;
 plot2CellEssential = false; %true;
 plot2CellM2h = false; %true;
 
+plotIpscComparisonBicRT = true;
+plot2CellEssentialBicRT = true;
+plot2CellM2hBicRT = true;
+
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPopulation = false; %true;
-plot2CellViolins = true;
+combine2CellPop = false; %true;
+plot2CellViolins = false; %true;
+
+analyze2CellSpikesBicRT = false; %true;
+plotAnalysis2CellBicRT = false; %true;
+backupPrevious2CellBicRT = false; %true;
+combine2CellPopBicRT = false; %true;
+plot2CellViolinsBicRT = false; %true;
 
 plot200CellExamples = false; %true;
 plotHeteroExamples = false; %true;
 
+plot200CellExamplesBicRT = false; %true;
+plotHeteroExamplesBicRT = false; %true;
+
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false; %true;
 backupPrevious200Cell = false; %true;
-combine200CellPopulation = false; %true;
-plot200CellViolins = true;
+combine200CellPop = false; %true;
+plot200CellViolins = false; %true;
+
+analyze200CellSpikesBicRT = false; %true;
+plotAnalysis200CellBicRT = false; %true;
+backupPrevious200CellBicRT = false; %true;
+combine200CellPopBicRT = false; %true;
+plot200CellViolinsBicRT = false; %true;
 
 analyzeHeteroSpikes = false; %true;
 plotAnalysisHetero = false; %true;
 backupPreviousHetero = false; %true;
-combineHeteroPopulation = false; %true;
-plotHeteroViolins = true;
+combineHeteroPop = false; %true;
+plotHeteroViolins = false; %true;
+
+analyzeHeteroSpikesBicRT = false; %true;
+plotAnalysisHeteroBicRT = false; %true;
+backupPreviousHeteroBicRT = false; %true;
+combineHeteroPopBicRT = false; %true;
+plotHeteroViolinsBicRT = false; %true;
 
 plot200CellGroupByCellJitters = false; %true;
 plotHeteroGroupByCellJitters = false; %true;
@@ -91,7 +117,7 @@ archiveScriptsFlag = true;
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure07Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure07');
 figure08Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure08');
-networkDirectory = fullfile(parentDirectory, 'network_model');
+networkDir = fullfile(parentDirectory, 'network_model');
 
 % exampleIterName2Cell = '20200131T1345_using_bestparams_20200126_singleneuronfitting101';  % 20200131
 % exampleIterName2Cell = '20200205T1353_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
@@ -119,13 +145,19 @@ networkDirectory = fullfile(parentDirectory, 'network_model');
 % popIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 
 exampleIterName2Cell = '20200501_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
+exampleIterName2CellBicRT = '20200724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples_bicucullineRT';
 exampleSeedDirName2Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
+popIterName2CellBicRT = '20200724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes_bicucullineRT';
 exampleIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+exampleIterName200CellBicRT = '20200726_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes_bicucullineRT';
 exampleIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
+exampleIterNameHeteroBicRT = '20200725_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes_bicucullineRT';
 exampleSeedDirName200Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 popIterName200Cell = '20200516_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
+popIterName200CellBicRT = '20200726_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes_bicucullineRT';
 popIterNameHetero = '20200516_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
+popIterNameHeteroBicRT = '20200725_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes_bicucullineRT';
 candCellSheetName = 'candidate_cells.csv';
 oscParamsSuffix = 'oscillation_params';
 
@@ -246,12 +278,18 @@ figTypes = {'png', 'epsc'};
 
 %% Preparation
 % Find the directory for this iteration
-exampleIterDir2Cell = fullfile(networkDirectory, exampleIterName2Cell);
-exampleIterDir200Cell = fullfile(networkDirectory, exampleIterName200Cell);
-exampleIterDirHetero = fullfile(networkDirectory, exampleIterNameHetero);
-popIterDir2Cell = fullfile(networkDirectory, popIterName2Cell);
-popIterDir200Cell = fullfile(networkDirectory, popIterName200Cell);
-popIterDirHetero = fullfile(networkDirectory, popIterNameHetero);
+exampleIterDir2Cell = fullfile(networkDir, exampleIterName2Cell);
+exampleIterDir2CellBicRT = fullfile(networkDir, exampleIterName2CellBicRT);
+exampleIterDir200Cell = fullfile(networkDir, exampleIterName200Cell);
+exampleIterDir200CellBicRT = fullfile(networkDir, exampleIterName200CellBicRT);
+exampleIterDirHetero = fullfile(networkDir, exampleIterNameHetero);
+exampleIterDirHeteroBicRT = fullfile(networkDir, exampleIterNameHeteroBicRT);
+popIterDir2Cell = fullfile(networkDir, popIterName2Cell);
+popIterDir2CellBicRT = fullfile(networkDir, popIterName2CellBicRT);
+popIterDir200Cell = fullfile(networkDir, popIterName200Cell);
+popIterDir200CellBicRT = fullfile(networkDir, popIterName200CellBicRT);
+popIterDirHetero = fullfile(networkDir, popIterNameHetero);
+popIterDirHeteroBicRT = fullfile(networkDir, popIterNameHeteroBicRT);
 
 % Find all possible candidate labels
 if isempty(candidateLabelsEach200Cell)
@@ -264,7 +302,7 @@ if isempty(candidateLabelsEach200Cell)
 end
 
 % Construct the full path to the candidate cell spreadsheet
-candCellSheetPath = fullfile(networkDirectory, candCellSheetName);
+candCellSheetPath = fullfile(networkDir, candCellSheetName);
 
 % Create a rank string
 rankStr = ['rank', create_label_from_sequence(rankNumsToUse)];
@@ -273,17 +311,27 @@ rankStr = ['rank', create_label_from_sequence(rankNumsToUse)];
 epasStr = ['TCepas', create_label_from_sequence(epasToUse)];
 
 % Create a condition label
-[conditionLabel2Cell, conditionLabel200Cell, conditionLabelHetero] = ...
+[conditionLabel2Cell, conditionLabel200Cell, conditionLabelHetero, ...
+        conditionLabel2CellBicRT, conditionLabel200CellBicRT, ...
+        conditionLabelHeteroBicRT] = ...
     argfun(@(x) [x, '_', rankStr, '_gIncr', num2str(gIncr), '_', epasStr], ...
-            popIterName2Cell, popIterName200Cell, popIterNameHetero);
+            popIterName2Cell, popIterName200Cell, popIterNameHetero, ...
+            popIterName2CellBicRT, popIterName200CellBicRT, ...
+            popIterNameHeteroBicRT);
 
 % Create a population data spreadsheet name
 popDataSheetName2Cell = [popIterName2Cell, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
+popDataSheetName2CellBicRT = [popIterName2CellBicRT, '_', rankStr, '_', ...
+                                oscParamsSuffix, '.csv'];
 popDataSheetName200Cell = [popIterName200Cell, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
+popDataSheetName200CellBicRT = [popIterName200CellBicRT, '_', rankStr, '_', ...
+                                oscParamsSuffix, '.csv'];
 popDataSheetNameHetero = [popIterNameHetero, '_', rankStr, '_', ...
                             oscParamsSuffix, '.csv'];
+popDataSheetNameHeteroBicRT = [popIterNameHeteroBicRT, '_', rankStr, '_', ...
+                                oscParamsSuffix, '.csv'];
 
 % Create a network data spreadsheet names
 networkSheetNames = strcat(popIterName200Cell, '_', ...
@@ -296,8 +344,11 @@ networkSheetNamesEcdfs = strcat(popIterName200Cell, '_', ...
 
 % Contruct the full path to the population data spreadsheet
 popDataPath2Cell = fullfile(figure07Dir, popDataSheetName2Cell);
+popDataPath2CellBicRT = fullfile(figure07Dir, popDataSheetName2CellBicRT);
 popDataPath200Cell = fullfile(figure08Dir, popDataSheetName200Cell);
+popDataPath200CellBicRT = fullfile(figure08Dir, popDataSheetName200CellBicRT);
 popDataPathHetero = fullfile(figure08Dir, popDataSheetNameHetero);
+popDataPathHeteroBicRT = fullfile(figure08Dir, popDataSheetNameHeteroBicRT);
 networkDataPaths = fullfile(figure08Dir, networkSheetNames);
 networkDataPathsEcdfs = fullfile(figure08Dir, networkSheetNamesEcdfs);
 
@@ -325,6 +376,18 @@ if plotIpscComparison || plot2CellEssential || plot2CellM2h
                                 'Keyword', x), ...
                 exampleCellNames2Cell, 'UniformOutput', false);
 end
+if plotIpscComparisonBicRT || plot2CellEssentialBicRT || ...
+        plot2CellM2hBicRT
+    % Select seed number directory
+    seedNumberDir2CellBicRT = ...
+        fullfile(exampleIterDir2CellBicRT, exampleSeedDirName2Cell);
+
+    % Find example network directories
+    [~, exampleDirs2CellBicRT] = ...
+        cellfun(@(x) all_subdirs('Directory', seedNumberDir2CellBicRT, ...
+                                'Keyword', x), ...
+                exampleCellNames2Cell, 'UniformOutput', false);
+end
 if plot200CellExamples
     % Select seed number directory
     seedNumberDir200Cell = ...
@@ -333,6 +396,17 @@ if plot200CellExamples
     % Find example network directories
     [~, exampleDirs200Cell] = ...
         cellfun(@(x) all_subdirs('Directory', seedNumberDir200Cell, ...
+                                'Keyword', x, 'Recursive', true), ...
+                exampleCellNames200Cell, 'UniformOutput', false);
+end
+if plot200CellExamplesBicRT
+    % Select seed number directory
+    seedNumberDir200CellBicRT = ...
+        fullfile(exampleIterDir200CellBicRT, exampleSeedDirName200Cell);
+
+    % Find example network directories
+    [~, exampleDirs200CellBicRT] = ...
+        cellfun(@(x) all_subdirs('Directory', seedNumberDir200CellBicRT, ...
                                 'Keyword', x, 'Recursive', true), ...
                 exampleCellNames200Cell, 'UniformOutput', false);
 end
@@ -347,14 +421,32 @@ if plotHeteroExamples
                                 'Keyword', x, 'Recursive', true), ...
                 exampleCellNamesHetero, 'UniformOutput', false);
 end
+if plotHeteroExamplesBicRT
+    % Select seed number directory
+    seedNumberDirHeteroBicRT = ...
+        fullfile(exampleIterDirHeteroBicRT, exampleSeedDirName200Cell);
+
+    % Find example network directories
+    [~, exampleDirsHeteroBicRT] = ...
+        cellfun(@(x) all_subdirs('Directory', seedNumberDirHeteroBicRT, ...
+                                'Keyword', x, 'Recursive', true), ...
+                exampleCellNamesHetero, 'UniformOutput', false);
+end
 
 %% Plots figures for comparing dynamic clamp ipsc
 if plotIpscComparison
-    cellfun(@(x, y) plot_ipsc_comparison(x, exampleIterName2Cell, gIncr, y, ...
-                                        figure07Dir, figTypes, ...
+    cellfun(@(x, y) plot_ipsc_comparison(x, exampleIterName2Cell, ...
+                                        gIncr, y, figure07Dir, figTypes, ...
                                         ipscFigWidth, ipscFigHeight, ...
                                         xLimits2CellGabab, yLimitsGabab), ...
             exampleCellNames2Cell, exampleDirs2Cell);
+end
+if plotIpscComparisonBicRT
+    cellfun(@(x, y) plot_ipsc_comparison(x, exampleIterName2CellBicRT, ...
+                                        gIncr, y, figure07Dir, figTypes, ...
+                                        ipscFigWidth, ipscFigHeight, ...
+                                        xLimits2CellGabab, yLimitsGabab), ...
+            exampleCellNames2Cell, exampleDirs2CellBicRT);
 end
 
 %% Plots example 2-cell networks
@@ -366,6 +458,16 @@ if plot2CellEssential
                             xLimits2CellEssential, yLimitsEssential, ...
                             'essential', b, yTicksEssential), ...
                 exampleCellNames2Cell, exampleDirs2Cell), ...
+        num2cell(pharmConditions), colorMapPharmCell);
+end
+if plot2CellEssentialBicRT
+    cellfun(@(a, b) ...
+        cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2CellBicRT, ...
+                            gIncr, a, y, figure07Dir, figTypes, ...
+                            essential2CellFigWidth, essential2CellFigHeight, ...
+                            xLimits2CellEssential, yLimitsEssential, ...
+                            'essential', b, yTicksEssential), ...
+                exampleCellNames2Cell, exampleDirs2CellBicRT), ...
         num2cell(pharmConditions), colorMapPharmCell);
 end
 
@@ -380,6 +482,16 @@ if plot2CellM2h
                 exampleCellNames2Cell, exampleDirs2Cell), ...
         num2cell(pharmConditions), colorMapPharmCell);
 end
+if plot2CellM2hBicRT
+    cellfun(@(a, b) ...
+        cellfun(@(x, y) plot_2cell_examples(x, exampleIterName2CellBicRT, ...
+                            gIncr, a, y, figure07Dir, figTypes, ...
+                            m2h2CellFigWidth, m2h2CellFigHeight, ...
+                            xLimits2CellEssential, yLimitsM2h, ...
+                            'm2h', b, yTicksM2h), ...
+                exampleCellNames2Cell, exampleDirs2CellBicRT), ...
+        num2cell(pharmConditions), colorMapPharmCell);
+end
 
 %% Plots example homogeneous 200-cell networks
 if plot200CellExamples
@@ -388,6 +500,14 @@ if plot200CellExamples
                             gIncr, z, y, figure08Dir, figTypes, ...
                         example200CellFigWidth, example200CellFigHeight), ...
                 exampleCellNames200Cell, exampleDirs200Cell), ...
+        pharmConditions);
+end
+if plot200CellExamplesBicRT
+    arrayfun(@(z) ...
+        cellfun(@(x, y) plot_200cell_examples(x, exampleIterName200CellBicRT, ...
+                            gIncr, z, y, figure08Dir, figTypes, ...
+                        example200CellFigWidth, example200CellFigHeight), ...
+                exampleCellNames200Cell, exampleDirs200CellBicRT), ...
         pharmConditions);
 end
 
@@ -400,41 +520,73 @@ if plotHeteroExamples
                 exampleCellNamesHetero, exampleDirsHetero), ...
         pharmConditions);
 end
+if plotHeteroExamplesBicRT
+    arrayfun(@(z) ...
+        cellfun(@(x, y) plot_200cell_examples(x, exampleIterNameHeteroBicRT, ...
+                            gIncr, z, y, figure08Dir, figTypes, ...
+                        example200CellFigWidth, example200CellFigHeight), ...
+                exampleCellNamesHetero, exampleDirsHeteroBicRT), ...
+        pharmConditions);
+end
 
 %% Analyzes spikes for all 2-cell networks
 if analyze2CellSpikes
     reanalyze_network_spikes(popIterDir2Cell, backupPrevious2Cell, ...
                                 plotAnalysis2Cell);
 end
+if analyze2CellSpikesBicRT
+    reanalyze_network_spikes(popIterDir2CellBicRT, backupPrevious2CellBicRT, ...
+                                plotAnalysis2CellBicRT);
+end
 
 %% Combines quantification over all 2-cell networks
-if combine2CellPopulation
+if combine2CellPop
     combine_osc_params(popIterDir2Cell, candCellSheetPath, ...
                             rankNumsToUse2Cell, popDataPath2Cell);
+end
+if combine2CellPopBicRT
+    combine_osc_params(popIterDir2CellBicRT, candCellSheetPath, ...
+                            rankNumsToUse2Cell, popDataPath2CellBicRT);
 end
 
 %% Analyzes spikes for all homogeneous 200-cell networks
 if analyze200CellSpikes
-    reanalyze_network_spikes(popIterDir200Cell, backupPrevious200Cell, ...
-                                plotAnalysis200Cell);
+    reanalyze_network_spikes(popIterDir200Cell, ...
+                        backupPrevious200Cell, plotAnalysis200Cell);
+end
+if analyze200CellSpikesBicRT
+    reanalyze_network_spikes(popIterDir200CellBicRT, ...
+                        backupPrevious200CellBicRT, plotAnalysis200CellBicRT);
 end
 
 %% Analyzes spikes for all heterogeneous 200-cell networks
 if analyzeHeteroSpikes
-    reanalyze_network_spikes(popIterDirHetero, backupPreviousHetero, ...
-                                plotAnalysisHetero);
+    reanalyze_network_spikes(popIterDirHetero, ...
+                            backupPreviousHetero, plotAnalysisHetero);
+end
+if analyzeHeteroSpikesBicRT
+    reanalyze_network_spikes(popIterDirHeteroBicRT, ...
+                            backupPreviousHeteroBicRT, plotAnalysisHeteroBicRT);
 end
 
 %% Combines quantification over all homogeneous 200-cell networks
-if combine200CellPopulation
+if combine200CellPop
     combine_osc_params(popIterDir200Cell, candCellSheetPath, ...
                             rankNumsToUse200Cell, popDataPath200Cell);
 end
+if combine200CellPopBicRT
+    combine_osc_params(popIterDir200CellBicRT, candCellSheetPath, ...
+                            rankNumsToUse200Cell, popDataPath200CellBicRT);
+end
 
 %% Combines quantification over all heterogeneous 200-cell networks
-if combineHeteroPopulation
+if combineHeteroPop
     combine_osc_params(popIterDirHetero, candCellSheetPath, ...
                             rankNumsToUseHetero, popDataPathHetero);
+end
+if combineHeteroPopBicRT
+    combine_osc_params(popIterDirHeteroBicRT, candCellSheetPath, ...
+                            rankNumsToUseHetero, popDataPathHeteroBicRT);
 end
 
 %% Combines activation profiles over seed numbers for each 200-cell network
@@ -453,11 +605,26 @@ if plot2CellViolins
     % Compute statistics if not done already
     m3ha_network_compute_and_save_statistics(stats2dPath2Cell, ...
                     popDataPath2Cell, gIncr, epasToUse, ...
-                    measuresOfInterest, measureTitles, ...
-                    'mean', cellNameStr, conditionLabel2Cell, pharmLabelsShort);
+                    measuresOfInterest, measureTitles, 'mean', cellNameStr, ...
+                    conditionLabel2Cell, pharmLabelsShort);
 
     % Plot violin plots
     m3ha_plot_violin(stats2dPath2Cell, 'RowsToPlot', measuresToPlot, ...
+                    'OutFolder', figure07Dir);
+end
+if plot2CellViolinsBicRT
+    % Construct stats table path
+    stats2dPath2CellBicRT = ...
+        fullfile(figure07Dir, strcat(conditionLabel2CellBicRT, '_stats.mat'));
+
+    % Compute statistics if not done already
+    m3ha_network_compute_and_save_statistics(stats2dPath2CellBicRT, ...
+                    popDataPath2CellBicRT, gIncr, epasToUse, ...
+                    measuresOfInterest, measureTitles, 'mean', cellNameStr, ...
+                    conditionLabel2CellBicRT, pharmLabelsShort);
+
+    % Plot violin plots
+    m3ha_plot_violin(stats2dPath2CellBicRT, 'RowsToPlot', measuresToPlot, ...
                     'OutFolder', figure07Dir);
 end
 
@@ -471,11 +638,26 @@ if plot200CellViolins
     % Compute statistics if not done already
     m3ha_network_compute_and_save_statistics(stats2dPath200Cell, ...
                 popDataPath200Cell, gIncr, epasToUse, ...
-                measuresOfInterest, measureTitles, ...
-                'mean', cellNameStr, conditionLabel200Cell, pharmLabelsShort);
+                measuresOfInterest, measureTitles, 'mean', cellNameStr, ...
+                conditionLabel200Cell, pharmLabelsShort);
 
     % Plot violin plots
     m3ha_plot_violin(stats2dPath200Cell, 'RowsToPlot', measuresToPlot, ...
+                    'OutFolder', figure08Dir);
+end
+if plot200CellViolinsBicRT
+    % Construct stats table path
+    stats2dPath200CellBicRT = ...
+        fullfile(figure08Dir, strcat(conditionLabel200CellBicRT, '_stats.mat'));
+
+    % Compute statistics if not done already
+    m3ha_network_compute_and_save_statistics(stats2dPath200CellBicRT, ...
+                popDataPath200CellBicRT, gIncr, epasToUse, ...
+                measuresOfInterest, measureTitles, 'mean', cellNameStr, ...
+                conditionLabel200CellBicRT, pharmLabelsShort);
+
+    % Plot violin plots
+    m3ha_plot_violin(stats2dPath200CellBicRT, 'RowsToPlot', measuresToPlot, ...
                     'OutFolder', figure08Dir);
 end
 
@@ -489,11 +671,26 @@ if plotHeteroViolins
     % Compute statistics if not done already
     m3ha_network_compute_and_save_statistics(stats2dPathHetero, ...
                 popDataPathHetero, gIncr, epasToUse, ...
-                measuresOfInterest, measureTitles, ...
-                'mean', cellNameStr, conditionLabelHetero, pharmLabelsShort);
+                measuresOfInterest, measureTitles, 'mean', cellNameStr, ...
+                conditionLabelHetero, pharmLabelsShort);
 
     % Plot violin plots
     m3ha_plot_violin(stats2dPathHetero, 'RowsToPlot', measuresToPlot, ...
+                    'OutFolder', figure08Dir);
+end
+if plotHeteroViolinsBicRT
+    % Construct stats table path
+    stats2dPathHeteroBicRT = ...
+        fullfile(figure08Dir, strcat(conditionLabelHeteroBicRT, '_stats.mat'));
+
+    % Compute statistics if not done already
+    m3ha_network_compute_and_save_statistics(stats2dPathHeteroBicRT, ...
+                popDataPathHeteroBicRT, gIncr, epasToUse, ...
+                measuresOfInterest, measureTitles, 'mean', cellNameStr, ...
+                conditionLabelHeteroBicRT, pharmLabelsShort);
+
+    % Plot violin plots
+    m3ha_plot_violin(stats2dPathHeteroBicRT, 'RowsToPlot', measuresToPlot, ...
                     'OutFolder', figure08Dir);
 end
 
@@ -567,13 +764,20 @@ end
 %% Archive all scripts for this run
 if archiveScriptsFlag
     if plotIpscComparison || plot2CellEssential || plot2CellM2h || ...
-            analyze2CellSpikes || combine2CellPopulation || plot2CellViolins
+            analyze2CellSpikes || combine2CellPop || plot2CellViolins || ...
+            plotIpscComparisonBicRT || plot2CellEssentialBicRT || ...
+            plot2CellM2hBicRT || analyze2CellSpikesBicRT || ...
+            combine2CellPopBicRT || plot2CellViolinsBicRT
         archive_dependent_scripts(mfilename, 'OutFolder', figure07Dir);
     end
     if plot200CellExamples || analyze200CellSpikes || ...
-            combineActivationProfiles || combine200CellPopulation || ...
+            combineActivationProfiles || combine200CellPop || ...
             plot200CellViolins || analyzeHeteroSpikes || ...
-            combineHeteroPopulation || plotHeteroViolins || ...
+            combineHeteroPop || plotHeteroViolins || ...
+            plot200CellExamplesBicRT || analyze200CellSpikesBicRT || ...
+            combineActivationProfilesBicRT || combine200CellPopBicRT || ...
+            plot200CellViolinsBicRT || analyzeHeteroSpikesBicRT || ...
+            combineHeteroPopBicRT || plotHeteroViolinsBicRT || ...
             plot200CellGroupByCellJitters || plotHeteroGroupByCellJitters || ...
             combineEach200CellNetwork || ...
             plot200CellGroupByEpasJitters || plot200CellCumDist
