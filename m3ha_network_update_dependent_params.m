@@ -41,12 +41,19 @@ function paramsTable = m3ha_network_update_dependent_params (paramsTable, vararg
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 % 2018-05-09 Fixed cpamp calculation for 'RTCl'
 % 2019-10-31 Now uses tables
+% 2020-07-27 Made gabaa2GababRatio a parameter
 
 %% Hard-coded parameters
 validExperiments = {'RTCl', 'm3ha', 'noexp'};
+gabaa2GababRatio = 2;   % based on Huguenard & Prince 1994 
+                        %   "Intrathalamic Rhythmicity Studied in Vitro"
+                        %   Figure 4A, it is closer to 9.7 / 2.9 ~ 3 instead
+                        % However, the recordings conditions in
+                        %   Beenhakker & Huguenard 2009 has more robust
+                        %       GABA-B IPSCs, so we used a factor of 2 instead
 
-% Maximal conductance of GABA-A receptors for 100% amp scale
-gabaaGmaxTemplate = [4.48; 6.72; 9.76; 4.48] ./ 1000;    % maximal conductance (uS)
+% Maximal conductance of GABA-B receptors for 100% amp scale
+gababGmaxTemplate = [4.48; 6.72; 9.76; 4.48] ./ 1000;    % maximal conductance (uS)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,11 +116,9 @@ case 'm3ha'
     gIncr = paramsTable{'gIncr', 'Value'};
 
     % Update maximal GABA-A conductance (uS)
-    %   2 times that of GABA-B 
-    %   based on Huguenard & Prince, 1994
     if paramsTable{'TCgabaaGmax', 'Value'} ~= 0      % Not in bicuculline mode
         paramsTable{'TCgabaaGmax', 'Value'} = ...
-            gabaaGmaxTemplate(pCond) * 2 * gIncr/100;  
+            gababGmaxTemplate(pCond) * gabaa2GababRatio * gIncr/100;  
     end
 
     % Load default GABAB IPSC parameters in uS and 

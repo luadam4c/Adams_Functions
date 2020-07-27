@@ -57,9 +57,9 @@ plotIpscComparison = false; %true;
 plot2CellEssential = false; %true;
 plot2CellM2h = false; %true;
 
-plotIpscComparisonBicRT = true;
-plot2CellEssentialBicRT = true;
-plot2CellM2hBicRT = true;
+plotIpscComparisonBicRT = false; %true;
+plot2CellEssentialBicRT = false; %true;
+plot2CellM2hBicRT = false; %true;
 
 analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
@@ -70,8 +70,8 @@ plot2CellViolins = false; %true;
 analyze2CellSpikesBicRT = false; %true;
 plotAnalysis2CellBicRT = false; %true;
 backupPrevious2CellBicRT = false; %true;
-combine2CellPopBicRT = false; %true;
-plot2CellViolinsBicRT = false; %true;
+combine2CellPopBicRT = true;
+plot2CellViolinsBicRT = true;
 
 plot200CellExamples = false; %true;
 plotHeteroExamples = false; %true;
@@ -775,7 +775,7 @@ if archiveScriptsFlag
             plot200CellViolins || analyzeHeteroSpikes || ...
             combineHeteroPop || plotHeteroViolins || ...
             plot200CellExamplesBicRT || analyze200CellSpikesBicRT || ...
-            combineActivationProfilesBicRT || combine200CellPopBicRT || ...
+            combine200CellPopBicRT || ...
             plot200CellViolinsBicRT || analyzeHeteroSpikesBicRT || ...
             combineHeteroPopBicRT || plotHeteroViolinsBicRT || ...
             plot200CellGroupByCellJitters || plotHeteroGroupByCellJitters || ...
