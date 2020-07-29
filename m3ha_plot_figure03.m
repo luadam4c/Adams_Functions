@@ -57,8 +57,8 @@ useCvode = false;
 % Other Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
-% figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
-% paramsDir = figure03Dir;
+figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
+paramsDir = figure03Dir;
 matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
 fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 
@@ -101,11 +101,14 @@ paramFileSuffix = 'params';
 % exampleCellNames = {'D101310'; 'C101210'};
 % exampleCellNames = {'C101210'};
 % exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};
-exampleCellNames = {'D101310'; 'G101310'};
+% exampleCellNames = {'D101310'; 'G101310'};
+% These are ranks: 6, 9, 2, 18, 33, 32
+exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; ...
+                    'A100810'; 'A092910'};
 
 % Simulation settings
-% useHH = false;
-% useCvode = true;
+useHH = false;
+useCvode = true;
 secondOrder = 0;
 columnMode = 1;
 plotAllFlag = false;

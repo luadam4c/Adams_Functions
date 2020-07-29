@@ -70,8 +70,8 @@ plot2CellViolins = false; %true;
 analyze2CellSpikesBicRT = false; %true;
 plotAnalysis2CellBicRT = false; %true;
 backupPrevious2CellBicRT = false; %true;
-combine2CellPopBicRT = true;
-plot2CellViolinsBicRT = true;
+combine2CellPopBicRT = false; %true;
+plot2CellViolinsBicRT = false; %true;
 
 plot200CellExamples = false; %true;
 plotHeteroExamples = false; %true;
@@ -82,8 +82,8 @@ plotHeteroExamplesBicRT = false; %true;
 analyze200CellSpikes = false; %true;
 plotAnalysis200Cell = false; %true;
 backupPrevious200Cell = false; %true;
-combine200CellPop = false; %true;
-plot200CellViolins = false; %true;
+combine200CellPop = true;
+plot200CellViolins = true;
 
 analyze200CellSpikesBicRT = false; %true;
 plotAnalysis200CellBicRT = false; %true;
@@ -1630,7 +1630,7 @@ title(figTitle);
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Set y axis limits based on measureTitle
-yLimits = m3ha_decide_on_ylimits(measureTitle);
+yLimits = m3ha_decide_on_ylimits(measureTitle, 'PlotType', '2d1');
 if ~isempty(yLimits)
     ylim(yLimits);
 end

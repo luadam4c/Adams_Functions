@@ -228,7 +228,7 @@ if ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
 end
 
 % Modify y limits
-if ~(ischar(yLimits) && strcmpi(yLimits, 'suppress'))
+if ~(ischar(yLimits) && strcmpi(yLimits, 'suppress') || isempty(yLimits))
     ylim(yLimits);
 end
 

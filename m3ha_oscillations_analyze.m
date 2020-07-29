@@ -62,15 +62,16 @@ sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
 figTypesForVis = {'png'};
 figTypesForCorel = {'epsc'};
 
-plotFigure1Individual = false; %true;
-parseExamplesFlag = false; %true;
-plotExampleContourFlag = false; %true;
+plotFigure1Individual = true;
+parseExamplesFlag = true;
+plotExampleContourFlag = true;
 contourXLimitsSeconds = [2, 20];
 contourWidth = 11;
 contourHeight = 3;
-plotExampleRawTracesFlag = false; %true;
+plotExampleRawTracesFlag = true;
 rawPlotLineWidth = 0.25;
-rawSweepNumbers = [16, 56];
+% rawSweepNumbers = [16, 56];
+rawSweepNumbers = [20, 60];
 rawWidth = 8;
 rawHeight = 2.75;
 rawXLimits = [2, 15];
@@ -103,7 +104,7 @@ chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
 barInsetWidth = 1;              % figure width in cm
 barInsetHeight = 2;             % figure height in cm
-computeFigure1Stats = true;
+computeFigure1Stats = false; %true;
 
 % Flags
 parseIndividualFlag = false; % true;

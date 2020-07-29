@@ -44,17 +44,11 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - 'PlotType': plot type
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       '2d1' - violin plots, Figures 2, 7 & 8
-%                       '2d2' - violin plots, Figure 4
-%                   default == '2d1'
 %                   - Any other parameter-value pair for plot_violin.m
 %
 % Requires:
 %       cd/argfun.m
 %       cd/combine_strings.m
-%       cd/convert_units.m
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/extract_fields.m
@@ -78,14 +72,13 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 % 2019-12-27 Moved from m3ha_plot_figure02.m
 % 2019-12-28 Added 'FigTypes' as an optional argument
 % 2019-12-28 Added 'FigHeight' and 'FigWidth' as optional arguments
-% 2020-07-29 Added 'PlotType' as an optional argument
+% 
 
 %% Hard-coded parameters
 violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
 medianColor = [0.6758, 1, 0.1836];     % rgb('GreenYellow') 
                                 % color of median circle
 medianSize = 6;                 % size of median circle in points
-validPlotTypes = {'2d1', '2d2'};
 
 %% Default values for optional arguments
 rowsToPlotDefault = 'all';
@@ -93,7 +86,6 @@ outFolderDefault = '';          % set later
 figWidthDefault = 3.4;
 figHeightDefault = 3;
 figTypesDefault = {'png', 'epsc'};
-plotTypeDefault  = '2d1';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -128,8 +120,6 @@ addParameter(iP, 'FigHeight', figHeightDefault, ...
                 'FigHeight must be a empty or a positive scalar!'));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
-addParameter(iP, 'plotType', plotTypeDefault, ...
-    @(x) any(validatestring(x, validPlotTypes)));
 
 % Read from the Input Parser
 parse(iP, statsPath, varargin{:});
@@ -138,7 +128,6 @@ outFolder = iP.Results.OutFolder;
 figWidth = iP.Results.FigWidth;
 figHeight = iP.Results.FigHeight;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
-plotType = validatestring(iP.Results.plotType, validPlotTypes);
 
 % Keep unmatched arguments for the plot_violin() function
 otherArguments = iP.Unmatched;
@@ -198,7 +187,7 @@ disp('Plotting 2D violin plots ...');
                             medianColor, medianSize, b, ...
                             pharmLabels, c, ...
                             figHeight, figWidth, ...
-                            figTypes, plotType, otherArguments), ...
+                            figTypes, otherArguments), ...
             allValues, allMeasureTitles, allFigPathBases);
 
 % Convert difference struct to a table
@@ -230,7 +219,7 @@ function [handles, diffStruct, diffStructFirstThree, ...
                                         medianColor, medianSize, ...
                                         measureTitle, pharmLabels, ...
                                         figPathBase, figHeight, figWidth, ...
-                                        figTypes, plotType, otherArguments)
+                                        figTypes, otherArguments)
 
 % Hard-coded parameters
 MS_PER_S = 1000;
@@ -266,13 +255,15 @@ diffStructConDual = ...
 fig = set_figure_properties('AlwaysNew', true);
 
 % Convert onset times from ms to seconds
+%{
 if contains(measureTitle, 'onset')
     % Update values
-    allValues = convert_units(allValues, 'ms', 's');
+    allValues = cellfun(@(x) x ./ MS_PER_S, allValues, 'UniformOutput', false);
 
     % Update title
     measureTitle = replace(measureTitle, 'ms', 's');
 end
+%}
 
 % Plot groups as a violin plot
 violins = plot_violin(allValues, 'XTickLabels', pharmLabels, ...
@@ -290,7 +281,7 @@ violins = plot_violin(allValues, 'XTickLabels', pharmLabels, ...
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Set y axis limits based on measureTitle
-yLimits = m3ha_decide_on_ylimits(measureTitle, 'PlotType', plotType);
+yLimits = m3ha_decide_on_ylimits(measureTitle);
 if ~isempty(yLimits)
     ylim(yLimits);
 end
@@ -319,6 +310,9 @@ handles.violins = violins;
 
 %{
 OLD CODE:
+
+% Construct the pharm group names
+pharmNames = extractAfter(pharmLabels, '-');
 
 %}
 

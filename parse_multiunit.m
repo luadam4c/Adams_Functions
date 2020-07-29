@@ -355,6 +355,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-29 Added 'FigFolder' as an optional argument
 % 2019-11-30 Added 'FigTypes' as an optional argument
 % 2019-12-05 Fixed units of Voltage label to uV
+% 2020-07-29 Fixed bug with toExtractData
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
@@ -378,8 +379,7 @@ measuresDir = 'measures';
 combinedDir = 'combined';
 contourDir = 'contour';
 measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
-                    'oscPeriod1Ms', 'oscPeriod2Ms', ...
-                    'oscDurationSec', ...
+                    'oscPeriod1Ms', 'oscPeriod2Ms', 'oscDurationSec', ...
                     'nSpikesTotal', 'nSpikesIn10s', 'nSpikesInOsc', ...
                     'nBurstsTotal', 'nBurstsIn10s', 'nBurstsInOsc', ...
                     'nSpikesPerBurst', 'nSpikesPerBurstIn10s', ...
@@ -652,8 +652,8 @@ paramsPath = fullfile(outFolder, [fileBase, paramsSuffix]);
 resultsPath = fullfile(outFolder, [fileBase, resultsSuffix]);
 
 % Extract data only if results not provided
-if ~isfile(resultsPath)
-    toExtractData = true;
+if toExtractData && isfile(resultsPath)
+    toExtractData = false;
 end
 
 % Extract data if needed

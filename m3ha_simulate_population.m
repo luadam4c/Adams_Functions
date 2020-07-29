@@ -97,7 +97,7 @@ combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotIndividualFlag = false; %true;
 plotEssentialFlag = false; %true;
-plotOpenProbabilityFlag = true;
+plotOpenProbabilityFlag = false; %true;
 ltsDefinition = 'original';
 % ltsDefinition = 'maxConcavity';
 onlyIfReached = false; %true;
@@ -105,8 +105,8 @@ plotEachCellFlag = false; %true;
 findSpecialCasesFlag = false; %true;
 computeCellInfoTableFlag = false; %true;
 plotCorrelationsFlag = false; %true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;
 archiveScriptsFlag = true;
 
 
@@ -368,11 +368,11 @@ individualYTickLocs = [];
 % rankNumsToUse = 1:23;
 % rankNumsOpenProbability = 1:23;
 
-outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-        '20200429_population_rank1-31_dataMode1_attemptNumber3_noHH_cvode_on');
-rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = 1:31;
-rankNumsOpenProbability = 1:31;
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+%         '20200429_population_rank1-31_dataMode1_attemptNumber3_noHH_cvode_on');
+% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = 1:31;
+% rankNumsOpenProbability = 1:31;
 
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
 %         '20200429_population_rank1-31_dataMode1_attemptNumber3_noHH_cvode_off');
@@ -386,11 +386,11 @@ rankNumsOpenProbability = 1:31;
 % rankNumsToUse = 1:31;
 % rankNumsOpenProbability = 1:31;
 
-% outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
-%         '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_off');
-% rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
-% rankNumsToUse = 1:31;
-% rankNumsOpenProbability = 1:31;
+outFolder = fullfile(parentDirectoryTemp, fitDirName, ......
+        '20200430_population_rank1-31_dataMode1_attemptNumber3_useHH_cvode_off');
+rankDirName = '20200207_ranked_manual_singleneuronfitting0-102';
+rankNumsToUse = 1:31;
+rankNumsOpenProbability = 1:31;
 
 % filtWidthMs = 30;
 
@@ -999,7 +999,7 @@ if plotViolinPlotsFlag
                     'SwpInfo', simSwpInfo, 'DataMode', dataMode, ...
                     'PharmConditions', pCond2D, 'GIncrConditions', gCond2D, ...
                     'RowsToPlot', measuresOfInterest, ...
-                    'OutFolder', outFolder), ...
+                    'OutFolder', outFolder, 'PlotType', '2d2'), ...
             conditionLabels2D, pConds2D, gConds2D);
 end
 
@@ -1033,7 +1033,8 @@ if plotBarPlotsFlag
     end
 
     % Plot all 3D bar plots
-    m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest);
+    m3ha_plot_bar3(stats3dPath, 'PlotType', '3d2', ...
+                    'RowsToPlot', measuresOfInterest);
 end
 
 % Archive all scripts for this run

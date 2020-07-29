@@ -43,6 +43,11 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - 'PlotType': plot type
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '3d1' - bar plots, Figure 2
+%                       '3d2' - bar plots, Figure 4
+%                   default == '3d1'
 %                   - Any other parameter-value pair for bar3()
 %
 % Requires:
@@ -53,6 +58,7 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %       cd/extract_fileparts.m
 %       cd/isfigtype.m
 %       cd/ispositiveintegervector.m
+%       cd/m3ha_decide_on_ylimits.m
 %       cd/struct2arglist.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -68,9 +74,10 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 % 2019-12-28 Added 'FigTypes' as an optional argument
 % 2019-12-28 Added 'FigHeight' and 'FigWidth' as optional arguments
 % 2020-02-08 Changed z axis label to title
-% 
+% 2020-07-29 Added 'PlotType' as an optional argument
 
 %% Hard-coded parameters
+validPlotTypes = {'3d1', '3d2'};
 
 %% Default values for optional arguments
 rowsToPlotDefault = 'all';
@@ -78,6 +85,7 @@ outFolderDefault = '';          % set later
 figWidthDefault = 4.3; %6;
 figHeightDefault = 4.3; %6;
 figTypesDefault = {'png', 'epsc'};
+plotTypeDefault = '3d1';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -112,6 +120,8 @@ addParameter(iP, 'FigHeight', figHeightDefault, ...
                 'FigHeight must be a empty or a positive scalar!'));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
+addParameter(iP, 'plotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
 
 % Read from the Input Parser
 parse(iP, statsPath, varargin{:});
@@ -120,6 +130,7 @@ outFolder = iP.Results.OutFolder;
 figWidth = iP.Results.FigWidth;
 figHeight = iP.Results.FigHeight;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+plotType = validatestring(iP.Results.plotType, validPlotTypes);
 
 % Keep unmatched arguments for the bar3() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -166,7 +177,7 @@ disp('Plotting 3D bar plots ...');
 handles = cellfun(@(a, b, c, d) m3ha_plot_bar3_helper(a, b, c, ...
                                 pharmLabels, gIncrLabels, ...
                                 d, figHeight, figWidth, ...
-                                figTypes, otherArguments), ...
+                                figTypes, plotType, otherArguments), ...
                 allMeanValues, allUpper95Values, ...
                 allMeasureTitles, allFigPathBases);
 
@@ -175,7 +186,7 @@ handles = cellfun(@(a, b, c, d) m3ha_plot_bar3_helper(a, b, c, ...
 function handles = m3ha_plot_bar3_helper(meanValue, upper95Value, ...
                         measureTitle, pharmLabels, gIncrLabels, ...
                         figPathBase, figHeight, figWidth, figTypes, ...
-                        otherArguments)
+                        plotType, otherArguments)
 
 % Create figure for conductance traces
 fig = set_figure_properties('AlwaysNew', true);
@@ -193,6 +204,16 @@ yTickLabels = gIncrLabels;
 relativeBarWidth = 0.2;
 xTickAngle = 320;
 barSeparation = 1;
+
+% Convert onset times from ms to seconds
+if contains(measureTitle, 'onset')
+    % Update values
+    meanValue = convert_units(meanValue, 'ms', 's');
+    upper95Value = convert_units(upper95Value, 'ms', 's');
+
+    % Update title
+    measureTitle = replace(measureTitle, 'ms', 's');
+end
 
 % Decide on the color map
 cm = decide_on_colormap([], 4);
@@ -238,11 +259,17 @@ errorBarHorz = ...
             xPosBarLeft, xPosBarRight, yValues, yValues, ...
             upper95ValueTransposed, upper95ValueTransposed);
 
-% Plot z axis label
-% zlabel(measureTitle);
-
-% Plot title
-title(measureTitle);
+% Plot measure title
+switch plotType
+    case '3d1'
+        % Plot as z axis label
+        zlabel(measureTitle);
+    case '3d2'
+        % Plot as title
+        title(measureTitle);
+    otherwise
+        body
+end
 
 % Set x tick labels
 set(gca, 'XTickLabel', xTickLabels);
@@ -257,19 +284,9 @@ set(gca, 'YTickLabel', yTickLabels);
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Set z axis limits based on measureTitle
-switch measureTitle
-    case 'LTS probability'
-        zlim([0, 1]);
-    case 'LTS onset time (ms)'
-        zlim([0, 3000]);
-    case 'Spikes per LTS'
-        zlim([0, 6.5]);
-    case 'LTS maximum slope (V/s)'
-        zlim([0, 4]);
-    case 'LTS amplitude (mV)'
-        zlim([-75, 0]);
-    otherwise
-        % Do nothing
+zLimits = m3ha_decide_on_ylimits(measureTitle, 'PlotType', plotType);
+if ~isempty(zLimits)
+    zlim(zLimits);
 end
 
 % Update figure for CorelDraw
