@@ -14,6 +14,7 @@
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_spike_histogram.m
 %       cd/update_figure_for_corel.m
+%       cd/update_slice_bases.m
 %       cd/save_all_figtypes.m
 
 % File History:
@@ -31,6 +32,7 @@
 % 2019-11-28 Changed maxInterBurstIntervalMs from 1500 ms to 2000 ms
 % 2019-11-28 Changed minSpikeRateInBurstHz from 50 Hz to 100 Hz
 % 2019-12-03 Added bar insets
+% 2020-07-29 Added usage of update_slice_bases.m
 
 %% Hard-coded parameters
 % Folders
@@ -71,7 +73,7 @@ contourHeight = 3;
 plotExampleRawTracesFlag = true;
 rawPlotLineWidth = 0.25;
 % rawSweepNumbers = [16, 56];
-rawSweepNumbers = [20, 60];
+rawSweepNumbers = [18, 58];
 rawWidth = 8;
 rawHeight = 2.75;
 rawXLimits = [2, 15];
@@ -188,15 +190,16 @@ varLabels = {'Oscillatory Index 4'; 'Oscillation Period 2 (ms)'; ...
 
 % Plot raster plots for Figure 01
 if plotFigure1Individual
+    % Update slice bases
+    update_slice_bases('Directory', figure01Dir);
+
     % Parse and save all parsed results
     if parseExamplesFlag
         parse_all_multiunit('Directory', figure01Dir, ...
                 'SaveResultsFlag', true, ...
                 'RelSnrThres2Max', relSnrThres2Max, ...
-                'FiltFreq', filtFreq, ...
-                'MinDelayMs', minDelayMs, ...
-                'BinWidthMs', binWidthMs, ...
-                'ResolutionMs', resolutionMs, ...
+                'FiltFreq', filtFreq, 'MinDelayMs', minDelayMs, ...
+                'BinWidthMs', binWidthMs, 'ResolutionMs', resolutionMs, ...
                 'MinBurstLengthMs', minBurstLengthMs, ...
                 'MaxFirstInterBurstIntervalMs', maxFirstInterBurstIntervalMs, ...
                 'MaxInterBurstIntervalMs', maxInterBurstIntervalMs, ...

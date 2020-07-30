@@ -620,6 +620,7 @@ There are 2 MATLAB scripts in this directory:
 - [**update_file_base_in_matfiles.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_file_base_in_matfiles.m): Updates slice bases in .mat files to match the file name if changed
 - [**update_neuron_scripts.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_neuron_scripts.m): Updates NEURON scripts from one directory to another and change to the latter directory
 - [**update_param_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_param_values.m): Updates a parameters table with new values
+- [**update_slice_bases.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_slice_bases.m): Updates slice bases to file bases for all slice data .mat files in a directory
 - [**validate_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/validate_string.m): Validate whether a string is an element of a cell array of valid strings
 - [**vec2array.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2array.m): Convert a vector to an array with dimensions given by dims using linear indexing (obsolete, use reshape() instead)
 - [**vec2cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2cell.m): Reorganize a vector or array into a cell array of partial vectors/arrays according to class
