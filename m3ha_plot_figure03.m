@@ -37,11 +37,11 @@
 
 %% Hard-coded parameters
 % Flags
-updateScripts = true;
+updateScripts = false; %true;
 simulateCpr = false; %true;
 plotCpr = false; %true;
-simulateIpscr = true;
-plotIpscr = true;
+simulateIpscr = false; %true;
+plotIpscr = false; %true;
 plotOverlapped = false; %true;
 archiveScriptsFlag = true;
 
@@ -102,9 +102,10 @@ paramFileSuffix = 'params';
 % exampleCellNames = {'C101210'};
 % exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};
 % exampleCellNames = {'D101310'; 'G101310'};
-% These are ranks: 6, 9, 2, 18, 33, 32
-exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; ...
-                    'A100810'; 'A092910'};
+% exampleCellNames = {'I101210'};
+% These are ranks: 6, 2, 9, 10, 18, 32, 33
+exampleCellNames = {'D101310'; 'K092810'; 'G101310'; 'I101210'; 'E101210'; ...
+                    'A092910'; 'A100810'};
 
 % Simulation settings
 useHH = false;
@@ -173,8 +174,7 @@ overlappedFigHeight = [];
 overlappedXLimits = [];
 overlappedYLimits = [];
 
-% figTypes = {'png', 'epsc2'};
-figTypes = {'png'};
+figTypes = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
