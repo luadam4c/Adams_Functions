@@ -103,6 +103,7 @@ paramFileSuffix = 'params';
 % exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};
 % exampleCellNames = {'D101310'; 'G101310'};
 % exampleCellNames = {'I101210'};
+% exampleCellNames = {'E101210'};
 % These are ranks: 6, 2, 9, 10, 18, 32, 33
 exampleCellNames = {'D101310'; 'K092810'; 'G101310'; 'I101210'; 'E101210'; ...
                     'A092910'; 'A100810'};
@@ -165,9 +166,11 @@ cprFigHeight = 6;
 cprXLimits = timeToStabilize + [70, 250];
 cprYLimits = [];
 ipscrFigWidth = 7.5;
-ipscrFigHeight = 7;
+% ipscrFigHeight = 7;
+ipscrFigHeight = 7.5;
 ipscrXLimits = timeToStabilize + [800, 2500];
-ipscrYLimits = [-100, -40];
+% ipscrYLimits = [-100, -40];
+ipscrYLimits = [-110, -40];
 ipscrYTicks = [-80, -60];
 overlappedFigWidth = [];
 overlappedFigHeight = [];
