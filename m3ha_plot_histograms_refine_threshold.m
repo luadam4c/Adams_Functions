@@ -74,11 +74,11 @@ passive_file_bycells = 'dclampPassiveLog_bycells_suffix.mat';
 
 %% Maximum number of components in the Gaussian mixture fit
 max_numComponents_1 = 3;    % for narrowest 2nd derivative
-max_numComponents_2 = 15;    % for RMSE rising and falling phases
+max_numComponents_2 = 15;   % for RMSE rising and falling phases
 
 %% Parameters used for data reorganization
-lts_thr = -0.0023;        % 2nd derivative in V^2/s^2 below which defines an LTS peak
-lts_thr_alt = -0.0081823;    % Alternative threshold that determines "gray area"
+lts_thr = -0.0023;        % 2nd derivative in kV/s^2 below which defines an LTS peak
+lts_thr_alt = -0.0081823; % Alternative threshold that determines "gray area"
 
 %% Peak Classification (corresponds to peakclass == 1 ~ 9):
 peakclass_labels = {'Not LTS by prominence', ...
@@ -403,8 +403,8 @@ peakclass_labels{3} = 'Not LTS by shape (taken out)';
        'OldThr', lts_thr, 'ThrMin', burst_thr, 'OutFolder', outfolder_hist, ...
        'FitMode', fitmode, 'PeakClass', peakclass', 'PeakClassLabels', peakclass_labels, ...
        'MinThreshold', 0, 'ThresMode', 'minFirstTwoComponents');
-fprintf('New LTS threshold is %g V^2/s^2\n', lts_thr_new);
-fprintf('Alternate LTS threshold is %g V^2/s^2\n', lts_thr_alt_new);
+fprintf('New LTS threshold is %g kV/s^2\n', lts_thr_new);
+fprintf('Alternate LTS threshold is %g kV/s^2\n', lts_thr_alt_new);
 
 % Change legend position in fit_gaussians_and_refine_threshold 
 % Following two plots are RMSE with fit
@@ -416,8 +416,8 @@ figname = ['rmse_R_row_Fit', suffix, '.png'];
        'OldThr', 0, 'ThrMin', 0, 'OutFolder', outfolder_hist, ...
        'FitMode', fitmode, 'PeakClass', cellidrow', 'PeakClassLabels', cellidrow_labels, ...
        'MinThreshold', 0, 'ThresMode', 'minFirstTwoComponents');
-fprintf('New LTS threshold is %g V^2/s^2\n', lts_thr_newR);
-fprintf('Alternate LTS threshold is %g V^2/s^2\n', lts_thr_alt_newR);
+fprintf('New LTS threshold is %g kV/s^2\n', lts_thr_newR);
+fprintf('Alternate LTS threshold is %g kV/s^2\n', lts_thr_alt_newR);
 
 figname = ['rmse_F_row_Fit', suffix, '.png'];
 [BestModelF, numComponentsF, Mu_bestF, Std_bestF, Prop_bestF, minAICF, lts_thr_newF, lts_thr_alt_newF, new_peakclassF, min_thresholdF, ~] = ...
@@ -426,8 +426,8 @@ figname = ['rmse_F_row_Fit', suffix, '.png'];
        'OldThr', 0, 'ThrMin', 0, 'OutFolder', outfolder_hist, ...
        'FitMode', fitmode, 'PeakClass', new_peakclassR', 'PeakClassLabels', cellidrow_labels, ...
        'MinThreshold', min_thresholdR, 'ThresMode', 'minFirstTwoComponents');
-fprintf('New LTS threshold is %g V^2/s^2\n', lts_thr_newF);
-fprintf('Alternate LTS threshold is %g V^2/s^2\n', lts_thr_alt_newF);
+fprintf('New LTS threshold is %g kV/s^2\n', lts_thr_newF);
+fprintf('Alternate LTS threshold is %g kV/s^2\n', lts_thr_alt_newF);
 
 % Following two plots are RMSE examining above and below threshold
 % Create file name for figures
@@ -438,8 +438,8 @@ figname = ['rmse_R_row_Fit_threshold', suffix, '.png'];
        'OldThr', 0, 'ThrMin', 0, 'OutFolder', outfolder_hist, ...
        'FitMode', fitmode, 'PeakClass', cellidrow', 'PeakClassLabels', cellidrow_labels, ...
        'MinThreshold', 0, 'ThresMode', 'minFirstTwoComponents');
-fprintf('New LTS threshold is %g V^2/s^2\n', lts_thr_newR);
-fprintf('Alternate LTS threshold is %g V^2/s^2\n', lts_thr_alt_newR);
+fprintf('New LTS threshold is %g kV/s^2\n', lts_thr_newR);
+fprintf('Alternate LTS threshold is %g kV/s^2\n', lts_thr_alt_newR);
 
 % Create file name for figures
 figname = ['rmse_F_row_Fit_threshold', suffix, '.png'];
@@ -449,8 +449,8 @@ figname = ['rmse_F_row_Fit_threshold', suffix, '.png'];
        'OldThr', 0, 'ThrMin', 0, 'OutFolder', outfolder_hist, ...
        'FitMode', fitmode, 'PeakClass', new_peakclassR', 'PeakClassLabels', cellidrow_labels, ...
        'MinThreshold', 0, 'ThresMode', 'minFirstTwoComponents');
-fprintf('New LTS threshold is %g V^2/s^2\n', lts_thr_newF);
-fprintf('Alternate LTS threshold is %g V^2/s^2\n', lts_thr_alt_newF);
+fprintf('New LTS threshold is %g kV/s^2\n', lts_thr_newF);
+fprintf('Alternate LTS threshold is %g kV/s^2\n', lts_thr_alt_newF);
 
 % Following two plots are RMSE with cells 5, 14, and 19 being examined (change cells in fit_gaussians_and_refine_threshold.m)
 % Create file name for figures
@@ -461,8 +461,8 @@ figname = ['rmse_R_row_Fit_traces', suffix, '.png'];
        'OldThr', 0, 'ThrMin', 0, 'OutFolder', outfolder_hist, ...
        'FitMode', fitmode, 'PeakClass', cellidrow', 'PeakClassLabels', cellidrow_labels, ...
        'MinThreshold', 0, 'ThresMode', 'minFirstTwoComponents');
-fprintf('New LTS threshold is %g V^2/s^2\n', lts_thr_newR);
-fprintf('Alternate LTS threshold is %g V^2/s^2\n', lts_thr_alt_newR);
+fprintf('New LTS threshold is %g kV/s^2\n', lts_thr_newR);
+fprintf('Alternate LTS threshold is %g kV/s^2\n', lts_thr_alt_newR);
 
 % Create file name for figures
 figname = ['rmse_F_row_Fit_traces', suffix, '.png'];
@@ -473,8 +473,8 @@ figname = ['rmse_F_row_Fit_traces', suffix, '.png'];
        'FitMode', fitmode, 'PeakClass', cellidrow', 'PeakClassLabels', cellidrow_labels, ...
        'MinThreshold', 0, 'ThresMode', 'minFirstTwoComponents');
 %        fitmode, new_peakclassR', cellidrow_labels, 0);
-fprintf('New LTS threshold is %g V^2/s^2\n', lts_thr_newF);
-fprintf('Alternate LTS threshold is %g V^2/s^2\n', lts_thr_alt_newF);
+fprintf('New LTS threshold is %g kV/s^2\n', lts_thr_newF);
+fprintf('Alternate LTS threshold is %g kV/s^2\n', lts_thr_alt_newF);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -600,7 +600,7 @@ hist_label = {'Data filename', 'Cell ID #', ...
         'Current pulse amplitude (pA)', 'Rinput (MOhm)', ...
         'IPSC offset (obsolete) (ms)', 'IPSC peak time (ms)', 'IPSC peak amplitude (pA)', ...
         'Actual Vhold (mV)', 'Maximum noise (mV)', ...
-        'Narrowest peak time (ms)', 'Narrowest peak 2nd derivative (V^2/s^2)', ...
+        'Narrowest peak time (ms)', 'Narrowest peak 2nd derivative (kV/s^2)', ...
         'Peak prominence (mV)', 'Peak class #', 'Spikes per peak', ...
         'LTS onset time (ms)', 'LTS amplitude (mV)', ...
         'Burst onset time (ms)', 'Spikes per burst'};

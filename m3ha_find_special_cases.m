@@ -13,8 +13,8 @@ function m3ha_find_special_cases(versionNumber)
 % 2017-03-29 - BT - Changed varargin to read version number for new vtraces folder, updated to new file hierarchy
 
 %% Parameters used in the analyses
-lts_thr = -0.0023;        % 2nd derivative in V^2/s^2 below which defines an LTS peak
-lts_thr_alt = -0.0081823;    % 2nd derivative in V^2/s^2 above which is the "gray area"
+lts_thr = -0.0023;        % 2nd derivative in kV/s^2 below which defines an LTS peak
+lts_thr_alt = -0.0081823;    % 2nd derivative in kV/s^2 above which is the "gray area"
 
 %% Set folders for reading and saving files
 inFolder = '//media/adamX/m3ha/data_dclamp/take4/backup/';
