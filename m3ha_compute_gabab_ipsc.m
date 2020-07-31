@@ -1,5 +1,25 @@
-function varargout = m3ha_compute_gabab_ipsc (outFolder, varargin)
+function varargout = m3ha_compute_gabab_ipsc (varargin)
 %% Computes and plots difference GABA-B IPSC waveforms
+% Usage: varargout = m3ha_compute_gabab_ipsc (setNumber (opt), varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       TODO
+%
+% Outputs:
+%       output1     - TODO: Description of output1
+%                   specified as a TODO
+%
+% Arguments:
+%       setNumber   - set number
+%                       1 - evenly spaced
+%                       2 - selected
+%                   must be a positive integer scalar
+%       varargin    - 'OutFolder': output folder
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   
 % Requires:
 %       cd/array_fun.m
 %       cd/compute_gabab_conductance.m
@@ -22,6 +42,8 @@ function varargout = m3ha_compute_gabab_ipsc (outFolder, varargin)
 % 2020-01-04 Added plotDualVaryTau and plotVaryDualtoGAT3toGAT1 
 % 2020-01-05 Changed ipscStart to 1000
 % 2020-01-22 Now uses m3ha_load_gabab_ipsc_params.m
+% 2020-07-30 Added 'setNumber' as an optional argument
+% 2020-07-30 Made 'OutFolder' as an optional argument
 
 %% Hard-coded parameters
 ampScaleFactor = 200;
@@ -55,9 +77,36 @@ plotGat3VaryAmp = true;
 plotGat3VaryAmp2 = true;
 plotOldFigures = false;
 
+%% Default values for optional arguments
+setNumberDefault = 1;
+outFolderDefault = '';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to the Input Parser
+addOptional(iP, 'setNumber', setNumberDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+setNumber = iP.Results.setNumber;
+outFolder = iP.Results.OutFolder;
+
 %% Preparation
+% Set default output folder
+if isempty(outFolder)
+    outFolder = pwd;
+end
+
 % Create a time vector in ms
 tVec = transpose(tStart:siMs:tStop);
 
@@ -146,12 +195,43 @@ tauDual = tauOrig(4);
 
 %% Decide on the empirical amplitudes and time constants to test
 % ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
-ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
-nAmpsToTest = numel(ampEmpTest) + (numel(ampEmpTest) - 1) * 3;
-ampEmpTest2 = ampEmpGat3 .* [0, 1, 2, 3, 4];
-nAmpsToTest2 = numel(ampEmpTest2) + (numel(ampEmpTest2) - 1) * 3;
-tauTest = [tauGat1/2, tauGat1, tauGat3, (tauGat3 + tauDual)/2, tauDual];
-nTausToTest = numel(tauTest) + (numel(tauTest) - 1) * 3;
+switch setNumber
+    case 1
+        ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
+        nAmpsToTest = numel(ampEmpTest) + (numel(ampEmpTest) - 1) * 3;
+    case 2
+        ampEmpTest = [ampEmpDual/2, ampEmpDual*3/4, ampEmpGat1, ampEmpGat3];
+        nAmpsToTest = numel(ampEmpTest) + (numel(ampEmpTest) - 1) * 1;
+    otherwise
+end
+
+switch setNumber
+    case 1
+        ampEmpTest2 = ampEmpGat3 .* [0, 1, 2, 3, 4];
+        nAmpsToTest2 = numel(ampEmpTest2) + (numel(ampEmpTest2) - 1) * 3;
+    case 2
+        ampEmpTest2 = ampEmpGat3 .* [0, 1, 2, 3, 4];
+        nAmpsToTest2 = numel(ampEmpTest2) + (numel(ampEmpTest2) - 1) * 1;
+    otherwise
+end
+
+switch setNumber
+    case 1
+        tauTest = [tauGat1/2, tauGat1, tauGat3, (tauGat3 + tauDual)/2, tauDual];
+        nTausToTest = numel(tauTest) + (numel(tauTest) - 1) * 3;
+    case 2
+        tauTest = [tauGat1/2, (tauGat3 + tauDual)/2, tauDual];
+        nTausToTest = numel(tauTest) + (numel(tauTest) - 1) * 3;
+    otherwise
+end
+
+switch setNumber
+    case 1
+        nCurvesVaryShape = 12;
+    case 2
+        nCurvesVaryShape = 7;
+    otherwise
+end
 
 %% Plot original GABAB IPSC conductances from Christine's thesis & old network model
 if plotOriginal
@@ -257,13 +337,15 @@ end
 %   while keeping the area under the curve constant
 if plotVaryDualtoGAT3toGAT1
     figPathBase = fullfile(outFolder, 'gababipsc_vary_dual_to_gat3_to_gat1');
-    ampTest = piecelinspace([ampDual, ampGat3New, ampGat1New], 12);
-    tauRiseTest = piecelinspace([tauRiseDual, tauRiseGat3, tauRiseGat1], 12);
+    ampTest = piecelinspace([ampDual, ampGat3New, ampGat1New], nCurvesVaryShape);
+    tauRiseTest = piecelinspace([tauRiseDual, tauRiseGat3, tauRiseGat1], ...
+                                nCurvesVaryShape);
     tauFallFastTest = piecelinspace([tauFallFastDual, tauFallFastGat3, ...
-                                    tauFallFastGat1], 12);
+                                    tauFallFastGat1], nCurvesVaryShape);
     tauFallSlowInit = piecelinspace([tauFallSlowDual, tauFallSlowGat3, ...
-                                    tauFallSlowGat1], 12);
-    weightTest = piecelinspace([weightDual, weightGat3, weightGat1], 12);
+                                    tauFallSlowGat1], nCurvesVaryShape);
+    weightTest = piecelinspace([weightDual, weightGat3, weightGat1], ...
+                                nCurvesVaryShape);
     tauFallSlowTest = compute_matching_tauFallSlow(aucDual, tauFallSlowInit, ...
                                     tVec, ipscStart, ampTest, tauRiseTest, ...
                                     tauFallFastTest, weightTest);
@@ -284,13 +366,15 @@ end
 %   while keeping the area under the curve constant
 if plotVaryGAT3toGAT1toDual
     figPathBase = fullfile(outFolder, 'gababipsc_vary_gat3_to_gat1_to_dual');
-    ampTest = piecelinspace([ampGat3New, ampGat1New, ampDual], 12);
-    tauRiseTest = piecelinspace([tauRiseGat3, tauRiseGat1, tauRiseDual], 12);
+    ampTest = piecelinspace([ampGat3New, ampGat1New, ampDual], nCurvesVaryShape);
+    tauRiseTest = piecelinspace([tauRiseGat3, tauRiseGat1, tauRiseDual], ...
+                                nCurvesVaryShape);
     tauFallFastTest = piecelinspace([tauFallFastGat3, tauFallFastGat1, ...
-                                        tauFallFastDual], 12);
+                                        tauFallFastDual], nCurvesVaryShape);
     tauFallSlowInit = piecelinspace([tauFallSlowGat3, tauFallSlowGat1, ...
-                                        tauFallSlowDual], 12);
-    weightTest = piecelinspace([weightGat3, weightGat1, weightDual], 12);
+                                        tauFallSlowDual], nCurvesVaryShape);
+    weightTest = piecelinspace([weightGat3, weightGat1, weightDual], ...
+                                nCurvesVaryShape);
     tauFallSlowTest = compute_matching_tauFallSlow(aucDual, tauFallSlowInit, ...
                                     tVec, ipscStart, ampTest, tauRiseTest, ...
                                     tauFallFastTest, weightTest);

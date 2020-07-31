@@ -41,7 +41,7 @@ updateScripts = false; %true;
 simulateCpr = false; %true;
 plotCpr = false; %true;
 simulateIpscr = false; %true;
-plotIpscr = false; %true;
+plotIpscr = true;
 plotOverlapped = false; %true;
 archiveScriptsFlag = true;
 
@@ -104,9 +104,10 @@ paramFileSuffix = 'params';
 % exampleCellNames = {'D101310'; 'G101310'};
 % exampleCellNames = {'I101210'};
 % exampleCellNames = {'E101210'};
+exampleCellNames = {'A100810'};
 % These are ranks: 6, 2, 9, 10, 18, 32, 33
-exampleCellNames = {'D101310'; 'K092810'; 'G101310'; 'I101210'; 'E101210'; ...
-                    'A092910'; 'A100810'};
+% exampleCellNames = {'D101310'; 'K092810'; 'G101310'; 'I101210'; 'E101210'; ...
+%                     'A092910'; 'A100810'};
 
 % Simulation settings
 useHH = false;
