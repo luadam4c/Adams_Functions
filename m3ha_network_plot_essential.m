@@ -67,9 +67,11 @@ function handles = m3ha_network_plot_essential (varargin)
 
 %% Hard-coded parameters
 validPlotTypes = {'essential', 'm2h'};
-spExtension = 'singsp';
+specialExtension = 'singsp';
 cellIdRT = 0;
 cellIdTC = 0;
+
+%   Note: Must be consistent with m3ha_network_launch.m
 timeToStabilize = 2000;         % time for everything to stabilize
 
 % Column numbers for simulated data
@@ -202,13 +204,13 @@ spKeyword = ['pCond_', num2str(pharmCondition), '_', ...
 if loadRT
     [~, dataPathRT] = all_files('Directory', inFolder, ...
                                 'Prefix', spPrefixRT, 'Keyword', spKeyword, ...
-                                'Extension', spExtension, 'MaxNum', 1);
+                                'Extension', specialExtension, 'MaxNum', 1);
 end
 
 % Locate the TC neuron data
 [~, dataPathTC] = all_files('Directory', inFolder, ...
                             'Prefix', spPrefixTC, 'Keyword', spKeyword, ...
-                            'Extension', spExtension, 'MaxNum', 1);
+                            'Extension', specialExtension, 'MaxNum', 1);
 
 % Decide on the TC parameters table
 if isempty(tcParamsTable)

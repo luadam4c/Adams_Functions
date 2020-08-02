@@ -41,6 +41,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %       cd/create_subplots.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
+%       cd/find_matching_files.m
 %       cd/read_neuron_outputs.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_spike_histogram.m
@@ -62,9 +63,13 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 % 2020-04-13 Now computes half rise time
 % 2020-05-18 Changed binWidthMs from 10 ms to 100 ms
 % 2020-05-18 Added minRelSecProm and made it 0.5
+% 2020-08-01 Now analyzes maximum open probability discrepancy
+%               if .singsp files are present
+%               
 
 %% Hard-coded parameters
 spiExtension = 'spi';
+specialExtension = 'singsp';
 
 % For compute_spike_histogram.m
 binWidthMs = 100;               % use a bin width of 100 ms for simulated networks
@@ -87,6 +92,7 @@ actProfileBinWidthMs = 500;
 %   Note: Must be consistent with m3ha_network_launch.m
 prefixRT = 'RE';
 prefixTC = 'TC';
+prefixTC0 = 'TC[0]';
 paramPrefix = 'sim_params';
 stimStartStr = 'stimStart';
 stimDurStr = 'stimDur';
@@ -165,6 +171,11 @@ spiPathsTC = strcat(spiFileBasesTC, ['.', spiExtension]);
 % Extract the condition strings
 condStr = extractAfter(spiPathBasesRT, [prefixRT, '_']);
 
+% Look for the TC[0] special file corresponding to this condition string
+[~, specialPathsTC] = ...
+    find_matching_files(condStr, 'ReturnEmpty', true, 'Directory', inFolder, ...
+                        'Prefix', prefixTC0, 'Extension', specialExtension);
+
 % Extract the directory base
 dirBase = extract_fileparts(inFolder, 'dirbase');
 
@@ -200,8 +211,8 @@ simNumber = oscParams.(simNumberStr);
 
 % Parse spikes
 [parsedParams, parsedData] = ...
-    cellfun(@(a, b, c, d, e, f, g) ...
-                    m3ha_network_parse_spikes(a, b, c, d, e, f, g, ...
+    cellfun(@(a, b, c, d, e, f, g, h) ...
+                    m3ha_network_parse_spikes(a, b, c, d, e, f, g, h, ...
                             plotFlag, outFolder, figTypes, ...
                             binWidthMs, minBurstLengthMs, ...
                             maxFirstInterBurstIntervalMs, ...
@@ -210,7 +221,7 @@ simNumber = oscParams.(simNumberStr);
                             actProfileBinWidthMs), ...
                 spikesDataRT, spikesDataTC, ...
                 num2cell(stimStartMs), num2cell(stimDurMs), ...
-                num2cell(tStopMs), num2cell(nCells), condStr);
+                num2cell(tStopMs), num2cell(nCells), condStr, specialPathsTC);
 
 % Convert structure arrays to tables
 [parsedParamsTable, parsedDataTable] = ...
@@ -233,13 +244,11 @@ save(matFileName, 'oscParams', 'oscData', '-v7.3')
 
 function [parsedParams, parsedData] = ...
             m3ha_network_parse_spikes (spikesDataRT, spikesDataTC, ...
-                            stimStartMs, stimDurMs, tStopMs, nCells, ...
-                            condStr, plotFlag, outFolder, figTypes, ...
-                            binWidthMs, minBurstLengthMs, ...
-                            maxFirstInterBurstIntervalMs, ...
-                            maxInterBurstIntervalMs, minSpikeRateInBurstHz, ...
-                            filterWidthMs, minRelProm, minRelSecProm, ...
-                            actProfileBinWidthMs)
+                stimStartMs, stimDurMs, tStopMs, nCells, ...
+                condStr, specialPathTC, plotFlag, outFolder, figTypes, ...
+                binWidthMs, minBurstLengthMs, maxFirstInterBurstIntervalMs, ...
+                maxInterBurstIntervalMs, minSpikeRateInBurstHz, ...
+                filterWidthMs, minRelProm, minRelSecProm, actProfileBinWidthMs)
 %% Parse spikes from .spi files
 
 %% Hard-coded parameters
@@ -247,6 +256,16 @@ MS_PER_S = 1000;
 xLimitsAcf = [0, 10];          % in seconds
 xLimitsHist = stimStartMs/1000 + xLimitsAcf;          % in seconds
 figName = '';
+itm2hDiffLowerLimit = 1e-9;
+
+% Column numbers for simulated data
+%   Note: Must be consistent with m3ha_net.hoc
+TC_TIME = 1;
+TC_VOLT = 2;
+TC_IT_M_DEND2 = 10;
+TC_IT_MINF_DEND2 = 11;
+TC_IT_H_DEND2 = 12;
+TC_IT_HINF_DEND2 = 13;
 
 % Compute stimulation end
 stimEndMs = stimStartMs + stimDurMs;
@@ -344,6 +363,33 @@ halfActiveLatencyMsTC = halfActiveTimeMsTC - stimEndMs;
 %           i.e., there must be at least 2 cycles
 hasOscillation = histParams.nBurstsInOsc > 2;
 
+% If a special TC neuron file exists 
+if ~isempty(specialPathTC)
+    % Read simulation outputs starting from stimulation start
+    simDataTC = read_neuron_outputs('FileNames', specialPathTC, ...
+                                    'TimeWindows', [stimStartMs; Inf]);
+
+    % Extract columns
+    [itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
+        extract_columns(simDataTC, [TC_IT_M_DEND2, TC_IT_MINF_DEND2, ...
+                                    TC_IT_H_DEND2, TC_IT_HINF_DEND2]);
+
+    % Compute m2h and its steady state
+    itm2h = (itmDend2 .^ 2) .* ithDend2;
+    itminf2hinf = (itminfDend2 .^ 2) .* ithinfDend2;
+
+    % Compute m2h discrepancy
+    itm2hDiff = itm2h - itminf2hinf;
+    itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
+
+    % Compute maximum m2h discrepancy
+    maxOpenProbabilityDiscrepancy = max(itm2hDiff);
+    maxLogOpenProbabilityDiscrepancy = log10(maxOpenProbabilityDiscrepancy);
+else
+    maxOpenProbabilityDiscrepancy = NaN;
+    maxLogOpenProbabilityDiscrepancy = NaN;
+end
+
 %% Plot for verification
 if plotFlag
     % Create a figure
@@ -403,6 +449,8 @@ parsedParams.halfActiveTimeMsRT = halfActiveTimeMsRT;
 parsedParams.halfActiveTimeMsTC = halfActiveTimeMsTC;
 parsedParams.halfActiveLatencyMsRT = halfActiveLatencyMsRT;
 parsedParams.halfActiveLatencyMsTC = halfActiveLatencyMsTC;
+parsedParams.maxOpenProbabilityDiscrepancy = maxOpenProbabilityDiscrepancy;
+parsedParams.maxLogOpenProbabilityDiscrepancy = maxLogOpenProbabilityDiscrepancy;
 parsedParams = merge_structs(parsedParams, histParams);
 parsedParams = merge_structs(parsedParams, autoCorrParams);
 

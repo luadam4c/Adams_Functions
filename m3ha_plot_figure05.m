@@ -50,11 +50,11 @@ plotM2hGabab = false; %true;
 
 plotVoltageVsOpdFig5 = false; %true;
 plotVoltageVsOpdTauh = false; %true;
-plotVoltageVsOpdGabab = true;
+plotVoltageVsOpdGabab = false; %true;
 
 createPlotMovieFig5 = false; %true;
 createPlotMovieTauh = false;
-createPlotMovieGabab = false; %true;
+createPlotMovieGabab = true;
 
 createPhasePlotOnlyMovieFig5 = false; %true;
 createPhasePlotOnlyMovieTauh = false;
@@ -62,7 +62,7 @@ createPhasePlotOnlyMovieGabab = false; %true;
 
 simulateNoITSoma = false; %true;
 
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -84,13 +84,14 @@ paramFileSuffix = 'params';
 exampleCellNames = {'D101310'};
 
 % Must be consistent with m3ha_compute_gabab_ipsc.m
-gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
-                        'gababipsc_dual_vary_amp', ...
-                        'gababipsc_gat3_vary_tau', ...
-                        'gababipsc_dual_vary_tau', ...
-                        'gababipsc_vary_dual_to_gat3_to_gat1', ...
-                        'gababipsc_original', ...
-                        'gababipsc_gat3_vary_amp2'};
+% gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
+%                         'gababipsc_dual_vary_amp', ...
+%                         'gababipsc_gat3_vary_tau', ...
+%                         'gababipsc_dual_vary_tau', ...
+%                         'gababipsc_vary_dual_to_gat3_to_gat1', ...
+%                         'gababipsc_original', ...
+%                         'gababipsc_gat3_vary_amp2'};
+gababIpscSheetBases = {'gababipsc_dual_vary_tau'};
 
 % Simulation settings
 dataModeIpscr = 2;                  % data mode for IPSC response
@@ -859,8 +860,10 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
             nColors = 4;
             iColorsToKeep = 3:4;
         else
-            nColors = 17;
-            iColorsToKeep = 15:16;
+            % nColors = 17;
+            % iColorsToKeep = 15:16;
+            nColors = 9;
+            iColorsToKeep = 7:8;
         end
         colorMapOrig = decide_on_colormap(colorMap, nColors, ...
                             'ForceCellOutput', true);

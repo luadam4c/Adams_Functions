@@ -141,12 +141,14 @@ logItm2hDiff = apply_to_all_cells(@log10, itm2hDiff);
 logItm2hDiffSmooth = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
 
 % Compute dx/dt
+%   Note: this is in k(s^-1)
 [dxdtVecs, t1Vecs] = compute_derivative_trace(logItm2hDiffSmooth, tVecs);
 
 % Smooth dx/dt over filtWidthMs
 dxdtVecs = movingaveragefilter(dxdtVecs, filtWidthMs, siMs);
 
 % Compute d2x/dt2
+%   Note: this is in M(s^-2)
 [d2xdt2Vecs, t2Vecs] = compute_derivative_trace(dxdtVecs, t1Vecs);
 
 % Smooth d2x/dt2 over filtWidthMs

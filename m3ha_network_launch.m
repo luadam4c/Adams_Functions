@@ -78,6 +78,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, ...
 % 2020-04-07 Fixed TCepas for seed number 15
 % 2020-07-24 Added bicucullineRTFlag
 % 2020-07-24 Made bicucullineFlag and bicucullineRTFlag optional arguments
+% 2020-07-31 Added spikesAndM2h
 
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Perform simulations to generate a linear model
@@ -104,28 +105,28 @@ homeDirName = 'network_model';
 candidateSheetName = 'candidate_cells.csv';
 
 %% Optional arguments
-if nargin <= 1
+if nargin < 1
     nCells = 100;
 end
-if nargin <= 2
+if nargin < 2
     useHH = true;
 end
-if nargin <= 3
+if nargin < 3
     candidateIDs = [2; 23; 14; 6; 7; 18; 11; 13; 16; 33; 12; 36; ...
                     5; 4; 31; 27; 30; 34; 24; 32; 35; 19; 29; 20];
 end
-if nargin <= 4
+if nargin < 4
     savePlotMode = '';
 end
-if nargin <= 5
+if nargin < 5
     seedNumberNeuron = 0;       % number to seed random number generator
                                 %   for gpas variation
 end
-if nargin <= 6
+if nargin < 6
     seedNumberMatlab = 0;       % number to seed random number generator
                                 %   for TC template ordering
 end
-if nargin <= 7
+if nargin < 7
     % paramsDirName = 'bestparams_20171213_singleneuronfitting16_Rivanna';
     % paramsDirName = 'bestparams_20180424_singleneuronfitting21_Rivanna';
     % paramsDirName = 'bestparams_20200103_ranked_singleneuronfitting0-94';
@@ -134,13 +135,13 @@ if nargin <= 7
     % paramsDirName = 'bestparams_20200126_singleneuronfitting101';
     paramsDirName = 'bestparams_20200203_manual_singleneuronfitting0-102';
 end
-if nargin <= 8
+if nargin < 8
     outFolderParent = '';
 end
-if nargin <= 9
+if nargin < 9
     bicucullineFlag = true;         % whether GABA-A conductances are removed
 end
-if nargin <= 10
+if nargin < 10
     bicucullineRTFlag = false;      % whether GABA-A conductances are removed
                                     %   in RT only
 end
@@ -171,10 +172,15 @@ if isempty(savePlotMode)
 end
 
 %% Simulation modes
-simMode = 1; %4;    % 1 - full simulation
-                % 2 - short simulation
-                % 3 - medium simulation
-                % 4 - no TC -> RT
+if strcmp(savePlotMode, 'spikesAndM2h')
+    simMode = 2; 
+else
+    simMode = 1;    % 1 - full simulation
+                    % 2 - short simulation
+                    % 3 - medium simulation
+                    % 4 - no TC -> RT
+end
+        
 
 %% Activation modes
 % 1 - Activate a single RE cell by injecting a train of current pulses
@@ -282,7 +288,8 @@ else
         maxNumWorkersNeuron = 20;  % maximum number of workers for running NEURON 
         renewParpoolFlagPlots = 0; % whether to renew parpool every batch to release memory
         maxNumWorkersPlots = 20;   % maximum number of workers for plotting things
-    case 'spikes'           % saving spikes and plotting raster plots and curves/maps only
+    case {'spikes', 'spikesAndM2h'}           
+                    % saving spikes and plotting raster plots and curves/maps only
         if nCells == 100
             renewParpoolFlagNeuron = 1;
         else
@@ -307,6 +314,7 @@ case 'all'
     saveSomaVoltage = 1;    % whether to save all voltage data
     saveSomaCli = 1;        % whether to save all chloride concentration data
     saveSpecial = 1;        % whether to save special neuron data
+    saveM2hOnly = 0;        % whether to save m & h data only
 
     %% Plot flags
     plotNetwork = 1;        % whether to plot network topology
@@ -321,6 +329,7 @@ case 'curves'
     saveSomaVoltage = 0;    % whether to save all voltage data
     saveSomaCli = 0;        % whether to save all chloride concentration data
     saveSpecial = 0;        % whether to save special neuron data
+    saveM2hOnly = 0;        % whether to save m & h data only
 
     %% Plot flags
     plotNetwork = 0;        % whether to plot network topology
@@ -335,6 +344,7 @@ case 'spikes'
     saveSomaVoltage = 0;    % whether to save all voltage data
     saveSomaCli = 0;        % whether to save all chloride concentration data
     saveSpecial = 0;        % whether to save special neuron data
+    saveM2hOnly = 0;        % whether to save m & h data only
 
     %% Plot flags
     plotNetwork = 0;        % whether to plot network topology
@@ -342,6 +352,21 @@ case 'spikes'
     plotTuning = 1;         % whether to plot tuning curves
     plotSingleNeuronData = 0;% whether to plot single neuron data
     analyzeSpikes = 1;
+case 'spikesAndM2h' 
+    %% Save flags
+    saveNetwork = 0;        % whether to save network topology
+    saveSpikes = 1;         % whether to save spike data
+    saveSomaVoltage = 0;    % whether to save all voltage data
+    saveSomaCli = 0;        % whether to save all chloride concentration data
+    saveSpecial = 1;        % whether to save special neuron data
+    saveM2hOnly = 1;        % whether to save m & h data only
+
+    %% Plot flags
+    plotNetwork = 0;        % whether to plot network topology
+    plotSpikes = 0;         % whether to plot spike data
+    plotTuning = 0;         % whether to plot tuning curves
+    plotSingleNeuronData = 0;% whether to plot single neuron data
+    analyzeSpikes = 0;
 case 'spikes&special'
     %% Save flags
     saveNetwork = 0;        % whether to save network topology
@@ -349,6 +374,7 @@ case 'spikes&special'
     saveSomaVoltage = 0;    % whether to save all voltage data
     saveSomaCli = 0;        % whether to save all chloride concentration data
     saveSpecial = 1;        % whether to save special neuron data
+    saveM2hOnly = 0;        % whether to save m & h data only
 
     %% Plot flags
     plotNetwork = 0;        % whether to plot network topology
@@ -952,6 +978,7 @@ simParamLabels = { ...
     'whether to save all voltage data'; ...
     'whether to save all chloride concentration data'; ...
     'whether to save special neuron data'; ...
+    'whether to save m, minf, h, hinf only for special neuron data'; ...
     'whether to plot network topology'; 'whether to plot spike data'; ...
     'whether to plot single neuron data'; ...
     'number of times to run simulation'; 'current simulation number'};
@@ -980,7 +1007,7 @@ simParamNames = { ...
     'debugFlag'; 'seedNumberMatlab'; 'seedNumberNeuron'; ...
     'onLargeMemFlag'; 'heteroTCFlag'; 'bicucullineFlag'; 'bicucullineRTFlag'; ...
     'saveNetwork'; 'saveSpikes'; 'saveSomaVoltage'; ...
-    'saveSomaCli'; 'saveSpecial'; ...
+    'saveSomaCli'; 'saveSpecial'; 'saveM2hOnly'; ...
     'plotNetwork'; 'plotSpikes'; 'plotSingleNeuronData'; ...
     'nSims'; 'simNumber'};
 
@@ -1007,7 +1034,7 @@ simParamsInit = [ ...
     debugFlag; seedNumberMatlab; seedNumberNeuron; ...
     onLargeMemFlag; heteroTCFlag; bicucullineFlag; bicucullineRTFlag; ...
     saveNetwork; saveSpikes; saveSomaVoltage; ...
-    saveSomaCli; saveSpecial; ...
+    saveSomaCli; saveSpecial; saveM2hOnly; ...
     plotNetwork; plotSpikes; plotSingleNeuronData; ...
     nSims; 0];
 
@@ -1147,7 +1174,7 @@ for iSim = 1:nSims
         '%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, ', ...
         '%g, %g, %g, %g, %g, %g, %g, %g, ', ...
         '%g, %g, %g, %g, %g, %g, %g, ', ...
-        '%d, %d, %d, %d, %d, %d, %d, %d)\n'], ...
+        '%d, %d, %d, %d, %d, %d, %d, %d, %d)\n'], ...
         sREREsynPaths{iSim}, sTCREsynPaths{iSim}, sRETCsynPaths{iSim}, ...
         REsp1cellID, REsp2cellID, TCsp1cellID, TCsp2cellID, useHH, REnsegs, ...
         REcldnum, REconsyn, REtauKCC2, REepas, REdiam, ...
@@ -1156,7 +1183,7 @@ for iSim = 1:nSims
         RERErad, TCRErad, RETCrad, ...
         spThr, synDel, synWeight, cai0, cao0, cli0, clo0, ...
         actCellID, actMode, saveNetwork, saveSpikes, ...
-        saveSomaVoltage, saveSomaCli, saveSpecial, isCircular)];
+        saveSomaVoltage, saveSomaCli, saveSpecial, isCircular, saveM2hOnly)];
 
     % Command to randomize leak current properties
     %     1. Uniformly randomizes RE leak conductance in [REgpasLB, REgpasUB]
@@ -1222,11 +1249,11 @@ for iSim = 1:nSims
     %%%%%%
     %%%%%%%%%%%%
     simCommand = [simCommand, sprintf(['sim(%g, %g, "%s", "%s", "%s", "%s", "%s", ', ...
-                                        '"%s", "%s", "%s", "%s", %d, %d, %d, %d)\n'], ...
+                                        '"%s", "%s", "%s", "%s", %d, %d, %d, %d, %d)\n'], ...
                     tStop, dt, ...
                     sREspikePaths{iSim}, sTCspikePaths{iSim}, sREvPaths{iSim}, sTCvPaths{iSim}, sREcliPaths{iSim}, ...
                     sREsp1Paths{iSim}, sREsp2Paths{iSim}, sTCsp1Paths{iSim}, sTCsp2Paths{iSim}, ...
-                    saveSpikes, saveSomaVoltage, saveSomaCli, saveSpecial)];
+                    saveSpikes, saveSomaVoltage, saveSomaCli, saveSpecial, saveM2hOnly)];
     %%%%%%%%%%%%
     %%%%%%
 
