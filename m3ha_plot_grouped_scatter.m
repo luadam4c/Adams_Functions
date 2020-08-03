@@ -47,13 +47,13 @@ function handles = m3ha_plot_grouped_scatter (statsPath, varargin)
 %                   - Any other parameter-value pair for plot_grouped_scatter.m
 %
 % Requires:
-%       cd/all_ordered_pairs.m
 %       cd/argfun.m
 %       cd/combine_strings.m
 %       cd/convert_units.m
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/extract_fileparts.m
+%       cd/force_column_cell.m
 %       cd/isfigtype.m
 %       cd/ispositiveintegervector.m
 %       cd/m3ha_decide_on_ylimits.m
@@ -132,7 +132,7 @@ if isempty(outFolder)
 end
 
 % Load stats table
-disp('Loading statistics for violin plots ...');
+disp('Loading statistics for grouped scatter plots ...');
 if isfile(statsPath)
     load(statsPath, 'statsTable', 'pharmLabels', 'conditionLabel');
 else
@@ -153,8 +153,8 @@ allValues = statsTable.allValues;
 % Count the number of variables
 nMeasures = numel(allMeasureStrs);
 
-% Create all pairs of indices
-allIndexPairs = all_ordered_pairs({1:nMeasures, 1:nMeasures});
+% Create all combinations
+allIndexPairs = force_column_cell(transpose(nchoosek(1:nMeasures, 2)));
 
 % Create all pairs of variables
 [allTitlePairs, allMeasurePairs, allValuePairs] = ...
@@ -205,7 +205,7 @@ for i = 1:numel(titlePair)
     end
 end
 
-% Plot groups as a violin plot
+% Plot groups as a grouped scatter plot
 scatters = plot_grouped_scatter(valuePair{1}, valuePair{2}, ...
                 'GroupingLabels', pharmLabels, 'ColorMap', colorMap, ...
                 'XLabel', titlePair{1}, 'YLabel', titlePair{2}, ...
@@ -215,20 +215,21 @@ scatters = plot_grouped_scatter(valuePair{1}, valuePair{2}, ...
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Set x axis limits
-xLimits = m3ha_decide_on_ylimits(titlePair{1}, 'PlotType', plotType);
+xLimits = m3ha_decide_on_ylimits(titlePair{1});
 if ~isempty(xLimits)
     ylim(xLimits);
 end
 
 % Set y axis limits
-yLimits = m3ha_decide_on_ylimits(titlePair{2}, 'PlotType', plotType);
+yLimits = m3ha_decide_on_ylimits(titlePair{2});
 if ~isempty(yLimits)
     ylim(yLimits);
 end
 
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                        'Height', figHeight, 'Width', figWidth);
+                        'Height', figHeight, 'Width', figWidth, ...
+                        'RemoveLegend', true);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);

@@ -122,6 +122,7 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 % 2017-12-13 Modified from plot_grouped_histogram.m
 % 2018-05-27 Fixed the case when nGroups is NaN or 0
 % 2020-05-14 Added many optional arguments
+% 2020-08-02 Fixed bug with x and y limits
 % TODO: Merge with plot_correlation
 
 %% Hard-coded parameters
@@ -417,13 +418,13 @@ end
 set(gca, 'XScale', xScale, 'YScale', yScale);
 
 % Set x axis limits
-if ~isempty(xLimits) && xLimits(1) ~= xLimits(2) && ...
+if ~isempty(xLimits) && ~isequaln(xLimits(1), xLimits(2)) && ...
         ~strcmpi(xLimits, 'suppress')
     xlim(xLimits);
 end
 
 % Set y axis limits
-if ~isempty(yLimits) && yLimits(1) ~= yLimits(2) && ...
+if ~isempty(yLimits) && ~isequaln(yLimits(1), yLimits(2)) && ...
         ~strcmpi(yLimits, 'suppress')
     ylim(yLimits);
 end
@@ -431,7 +432,8 @@ end
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')
     lgd = legend(dots, 'Location', legendLocation);
-    set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
+    % set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
+    set(lgd, 'AutoUpdate', 'off');
 end
 
 % Generate an x-axis label
@@ -566,12 +568,15 @@ if any(eigenValues<= 0)
     fprintf('Eigenvalues: \n');
     disp(eigenValues);
     fprintf('\n');
+    toPlotEllipse = false;
+else
+    toPlotEllipse = true;
 end
 
 % Find the half lengths and angle of rotation for the ellipse
 %   Note: if an eigenvalue is zero, there is direct correlation and
 %           no ellipse will be plotted
-if length(eigenValues) >= 2 && all(eigenValues> 0)
+if toPlotEllipse && length(eigenValues) >= 2 && all(eigenValues> 0)
     % Compute half lengths for the 95% confidence ellipse
     halfLengths = sqrt(eigenValues.* criticalValue);
 
@@ -581,11 +586,15 @@ if length(eigenValues) >= 2 && all(eigenValues> 0)
     % Compute the angle of rotation in radians
     %   This is the angle between the x axis and the first eigenvector
     angle = atan(eigenVectors(2, 1) / eigenVectors(1, 1));
+else
+    eigenVectors = [];
+    halfLengths = [NaN; NaN];
+    angle = NaN;
 end
 
 % Find the x and y values for the ellipse
-if length(sampleMeans) >= 2 && ~isempty(halfLengths) && ...
-        ~isempty(angle)
+if toPlotEllipse && length(sampleMeans) >= 2 && ...
+        ~isempty(halfLengths) && ~isempty(angle)
     % Obtain the x and y values of the ellipse on the scaled plot
     [~, xPlot, yPlot] = ...
         plot_ellipse(sampleMeans, halfLengths, ...
@@ -603,6 +612,9 @@ if length(sampleMeans) >= 2 && ~isempty(halfLengths) && ...
     else
         yEllipses = yPlot;
     end
+else
+    xEllipses = [];
+    yEllipses = [];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
