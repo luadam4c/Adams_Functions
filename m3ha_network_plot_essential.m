@@ -264,9 +264,12 @@ stimWindow = [stimStartMs, stimStartMs + stimDurMs];
 
 % Load simulated data
 if loadRT
-    simDataRT = read_neuron_outputs('FileNames', dataPathRT);
+    [simDataRT, ~, nColumnsRT] = read_neuron_outputs('FileNames', dataPathRT);
 end
-simDataTC = read_neuron_outputs('FileNames', dataPathTC);
+[simDataTC, ~, nColumnsTC] = read_neuron_outputs('FileNames', dataPathTC);
+
+% Decide whether to plot gGABAA
+plotGGABAA = set_default_flag([], nColumnsTC >= TC_GGABAA);
 
 % Convert the table to a structure array
 tcParamsStructArray = table2struct(tcParamsTable);
@@ -277,12 +280,15 @@ if loadRT
 end
 switch plotType
 case 'essential'
-    [tVecsMs, vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
+    [tVecsMs, vVecTC, gGababTCUs, itSomaTC, itDend1TC, itDend2TC, ...
             itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
         extract_columns(simDataTC, [TC_TIME, TC_VOLT, TC_GGABAB, ...
                                     TC_ICA_SOMA, TC_ICA_DEND1, TC_ICA_DEND2, ...
                                     TC_IT_M_DEND2, TC_IT_MINF_DEND2, ...
                                     TC_IT_H_DEND2, TC_IT_HINF_DEND2]);
+    if plotGGABAA
+        gGabaaTCUs = extract_columns(simDataTC, TC_GGABAA);
+    end
 case 'm2h'
     [tVecsMs, itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
         extract_columns(simDataTC, [TC_TIME, TC_IT_M_DEND2, TC_IT_MINF_DEND2, ...
@@ -295,13 +301,16 @@ clear simDataRT simDataTC
 % Downsample by 10;
 switch plotType
 case 'essential'
-    [tVecsMs, vVecRT, vVecTC, gCmdTCUs, ...
+    [tVecsMs, vVecRT, vVecTC, gGababTCUs, ...
             itSomaTC, itDend1TC, itDend2TC, ...
             itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
         argfun(@(x) downsample(x, 10), ...
-                tVecsMs, vVecRT, vVecTC, gCmdTCUs, ...
+                tVecsMs, vVecRT, vVecTC, gGababTCUs, ...
                 itSomaTC, itDend1TC, itDend2TC, ...
                 itmDend2, itminfDend2, ithDend2, ithinfDend2);
+    if plotGGABAA
+        gGabaaTCUs = downsample(gGabaaTCUs, 10);
+    end
 case 'm2h'
     [tVecsMs, itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
         argfun(@(x) downsample(x, 10), ...
@@ -317,20 +326,33 @@ itm2hDiff(itm2hDiff < itm2hDiffLowerLimit) = itm2hDiffLowerLimit;
 switch plotType
 case 'essential'
     % Convert conductance from uS to nS
-    gCmdTCNs = convert_units(gCmdTCUs, 'uS', 'nS');
+    gGababTCNs = convert_units(gGababTCUs, 'uS', 'nS');
+    if plotGGABAA
+        gGabaaTCNs = convert_units(gGabaaTCUs, 'uS', 'nS');
+    end
 
     % Compute total T current
     itTotalTC = compute_total_current([itSomaTC, itDend1TC, itDend2TC], ...
                                         'GeomParams', tcParamsStructArray);
+
     % List all possible items to plot
-    vecsAll = {vVecRT; vVecTC; gCmdTCNs; itTotalTC; ...
+    vecsAll = {vVecRT; vVecTC; gGababTCNs; itTotalTC; ...
                 itm2h; itminf2hinf; itm2hDiff};
 
     % List corresponding labels
-    labelsAll = {'V_{RT} (mV)'; 'V_{TC,soma} (mV)'; 'g_{GABA_B} (nS)'; ...
+    labelsAll = {'V_{RT} (mV)'; 'V_{TC,soma} (mV)'; ...
+                'g_{GABA_B} (nS)'; ...
                 'I_{T} (nA)'; 'm_{T,dend2}^2h_{T,dend2}'; ...
                 'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'; ...
                 'm2hDiff'};
+
+    if plotGGABAA
+        % List all possible items to plot
+        vecsAll = vertcat(vecsAll, {gGabaaTCNs});
+
+        % List corresponding labels
+        labelsAll = vertcat(labelsAll, {'g_{GABA_A} (nS)'});
+    end
 case 'm2h'
     % List all possible items to plot
     vecsAll = {itm2h; itminf2hinf};

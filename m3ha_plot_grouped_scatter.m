@@ -217,7 +217,7 @@ save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 % Set x axis limits
 xLimits = m3ha_decide_on_ylimits(titlePair{1});
 if ~isempty(xLimits)
-    ylim(xLimits);
+    xlim(xLimits);
 end
 
 % Set y axis limits
@@ -229,7 +229,7 @@ end
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth, ...
-                        'RemoveLegend', true);
+                        'PlotMarkerSize', 3, 'RemoveLegend', true);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);

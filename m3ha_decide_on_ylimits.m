@@ -136,6 +136,8 @@ switch measureTitle
         end
     case 'Oscillation Probability'
         yLimits = [0, 1];
+    case 'Passed Open Probability Discrepancy Threshold'
+        yLimits = [0, 1];
     case 'Oscillation Period (sec)'
         % yLimits = [0.1, 1];
         yLimits = [0.3, 1.3];

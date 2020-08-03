@@ -1,6 +1,6 @@
-function [outputs, fullPaths, nColumns] = read_neuron_outputs (varargin)
+function [outputs, fullPaths] = read_neuron_outputs (varargin)
 %% Loads .out files created by NEURON into a cell array
-% Usage: [outputs, fullPaths, nColumns] = read_neuron_outputs (varargin)
+% Usage: [outputs, fullPaths] = read_neuron_outputs (varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -9,10 +9,6 @@ function [outputs, fullPaths, nColumns] = read_neuron_outputs (varargin)
 %       outputs     - outputs of NEURON simulations
 %                   specified as a numeric array 
 %                       or a cell array of numeric arrays
-%       fullPaths   - full paths to the output files
-%                   specified as a cell array of character vectors
-%       nColumns    - number of columns in each output file
-%                   specified as a nonnegative integer vector
 %
 % Arguments:
 %       varargin    - 'Directories': the name of the directory(ies) containing 
@@ -68,7 +64,6 @@ function [outputs, fullPaths, nColumns] = read_neuron_outputs (varargin)
 % 2020-01-31 Added 'ForceCellOutput' as an optional argument
 % 2020-02-18 Added 'TimeWindows' as an optional argument
 % 2020-04-24 Now loads and processes output within array_fun
-% 2020-08-03 Added nColumns as an output
 
 %% Hard-coded parameters
 outputExtension = '.out';
@@ -166,12 +161,8 @@ end
 
 %% Load files
 % Load the data saved by NEURON to a .out file into a cell array
-[outputs, nColumns] = ...
-    array_fun(@(x, y, z) load_one_neuron_output(x, y, z), ...
+outputs = array_fun(@(x, y, z) load_one_neuron_output(x, y, z), ...
                     fullPaths, tVecs, timeWindows, 'UniformOutput', false);
-
-% Convert back to numeric array
-nColumns = cell2mat(nColumns);
 
 %% Outputs
 % Don't output as cell if not necessary
@@ -188,15 +179,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [output, nColumns] = ...
-                load_one_neuron_output (fullPath, tVec, timeWindow)
+function output = load_one_neuron_output (fullPath, tVec, timeWindow)
 %% Loads NEURON outputs from one file
 
 % Load output
 output = load(fullPath);
-
-% Count the number of output columns
-nColumns = size(output, 2);
 
 % If tVecs not empty, interpolate simulated data to match the time points
 if ~isempty(tVec)
@@ -222,6 +209,22 @@ end
 
 %{
 OLD CODE:
+
+% Count the number of output files
+nFiles = numel(fullPaths);
+
+simDataNeuron = cell(nFiles, 1);
+parfor iFile = 1:nFiles
+    simDataNeuron{iFile} = load(fullPaths{iFile});
+end
+
+parfor iFile = 1:nFiles
+    delete(fullPaths{iFile});
+end
+
+% 2018-11-01 The following is slower than parfor for large files
+% Load the data saved by NEURON to a .out file into a cell array
+outputs = cellfun(@load, fullPaths, 'UniformOutput', false);
 
 %}
 
