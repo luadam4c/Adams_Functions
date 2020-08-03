@@ -11,6 +11,7 @@
 %       cd/argfun.m
 %       cd/array_fun.m
 %       cd/compute_combined_trace.m
+%       cd/compute_weighted_average.m
 %       cd/convert_to_char.m
 %       cd/convert_units.m
 %       cd/create_labels_from_numbers.m
@@ -21,11 +22,14 @@
 %       cd/extract_common_prefix.m
 %       cd/extract_fileparts.m
 %       cd/extract_substrings.m
+%       cd/extract_subvectors.m
 %       cd/extractFrom.m
 %       cd/find_matching_files.m
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
+%       cd/is_var_in_table.m
 %       cd/ismatch.m
+%       cd/ismember_custom.m
 %       cd/lower_first_char.m
 %       cd/m3ha_decide_on_ylimits.m
 %       cd/m3ha_extract_candidate_label.m
@@ -33,13 +37,16 @@
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
+%       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_violin.m
 %       cd/plot_grouped_jitter.m
 %       cd/plot_scale_bar.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_violin.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/sscanf_full.m
+%       cd/test_difference.m
 %       cd/unique_custom.m
 %       cd/update_figure_for_corel.m
 
@@ -61,11 +68,13 @@ plotIpscComparisonBicRT = false; %true;
 plot2CellEssentialBicRT = false; %true;
 plot2CellM2hBicRT = false; %true;
 
-analyze2CellSpikes = true;
+analyze2CellSpikes = false; %true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
 combine2CellPop = false; %true;
 plot2CellViolins = false; %true;
+plot2CellScatters = true;
+plot2CellTwoGroups = false; %true;
 
 analyze2CellSpikesBicRT = false; %true;
 plotAnalysis2CellBicRT = false; %true;
@@ -200,13 +209,17 @@ pharmConditions = (1:4)';   % Pharmacological conditions
                             %   3 - GAT 3 Block
                             %   4 - Dual Block
 measuresOfInterest = {'oscillationProbability'; 'meanOscPeriod2Ms'; ...
-                        'meanOscIndex4'; 'meanPercentActiveTC'; ...
-                        'meanHalfActiveLatencyMsTC'; 'meanPercentActive'; ...
-                        'meanOscDurationSec'};
+                    'meanOscIndex4'; 'meanPercentActiveTC'; ...
+                    'meanHalfActiveLatencyMsTC'; 'meanPercentActive'; ...
+                    'meanOscDurationSec'; ...
+                    'maxLogOpenProbabilityDiscrepancy'; ...
+                    'passedOpdThreshold'};
 measureTitles = {'Oscillation Probability'; 'Oscillation Period (ms)'; ...
                     'Oscillatory Index'; 'Active TC Cells (%)'; ...
                     'Half Activation Time (ms)'; 'Active Cells (%)'; ...
-                    'Oscillation Duration (sec)'};
+                    'Oscillation Duration (sec)'; ...
+                    'Maximum Open Probability Discrepancy'; ...
+                    'Passed Open Probability Discrepancy Threshold'};
 measuresOfInterestJitter = {'oscPeriod2Ms'; ...
                         'oscIndex4'; 'percentActiveTC'; ...
                         'halfActiveLatencyMsTC'; 'percentActive'; ...
@@ -240,6 +253,8 @@ example200CellFigWidth = 8.5;
 example200CellFigHeight = 3;
 pharmLabelsShort = {'{\it s}Con', '{\it s}GAT1', ...
                     '{\it s}GAT3', '{\it s}Dual'};
+openProbFigWidth = 5;       % (cm)
+openProbFigHeight = 3;      % (cm)
 
 % epasToPlot = [];
 epasToPlot = [-74; -70; -66; -62];
@@ -598,7 +613,7 @@ end
 
 %% Plots oscillation measures over pharm condition 
 %       across all 2-cell networks
-if plot2CellViolins
+if plot2CellViolins || plot2CellScatters
     % Construct stats table path
     stats2dPath2Cell = ...
         fullfile(figure07Dir, strcat(conditionLabel2Cell, '_stats.mat'));
@@ -610,8 +625,16 @@ if plot2CellViolins
                     conditionLabel2Cell, pharmLabelsShort);
 
     % Plot violin plots
-    m3ha_plot_violin(stats2dPath2Cell, 'RowsToPlot', measuresToPlot, ...
-                    'OutFolder', figure07Dir);
+    if plot2CellViolins
+        m3ha_plot_violin(stats2dPath2Cell, ...
+                        'RowsToPlot', measuresToPlot, 'OutFolder', figure07Dir);
+    end
+
+    % Plot scatter plots
+    if plot2CellScatters
+        m3ha_plot_grouped_scatter(stats2dPath2Cell, ...
+                        'RowsToPlot', measuresToPlot, 'OutFolder', figure07Dir);
+    end
 end
 if plot2CellViolinsBicRT
     % Construct stats table path
@@ -627,6 +650,19 @@ if plot2CellViolinsBicRT
     % Plot violin plots
     m3ha_plot_violin(stats2dPath2CellBicRT, 'RowsToPlot', measuresToPlot, ...
                     'OutFolder', figure07Dir);
+end
+
+%% Plots maximum open probability against oscillation measures
+%       across all 2-cell networks
+if plot2CellTwoGroups
+    m3ha_network_plot_opd(popDataPath2Cell, gIncr, epasToUse, ...
+                    measuresOfInterest, measureTitles, 'mean', cellNameStr, ...
+                    conditionLabel2Cell, pharmLabelsShort, ...
+                    openProbFigWidth, openProbFigHeight, figTypes);
+    m3ha_network_plot_opd(popDataPath2Cell, gIncr, epasToUse, ...
+                    measuresOfInterest, measureTitles, 'all', cellNameStr, ...
+                    conditionLabel2Cell, pharmLabelsShort, ...
+                    openProbFigWidth, openProbFigHeight, figTypes);
 end
 
 %% Plots mean oscillation measures over pharm condition 
@@ -766,6 +802,7 @@ end
 if archiveScriptsFlag
     if plotIpscComparison || plot2CellEssential || plot2CellM2h || ...
             analyze2CellSpikes || combine2CellPop || plot2CellViolins || ...
+            plot2CellScatters || plot2CellTwoGroups || ...
             plotIpscComparisonBicRT || plot2CellEssentialBicRT || ...
             plot2CellM2hBicRT || analyze2CellSpikesBicRT || ...
             combine2CellPopBicRT || plot2CellViolinsBicRT
@@ -1071,7 +1108,7 @@ if any(ismatch(cellNamesToUse, '[A-Z][0-9]{6}', 'MatchMode', 'regexp'))
 end
 
 % Save the table
-writetable(combinedTable, combinedPath);
+writetable(combinedTable, combinedPath, 'WriteRowNames', true);
 
 end
 
@@ -1362,15 +1399,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function m3ha_network_compute_and_save_statistics(statsPath, dataPath, ...
-            gIncr, epasToUse, measuresOfInterestJitter, measureTitlesJitter, ...
+            gIncr, epasToUse, measuresOfInterest, measureTitles, ...
             method, groupNameStr, conditionLabel, pharmLabels)
 
 if ~isfile(statsPath)
     % Compute statistics for all features
     disp('Computing statistics for grouped jitter plots ...');
     statsTable = m3ha_network_compute_statistics(dataPath, ...
-                        gIncr, epasToUse, measuresOfInterestJitter, ...
-                        measureTitlesJitter, method, groupNameStr);
+                        gIncr, epasToUse, measuresOfInterest, ...
+                        measureTitles, method, groupNameStr);
 
     % Save stats table
     save(statsPath, 'statsTable', 'pharmLabels', ...
@@ -1390,11 +1427,200 @@ if isempty(groupNameStr)
     groupNameStr = 'cellName';
 end
 seedNumStr = 'seedNumber';
-gIncrStr = 'gIncr';
 pharmStr = 'pCond';
-epasStr = 'TCepas';
 hasOscStr = 'hasOscillation';
 measuresOnlyIfOsc = {'oscPeriod2Ms', 'oscIndex4', 'halfActiveLatencyMsTC'};
+
+%% Do the job
+% Extract the table of interest
+popTableOfInterest = m3ha_network_extract_table(popDataPath, ...
+                                gIncr, epasToUse, measureStr, groupNameStr, ...
+                                seedNumStr, pharmStr, hasOscStr);
+
+% Compute statistics for each measure of interest
+[allValues, pharmCondition, uniqueGroupValues] = ...
+    cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, method, x, ...
+                                        seedNumStr, pharmStr, groupNameStr, ...
+                                        hasOscStr, measuresOnlyIfOsc), ...
+                    measureStrOrig, 'UniformOutput', false);
+
+% Convert times from ms to seconds
+[measureStr, measureTitle, allValues] = ...
+    cellfun(@(a, b, c) convert_ms_to_sec(a, b, c), ...
+            measureStr, measureTitle, allValues, 'UniformOutput', false);
+
+% Create the statistics table
+statsTable = table(measureTitle, measureStr, pharmCondition, ...
+                    uniqueGroupValues, allValues, 'RowNames', measureStr);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_network_plot_opd(popDataPath, ...
+            gIncr, epasToUse, measuresOfInterest, measureTitles, ...
+            method, groupNameStr, conditionLabel, pharmLabels, ...
+            figWidth, figHeight, figTypes)
+
+%% Hard-coded parameters
+if isempty(groupNameStr)
+    groupNameStr = 'cellName';
+end
+seedNumStr = 'seedNumber';
+pharmStr = 'pCond';
+opdStr = 'maxLogOpenProbabilityDiscrepancy';
+opdLabel = 'Maximum Open Probability Discrepancy';
+hasOscStr = 'hasOscillation';
+binaryMeasures = {'hasOscillation'; 'percentActiveTC'};
+binaryTickLabels = {{'No Osc'; 'Has Osc'}; {'TC Inactive'; 'TC Active'}};
+binaryTitles = {''; ''};
+
+%% Preparation
+% Extract the directory
+dataDir = extract_fileparts(popDataPath, 'directory');
+
+%% Finalize data
+% Extract the table of interest
+popTableOfInterest = m3ha_network_extract_table(popDataPath, ...
+                                        gIncr, epasToUse, method, ...
+                                        measuresOfInterest, groupNameStr, ...
+                                        seedNumStr, pharmStr, hasOscStr);
+
+%% Plot two groups, all simulations
+isPaired = false;
+handles = ...
+    cellfun(@(a, b) plot_continuous_vs_binary(popTableOfInterest, ...
+                        method, a, opdStr, groupNameStr, ...
+                        b, opdLabel, dataDir, conditionLabel, ...
+                        figWidth, figHeight, figTypes), ...
+            binaryMeasures, binaryTickLabels, 'UniformOutput', false);
+
+%% Plot scatter plots for all networks grouped by pharm condition
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = plot_continuous_vs_binary (dataTable, method, ...
+                            xMeasure, yMeasure, groupNameStr, ...
+                            xTickLabels, yLabel, dataDir, conditionLabel, ...
+                            figWidth, figHeight, figTypes)
+%% Plots a continuous measure against a binary measure as a violin plot
+%% TODO: Pull out as its own function
+
+%% Hard-coded parameters
+colorMapViolin = {'Black', 'DarkGreen'};
+averageMethod = 'arithmetic';
+
+%% Preparation
+% Create an output path base
+pathBase = fullfile(dataDir, strcat(yMeasure, '_vs_', xMeasure, '_', method, ...
+                    '_', conditionLabel));
+
+
+%% Extract data
+% Extract x values (must be binary)
+xValues = logical(dataTable.(xMeasure));
+
+% Extract y values
+yValues = dataTable.(yMeasure);
+
+% Compute the two groups
+switch method
+    case 'mean'
+        % Compute the average (arithmetic mean) y measure for each group
+        %   with and without X
+
+        % Extract group values
+        groupValues = dataTable.(groupNameStr);
+
+        % Get unique group values
+        uniqueGroupValues = unique(groupValues);
+
+        % Function for computing weighted average
+        averageFun = @(x) compute_weighted_average(x, 'IgnoreNan', true, ...
+                                                'AverageMethod', averageMethod);
+
+        % Find the indices for each group with and without X
+        [indEachGroupWithX, indEachGroupWithNoX] = ...
+            argfun(@(x) cellfun(@(g) find(x & strcmp(groupValues, g)), ...
+                                uniqueGroupValues, 'UniformOutput', false), ...
+                    xValues, ~xValues);
+
+        % Find the y values for each group with and without X
+        [yByGroupWithX, yByGroupWithNoX] = ...
+            argfun(@(ind) extract_subvectors(yValues, 'Indices', ind, ...
+                                            'AcceptEmptyIndices', true), ...
+                    indEachGroupWithX, indEachGroupWithNoX);
+
+
+        % Average the y values for each group with and without X
+        [yWithX, yWithNoX] = argfun(@(x) cellfun(averageFun, x), ...
+                                    yByGroupWithX, yByGroupWithNoX);
+
+        % Data are paired
+        isPaired = true;
+    case 'all'
+        yWithNoX = yValues(~xValues);
+        yWithX = yValues(xValues);
+
+        % Data are not paired
+        isPaired = false;
+    otherwise
+        error('method unrecognized!');
+end
+
+% Place in two groups
+twoGroups = {yWithNoX; yWithX};
+
+% Test for differences
+test_difference(twoGroups, 'IsPaired', isPaired, ...
+                'SaveFlag', true, 'FileBase', pathBase);
+
+%% Plot
+% Create figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot violin plot
+handles = plot_violin(twoGroups, 'ColorMap', colorMapViolin, ...
+                    'XTickLabels', xTickLabels, 'YLabel', yLabel);
+
+% Create a title
+if length(conditionLabel) > 20
+    conditionLabelShort = conditionLabel(1:20);
+end
+titleLabel = replace(conditionLabelShort, '_', '\_');
+switch method
+    case 'mean'
+        title(sprintf('%s: All data', titleLabel));
+    case 'all'
+        title(sprintf('%s: Averaged for each %s', ...
+                        titleLabel, groupNameStr));
+end
+
+% Save the figure
+pathBaseOrig = [pathBase, '_orig'];
+save_all_figtypes(fig, pathBaseOrig, 'png');
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                'Width', figWidth, 'Height', figHeight, ...
+                'RemoveLegends', true);
+
+% Save figure
+save_all_figtypes(fig, pathBase, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function popTableOfInterest = m3ha_network_extract_table(popDataPath, ...
+                                                gIncr, epasToUse, method, ...
+                                                measureStr, groupNameStr, ...
+                                                seedNumStr, pharmStr, hasOscStr)
+%% Hard-coded parameters
+gIncrStr = 'gIncr';
+epasStr = 'TCepas';
 dclamp2NetworkAmpRatio = 12;
 
 %% Do the job
@@ -1408,7 +1634,7 @@ toUse = isGIncr & isTCepas;
 
 % Change the measure strings the original non-averaged strings
 switch method
-    case 'mean'
+    case {'mean', 'all'}
         measureStrNoMean = ...
             replace(measureStr, {'mean', 'oscillationProbability'}, ...
                                             {'', 'hasOscillation'});
@@ -1429,22 +1655,6 @@ end
 
 % Extract the table of interest
 popTableOfInterest = popDataTable(toUse, colsOfInterest);
-
-% Compute statistics for each measure of interest
-[allValues, pharmCondition, uniqueGroupValues] = ...
-    cellfun(@(x) m3ha_network_stats_helper(popTableOfInterest, method, x, ...
-                                        seedNumStr, pharmStr, groupNameStr, ...
-                                        hasOscStr, measuresOnlyIfOsc), ...
-                    measureStrOrig, 'UniformOutput', false);
-
-% Convert times from ms to seconds
-[measureStr, measureTitle, allValues] = ...
-    cellfun(@(a, b, c) convert_ms_to_sec(a, b, c), ...
-            measureStr, measureTitle, allValues, 'UniformOutput', false);
-
-% Create the statistics table
-statsTable = table(measureTitle, measureStr, pharmCondition, ...
-                    uniqueGroupValues, allValues, 'RowNames', measureStr);
 
 end
 
@@ -1523,16 +1733,31 @@ switch method
     case 'mean'
         allValuesEachPharm = ...
             cellfun(@(a) ...
-                    cellfun(@(b) nanmean(popDataTable{b, measureStr}), a), ... 
+                    cellfun(@(b) nanmean(extract_value_if_exists(...
+                                    popDataTable, b, measureStr)), a), ... 
                 rowsEachGroupEachPharm, 'UniformOutput', false);
     case 'grouped'
         allValuesEachPharm = ...
             cellfun(@(a) ...
-                    cellfun(@(b) popDataTable{b, measureStr}, ...
+                    cellfun(@(b) extract_value_if_exists(popDataTable, ...
+                                    b, measureStr), ...
                             a, 'UniformOutput', false), ... 
                 rowsEachGroupEachPharm, 'UniformOutput', false);
     otherwise
         error('Not implemented yet!');
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function value = extract_value_if_exists(table, row, varName)
+%% Extracts a value from a table if it exists
+
+if is_var_in_table(varName, table)
+    value = table{row, varName};
+else
+    value = [];
 end
 
 end
@@ -1586,7 +1811,7 @@ if contains(conditionLabel, 'candidate')
 elseif contains(conditionLabel, 'rank')
     figTitle = extractFrom(conditionLabel, 'rank');
 else
-    figTitle = conditionLabel
+    figTitle = conditionLabel;
 end
 figTitle = replace(figTitle, '_', '\_');
 

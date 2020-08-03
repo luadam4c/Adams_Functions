@@ -58,6 +58,7 @@ function finalString = combine_strings (varargin)
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_violin.m
 %       cd/test_difference.m
 %       /media/adamX/RTCl/raster_plot.m

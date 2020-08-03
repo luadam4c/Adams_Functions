@@ -8,8 +8,24 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %       TODO
 %
 % Outputs:
-%       oscParams    - a table with each network as a row and columns:
-%                       condStr     - condition string
+%       oscParams    - a table with each network as a row 
+%                       (using condStr as a row name) and columns:
+%                       stimStartMs
+%                       stimDurMs
+%                       hasOscillation
+%                       nActive
+%                       nActiveRT
+%                       nActiveTC
+%                       percentActive
+%                       percentActiveRT
+%                       percentActiveTC
+%                       halfActiveTimeMsRT
+%                       halfActiveTimeMsTC
+%                       halfActiveLatencyMsRT
+%                       halfActiveLatencyMsTC
+%                       maxOpenProbabilityDiscrepancy
+%                       maxLogOpenProbabilityDiscrepancy
+%                       passedOpdThreshold
 %                   specified as a 2D table
 %
 % Arguments:
@@ -65,6 +81,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 % 2020-05-18 Added minRelSecProm and made it 0.5
 % 2020-08-01 Now analyzes maximum open probability discrepancy
 %               if .singsp files are present
+% 2020-08-02 Added passedOpdThreshold
 %               
 
 %% Hard-coded parameters
@@ -237,7 +254,7 @@ oscData.Properties.RowNames = condStr;
 oscData = oscData(origInd, :);
 
 %% Save the output
-writetable(oscParams, sheetName);
+writetable(oscParams, sheetName, 'WriteRowNames', true);
 save(matFileName, 'oscParams', 'oscData', '-v7.3')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -385,9 +402,11 @@ if ~isempty(specialPathTC)
     % Compute maximum m2h discrepancy
     maxOpenProbabilityDiscrepancy = max(itm2hDiff);
     maxLogOpenProbabilityDiscrepancy = log10(maxOpenProbabilityDiscrepancy);
+    passedOpdThreshold = maxLogOpenProbabilityDiscrepancy >= -2;
 else
     maxOpenProbabilityDiscrepancy = NaN;
     maxLogOpenProbabilityDiscrepancy = NaN;
+    passedOpdThreshold = NaN;
 end
 
 %% Plot for verification
@@ -451,6 +470,7 @@ parsedParams.halfActiveLatencyMsRT = halfActiveLatencyMsRT;
 parsedParams.halfActiveLatencyMsTC = halfActiveLatencyMsTC;
 parsedParams.maxOpenProbabilityDiscrepancy = maxOpenProbabilityDiscrepancy;
 parsedParams.maxLogOpenProbabilityDiscrepancy = maxLogOpenProbabilityDiscrepancy;
+parsedParams.passedOpdThreshold = passedOpdThreshold;
 parsedParams = merge_structs(parsedParams, histParams);
 parsedParams = merge_structs(parsedParams, autoCorrParams);
 

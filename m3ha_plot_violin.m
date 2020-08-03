@@ -64,11 +64,9 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %       cd/ispositiveintegervector.m
 %       cd/m3ha_decide_on_ylimits.m
 %       cd/plot_violin.m
-%       cd/struct2arglist.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/update_figure_for_corel.m
-%       ~/Downloaded_Functions/Violinplot/violinplot.m
 %
 % Used by:
 %       cd/m3ha_compute_and_plot_violin.m
@@ -128,7 +126,7 @@ addParameter(iP, 'FigHeight', figHeightDefault, ...
                 'FigHeight must be a empty or a positive scalar!'));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
-addParameter(iP, 'plotType', plotTypeDefault, ...
+addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
 
 % Read from the Input Parser
@@ -138,7 +136,7 @@ outFolder = iP.Results.OutFolder;
 figWidth = iP.Results.FigWidth;
 figHeight = iP.Results.FigHeight;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
-plotType = validatestring(iP.Results.plotType, validPlotTypes);
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 
 % Keep unmatched arguments for the plot_violin() function
 otherArguments = iP.Unmatched;

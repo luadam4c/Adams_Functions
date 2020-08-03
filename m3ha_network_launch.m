@@ -173,12 +173,13 @@ end
 
 %% Simulation modes
 if strcmp(savePlotMode, 'spikesAndM2h')
-    simMode = 2; 
+    simMode = 5; 
 else
     simMode = 1;    % 1 - full simulation
-                    % 2 - short simulation
-                    % 3 - medium simulation
+                    % 2 - 1 sec after stim
+                    % 3 - 1.8 sec after stim
                     % 4 - no TC -> RT
+                    % 5 - 3 sec after stim
 end
         
 
@@ -701,6 +702,8 @@ elseif simMode == 3
     tStop = timeToStabilize + 5000;
 elseif simMode == 4
     tStop = timeToStabilize + 2800;
+elseif simMode == 5
+    tStop = timeToStabilize + 4000;
 end
 dt = 0.1;                       % time step of integration (ms)
 

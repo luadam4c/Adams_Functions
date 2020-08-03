@@ -27,6 +27,7 @@ function [yLimits, yTicks] = m3ha_decide_on_ylimits (measureTitle, varargin)
 %
 % Used by:
 %       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_plot_bar3.m
 

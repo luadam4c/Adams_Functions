@@ -32,6 +32,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure05.m
 %       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m

@@ -34,6 +34,7 @@ function [results, figtypes] = isfigtype (candidates, varargin)
 %       cd/compute_and_plot_all_responses.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
+%       cd/m3ha_plot_grouped_scatter.m
 %       cd/plot_all_abfs.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m

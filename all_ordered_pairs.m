@@ -46,6 +46,7 @@ function [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, v
 % Used by:    
 %       cd/create_looped_params.m
 %       cd/extract_looped_params.m
+%       cd/m3ha_plot_grouped_scatter.m
 
 % File History:
 % 2017-05-03 Created by Adam Lu
