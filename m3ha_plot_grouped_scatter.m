@@ -211,6 +211,24 @@ scatters = plot_grouped_scatter(valuePair{1}, valuePair{2}, ...
                 'XLabel', titlePair{1}, 'YLabel', titlePair{2}, ...
                 otherArguments);
 
+% TODO: plot_correlation_coefficient.m
+% % Compute the correlation coefficient
+% corrValue = corr2(xVecToCorr, yVecToCorr);
+
+% % Decide on the text color
+% if abs(corrValue) > 0.6 && abs(corrValue) ~= 1
+%     isSignificant = true;
+%     textColor = 'r';
+% else
+%     isSignificant = false;
+%     textColor = 'k';
+% end
+
+% % Plot the correlation coefficient
+% text(0.1, 0.95, ...
+%     ['Correlation coefficient: ', num2str(corrValue, 3)], ...
+%     'Units', 'normalized', 'Color', textColor); 
+
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
@@ -229,7 +247,8 @@ end
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth, ...
-                        'PlotMarkerSize', 3, 'RemoveLegend', true);
+                        'PlotMarkerSize', 3, 'RemoveLegend', true, ...
+                        'RemoveText', true, 'RemovePlots', true);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);

@@ -73,7 +73,7 @@ plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
 combine2CellPop = false; %true;
 plot2CellViolins = false; %true;
-plot2CellScatters = true;
+plot2CellScatters = false; %true;
 plot2CellTwoGroups = false; %true;
 
 analyze2CellSpikesBicRT = false; %true;

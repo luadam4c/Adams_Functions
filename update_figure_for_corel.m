@@ -59,6 +59,10 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'RemoveCircles': whether to remove plots that are circles
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemovePlots': whether to remove plots 
+%                                       that have more than 2 points
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'XTickLocs': locations of X ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == 'suppress'
@@ -133,7 +137,9 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-12-04 Added 'RemoveTexts' as an optional argument
 % 2019-12-29 Added 'AlignSubplots' as an optional argument
 % 2020-02-06 Added 'BoxOn' as an optional argument
-% 2019-04-22 Added 'RemoveCircles' as an optional argument
+% 2020-04-22 Added 'RemoveCircles' as an optional argument
+% 2020-08-03 Added 'RemovePlots' as an optional argument
+
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -160,6 +166,7 @@ removeTitlesDefault = false;    % don't remove by default
 removeLegendsDefault = false;   % don't remove by default
 removeTextsDefault = false;     % don't remove by default
 removeCirclesDefault = false;   % don't remove by default
+removePlotsDefault = false;     % don't remove by default
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
 labelsFontSizeDefault = 8;
@@ -217,6 +224,8 @@ addParameter(iP, 'RemoveTexts', removeTextsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveCircles', removeCirclesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemovePlots', removePlotsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
                     isnumericvector(x) || iscellnumericvector(x), ...
@@ -260,6 +269,7 @@ removeTitles = iP.Results.RemoveTitles;
 removeLegends = iP.Results.RemoveLegends;
 removeTexts = iP.Results.RemoveTexts;
 removeCircles = iP.Results.RemoveCircles;
+removePlots = iP.Results.RemovePlots;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
 labelsFontSize = iP.Results.LabelsFontSize;
@@ -437,13 +447,20 @@ if ~isempty(plotLineWidth)
     set(plots, 'LineWidth', plotLineWidth);
 end
 
-% Remove markers
+% Remove markers that are circles
 if removeCircles
     lines = findobj(figHandle, 'Type', 'Line');
     markers = extract_fields(lines, 'Marker', 'UniformOutput', false);
     lineStyles = extract_fields(lines, 'LineStyle', 'UniformOutput', false);
     toRemove = strcmp(markers, 'o') & strcmp(lineStyles, 'none');
     delete(lines(toRemove))
+end
+
+% Remove plots
+if removePlots
+    lines = findobj(figHandle, 'Type', 'Line');
+    plots = lines(arrayfun(@(x) is_plot(x), lines));
+    delete(plots);
 end
 
 % Update marker sizes
@@ -497,7 +514,8 @@ arrayfun(@convert_color_to_rgb, objects);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function isPlot = is_plot(lineObject)
+function isPlot = is_plot (lineObject)
+%% Returns whether a Line object has more than two data points
 % TODO: Pull out as its own function
 
 % Get x, y and z data
