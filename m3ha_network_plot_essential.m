@@ -101,6 +101,7 @@ TC_IT_H_DEND2 = 12;
 TC_IT_HINF_DEND2 = 13;
 TC_ICA_DEND1 = 14;
 TC_ICA_DEND2 = 15;
+TC_GGABAA = 16;
 
 % Plot parameters
 xLabel = 'Time (ms)';

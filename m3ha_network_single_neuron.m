@@ -21,7 +21,7 @@ function [data] = m3ha_network_single_neuron (inFolder, varargin)
 %            must be a numeric array with elements that are integers between 0 and nCells
 %            default: [act, actLeft1, actLeft2, far], whose values are saved in sim_params.csv
 %            - 'PropertiesToPlot': property #s of special neuron to record to be plotted 
-%            maximum range: 1~12, must be consistent with net.hoc
+%            maximum range: 1~12, must be consistent with m3ha_net.hoc
 %            must be a numeric array with elements that are integers between 0 and 12
 %            default: 1:12
 %            legend for RTCl:    TODO: for m3ha
@@ -37,7 +37,7 @@ function [data] = m3ha_network_single_neuron (inFolder, varargin)
 %                       10 - chloride concentration (mM) in inner annuli trace
 %                       11 - chloride reversal potential trace
 %                       12 - GABA-A reversal potential trace
-%            NOTE: must be consistent with propLabels & net.hoc
+%            NOTE: must be consistent with propLabels & m3ha_net.hoc
 %
 % Requires:
 %       cd/all_files.m
@@ -75,19 +75,19 @@ propLabelsRT = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
                 'icl (mA/cm2)', 'cli1 (mM)', ...
                 'ecl (mV)', 'eGABA (mV)'};
 propLabelsTC = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
-                'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
-                'cai (mM)', 'gGABAB (uS)', ...
+                'ica (mA/cm2)', 'iGABA_A (nA)', 'iGABA_B (nA)', ...
+                'cai (mM)', 'gGABA_B (uS)', ...
                 'm_{T,dend2}', 'm_{\infty,T,dend2}', ...
                 'h_{T,dend2}', 'h_{\infty,T,dend2}'};
 % propLabelsTC = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
-%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
-%                 'cai (mM)', 'gGABAB (uS)'};
+%                 'ica (mA/cm2)', 'iGABA_A (nA)', 'iGABA_B (nA)', ...
+%                 'cai (mM)', 'gGABA_B (uS)'};
 % propLabelsTC = {'v (mV)', 'inRefractory', 'ik (mA/cm2)', ...
-%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
-%                 'cai (mM)', 'gGABAB (uS)'};
+%                 'ica (mA/cm2)', 'iGABA_A (nA)', 'iGABA_B (nA)', ...
+%                 'cai (mM)', 'gGABA_B (uS)'};
 % propLabelsTC = {'v (mV)', 'inSlopeWatching', 'ik (mA/cm2)', ...
-%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
-%                 'cai (mM)', 'gGABAB (uS)'};
+%                 'ica (mA/cm2)', 'iGABA_A (nA)', 'iGABA_B (nA)', ...
+%                 'cai (mM)', 'gGABA_B (uS)'};
 
 % Set figure name suffixes
 figSuffixVoltage = '_selected_soma_voltage.png';
@@ -449,7 +449,10 @@ save_all_figtypes(h, figName, figtypes);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function data = plot_single_neuron_data(filetype, nCells, useHH, tStart, tStop, filename, figName, ToPl, stimStart, stimDur, stimFreq, inFolder, figtypes, propLabels)
+function data = plot_single_neuron_data(filetype, nCells, useHH, tStart, ...
+                                        tStop, filename, figName, ToPl, ...
+                                        stimStart, stimDur, stimFreq, ...
+                                        inFolder, figtypes, propLabels)
 %% Plot single neuron data
 
 %% Extract info from arguments
@@ -468,7 +471,8 @@ if strcmp(filetype, 'v') || strcmp(filetype, 'cli')
         labels{id+1} = sprintf('Cell #%d', id);
     end
 elseif strcmp(filetype, 'sp')
-    % Set labels for properties of the special neuron to be plotted, must be consistent with net.hoc
+    % Set labels for properties of the special neuron to be plotted, 
+    %       must be consistent with m3ha_net.hoc
     labels = propLabels;
 end
 

@@ -57,6 +57,7 @@ function handles = m3ha_network_plot_gabab (varargin)
 % 2020-01-22 Created by Adam Lu
 % 2020-01-30 Added input parser
 % 2020-02-06 Now downsamples vectors
+% 2020-08-03 Updated GABAB column number
 
 %% Hard-coded parameters
 spExtension = 'singsp';
@@ -68,19 +69,12 @@ ampUnits = 'nS';
 % Column numbers for simulated data
 %   Note: Must be consistent with m3ha_net.hoc
 TIME_COL_SIM = 1;
-VOLT_COL_SIM = 2;
-INA_COL_SIM = 3;
-IK_COL_SIM = 4;
-ICA_COL_SIM = 5;
-IGABAA_COL_SIM = 6;
-IGABAB_COL_SIM = 7;
-CAI_COL_SIM = 8;
-GGABAB_COL_SIM = 9;
+GGABAB_COL_SIM = 10;
 
 % Plot parameters
 xLabel = 'Time (ms)';
-pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
-                    '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
+pharmLabels = {'{\it s}Control', '{\it s}GAT1 Block', ...
+                    '{\it s}GAT3 Block', '{\it s}Dual Block'};
 
 % TODO: Make optional arguments
 figTypes = 'png';

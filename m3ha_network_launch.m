@@ -33,12 +33,9 @@ function m3ha_network_launch (nCells, useHH, candidateIDs, savePlotMode, ...
 %       cd/run_neuron.m
 %       cd/save_params.m
 %       /media/adamX/m3ha/network_model/m3ha_run_1cell.hoc
-%       /media/adamX/m3ha/network_model/m3ha_net.hoc
-%       /media/adamX/m3ha/network_model/RE.tem
-%       /media/adamX/m3ha/network_model/TC3.tem
-%       /media/adamX/m3ha/network_model/ipulse2.mod
-%       /media/adamX/m3ha/network_model/gabaA_Cl.mod
-%       /media/adamX/m3ha/network_model/gabaa.mod (potentially)
+%       /media/adamX/m3ha/network_model/m3ha_run_2cell.hoc
+%       /media/adamX/m3ha/network_model/m3ha_run_20cell.hoc
+%       /media/adamX/m3ha/network_model/m3ha_run_100cell.hoc
 
 % File History:
 % 2017-10-23 Modified from /RTCl/neuronlaunch112.m
@@ -745,10 +742,12 @@ else
 end
 
 %% Arguments for plotting (not logged in sim_params)
-propertiesToPlotRT = 1:8;       % property #s of special neuron to record to be plotted (maximum range: 1~8, must be consistent with net.hoc)
-propertiesToPlotTC = 1:12;      % property #s of special neuron to record to be plotted (maximum range: 1~8, must be consistent with net.hoc)
-% propertiesToPlot = 1:8;
-% propertiesToPlot = [1, 5, 6, 8]; 
+propertiesToPlotRT = 1:8;       % property #s of special neuron to record 
+                                %   to be plotted (maximum range: 1~14, 
+                                %   must be consistent with m3ha_net.hoc)
+propertiesToPlotTC = 1:8;       % property #s of special neuron to record 
+                                %   to be plotted (maximum range: 1~15, 
+                                %   must be consistent with m3ha_net.hoc)
 cellsToPlot = [act, actLeft1, actLeft2, far]; % ID #s for neurons whose voltage is to be plotted
 
 %% Set output file names; must have only one '.' (not logged in sim_params)
