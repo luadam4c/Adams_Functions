@@ -82,6 +82,8 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 % 2020-08-01 Now analyzes maximum open probability discrepancy
 %               if .singsp files are present
 % 2020-08-02 Added passedOpdThreshold
+% 2020-08-02 Changed definition of max OPD to that 
+%               after 2 seconds after stim start
 %               
 
 %% Hard-coded parameters
@@ -274,6 +276,7 @@ xLimitsAcf = [0, 10];          % in seconds
 xLimitsHist = stimStartMs/1000 + xLimitsAcf;          % in seconds
 figName = '';
 itm2hDiffLowerLimit = 1e-9;
+minOscDurationMs = 2000;
 
 % Column numbers for simulated data
 %   Note: Must be consistent with m3ha_net.hoc
@@ -382,9 +385,10 @@ hasOscillation = histParams.nBurstsInOsc > 2;
 
 % If a special TC neuron file exists 
 if ~isempty(specialPathTC)
-    % Read simulation outputs starting from stimulation start
+    % Read simulation outputs starting from 
+    %       minOscDurationMs after stimulation start
     simDataTC = read_neuron_outputs('FileNames', specialPathTC, ...
-                                    'TimeWindows', [stimStartMs; Inf]);
+                        'TimeWindows', [stimStartMs + minOscDurationMs; Inf]);
 
     % Extract columns
     [itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
@@ -519,6 +523,10 @@ hasOscillation = ~isempty(spikeTimesMsTC) && ...
     argfun(@(x) x(origInd), ...
             spikesDataRT, spikesDataTC, stimStartMs, ...
             stimDurMs, nCells, condStr);
+
+    % Read simulation outputs starting from stimulation start
+    simDataTC = read_neuron_outputs('FileNames', specialPathTC, ...
+                        'TimeWindows', [stimStartMs; Inf]);
 
 %}
 

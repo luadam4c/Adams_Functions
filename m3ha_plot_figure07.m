@@ -68,13 +68,13 @@ plotIpscComparisonBicRT = false; %true;
 plot2CellEssentialBicRT = false; %true;
 plot2CellM2hBicRT = false; %true;
 
-analyze2CellSpikes = false; %true;
+analyze2CellSpikes = true;
 plotAnalysis2Cell = false; %true;
 backupPrevious2Cell = false; %true;
-combine2CellPop = false; %true;
-plot2CellViolins = false; %true;
+combine2CellPop = true;
+plot2CellViolins = true;
 plot2CellScatters = true;
-plot2CellTwoGroups = false; %true;
+plot2CellTwoGroups = true;
 
 analyze2CellSpikesBicRT = false; %true;
 plotAnalysis2CellBicRT = false; %true;
@@ -157,7 +157,8 @@ exampleIterName2Cell = '20200501_using_bestparams_20200203_manual_singleneuronfi
 exampleIterName2CellBicRT = '20200724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples_bicucullineRT';
 exampleSeedDirName2Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
 % popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
-popIterName2Cell = '20200731_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikesAndM2h';
+% popIterName2Cell = '20200731_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikesAndM2h';
+popIterName2Cell = '20200802_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikesAndM2h';
 popIterName2CellBicRT = '20200724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes_bicucullineRT';
 exampleIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 exampleIterName200CellBicRT = '20200726_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes_bicucullineRT';
