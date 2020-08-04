@@ -153,13 +153,13 @@ networkDir = fullfile(parentDirectory, 'network_model');
 % popIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 % popIterNameHetero = '20200504_using_bestparams_20200203_manual_singleneuronfitting0-102_hetero_spikes';
 % exampleIterName2CellBicRT = '20200724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples_bicucullineRT';
+% popIterName2Cell = '20200731_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikesAndM2h';
+% popIterName2Cell = '20200802_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikesAndM2h';
 
 exampleIterName2Cell = '20200501_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples';
 exampleIterName2CellBicRT = '20200803_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_examples_bicucullineRT';
 exampleSeedDirName2Cell = 'seedNumber_5';      % Use seed number 5 (TCepas = -70)
-% popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
-% popIterName2Cell = '20200731_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikesAndM2h';
-popIterName2Cell = '20200802_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikesAndM2h';
+popIterName2Cell = '20200430_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes';
 popIterName2CellBicRT = '20200724_using_bestparams_20200203_manual_singleneuronfitting0-102_2cell_spikes_bicucullineRT';
 exampleIterName200Cell = '20200503_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes';
 exampleIterName200CellBicRT = '20200726_using_bestparams_20200203_manual_singleneuronfitting0-102_200cell_spikes_bicucullineRT';
@@ -214,8 +214,8 @@ measuresOfInterest = {'oscillationProbability'; 'meanOscPeriod2Ms'; ...
                     'meanOscIndex4'; 'meanPercentActiveTC'; ...
                     'meanHalfActiveLatencyMsTC'; 'meanPercentActive'; ...
                     'meanOscDurationSec'; ...
-                    'maxLogOpenProbabilityDiscrepancy'; ...
-                    'passedOpdThreshold'};
+                    'meanMaxLogOpenProbabilityDiscrepancy'; ...
+                    'meanPassedOpdThreshold'};
 % measuresOfInterest = {'oscillationProbability'; 'passedOpdThreshold'};
 measureTitles = {'Oscillation Probability'; 'Oscillation Period (ms)'; ...
                     'Oscillatory Index'; 'Active TC Cells (%)'; ...

@@ -64,6 +64,7 @@
 %       cd/set_figure_properties.m
 %       cd/test_difference.m
 %       cd/update_neuron_scripts.m
+%       cd/updatevars.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -1040,21 +1041,6 @@ end
 % Archive all scripts for this run
 if archiveScriptsFlag
     archive_dependent_scripts(mfilename, 'OutFolder', outFolder);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function myTable = updatevars (myTable, varValue)
-%% Replace a variable in a table or add it if it doesn't exist
-% TODO: Pull out as its own function
-
-varName = inputname(2);
-if is_field(myTable, varName)
-    myTable.(varName) = varValue;
-else
-    myTable = addvars(myTable, varValue, 'NewVariableNames', varName);
-end
-
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
