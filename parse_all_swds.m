@@ -180,7 +180,7 @@ nAssystPaths = numel(assystPaths);
 % Apply parse_atf_swd.m to each .atf file
 swdManualTables = cell(nManualPaths, 1);
 swdManualCsvFiles = cell(nManualPaths, 1);
-parfor iFile = 1:nManualPaths
+for iFile = 1:nManualPaths
     [swdManualTables{iFile}, swdManualCsvFiles{iFile}] = ...
         parse_atf_swd(manualPaths{iFile}, 'OutFolder', outFolder, ...
                         'SheetType', sheetType, otherArguments);

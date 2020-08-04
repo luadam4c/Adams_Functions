@@ -57,6 +57,7 @@ function handles = m3ha_plot_grouped_scatter (statsPath, varargin)
 %       cd/isfigtype.m
 %       cd/ispositiveintegervector.m
 %       cd/m3ha_decide_on_ylimits.m
+%       cd/plot_correlation_coefficient.m
 %       cd/plot_grouped_scatter.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -211,23 +212,8 @@ scatters = plot_grouped_scatter(valuePair{1}, valuePair{2}, ...
                 'XLabel', titlePair{1}, 'YLabel', titlePair{2}, ...
                 otherArguments);
 
-% TODO: plot_correlation_coefficient.m
-% % Compute the correlation coefficient
-% corrValue = corr2(xVecToCorr, yVecToCorr);
-
-% % Decide on the text color
-% if abs(corrValue) > 0.6 && abs(corrValue) ~= 1
-%     isSignificant = true;
-%     textColor = 'r';
-% else
-%     isSignificant = false;
-%     textColor = 'k';
-% end
-
-% % Plot the correlation coefficient
-% text(0.1, 0.95, ...
-%     ['Correlation coefficient: ', num2str(corrValue, 3)], ...
-%     'Units', 'normalized', 'Color', textColor); 
+% Plot the correlation coefficient
+plot_correlation_coefficient;
 
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');

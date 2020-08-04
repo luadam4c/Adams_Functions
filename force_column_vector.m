@@ -69,6 +69,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/isnum.m
 %
 % Used by:
+%       cd/plot_correlation_coefficient.m
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
 %       cd/adjust_edges.m

@@ -46,6 +46,7 @@ function varargout = extract_fields (structs, varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
 %       cd/parse_spike2_mat.m
+%       cd/plot_correlation_coefficient.m
 %       cd/update_figure_for_corel.m
 
 % File History:
@@ -56,6 +57,8 @@ function varargout = extract_fields (structs, varargin)
 % 2020-01-02 Changed the default UniformOutput to true whenever possible
 % 2020-04-20 Now applies default UniformOutput to each field separately
 % 2020-07-07 Fixed the case when structs are in cell arrays
+% 2020-08-04 Now returns a field from a scalar struct 
+%               without cell arrays by default
 % TODO: accept substrings
 % TODO: OutputMode
 % 
@@ -120,6 +123,9 @@ if isempty(uniformOutput)
         fieldValues = extract_one_field(structs, fieldName, true);
     catch
         fieldValues = extract_one_field(structs, fieldName, false);
+        if numel(structs) == 1
+            fieldValues = fieldValues{1};
+        end
     end
     return
 else

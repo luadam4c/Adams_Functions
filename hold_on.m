@@ -18,6 +18,7 @@ function wasHold = hold_on
 %       cd/plot_autocorrelogram.m
 %       cd/plot_ball_stick.m
 %       cd/plot_chevron.m
+%       cd/plot_correlation_coefficient.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_jitter.m
 %       cd/plot_grouped_scatter.m

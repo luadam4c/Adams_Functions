@@ -38,6 +38,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/plot_ball_stick.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_correlation_coefficient.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_jitter.m
 %       cd/plot_grouped_scatter.m
