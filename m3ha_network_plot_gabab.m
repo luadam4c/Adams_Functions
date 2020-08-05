@@ -51,7 +51,7 @@ function handles = m3ha_network_plot_gabab (varargin)
 %       cd/set_figure_properties.m
 %
 % Used by:
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 
 % File History:
 % 2020-01-22 Created by Adam Lu

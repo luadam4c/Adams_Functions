@@ -22,10 +22,10 @@ function myTable = addvars_custom (myTable, value, varargin)
 %       cd/match_row_count.m
 %
 % Used by:
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 
 % File History:
-% 2020-03-06 Moved from m3ha_plot_figure07.m
+% 2020-03-06 Moved from m3ha_plot_figure08.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

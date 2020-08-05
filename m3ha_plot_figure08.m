@@ -1,4 +1,4 @@
-% m3ha_plot_figure07.m
+% m3ha_plot_figure08.m
 %% Plots Figure 07 for the GAT Blocker paper
 %
 % Requires:
@@ -197,7 +197,7 @@ epasToUse = -73:-60;
 % Files
 
 % Analysis settings
-% Should be consistent with m3ha_plot_figure03.m & m3ha_plot_figure07.m
+% Should be consistent with m3ha_plot_figure03.m & m3ha_plot_figure08.m
 exampleCellNames2Cell = {'D101310'; 'G101310'};
 % exampleCellNames200Cell = {'D101310'; 'G101310'; 'hetero4'; 'hetero8'; 'hetero12'};
 % exampleCellNames200Cell = {'D101310'; 'hetero12'};

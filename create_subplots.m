@@ -83,7 +83,7 @@ function [fig, ax] = create_subplots (varargin)
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_plot_figure03.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/parse_current_family.m
 %       cd/parse_multiunit.m
 %       cd/plot_table_parallel.m

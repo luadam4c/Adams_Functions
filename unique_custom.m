@@ -56,7 +56,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       cd/convert_to_rank.m
 %       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_phase_info.m
 %       cd/plot_measures.m

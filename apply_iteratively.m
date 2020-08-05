@@ -37,7 +37,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 %       cd/compute_axis_limits.m
 %       cd/extract_subvectors.m
 %       cd/identify_channels.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/plot_raster.m
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m

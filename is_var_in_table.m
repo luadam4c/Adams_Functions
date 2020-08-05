@@ -31,7 +31,7 @@ function isInTable = is_var_in_table (varName, table, varargin)
 %       cd/is_field.m
 %       cd/is_row_in_table.m
 %       cd/m3ha_network_change_params.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_select_sweeps.m
 %       cd/plot_measures.m
 %       /media/adamX/m3ha/optimizer4compgabab/singleneuronfitting59.m

@@ -75,7 +75,7 @@ function handles = plot_grouped_jitter (data, varargin)
 %
 % Used by:
 %       cd/m3ha_plot_grouped_jitter.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_simulate_population.m
 
 % File History:

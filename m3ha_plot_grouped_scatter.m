@@ -64,7 +64,7 @@ function handles = m3ha_plot_grouped_scatter (statsPath, varargin)
 %       cd/update_figure_for_corel.m
 %
 % Used by:
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 
 % File History:
 % 2020-08-02 Modified from m3ha_plot_violin.m

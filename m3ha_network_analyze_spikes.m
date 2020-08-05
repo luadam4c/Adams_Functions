@@ -65,7 +65,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %
 % Used by:
 %       cd/m3ha_network_launch.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 
 % File History:
 % 2020-01-30 Modified from m3ha_network_plot_essential.m

@@ -34,7 +34,7 @@ function cellNames = m3ha_extract_cell_name (strs, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure04.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_simulate_population.m
 
 % File History:

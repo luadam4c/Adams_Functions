@@ -34,7 +34,7 @@ function label = create_label_from_sequence (integers, varargin)
 %       cd/compare_events_pre_post_stim.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_plot_figure04.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m
 %       cd/parse_atf_swd.m

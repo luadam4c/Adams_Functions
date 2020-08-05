@@ -93,7 +93,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/compute_minimum_trace.m
 %       cd/extract_vars.m
 %       cd/find_in_strings.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/parse_ipsc.m
 
 % File History:

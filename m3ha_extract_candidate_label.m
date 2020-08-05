@@ -29,7 +29,7 @@ function candidateLabels = m3ha_extract_candidate_label (strs, varargin)
 %       cd/extract_substrings.m
 %
 % Used by:
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 
 % File History:
 % 2020-04-19 Modified from m3ha_extract_candidate_label.m

@@ -58,7 +58,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure05.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m

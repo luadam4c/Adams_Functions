@@ -149,7 +149,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %       cd/m3ha_find_decision_point.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_simulate_population.m
 %       cd/match_positions.m

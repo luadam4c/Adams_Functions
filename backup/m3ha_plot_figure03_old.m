@@ -63,7 +63,7 @@ paramFileSuffix = 'params';
 
 % Analysis settings
 
-% Should be consistent with m3ha_plot_figure02.m & m3ha_plot_figure07.m
+% Should be consistent with m3ha_plot_figure02.m & m3ha_plot_figure08.m
 % exampleCellNames = {'D101310'; 'C101210'};
 % exampleCellNames = {'C101210'};
 % exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};

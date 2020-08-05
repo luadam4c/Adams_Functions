@@ -34,7 +34,7 @@ function varargout = all_subdirs(varargin)
 %
 % Used by:
 %       cd/apply_to_all_subdirs.m
-%       cd/m3ha_plot_figure07.m.m
+%       cd/m3ha_plot_figure08.m.m
 %       cd/m3ha_simulate_population.m
 %       /media/ashleyX/Recordings/analyze_recordings.m TODO: Update this
 %       /home/zhongxiao/SCIDmiceLTP/Code/analyze_SCIDmiceLTP.m

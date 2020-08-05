@@ -35,7 +35,7 @@ function parentDir = extract_common_directory (paths, varargin)
 %       cd/all_dependent_functions.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/parse_iox.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m

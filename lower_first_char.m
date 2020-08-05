@@ -22,7 +22,7 @@ function strs = lower_first_char (strs, varargin)
 % Requires:
 %
 % Used by:
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 
 % File History:
 % 2020-03-06 Created by Adam Lu

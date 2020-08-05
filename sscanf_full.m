@@ -25,7 +25,7 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 %       cd/array_fun.m
 %
 % Used by:
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_atf_swd.m
 %       cd/read_data_atf.m

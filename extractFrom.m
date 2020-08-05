@@ -23,7 +23,7 @@ function strOut = extractFrom (strIn, startStr, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 
 % File History:
 % 2020-04-19 Created by Adam Lu

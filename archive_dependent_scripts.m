@@ -53,7 +53,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
-%       cd/m3ha_plot_figure07.m
+%       cd/m3ha_plot_figure08.m
 %       cd/m3ha_rank_neurons.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting103.m
 
