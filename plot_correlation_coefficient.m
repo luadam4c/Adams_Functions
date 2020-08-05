@@ -107,7 +107,7 @@ wasHold = hold_on;
 % Plot the correlation coefficient
 text(0.1, 0.95, ...
     ['Correlation coefficient: ', num2str(corrValue, 3)], ...
-    'Units', 'normalized', 'Color', textColor); 
+    'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
 % Hold off
 hold_off(wasHold);
