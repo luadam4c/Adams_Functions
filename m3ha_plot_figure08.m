@@ -57,6 +57,7 @@
 % 2020-04-09 Added combineActivationProfiles
 % 2020-04-28 Added timeToStabilize
 % 2020-07-27 Added bicuculineRT plots
+% 2020-08-04 Renamed Figure08 -> Figure09, Figure07 -> Figure08
 
 %% Hard-coded parameters
 % Flags
