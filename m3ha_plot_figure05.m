@@ -50,7 +50,7 @@ plotM2hTauh = false; %true;
 plotM2hGabab = false; %true;
 
 plotVoltageVsOpdFig5 = false; %true;
-plotVoltageVsOpdTauh = false; %true;
+plotVoltageVsOpdTauh = true;
 plotVoltageVsOpdGabab = false; %true;
 
 createPlotMovieFig5 = false; %true;
