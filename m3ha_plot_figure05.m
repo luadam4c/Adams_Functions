@@ -189,11 +189,11 @@ voltageVsOpdFig5YLimits = [-95, -45];
 voltageVsOpdFig5YTickLocs = [];
 voltageVsOpdFig5ToAnnotate = true;
 
-voltageVsOpdTauhFigWidth = 7.7;
-voltageVsOpdTauhFigHeight = 7;
+voltageVsOpdTauhFigWidth = 8;
+voltageVsOpdTauhFigHeight = 11.5;
 voltageVsOpdTauhXLimits = [1e-7, 1e0];
-voltageVsOpdTauhYLimits = [-95, -45];
-voltageVsOpdTauhYTickLocs = [];
+voltageVsOpdTauhYLimits = [-95, -25];
+voltageVsOpdTauhYTickLocs = -95:5:-25;
 voltageVsOpdTauhToAnnotate = true;
 
 voltageVsOpdGababFigWidth = 3.5 * 2; %4.7 * 2;

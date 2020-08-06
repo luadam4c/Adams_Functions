@@ -51,6 +51,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/issheettype.m
 %       cd/match_dimensions.m
 %       cd/parse_abf.m
+%       cd/print_and_show_message.m
 %       cd/read_data_atf.m
 %       cd/read_lines_from_file.m
 %       cd/sscanf_full.m
@@ -155,7 +156,7 @@ if ~isfile(atfFile) && ~isfile(atfCsvFile)
 elseif isfile(atfCsvFile)
     % Display warning if atf file also provided
     if isfile(atfFile)
-        fprintf(['Table with be read from the csv file ', ...
+        fprintf(['Table to be read from the csv file ', ...
                 'instead of the atf file!\n']);
     end
 
@@ -225,13 +226,19 @@ else
                     indOverlapPrev, 'UniformOutput', false);
         rowsOverlapPrev = union_over_cells(rowsOverlapPrevCell);
 
-        fprintf(['The file %s cannot be parsed because the following ', ...
+        % Create a message
+        message = ...
+            {sprintf(['The file %s cannot be parsed because the following ', ...
                     'window numbers overlap with the next one:\n'], ...
-                    originalEventFile);
-        fprintf('\t%s\n', create_label_from_sequence(indOverlapPrev));
-        fprintf('Please remove these lines from %s:\n', originalEventFile);
-        fprintf('\t%s\n', create_label_from_sequence(rowsOverlapPrev));
-        fprintf('\n');
+                    originalEventFile), ...
+            sprintf('\t%s\n', create_label_from_sequence(indOverlapPrev)), ...
+            sprintf('Please remove these lines from %s:\n', ...
+                    originalEventFile), ...
+            sprintf('\t%s\n', create_label_from_sequence(rowsOverlapPrev)), ...
+            sprintf('\n'};
+
+        % Show message in both standard output and dialog box
+        print_and_show_message(message, 'Icon', 'warn', 'MessageMode', 'show');
         return
     end
 

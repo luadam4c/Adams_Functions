@@ -134,6 +134,8 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/plot_window_boundaries.m
 %       cd/read_lines_from_file.m
 %       cd/restrict_values.m
+%       cd/set_axes_properties.m
+%       cd/set_figure_properties.m
 %       cd/set_default_flag.m
 %       cd/sscanf_full.m
 %       cd/unique_custom.m
@@ -1672,7 +1674,9 @@ fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 
 % Create subplots and link axes
 if plotVoltageVsOpdOnly
-    % Do nothing
+    % Get current figure and axes
+    fig = set_figure_properties;
+    ax = set_axes_properties;
 elseif plotPhasePlotsOnly
     % Create subplots
     [fig, ax] = create_subplots(2, 2, 'FigExpansion', [2, 2]);
@@ -1960,7 +1964,7 @@ if plotPhasePlotsOnly && ~plotVoltageVsOpdOnly
                     otherXLimits, otherYLimits, indDecision, ...
                     otherXVecsLabel, otherYVecsLabel, figTitle6, ...
                     plotPrePostForPhasePlots, plotSelected);
-else
+elseif ~plotVoltageVsOpdOnly
     handles.ax6Stuff = ...
         plot_phase_plot(ax(6), colorMap, ...
                     colorMapPrePost, markerSizePrePost, ...
@@ -1976,7 +1980,7 @@ end
 
 
 %% Plot other2YVecs vs other2XVecs
-if plotPhasePlotsOnly
+if plotPhasePlotsOnly && ~plotVoltageVsOpdOnly
     handles.ax3Stuff = ...
         plot_phase_plot(ax(3), colorMap, ...
                     colorMapPrePost, markerSizePrePost, ...                      
@@ -2002,7 +2006,10 @@ if plotPhasePlotsOnly
 end
 
 %% Update axis limits or scales
-if ~plotPhasePlotsOnly
+if plotVoltageVsOpdOnly
+    % Set the x axis to be log-scaled
+    set(ax, 'XScale', 'log');
+elseif ~plotPhasePlotsOnly
     % Set the y axis to be log-scaled
 %     set(ax(2:4), 'YScale', 'log');
     set(ax(4), 'YScale', 'log');
@@ -2015,7 +2022,7 @@ if ~plotPhasePlotsOnly
 end
 
 %% Create overarching title
-if plotSupTitle
+if plotSupTitle && ~plotVoltageVsOpdOnly
     suptitle(expStrForTitle);
 end
 

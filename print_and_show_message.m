@@ -5,9 +5,15 @@ function print_and_show_message(message, varargin)
 %       Either pause program and show message box, only show message box, 
 %               or neither
 %       Message will be printed in stardard output in all cases.
+%
+% Example:
+%       print_and_show_message('Are you ok?')
+%       print_and_show_message({'Hi~', 'Are you ok?'})
+%
 % Arguments:
 %       message     - message displayed in message box
-%                   must be a string scalar or a character vector
+%                   must be a string vector or a character vector
+%                       or a cell array of character vectors
 %       varargin    - 'MTitle': Title of message box
 %                   must be a character vector
 %                   default == 'Message box'
@@ -27,12 +33,13 @@ function print_and_show_message(message, varargin)
 %       cd/print_cellstr.m
 %
 % Used by:
+%       cd/combine_sweeps.m
+%       cd/parse_atf_swd.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
 %       /home/Matlab/minEASE/detect_gapfree_events.m
 %       /home/Matlab/Kojis_Functions/compute_average_PSC_trace.m
-%       /home/Matlab/Adams_Functions/combine_sweeps.m
 %
 % File History:
 %   2018-02-14 Modified from print_or_show_message.m
