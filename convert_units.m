@@ -38,6 +38,8 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
+%       cd/plot_raw_multiunit.m
+%       cd/plot_spectrogram_multiunit.m
 %       cd/read_data_atf.m
 
 % File History:

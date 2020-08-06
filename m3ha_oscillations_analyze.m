@@ -11,6 +11,7 @@
 %       cd/plot_raster.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_scale_bar.m
+%       cd/plot_spectrogram_multiunit.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_spike_histogram.m
 %       cd/update_figure_for_corel.m
@@ -33,12 +34,15 @@
 % 2019-11-28 Changed minSpikeRateInBurstHz from 50 Hz to 100 Hz
 % 2019-12-03 Added bar insets
 % 2020-07-29 Added usage of update_slice_bases.m
+% 2020-08-05 Added plotExampleSpectrogramFlag
 
 %% Hard-coded parameters
 % Folders
 figure01Dir = fullfile('/media', 'adamX', 'm3ha', ...
                         'manuscript', 'figures', 'Figure01');
 parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+figureRebuttal1Dir = fullfile('/media', 'adamX', 'm3ha', ...
+                        'manuscript', 'figures', 'FigureRebuttal1');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
 %                       'parse_multiunit_m3ha');
 % archiveDir = parentDir;
@@ -62,15 +66,15 @@ sweepsRelToPhase2 = -19:40;         % select between -20 & 40 min
 
 % For manuscript
 figTypesForVis = {'png'};
-figTypesForCorel = {'epsc'};
+figTypesForCorel = {'png', 'epsc'};
 
 plotFigure1Individual = true;
 parseExamplesFlag = true;
-plotExampleContourFlag = true;
+plotExampleContourFlag = false; %true;
 contourXLimitsSeconds = [2, 20];
 contourWidth = 11;
 contourHeight = 3;
-plotExampleRawTracesFlag = true;
+plotExampleRawTracesFlag = false; %true;
 rawPlotLineWidth = 0.25;
 % rawSweepNumbers = [16, 56];
 rawSweepNumbers = [18, 58];
@@ -78,6 +82,12 @@ rawWidth = 8;
 rawHeight = 2.75;
 rawXLimits = [2, 15];
 rawYLimits = [-5, 5];
+plotExampleSpectrogramFlag = true;
+spectrogramSweepNumbers = [18, 58];
+spectrogramXLimits = [2, 15];
+spectrogramYLimits = [0, 1500];
+spectrogramWidth = 8;
+spectrogramHeight = 5;
 plotExampleSpikeDetectionFlag = false; %true;
 sampleXLimits = [2.5, 8.5];
 sampleSweepNumber = 16;
@@ -252,7 +262,7 @@ if plotFigure1Individual
                                 'MaxNYTicks', 4);
 
             % Save the figure
-            save_all_figtypes(fig, figBaseContour, figTypesForVis);
+            save_all_figtypes(fig, [figBaseContour, '_orig'], figTypesForVis);
 
             % Plot scale bars
             plot_scale_bar('xy', 'XBarLength', 1, 'XBarUnits', 'sec', ...
@@ -281,13 +291,13 @@ if plotFigure1Individual
 
             % Plot raw traces
             plot_raw_multiunit(parsedData, parsedParams, ...
-                            'PlotFiltered', false, 'PlotMode', 'parallel', ...
-                            'PlotStim', false, 'SweepNumbers', rawSweepNumbers, ...
-                            'XLimits', rawXLimits, 'YLimits', rawYLimits, ...
-                            'LineWidth', rawPlotLineWidth);
+                        'PlotFiltered', false, 'PlotMode', 'parallel', ...
+                        'PlotStim', false, 'SweepNumbers', rawSweepNumbers, ...
+                        'XLimits', rawXLimits, 'YLimits', rawYLimits, ...
+                        'LineWidth', rawPlotLineWidth);
 
             % Save the figure
-            save_all_figtypes(fig, figBaseRaw, figTypesForVis);
+            save_all_figtypes(fig, [figBaseRaw, '_orig'], figTypesForVis);
 
             % Plot scale bars
             plot_scale_bar('xy', 'XBarLength', 2, 'XBarUnits', 'sec', ...
@@ -299,6 +309,34 @@ if plotFigure1Individual
                             'Width', rawWidth, 'Height', rawHeight, ...
                             'RemoveTicks', true, 'RemoveLabels', true, ...
                             'RemoveRulers', true, 'RemoveTitles', true);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseRaw, figTypesForCorel);
+        end
+
+        % Plot example spectrograms
+        if plotExampleSpectrogramFlag
+            fprintf('Plotting example spectrograms for %s ...\n', fileBase);
+
+            % Create a figure base
+            figBaseRaw = fullfile(figureRebuttal1Dir, ...
+                                [fileBase, '_spectrogram_examples']);
+
+            % Create figure
+            fig = set_figure_properties('AlwaysNew', true);
+
+            % Plot raw traces
+            plot_spectrogram_multiunit(parsedData, parsedParams, ...
+                'SweepNumbers', spectrogramSweepNumbers, ...
+                'XLimits', spectrogramXLimits, 'YLimits', spectrogramYLimits);
+
+            % Save the figure
+            save_all_figtypes(fig, [figBaseRaw, '_orig'], figTypesForVis);
+
+            % Update figure for CorelDraw
+            update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                                    'Width', spectrogramWidth, ...
+                                    'Height', spectrogramHeight);
 
             % Save the figure
             save_all_figtypes(fig, figBaseRaw, figTypesForCorel);
@@ -354,7 +392,7 @@ if plotFigure1Individual
             title(['Spike Detection for ', figTitleBase]);
 
             % Save the figure
-            save_all_figtypes(fig, figBaseSpikeDet, figTypesForVis);
+            save_all_figtypes(fig, [figBaseSpikeDet, '_orig'], figTypesForVis);
 
             % Plot scale bars
             plot_scale_bar('x', 'XBarLength', 1, 'XBarUnits', 'sec', ...
@@ -387,7 +425,7 @@ if plotFigure1Individual
                         'XLimits', sampleXLimits, 'YLimits', spikeHistYLimits);
 
             % Save the figure
-            save_all_figtypes(fig, figBaseSpikeHist, figTypesForVis);
+            save_all_figtypes(fig, [figBaseSpikeHist, '_orig'], figTypesForVis);
 
             % Plot scale bars
             plot_scale_bar('x', 'XBarLength', 1, 'XBarUnits', 'sec', ...
@@ -425,7 +463,7 @@ if plotFigure1Individual
             %                 'XLimits', [], 'YLimits', []);
 
             % Save the figure
-            save_all_figtypes(fig, figBaseAcf, figTypesForVis);
+            save_all_figtypes(fig, [figBaseAcf, '_orig'], figTypesForVis);
 
             % Update figure for CorelDraw
             update_figure_for_corel(fig, 'Units', 'centimeters', ...
@@ -451,7 +489,7 @@ if plotFigure1Individual
                         'XLimits', autoCorrXLimits, 'YLimits', autoCorrYLimits);
 
             % Save the figure
-            save_all_figtypes(fig, figBaseAutoCorr, figTypesForVis);
+            save_all_figtypes(fig, [figBaseAutoCorr, '_orig'], figTypesForVis);
 
             % Update figure for CorelDraw
             update_figure_for_corel(fig, 'Units', 'centimeters', ...

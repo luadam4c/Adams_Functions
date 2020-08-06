@@ -480,7 +480,8 @@ for iPlot = 1:nSubPlots
     % Plot the appropriate trace or map
     if plotSpectrogram && iPlot == nSubPlots
         plot_spectrogram(spectDataToPlot, timeInstantsToPlot, freqHz, ...
-                        'AxesHandle', ax(iPlot), 'YLimits', spectYLimits);
+                        'AxesHandle', ax(iPlot), 'YLimits', spectYLimits, ...
+                        'PlotOnly', true);
     else
         plot(ax(iPlot), timeVecToPlot, channelValuesToPlot(:, iPlot), ...
                 'Color', 'k');

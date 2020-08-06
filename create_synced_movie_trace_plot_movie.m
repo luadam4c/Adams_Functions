@@ -285,7 +285,8 @@ for iPlot = 1:nPlots
     % Plot the appropriate trace or map
     if plotSpectrogram && iPlot == nPlots
         spect = plot_spectrogram(spectData, timeInstantsSeconds, freqHz, ...
-                            'AxesHandle', traceSubPlots(iPlot));
+                            'AxesHandle', traceSubPlots(iPlot), ...
+                            'PlotOnly', true);
     else
         traceLines(iPlot) = plot(traceSubPlots(iPlot), tVec, data(:, iPlot));
     end

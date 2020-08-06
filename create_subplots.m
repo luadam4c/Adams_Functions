@@ -89,6 +89,7 @@ function [fig, ax] = create_subplots (varargin)
 %       cd/plot_table_parallel.m
 %       cd/plot_relative_events.m
 %       cd/plot_small_chevrons.m
+%       cd/plot_spectrogram_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 

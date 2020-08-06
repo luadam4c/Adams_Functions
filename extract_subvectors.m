@@ -166,6 +166,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %       cd/plot_fitted_traces.m
 %       cd/plot_histogram.m
 %       cd/plot_relative_events.m
+%       cd/plot_spectrogram_multiunit.m
 %       cd/plot_spike_histogram.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m

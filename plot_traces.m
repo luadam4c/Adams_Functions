@@ -678,7 +678,7 @@ else
         create_labels_from_numbers(defaultTraceNumbers, 'Prefix', 'Trace #');
 end
 
-% Set the default x-axis labels
+% Set the default x-axis label
 if isempty(xLabel)
     xLabel = ['Time (', xUnits, ')'];
 end

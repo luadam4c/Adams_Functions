@@ -41,7 +41,7 @@ datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
 saveCellInfo = false;
 copyExampleFiles = false; %true;
 plotExamplesFlag = false; %true;
-plotViolinPlotsFlag = true;
+plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 archiveScriptsFlag = true;
 
@@ -127,7 +127,6 @@ if plotExamplesFlag
                             exampleYTicks, pharmLabelsLong, exampleLineWidth, ...
                             exampleHeight, exampleWidth, figTypes), ...
                         exampleCellNames);
-
 end
 
 %% Plot 2D violin plots

@@ -22,8 +22,8 @@ function wasHold = hold_on
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_jitter.m
 %       cd/plot_grouped_scatter.m
-%       cd/plot_raw_multiunit.m
 %       cd/plot_selected.m
+%       cd/plot_spectrogram.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m

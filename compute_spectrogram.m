@@ -1,30 +1,40 @@
 function [spectData, freqHz, timeInstantsSeconds] = ...
-                compute_spectrogram (eegValues, siSeconds, varargin)
+                compute_spectrogram (dataValues, siSeconds, varargin)
 %% Computes a spectrogram
 % Usage: [spectData, freqHz, timeInstantsSeconds] = ...
-%               compute_spectrogram (eegValues, siSeconds, varargin)
+%               compute_spectrogram (dataValues, siSeconds, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       [data, freq, time] = compute_spectrogram(rand(100, 1), 0.1);
+%       [data, freq, time] = compute_spectrogram(rand(1000, 1), 0.005);
+%       plot_spectrogram(data, time, freq);
 %
 % Outputs:
-%       spectData               - TODO: Description of spectData
-%                               specified as a TODO
-%       freqHz                  - TODO: Description of freqHz
-%                               specified as a TODO
-%       timeInstantsSeconds     - TODO: Description of timeInstantsSeconds
-%                               specified as a TODO
+%       spectData               - short-time Fourier transform
+%                                   in [data units x seconds]
+%                               specified as a numeric matrix
+%       freqHz                  - cyclical frequencies in Hz
+%                               specified as a numeric vector
+%       timeInstantsSeconds     - midpoints of each time bin in seconds
+%                               specified as a numeric vector
 %
 % Arguments:
-%       eegValues   - TODO: Description of eegValues
-%                   must be a TODO
-%       siSeconds   - TODO: Description of siSeconds
-%                   must be a TODO
+%       dataValues  - data values
+%                   must be a numeric vector readable 
+%                       by the spectrogram() function
+%       siSeconds   - sampling interval in seconds
+%                   must be a positive scalar
 %       varargin    - 'BinWidthSeconds': bin width in seconds
 %                   must be a numeric scalar
 %                   default == 1
+%                   - 'OverlapSeconds': bin overlap in seconds
+%                   must be empty or a numeric scalar
+%                   default == half of bin width
+%                   - 'StartTimeSeconds': data start time in seconds
+%                   must be a nonnegative scalar
+%                   default == 0
 %                   - Any other parameter-value pair for spectrogram()
 %
 % Requires:
@@ -33,18 +43,20 @@ function [spectData, freqHz, timeInstantsSeconds] = ...
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/plot_spectrogram_multiunit.m
 %       cd/plot_traces_spike2_mat.m
 
 % File History:
 % 2019-10-15 Moved from plot_traces_spike2_mat.m
-% 
+% 2020-08-05 Made 'OverlapSeconds' an optional argument
+% 2020-08-05 Made 'StartTimeSeconds' an optional argument
 
 %% Hard-coded parameters
-% TODO: Make optional arguments
-overlapSeconds = [];
 
 %% Default values for optional arguments
 binWidthSecondsDefault = 1;     % 1 second bins by default
+overlapSecondsDefault = [];     % set later
+startTimeSecondsDefault = 0;    % data starts at 0 seconds by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -60,16 +72,23 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'eegValues');
-addRequired(iP, 'siSeconds');
+addRequired(iP, 'dataValues');
+addRequired(iP, 'siSeconds', ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'BinWidthSeconds', binWidthSecondsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'OverlapSeconds', overlapSecondsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'StartTimeSeconds', startTimeSecondsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 
 % Read from the Input Parser
-parse(iP, eegValues, siSeconds, varargin{:});
+parse(iP, dataValues, siSeconds, varargin{:});
 binWidthSeconds = iP.Results.BinWidthSeconds;
+overlapSeconds = iP.Results.OverlapSeconds;
+startTimeSeconds = iP.Results.StartTimeSeconds;
 
 % Keep unmatched arguments for the spectrogram() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -91,9 +110,14 @@ samplingFreqHz = 1 / siSeconds;
 %% Do the job
 % Compute the spectrogram
 %   Note: time instants are the midpoints of each time window
-[spectData, freqHz, timeInstantsSeconds] = ...
-    spectrogram(eegValues, binWidthSamples, ...
+%           the spectrogram values are complex values 
+%           in [data units x seconds]
+[spectData, freqHz, timeInstantsSecondsRel] = ...
+    spectrogram(dataValues, binWidthSamples, ...
                 overlapSamples, [], samplingFreqHz, otherArguments{:});
+
+% Add start time to time instants
+timeInstantsSeconds = timeInstantsSecondsRel + startTimeSeconds;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

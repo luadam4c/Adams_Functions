@@ -543,7 +543,8 @@ There are 2 MATLAB scripts in this directory:
 - [**plot_selected.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_selected.m): Plots selected values
 - [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Plots signals (TO BE MERGED WITH plot_traces.m)
 - [**plot_small_chevrons.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_small_chevrons.m): Plots two chevron tables
-- [**plot_spectrogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spectrogram.m): Plots the spectrogram data computed by compute_spectrogram.m
+- [**plot_spectrogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spectrogram.m): Plots the magnitude of the spectrogram data computed by compute_spectrogram.m
+- [**plot_spectrogram_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spectrogram_multiunit.m): Plots spectrograms from parsed multiunit data
 - [**plot_spike_density_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spike_density_multiunit.m): Plots a spike density plot from parsed multiunit data
 - [**plot_spike_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spike_histogram.m): Plots a spike histogram from the results of compute_spike_histogram.m
 - [**plot_struct.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_struct.m): Plot all fields in a structure array as tuning curves

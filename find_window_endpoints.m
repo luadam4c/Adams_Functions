@@ -75,6 +75,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_ipsc.m
 %       cd/plot_fitted_traces.m
+%       cd/plot_spectrogram_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 

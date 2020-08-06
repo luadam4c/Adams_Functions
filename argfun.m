@@ -110,6 +110,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_raw_multiunit.m
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_relative_events.m
+%       cd/plot_spectrogram_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m
 %       cd/plot_tuning_curve.m

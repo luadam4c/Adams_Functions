@@ -53,9 +53,9 @@ function handles = plot_raw_multiunit (parsedData, parsedParams, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/compute_axis_limits.m
 %       cd/compute_index_boundaries.m
+%       cd/convert_units.m
 %       cd/extract_common_prefix.m
-%       cd/hold_off.m
-%       cd/hold_on.m
+%       cd/extract_fileparts.m
 %       cd/plot_traces.m
 %       cd/plot_vertical_line.m
 %       cd/plot_horizontal_line.m
@@ -68,9 +68,9 @@ function handles = plot_raw_multiunit (parsedData, parsedParams, varargin)
 % 2019-12-02 Moved from parse_multiunit.m
 % 2019-12-02 Added 'SweepNumbers' as an optional argument
 % 2019-12-02 Added 'YLimits' as an optional argument
+% 2020-08-05 Now uses convert_units.m
 
 %% Hard-coded constants
-MS_PER_S = 1000;
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'staggered'};
@@ -155,8 +155,7 @@ phaseBoundaries = compute_index_boundaries('Grouping', phaseVector, ...
 nSweeps = height(parsedParams);
 
 % Convert time vector to seconds
-% TODO: Use convert_units.m instead
-tVecsSec = transform_vectors(tVecs, MS_PER_S, 'divide');
+tVecsSec = convert_units(tVecs, 'ms', 's');
 
 % Decide on x axis label
 xLabel = 'Time (s)';
@@ -179,8 +178,11 @@ end
 % Decide on figure title(s)
 switch plotMode
     case 'parallel'
+        % Extract the file bases
+        fileBase = extract_fileparts(figPathBase, 'base');
+
         % Create figure titles
-        titleBase = replace(figPathBase, '_', '\_');
+        titleBase = replace(fileBase, '_', '\_');
         figTitle = 'suppress';
         figSubTitles = strcat(titlePrefix, {' for '}, titleBase);
     case  {'staggered', 'overlapped'}
@@ -222,9 +224,6 @@ else
 end
 
 %% Do the job
-% Hold on
-wasHold = hold_on;
-
 % Plot traces
 handles = plot_traces(tVecsSec, dataToPlot, 'DataToCompare', dataToCompare, ...
             'Verbose', false, 'PlotMode', plotMode, ...
@@ -248,9 +247,6 @@ if ~isempty(phaseBoundaries) && strcmp(plotMode, 'staggered')
     horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
                                     'LineStyle', '--', 'LineWidth', 2);
 end
-
-% Hold off
-hold_off(wasHold);
 
 %% Output results
 if plotStim
