@@ -189,8 +189,8 @@ voltageVsOpdFig5YLimits = [-95, -45];
 voltageVsOpdFig5YTickLocs = [];
 voltageVsOpdFig5ToAnnotate = true;
 
-voltageVsOpdTauhFigWidth = 7.7 * 2;
-voltageVsOpdTauhFigHeight = 7 * 3;
+voltageVsOpdTauhFigWidth = 7.7;
+voltageVsOpdTauhFigHeight = 7;
 voltageVsOpdTauhXLimits = [1e-7, 1e0];
 voltageVsOpdTauhYLimits = [-95, -45];
 voltageVsOpdTauhYTickLocs = [];
@@ -441,7 +441,7 @@ if plotVoltageVsOpdTauh
                     voltageVsOpdTimeLimits1, voltageVsOpdSiMs, ...
                     voltageVsOpdTauhXLimits, voltageVsOpdTauhYLimits, ...
                     voltageVsOpdTauhYTickLocs, voltageVsOpdTauhToAnnotate, ...
-                    colorMapPharm, 'voltageVsOpd1'), ...
+                    colorMapPharm, 'voltageVsOpd0'), ...
                 exampleLabelsModeAll{iMode}, outFoldersModeAll{iMode});
     end
 end
@@ -736,7 +736,7 @@ figPathBaseConcavityVsSlopeSimple = ...
 
 % Create and save plot
 switch plotType
-case 'voltageVsOpd1'
+case {'voltageVsOpd0', 'voltageVsOpd1'}
     % Create the figure
     figVoltVsOpdOrig = set_figure_properties('AlwaysNew', true);
 

@@ -175,13 +175,14 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2020-05-15 Now matches file bases in an exact manner
 % 2020-05-16 Now matches to recorde time points for voltageVsOpd plots 
 % 2020-05-16 Changed filtWidthMs for voltageVsOpd plots from 30 ms to 5 ms
+% 2020-08-05 Added voltageVsOpd0
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
                     'essential', 'somaVoltage', ...
                     'allVoltages', 'allTotalCurrents', ...
                     'allComponentCurrents', 'allITproperties', ...
-                    'dend2ITproperties', 'm2h', ...
+                    'dend2ITproperties', 'm2h', 'voltageVsOpd0', ...
                     'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'};
 validBuildModes = {'', 'active', 'passive'};
 validSimModes = {'', 'active', 'passive'};
@@ -342,7 +343,7 @@ switch plotType
             'allTotalCurrents', 'allComponentCurrents', ...
             'allITproperties', 'm2h', 'dend2ITproperties'}
         toImportRecorded = false;
-    case {'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
+    case {'voltageVsOpd0', 'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
         toImportRecorded = set_default_flag([], isempty(tVecs));
 end
 
@@ -441,7 +442,7 @@ if isempty(colorMap)
         case {'overlapped', 'essential', 'somaVoltage', ...
                 'allVoltages', 'allTotalCurrents', ...
                 'allComponentCurrents', 'allITproperties', ...
-                'dend2ITproperties', 'm2h', ...
+                'dend2ITproperties', 'm2h', 'voltageVsOpd0', ...
                 'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
             colorMap = decide_on_colormap([], 4);
             if nFiles > nRows
@@ -466,7 +467,7 @@ if isempty(lineWidth)
         case {'overlapped', 'essential', 'somaVoltage', ...
                 'allVoltages', 'allTotalCurrents', ...
                 'allComponentCurrents', 'allITproperties', ...
-                'dend2ITproperties', 'm2h', ...
+                'dend2ITproperties', 'm2h', 'voltageVsOpd0', ...
                 'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
             lineWidth = lineWidthParallel;
         otherwise
@@ -576,7 +577,7 @@ switch plotType
         handles = m3ha_plot_m2h(simData, buildMode, ...
                                     xLimits, colorMap, lineWidth, ...
                                     expStr, expStrForTitle, otherArguments);
-    case {'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
+    case {'voltageVsOpd0', 'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
         handles = m3ha_plot_voltage_vs_opd(simData, buildMode, ...
                                 timeLimits, xLimits, colorMap, lineWidth, ...
                                 expStr, expStrForTitle, ...
@@ -1338,7 +1339,9 @@ nTraces = numel(simData);
 
 % Set default flags
 % TODO: padRemaining not working yet
-retrictToLts = set_default_flag([], strcmp(plotType, 'voltageVsOpd1') || ...
+plotVoltageVsOpdOnly = set_default_flag([], strcmp(plotType, 'voltageVsOpd0'));
+retrictToLts = set_default_flag([], strcmp(plotType, 'voltageVsOpd0') || ...
+                                    strcmp(plotType, 'voltageVsOpd1') || ...
                                     strcmp(plotType, 'voltageVsOpd2') || ...
                                     strcmp(plotType, 'voltageVsOpd3'));
 plotPrePostForTimePlots = ...
@@ -1347,6 +1350,7 @@ plotPrePostForTimePlots = ...
 plotPrePostForPhasePlots = set_default_flag([], false);
 padRemaining = set_default_flag([], strcmp(plotType, 'voltageVsOpd2'));
 plotSelected = set_default_flag(plotSelected, ...
+                                    strcmp(plotType, 'voltageVsOpd0') || ...
                                     strcmp(plotType, 'voltageVsOpd1'));
 plotLtsWindow = set_default_flag([], strcmp(plotType, 'voltageVsOpd1'));
 plotSupTitle = set_default_flag([], strcmp(plotType, 'voltageVsOpd1'));
@@ -1667,7 +1671,9 @@ end
 fprintf('Plotting figure of voltage vs m2hdiff for %s ...\n', expStr);
 
 % Create subplots and link axes
-if plotPhasePlotsOnly
+if plotVoltageVsOpdOnly
+    % Do nothing
+elseif plotPhasePlotsOnly
     % Create subplots
     [fig, ax] = create_subplots(2, 2, 'FigExpansion', [2, 2]);
 
@@ -1687,7 +1693,7 @@ else
 end
 
 %% Plot voltage vs time
-if ~plotPhasePlotsOnly
+if ~plotVoltageVsOpdOnly && ~plotPhasePlotsOnly
     subplot(ax(1));
     if plotPrePostForTimePlots
         handles.ax1Stuff.tracesPre = ...
@@ -1738,7 +1744,7 @@ if ~plotPhasePlotsOnly
 end
 
 %% Plot m and minf vs time
-if ~plotPhasePlotsOnly
+if ~plotVoltageVsOpdOnly && ~plotPhasePlotsOnly
     subplot(ax(2));
     if plotPrePostForTimePlots
         handles.ax2Stuff.tracesPre = ...
@@ -1805,7 +1811,7 @@ if ~plotPhasePlotsOnly
 end
 
 %% Plot h and hinf vs time
-if ~plotPhasePlotsOnly
+if ~plotVoltageVsOpdOnly && ~plotPhasePlotsOnly
     subplot(ax(3));
     if plotPrePostForTimePlots
         handles.ax3Stuff.tracesPre = ...
@@ -1872,7 +1878,7 @@ if ~plotPhasePlotsOnly
 end
 
 %% Plot m2hdiff vs time
-if ~plotPhasePlotsOnly
+if ~plotVoltageVsOpdOnly && ~plotPhasePlotsOnly
     subplot(ax(4));
     if plotPrePostForTimePlots
         handles.ax4Stuff.tracesPre = ...
@@ -1908,8 +1914,10 @@ if ~plotPhasePlotsOnly
 end
 
 %% Plot voltage vs m2hdiff
-if ~plotPhasePlotsOnly
-    subplot(ax(5));
+if ~plotPhasePlotsOnly || plotVoltageVsOpdOnly
+    if ~plotVoltageVsOpdOnly
+        subplot(ax(5));
+    end
     handles.ax5Stuff.traces = ...
         plot_traces(itm2hDiffMain, vVecsMain, 'XLimits', xLimits, ...
                 'RestrictToXLimits', false, ...
@@ -1929,7 +1937,7 @@ if ~plotPhasePlotsOnly
 end
 
 %% Plot otherYVecs vs otherXVecs
-if plotPhasePlotsOnly
+if plotPhasePlotsOnly && ~plotVoltageVsOpdOnly
     handles.ax1Stuff = ...
         plot_phase_plot(ax(1), colorMap, ...
                     colorMapPrePost, markerSizePrePost, ...                        
