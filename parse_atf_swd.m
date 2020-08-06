@@ -72,6 +72,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 % 2020-06-26 Added 'ParseFeatures' as an optional argument
 % 2020-07-15 Now generates an output file even there is no event recorded
 % 2020-07-23 Added 'traceStartTime' in output table
+% 2020-08-06 Now uses print_and_show_message.m
 
 %% Hard-coded constants
 MS_PER_S = 1000;
@@ -235,7 +236,7 @@ else
             sprintf('Please remove these lines from %s:\n', ...
                     originalEventFile), ...
             sprintf('\t%s\n', create_label_from_sequence(rowsOverlapPrev)), ...
-            sprintf('\n'};
+            '\n'};
 
         % Show message in both standard output and dialog box
         print_and_show_message(message, 'Icon', 'warn', 'MessageMode', 'show');
