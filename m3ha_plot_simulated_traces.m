@@ -76,6 +76,9 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                   - 'ExpStr': experiment string file names
 %                   must be a character array
 %                   default == extract_common_prefix(fileNames)
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
+%                   default == uses experiment string
 %                   - 'tVecs': time vectors to match
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == [] (none provided)
@@ -137,7 +140,8 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
 %       cd/set_default_flag.m
-%       cd/sscanf_full.m
+%       cd/sscanf_full.
+%       cd/suptitle_custom.m
 %       cd/unique_custom.m
 %
 % Used by:
@@ -236,6 +240,7 @@ timeLimitsDefault = [];         % set later
 xLimitsDefault = [];            % set later
 outFolderDefault = '';          % set later
 expStrDefault = '';             % set later
+figTitleDefault = '';           % set later
 tVecsDefault = [];
 vVecsRecDefault = [];
 iVecsRecDefault = [];
@@ -284,6 +289,8 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ExpStr', expStrDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
                 ['tVecs must be either a numeric array', ...
@@ -325,6 +332,7 @@ timeLimits = iP.Results.TimeLimits;
 xLimits = iP.Results.XLimits;
 outFolder = iP.Results.OutFolder;
 expStr = iP.Results.ExpStr;
+figTitle = iP.Results.FigTitle;
 tVecs = iP.Results.tVecs;
 vVecsRec = iP.Results.vVecsRec;
 iVecsRec = iP.Results.iVecsRec;
@@ -406,6 +414,10 @@ end
 
 % Create an experiment identifier for title
 expStrForTitle = replace(expStr, '_', '\_');
+
+if isempty(figTitle)
+    figTitle = expStrForTitle;
+end
 
 % Decide on timeLimits
 if isempty(timeLimits)
@@ -582,7 +594,7 @@ switch plotType
     case {'voltageVsOpd0', 'voltageVsOpd1', 'voltageVsOpd2', 'voltageVsOpd3'}
         handles = m3ha_plot_voltage_vs_opd(simData, buildMode, ...
                                 timeLimits, xLimits, colorMap, lineWidth, ...
-                                expStr, expStrForTitle, ...
+                                expStr, figTitle, ...
                                 plotType, plotSelected, otherArguments);
     otherwise
         error('plotType unrecognized!');
@@ -1273,7 +1285,7 @@ handles.handlesSteadyState = handlesSteadyState;
 
 function handles = m3ha_plot_voltage_vs_opd (simData, buildMode, ...
                                 timeLimits, xLimits, colorMap, lineWidth, ...
-                                expStr, expStrForTitle, ...
+                                expStr, figTitle, ...
                                 plotType, plotSelected, otherArguments)
 
 %% Hard-coded parameters
@@ -1302,9 +1314,9 @@ if isempty(xLimits)
 end
 
 % Legends
-itmLegendLocation = 'northeast';
+itmLegendLocation = 'best';
 itmLegendLabels = {'Instantaneous', 'Steady-State'};
-ithLegendLocation = 'northeast';
+ithLegendLocation = 'best';
 ithLegendLabels = {'Instantaneous', 'Steady-State'};
 
 % Labels
@@ -1355,15 +1367,16 @@ plotSelected = set_default_flag(plotSelected, ...
                                     strcmp(plotType, 'voltageVsOpd0') || ...
                                     strcmp(plotType, 'voltageVsOpd1'));
 plotLtsWindow = set_default_flag([], strcmp(plotType, 'voltageVsOpd1'));
-plotSupTitle = set_default_flag([], strcmp(plotType, 'voltageVsOpd1'));
+plotSupTitle = set_default_flag([], strcmp(plotType, 'voltageVsOpd1') || ...
+                                    strcmp(plotType, 'voltageVsOpd2'));
 
 plotPhasePlotsOnly = set_default_flag([], strcmp(plotType, 'voltageVsOpd3'));
 
 % Create other color maps
-colorMapFaded = decide_on_colormap(colorMap, nTraces, 'FadePercentage', 30);
+colorMapFaded = decide_on_colormap(colorMap, nTraces, 'FadePercentage', 70);
 barColorMap = decide_on_colormap('DarkGreen', 1);
 flankColorMap = decide_on_colormap(barColorMap, 'OriginalNColors', true, ...
-                                    'FadePercentage', 30);
+                                    'FadePercentage', 70);
 
 % Decide on the color map and marker sizes for hinf and minf
 if strcmpi(plotType, 'voltageVsOpd1')
@@ -1437,7 +1450,7 @@ logItm2hDiffSmoothed = movingaveragefilter(logItm2hDiff, filtWidthMs, siMs);
 aboveThreshold = transpose(max(itm2hDiff, [], 1) >= itm2hDiffThreshold);
 colorMap2 = match_positions({'Black', 'Red'}, [false, true], aboveThreshold);
 colorMap2 = decide_on_colormap(colorMap2, nTraces);
-colorMapFaded2 = decide_on_colormap(colorMap2, nTraces, 'FadePercentage', 30);
+colorMapFaded2 = decide_on_colormap(colorMap2, nTraces, 'FadePercentage', 70);
 colorMapPrePost2 = colorMapFaded2;
 
 %% Decide on y axis vectors for 4th subplot
@@ -2023,41 +2036,53 @@ end
 
 %% Create overarching title
 if plotSupTitle && ~plotVoltageVsOpdOnly
-    suptitle(expStrForTitle);
+    suptitle_custom(figTitle);
 end
 
 %% Special cases
 % For D101310_aft_ipscr movies only
 if contains(expStr, 'D101310_aft_ipscr')
     % Annotate 'LTS'
-    textArrows(1) = annotation('textarrow', [0.4, 0.37], [0.95, 0.95], ...
+    % textArrows(1) = annotation('textarrow', [0.4, 0.37], [0.95, 0.95], ...
+    %                             'String', 'LTS');
+    textArrows(1) = annotation('textarrow', [0.4, 0.37], [0.925, 0.925], ...
                                 'String', 'LTS');
 
     % Annotate 'No LTS'
-    textArrows(2) = annotation('textarrow', [0.42, 0.37], [0.92, 0.885], ...
+    % textArrows(2) = annotation('textarrow', [0.42, 0.37], [0.92, 0.885], ...
+    %                             'String', 'No LTS');
+    textArrows(2) = annotation('textarrow', [0.42, 0.37], [0.895, 0.86], ...
                                 'String', 'No LTS');
 
     % Annotate 'Positive Concavity'
-    textArrows(3) = annotation('textarrow', [0.33, 0.34], [0.205, 0.17], ...
+    % textArrows(3) = annotation('textarrow', [0.33, 0.34], [0.205, 0.17], ...
+    %                             'String', 'Positive Concavity');
+    textArrows(3) = annotation('textarrow', [0.33, 0.34], [0.20, 0.165], ...
                                 'String', 'Positive Concavity');
 
     % Annotate 'Negative Concavity'
-    textArrows(4) = annotation('textarrow', [0.35, 0.36], [0.08, 0.14], ...
+    % textArrows(4) = annotation('textarrow', [0.35, 0.36], [0.08, 0.14], ...
+    %                             'String', 'Negative Concavity');
+    textArrows(4) = annotation('textarrow', [0.35, 0.36], [0.075, 0.135], ...
                                 'String', 'Negative Concavity');
 
-    % Move legend location
-    lgds = findobj(gcf, 'Type', 'Legend');
-    set(lgds(3), 'Location', 'northwest');
+    % % Move legend location
+    % lgds = findobj(gcf, 'Type', 'Legend');
+    % set(lgds(2), 'Location', 'northwest');
 end
 
 % For dual_vary_tau movies only
 if contains(expStr, 'dual_vary_tau')
     % Annotate 'LTS'
-    textArrows(1) = annotation('textarrow', [0.35, 0.33], [0.94, 0.94], ...
+    % textArrows(1) = annotation('textarrow', [0.35, 0.33], [0.94, 0.94], ...
+    %                             'String', 'LTS');
+    textArrows(1) = annotation('textarrow', [0.35, 0.33], [0.915, 0.915], ...
                                 'String', 'LTS');
 
     % Annotate 'No LTS'
-    textArrows(2) = annotation('textarrow', [0.37, 0.34], [0.91, 0.9], ...
+    % textArrows(2) = annotation('textarrow', [0.37, 0.34], [0.91, 0.9], ...
+    %                             'String', 'No LTS');
+    textArrows(2) = annotation('textarrow', [0.37, 0.34], [0.885, 0.875], ...
                                 'String', 'No LTS');
 
     % Annotate 'Positive Concavity'

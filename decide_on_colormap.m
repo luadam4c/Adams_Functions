@@ -51,6 +51,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       cd/char2rgb.m
 %       cd/create_colormap.m
 %       cd/create_error_for_nargin.m
+%       cd/iscellnumericvector.m
 %       cd/match_row_count.m
 %       cd/struct2arglist.m
 %
@@ -83,6 +84,8 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % 2020-04-20 Added 'DarkPercentage' as an optional argument
 % 2020-04-20 Added 'FadePercentage' as an optional argument
 % 2020-04-26 Fixed the case when nColors is zero
+% 2020-08-06 Fixed the case when colorMap is a cell array of numeric vectors
+% 2020-08-06 Fixed the definition of DarkPercentage and FadePercentage
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
@@ -182,16 +185,19 @@ elseif isstring(colorMap) || iscellstr(colorMap)
     
     % Vertically concatenate them
     colorMap = vertcat(colorMap{:});
+elseif iscellnumericvector(colorMap)
+    % Vertically concatenate them
+    colorMap = vertcat(colorMap{:});
 end
 
 % Dark out if requested
 if ~isempty(darkPercentage)
-    colorMap = colorMap .* (darkPercentage / 100);
+    colorMap = colorMap .* (1 - darkPercentage / 100);
 end
 
 % Fade out if requested
 if ~isempty(fadePercentage)
-    colorMap = WHITE - (WHITE - colorMap) * (fadePercentage / 100);
+    colorMap = WHITE - (WHITE - colorMap) * (1 - fadePercentage / 100);
 end
 
 % Match the number of rows in the color map to nColors
@@ -209,6 +215,13 @@ end
 
 %{
 OLD CODE:
+
+if iscell(colorMap)
+    colorMap = cellfun(@(x) WHITE - (WHITE - x) * ...
+                        (fadePercentage / 100), ...
+                        colorMap, 'UniformOutput', false);
+else
+end
 
 %}
 

@@ -28,6 +28,8 @@
 % 2020-04-13 Added plotVoltageVsOpdFig5
 % 2020-05-04 Added createPlotMovie
 % 2020-08-04 Splitted Figure06 to Figure06 and Figure07
+% 2020-08-06 Updated pharmLabelsLong
+% 2020-08-06 Updated legend placement in movies
 
 %% Hard-coded parameters
 % Flags
@@ -50,12 +52,12 @@ plotM2hTauh = false; %true;
 plotM2hGabab = false; %true;
 
 plotVoltageVsOpdFig5 = false; %true;
-plotVoltageVsOpdTauh = true;
+plotVoltageVsOpdTauh = false; %true;
 plotVoltageVsOpdGabab = false; %true;
 
-createPlotMovieFig5 = false; %true;
+createPlotMovieFig5 = true;
 createPlotMovieTauh = false;
-createPlotMovieGabab = false; %true;
+createPlotMovieGabab = true;
 
 createPhasePlotOnlyMovieFig5 = false; %true;
 createPhasePlotOnlyMovieTauh = false;
@@ -203,13 +205,13 @@ voltageVsOpdGababYLimits = [-95, -45];
 voltageVsOpdGababYTickLocs = [];
 voltageVsOpdGababToAnnotate = false;
 
-pharmLabelsLong = {'{\it s}Control'; '{\it s}GAT1-Block'; ...
-                    '{\it s}GAT3-Block'; '{\it s}Dual-Block'};
+pharmLabelsLong = {'{\it sim}Control'; '{\it sim}GAT1-Block'; ...
+                    '{\it sim}GAT3-Block'; '{\it sim}Dual-Block'};
 traceLabelsFig5 = pharmLabelsLong;
 traceLabelsTauh = pharmLabelsLong;
 traceLabelsGabab = {};
-legendLocationFig5 = 'southeast';
-legendLocationTauh = 'southeast';
+legendLocationFig5 = 'best';
+legendLocationTauh = 'best';
 legendLocationGabab = 'suppress';
 
 figTypes = {'png', 'epsc'};
@@ -716,7 +718,8 @@ nSamples = floor(diff(timeLimits) / siMs);
 tVecToMatch = create_time_vectors(nSamples, 'TimeStart', timeLimits(1), ...
                             'SamplingIntervalMs', siMs, 'TimeUnits', 'ms');
 plotMarkerSize = 3;
-fiSeconds = (siMs / MS_PER_S) * 100;            % play at 1/100 x speed
+% fiSeconds = (siMs / MS_PER_S) * 100;            % play at 1/100 x speed
+fiSeconds = (siMs / MS_PER_S) * 50;            % play at 1/50 x speed
 
 % Create figure path bases
 figPathBaseVoltVsOpd = fullfile(outFolder, [expStr, '_voltageVsOpd']);
@@ -779,9 +782,21 @@ case {'voltageVsOpd0', 'voltageVsOpd1'}
     % Save the figure
     save_all_figtypes(figVoltVsOpdOrig, figPathBaseVoltVsOpdCompressed, ...
                         figTypes);
-case {'voltageVsOpd2', 'voltageVsOpd3'}
+case {'voltageVsOpd2', 'voltageVsOpd3'}    
     % Create the figure
     figMovie1 = set_figure_properties('AlwaysNew', true);
+
+    % Decide on figure title
+    if contains(expStr, 'D101310_aft_ipscr')
+        figTitle = ['Voltage and T channel gating trajectories are ', ...
+                    'different following distinct GABA_B IPSCs'];
+    elseif contains(expStr, 'dual_vary_tau')
+        figTitle = ['Voltage and T channel gating trajectories ', ...
+                    'change as {\it sim}Dual-Block waveform time ', ...
+                    'constants are varied'];
+    else
+        figTitle = '';
+    end
 
     % Plot traces
     handles = m3ha_plot_simulated_traces('Directory', directory, ...
@@ -790,8 +805,14 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
                     'XLimits', xLimits, 'YLimits', yLimits, ...
                     'ColorMap', colorMap, 'LineStyle', 'none', ...
                     'tVecs', tVecToMatch, 'Marker', '.', ...
-                    'PlotSelected', true, 'LegendLocation', legendLocation, ...
-                    'TraceLabels', traceLabels);
+                    'PlotSelected', true, 'FigTitle', figTitle);
+
+    % Plot legend on first subplot
+    if ~strcmp(legendLocation, 'suppress')
+        ax1 = handles.ax(1);
+        plots = handles.ax1Stuff.traces.plotsData;
+        legend(ax1, plots, traceLabels, 'Location', legendLocation);
+    end
 
     % Decide on movie file base
     switch plotType
@@ -814,8 +835,14 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
                     'XLimits', xLimits, 'YLimits', yLimits, ...
                     'ColorMap', colorMap, 'LineStyle', 'none', ...
                     'tVecs', tVecToMatch, 'Marker', '.', ...
-                    'PlotSelected', true, 'LegendLocation', legendLocation, ...
-                    'TraceLabels', traceLabels);
+                    'PlotSelected', true, 'FigTitle', figTitle);
+
+    % Plot legend on first subplot
+    if ~strcmp(legendLocation, 'suppress')
+        ax1 = handles.ax(1);
+        plots = handles.ax1Stuff.traces.plotsData;
+        legend(ax1, plots, traceLabels, 'Location', legendLocation);
+    end
 
     % Decide on movie file base
     switch plotType
@@ -845,15 +872,51 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
     % Create the figure
     figMovie3 = set_figure_properties('AlwaysNew', true);
 
+    % Decide on figure title
+    if contains(expStr, 'D101310_aft_ipscr')
+        figTitle = ['Voltage and T channel gating trajectories are ', ...
+                    'different following {\it sim}GAT3-Block ', ...
+                    'vs {\it sim}Dual-Block'];
+    elseif contains(expStr, 'dual_vary_tau')
+        figTitle = ['Voltage and T channel gating trajectories ', ...
+                'are different for two {\it sim}Dual-Block time constants'];
+    else
+        figTitle = '';
+    end
+
+    % Decide on colors to keep
+    if contains(expStr, 'D101310_aft_ipscr')
+        nColors = 4;
+        iColorsToKeep = 3:4;
+        darkPercentage = [];
+    elseif contains(expStr, 'dual_vary_tau')
+        % nColors = 17;
+        % iColorsToKeep = 15:16;
+        nColors = 9;
+        iColorsToKeep = 7:8;
+        darkPercentage = 25;
+    end
+
+    % Decide on the color map
+    colorMapOrig = decide_on_colormap(colorMap, nColors, ...
+                        'DarkPercentage', darkPercentage, ...
+                        'ForceCellOutput', true);
+
     % Plot traces
     handles = m3ha_plot_simulated_traces('Directory', directory, ...
                     'ExpStr', expStr, 'PlotType', plotType, ...
                     'FigHandle', figMovie3, 'TimeLimits', timeLimits, ...
                     'XLimits', xLimits, 'YLimits', yLimits, ...
-                    'ColorMap', colorMap, 'LineStyle', 'none', ...
+                    'ColorMap', colorMapOrig, 'LineStyle', 'none', ...
                     'tVecs', tVecToMatch, 'Marker', '.', ...
-                    'PlotSelected', true, 'LegendLocation', legendLocation, ...
-                    'TraceLabels', traceLabels);
+                    'PlotSelected', true, 'FigTitle', figTitle);
+
+    % Plot legend on first subplot
+    if ~strcmp(legendLocation, 'suppress')
+        ax1 = handles.ax(1);
+        plots = handles.ax1Stuff.traces.plotsData;
+        legend(ax1, plots, traceLabels, 'Location', legendLocation);
+    end
 
     % Decide on movie file base
     switch plotType
@@ -867,27 +930,10 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
     lines = findobj(figMovie3, 'Type', 'Line');
     colors = extract_fields(lines, 'Color');
     if contains(expStr, 'D101310_aft_ipscr') || contains(expStr, 'dual_vary_tau')
-        if contains(expStr, 'D101310_aft_ipscr')
-            nColors = 4;
-            iColorsToKeep = 3:4;
-        else
-            % nColors = 17;
-            % iColorsToKeep = 15:16;
-            nColors = 9;
-            iColorsToKeep = 7:8;
-        end
-        colorMapOrig = decide_on_colormap(colorMap, nColors, ...
-                            'ForceCellOutput', true);
-        colorMapFaded = decide_on_colormap(colorMap, nColors, ...
-                            'FadePercentage', 30, 'ForceCellOutput', true);
+        colorMapFaded = decide_on_colormap(colorMapOrig, nColors, ...
+                            'FadePercentage', 70, 'ForceCellOutput', true);
         toRemove = ~ismember_custom(colors, [colorMapOrig(iColorsToKeep); ...
                                             colorMapFaded(iColorsToKeep)]);
-
-        if contains(expStr, 'D101310_aft_ipscr')
-            % Set pharm legend to autoupdate
-            lgds = findobj(gcf, 'Type', 'Legend');
-            set(lgds(1), 'AutoUpdate', 'on');
-        end
 
         delete(lines(toRemove));
 
@@ -897,7 +943,8 @@ case {'voltageVsOpd2', 'voltageVsOpd3'}
             delete(colorBar);
 
             % Create new legend
-            traces = handles.ax5Stuff.traces.plotsData;
+            % traces = handles.ax5Stuff.traces.plotsData;
+            traces = handles.ax1Stuff.traces.plotsData;
             legend(traces(iColorsToKeep), ...
                     {'\tau = 2.0 sec', '\tau = 2.3 sec'}, ...
                     'Location', 'southeast');
@@ -929,6 +976,12 @@ end
 
 %{
 OLD CODE:
+
+% Set pharm legend to autoupdate
+if contains(expStr, 'D101310_aft_ipscr')
+    lgds = findobj(gcf, 'Type', 'Legend');
+    set(lgds(1), 'AutoUpdate', 'on');
+end
 
 %}
 
