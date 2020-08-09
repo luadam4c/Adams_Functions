@@ -28,6 +28,9 @@ function print_and_show_message(message, varargin)
 %                                   message box
 %                       'none'  - neither stop program nor show a message box
 %                   default == 'wait'
+%                   - 'CreateMode' - how message boxes are created
+%                   see the documentation for the msgbox() function
+%                   default == 'modal'
 % 
 % Requires:
 %       cd/print_cellstr.m
@@ -57,6 +60,8 @@ iconDefault = 'none';               % default : Does not display an icon with
                                     %   with message box
 messageModeDefault = 'wait';        % default : Pauses program and displays
                                     %   message box
+createModeDefault = 'modal';        % default: create only one message box
+                                    %   with the same title
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,11 +84,13 @@ addParameter(iP, 'MTitle', mTitleDefault, @ischar);
 addParameter(iP, 'Icon', iconDefault, @ischar);
 addParameter(iP, 'MessageMode', messageModeDefault, ...
     @(x) any(validatestring(x, validMessageModes)));
+addParameter(iP, 'CreateMode', createModeDefault);
 
 % Read from the Input Parser
 parse(iP, message, varargin{:});
 mTitle = iP.Results.MTitle;
 icon = iP.Results.Icon;
+createMode = iP.Results.CreateMode;
 
 % Match possibly ambiguous strings to valid strings
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes); 
@@ -99,10 +106,10 @@ messageStr = print_cellstr(message, 'Delimiter', '\n', ...
 switch messageMode
 case 'wait'
     %   Program stops and displays message box               
-    uiwait(msgbox(message, mTitle, icon, 'modal'));                  
+    uiwait(msgbox(message, mTitle, icon, createMode));                  
 case 'show'
     %   Program does not stop but still displays message box
-    msgbox(message, mTitle, icon, 'modal');
+    msgbox(message, mTitle, icon, createMode);
 case 'none'
     %   Program does not stop or display message box
 otherwise
