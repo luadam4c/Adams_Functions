@@ -52,7 +52,7 @@ plotM2hTauh = false; %true;
 plotM2hGabab = false; %true;
 
 plotVoltageVsOpdFig5 = false; %true;
-plotVoltageVsOpdTauh = false; %true;
+plotVoltageVsOpdTauh = true;
 plotVoltageVsOpdGabab = false; %true;
 
 createPlotMovieFig5 = false; %true;
@@ -140,8 +140,7 @@ timeToStabilize = 3000;         % padded time (ms) to make sure initial value
 colorMapPharm = [];                 % use m3ha default
 colorMapVary = @jet;                % rainbow colors
 
-overlappedFig5Width = 10.5; %4.7; %5.7;  % For Figure 5
-% overlappedFig5Width = 8;       % For Figure 5 Supplement
+overlappedFig5Width = 8; %10.5; %4.7; %5.7;  % For Figure 5
 overlappedTauhWidth = 8;
 overlappedGababWidth = 4;
 overlappedFigHeightPerRow = 1.5;
@@ -173,7 +172,7 @@ dend2ITpropertiesYTickLocs = {-5:5:5, 0:0.5:1, 0:0.5:1, 0:0.5:1, ...
 somaVoltageYTickLocs = {-90:20:-50, [1e-6, 1e-2]};
 essentialYTickLocs = {-90:20:-50, 0:5:10, -0.4:0.2:0, ...
                             -15:5:0, [1e-6, 1e-2]};
-m2hFig5Width = 10.5; %4.7; %5.7;
+m2hFig5Width = 8; %10.5; %4.7; %5.7;
 m2hTauhWidth = 8;
 m2hGababWidth = 4;
 m2hFigHeight = 3;
@@ -184,18 +183,18 @@ m2hYTickLocs = [1e-5, 1e-3, 1e-1];
 voltageVsOpdTimeLimits1 = timeToStabilize + [800, 2800];
 voltageVsOpdTimeLimits2 = timeToStabilize + [1000, 2000];
 voltageVsOpdSiMs = 1;
-voltageVsOpdFig5FigWidth = 5.5 * 2;
+voltageVsOpdFig5FigWidth = 8 * 2; %5.5 * 2;
 voltageVsOpdFig5FigHeight = 5 * 3;
 voltageVsOpdFig5XLimits = [1e-7, 1e0];
 voltageVsOpdFig5YLimits = [-95, -45];
-voltageVsOpdFig5YTickLocs = [];
+voltageVsOpdFig5YTickLocs = -90:10:-50; %[];
 voltageVsOpdFig5ToAnnotate = true;
 
 voltageVsOpdTauhFigWidth = 8;
-voltageVsOpdTauhFigHeight = 11.5;
+voltageVsOpdTauhFigHeight = 7; %11.5;
 voltageVsOpdTauhXLimits = [1e-7, 1e0];
 voltageVsOpdTauhYLimits = [-95, -25];
-voltageVsOpdTauhYTickLocs = -95:5:-25;
+voltageVsOpdTauhYTickLocs = -90:10:-20; %-95:5:-25;
 voltageVsOpdTauhToAnnotate = true;
 
 voltageVsOpdGababFigWidth = 3.5 * 2; %4.7 * 2;
