@@ -37,6 +37,9 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %                   - 'ParseLaser': whether to parse laser pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ParsePleth': whether to parse pleth traces
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'GasPulseDirection': direction of expected gas pulse
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'downward'  - downward peaks (e.g., hypoxia for O2)
@@ -65,6 +68,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/match_row_count.m
 %       cd/parse_gas_trace.m
 %       cd/parse_laser_trace.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/struct2arglist.m
 %
@@ -81,6 +85,8 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % 2020-07-16 Added gasGasMinPulseAmplitude and set as 0.5
 % 2020-07-16 Added 'GasPulseDirection' as an optional argument
 % 2020-07-16 Added 'GasMinPulseAmplitude' as an optional argument
+% 2020-08-11 Fixed ParseText bug
+% 2020-08-11 Added 'ParsePleth' as an optional argument
 
 %% Hard-coded parameters
 MS_PER_S = 1000;
@@ -97,6 +103,7 @@ gasGasMinPulseAmplitude = 1;
 parseTextDefault = false;
 parseGasDefault = false;
 parseLaserDefault = false;
+parsePlethDefault = false;
 gasPulseDirectionDefault = 'auto';
 gasMinPulseAmplitudeDefault = 1;
 channelNamesDefault = {};          % set later
@@ -125,6 +132,8 @@ addParameter(iP, 'ParseGas', parseGasDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ParseLaser', parseLaserDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ParsePleth', parsePlethDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'GasPulseDirection', gasPulseDirectionDefault, ...
     @(x) any(validatestring(x, validGasPulseDirections)));
 addParameter(iP, 'GasMinPulseAmplitude', gasMinPulseAmplitudeDefault, ...
@@ -137,6 +146,7 @@ parse(iP, spike2MatPath, varargin{:});
 parseText = iP.Results.ParseText;
 parseGas = iP.Results.ParseGas;
 parseLaser = iP.Results.ParseLaser;
+parsePleth = iP.Results.ParsePleth;
 gasPulseDirection = validatestring(iP.Results.GasPulseDirection, validGasPulseDirections);
 gasMinPulseAmplitude = iP.Results.GasMinPulseAmplitude;
 channelNamesUser = iP.Results.ChannelNames;
@@ -152,6 +162,12 @@ spike2MatPath = force_string_end(spike2MatPath, '.mat');
 % Load everything
 %   Note: this is a struct of structs
 spike2FileContents = load(spike2MatPath);
+
+% Find all fields with a 'text' field
+if parseText
+    textStructs = all_fields(spike2FileContents, 'ValueFunc', isText, ...
+                                'OutputType', 'value');
+end
 
 % Load data
 if isempty(channelNamesUser)
@@ -234,7 +250,7 @@ channelStarts = adjust_start_times(channelStarts, siSeconds);
 
 %% Parse text marks it they exist
 if parseText
-    textTable = parse_text_spike2_mat(spike2MatPath, spike2FileContents);
+    textTable = parse_text_spike2_mat(spike2MatPath, textStructs);
 end
 
 %% Parse gas trace if it exists
@@ -269,6 +285,20 @@ if any(isLaserTrace) && parseLaser
     parse_laser_trace(laserVec, siMs, 'TraceFileName', spike2MatPath);
 end
 
+%% Parse pleth trace if it exists
+% Test if a pleth trace exists
+isPlethTrace = strcmp(channelNames, 'Pleth 2');
+
+if any(isPlethTrace) && parsePleth
+    % Get laser vector(s)
+    plethVec = channelValues{isPlethTrace};
+
+    % Get the sampling interval in ms
+    siSecondsPleth = siSeconds(isPlethTrace);
+
+    % Parse pleth vectors
+    parse_pleth_trace(plethVec, siSecondsPleth, 'TraceFileName', spike2MatPath);
+end
 
 %% Output results
 % Place in a table
@@ -286,7 +316,7 @@ channelStarts = floor(channelStarts ./ siSeconds) .* siSeconds;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function textTable = parse_text_spike2_mat (spike2MatPath, spike2FileContents)
+function textTable = parse_text_spike2_mat (spike2MatPath, textStructs)
 % TODO: parse_text_spike2_mat.m
 
 % Hard-coded parameters
@@ -304,9 +334,15 @@ figBase = force_string_end(fileBase, figSuffix);
 % Create paths for the pulse table
 textTablePath = force_string_end(textTableBase, '.csv');
 
-% Find all fields with a 'text' field
-textStructs = all_fields(spike2FileContents, 'ValueFunc', isText, ...
-                            'OutputType', 'value');
+% Load text structs
+if isempty(textStructs)
+    % Load the spike2-exported .mat file
+    spike2FileContents = load(spike2MatPath);
+
+    % Find all fields with a 'text' field
+    textStructs = all_fields(spike2FileContents, 'ValueFunc', isText, ...
+                                'OutputType', 'value');
+end
 
 % Extract just the first structure with the 'text' field
 % TODO: What if there are multiple 'text' fields

@@ -24,6 +24,7 @@ function indices = create_indices (varargin)
 %       create_indices([])
 %       create_indices([], 'Vectors', (1:5)')
 %       create_indices([NaN, NaN], 'Vectors', (1:5)')
+%       create_indices([NaN, NaN], 'Vectors', (1:5)', 'ForceInRange', false)
 %       create_indices('Vectors', 1:5, 'IndexEnd', 4)
 %       create_indices('Vectors', (1:5)', 'IndexEnd', 4)
 %       create_indices('Vectors', magic(5), 'IndexEnd', 4)
@@ -44,7 +45,14 @@ function indices = create_indices (varargin)
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%       varargin    - 'ForceCellOutput': whether to force output as a cell array
+%       varargin    - 'ForcePositive': whether to force indices as positive
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ForceRowOutput': whether to force indices within
+%                                       vector range
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ForceRowOutput': whether to force as row vector instead
@@ -134,6 +142,7 @@ function indices = create_indices (varargin)
 % 2020-04-20 Fixed bug when start and end indices out of vector range
 % 2020-05-13 Now makes create_indices([NaN; NaN], 'Vectors', vecs) 
 %               to be full index range
+% 2020-08-11 Added forceInRange as an optional argument
 % TODO: Added 'spanboth', 'spanleft' and 'spanright' as align methods
 % TODO: Use argument 'ForcePositive' as false where necessary
 
@@ -143,6 +152,7 @@ validAlignMethods = {'left', 'right', 'center'};
 %% Default values for optional arguments
 endPointsDefault = [];          % no endpoint by default
 forcePositiveDefault = true;    % force indices to be positive by default
+forceInRangeDefault = true;     % whether to force indices within range
 forceCellOutputDefault = false; % don't force output as a cell array by default
 forceRowOutputDefault = false;  % return column vectors by default
 vectorsDefault = [];
@@ -171,6 +181,8 @@ addOptional(iP, 'endPoints', endPointsDefault, ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForcePositive', forcePositiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceInRange', forceInRangeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -202,6 +214,7 @@ addParameter(iP, 'AlignMethod', alignMethodDefault, ...
 parse(iP, varargin{:});
 endPoints = iP.Results.endPoints;
 forcePositive = iP.Results.ForcePositive;
+forceInRange = iP.Results.ForceInRange;
 forceCellOutput = iP.Results.ForceCellOutput;
 forceRowOutput = iP.Results.ForceRowOutput;
 vectors = iP.Results.Vectors;
@@ -307,17 +320,20 @@ if ~isempty(vectors) && ...
         argfun(@(x) match_format_vector_sets(x, nSamples, 'MatchVectors', true), ...
                 idxStart, idxEnd);
 
-    % Make sure endpoint indices are in range, step 1
-    candidatesStart = match_and_combine_vectors(idxStart, 1);
-    candidatesEnd = match_and_combine_vectors(idxEnd, nSamples);
-    idxStart = compute_maximum_trace(candidatesStart, ...
-                            'TreatRowAsMatrix', true, 'IgnoreNaN', true);
-    idxEnd = compute_minimum_trace(candidatesEnd, ...
-                            'TreatRowAsMatrix', true, 'IgnoreNaN', true);
+    % Make sure endpoint indices are in range if requested
+    if forceInRange
+        % Make sure endpoint indices are in range, step 1
+        candidatesStart = match_and_combine_vectors(idxStart, 1);
+        candidatesEnd = match_and_combine_vectors(idxEnd, nSamples);
+        idxStart = compute_maximum_trace(candidatesStart, ...
+                                'TreatRowAsMatrix', true, 'IgnoreNaN', true);
+        idxEnd = compute_minimum_trace(candidatesEnd, ...
+                                'TreatRowAsMatrix', true, 'IgnoreNaN', true);
 
-    % Make sure endpoint indices are in range, step 2
-    idxStart(idxStart > nSamples) = NaN;
-    idxEnd(idxEnd < 1) = NaN;
+        % Make sure endpoint indices are in range, step 2
+        idxStart(idxStart > nSamples) = NaN;
+        idxEnd(idxEnd < 1) = NaN;
+    end
 end
 
 % Create the indices
