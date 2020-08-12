@@ -64,6 +64,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % Used by:
 %       cd/compute_baseline_noise.m
 %       cd/compute_lts_errors.m
+%       cd/compute_running_windows.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/extract_subvectors.m
@@ -91,6 +92,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % 2019-11-14 Now allows time vectors to be decreasing
 % 2020-01-02 Now returns matrices if inputs are all matrices
 % 2020-04-21 Now returns empty if timeVec is empty
+% 2020-08-12 Improved performance when there is one vectors and many windows
 
 %% Hard-coded parameters
 validBoundaryModes = {'inclusive', 'leftadjust', 'rightadjust', 'restrictive'};
@@ -148,8 +150,11 @@ else
 end
 
 % Match the formats of timeWindows and timeVecs so that cellfun can be used
-[timeWindows, timeVecs] = ...
-    match_format_vector_sets(timeWindows, timeVecs, 'ForceCellOutputs', false);
+if iscell(timeVecs)
+    [timeWindows, timeVecs] = ...
+        match_format_vector_sets(timeWindows, timeVecs, ...
+                                'ForceCellOutputs', false);
+end
 
 % Force as column vectors
 [timeWindows, timeVecs] = ...
@@ -204,6 +209,9 @@ nTimePoints = size(timeVec, 1);
 % Compute the number of vectors
 nVectors = size(timeVec, 2);
 
+% Compute the number of windows
+nWindows = size(timeWindow, 2);
+
 % If the time window is empty, return the first and last indices
 if isempty(timeWindow)
     endPoints = [1; nTimePoints];
@@ -229,10 +237,17 @@ timeEnd = timeWindow(2, :);
 
 % Decide on first and last indices for each vector based on boundaryMode
 %   Note: this should return row vectors
-[idxStart, idxEnd] = ...
-    array_fun(@(x) decide_on_endpoints(timeVec(:, x), ...
-                    timeStart(x), timeEnd(x), boundaryMode, warnFlag), ...
-                1:nVectors, 'UniformOutput', true);
+if nVectors > 1
+    [idxStart, idxEnd] = ...
+        array_fun(@(x) decide_on_endpoints(timeVec(:, x), ...
+                        timeStart(x), timeEnd(x), boundaryMode, warnFlag), ...
+                    1:nVectors, 'UniformOutput', true);
+else
+    [idxStart, idxEnd] = ...
+        array_fun(@(a, b) decide_on_endpoints(timeVec, a, b, ...
+                                            boundaryMode, warnFlag), ...
+                    timeStart, timeEnd, 'UniformOutput', true);
+end
 
 % Create endpoints
 if vectorFlipped

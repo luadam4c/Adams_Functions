@@ -168,10 +168,7 @@ nVectors = count_vectors(vectors);
 
 % Create time vectors in seconds
 timeVec = create_time_vectors(nSamples, 'TimeUnits', 's', ...
-                                'SamplingIntervalMs', siMs);
-
-% Match the format
-timeVec = match_format_vector_sets(timeVec, vectors);
+                                'SamplingIntervalMs', siMs, 'Vectors', vectors);
 
 % Convert sampling interval to seconds
 siSeconds = siMs / MS_PER_S;
@@ -267,6 +264,7 @@ else
     parsedData.secEndPoints = secEndPoints;
     parsedData.pulseEndPoints = pulseEndPoints;
 end
+
 % Output variably
 varargout{1} = parsedParams;
 if nargout > 1

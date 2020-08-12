@@ -1,6 +1,6 @@
-function timeVecs = create_time_vectors (nSamples, varargin)
+function timeVecs = create_time_vectors (varargin)
 %% Creates time vector(s) in seconds from number(s) of samples and other optional arguments
-% Usage: timeVecs = create_time_vectors (nSamples, varargin)
+% Usage: timeVecs = create_time_vectors (nSamples (opt), varargin)
 % Explanation:
 %       TODO
 %
@@ -16,7 +16,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   specified as a column vector
 %                       or a cell array of column vectors
 % Arguments:    
-%       nSamples    - number of sample points for each vector to build
+%       nSamples    - (opt) number of sample points for each vector to build
 %                   must be a positive integer vector
 %       varargin    - 'BoundaryMode': boundary mode
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -48,13 +48,17 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   - 'TimeStart': start time(s) in output time units
 %                   must be a numeric vector
 %                   default == 0
+%                   - 'Vectors': vectors to match
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
+%                   must be a numeric array or a cell array
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   
 % Requires:
-%       cd/create_error_for_nargin.m
 %       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
 %
 % Used by:
@@ -62,6 +66,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/compute_lts_errors.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/count_samples.m
 %       cd/create_average_time_vector.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/create_synced_movie_trace_plot_movie.m
@@ -86,7 +91,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 % 2019-01-01 Added 'ForceCellOutput' as an optional argument
 % 2019-03-14 Added 'SamplingIntervalSeconds' as an optional argument
 % 2019-09-11 Added 'min' as a valid time unit
-% 
+% 2020-08-12 Added 'Vectors' as an optional argument
 
 %% Hard-coded constants
 S_PER_MIN = 60;
@@ -98,6 +103,7 @@ validBoundaryModes = {'span', 'leftadjust', 'rightadjust'};
 validTimeUnits = {'min', 's', 'ms', 'us'};
 
 %% Default values for optional arguments
+nSamplesDefault = [];
 boundaryModeDefault = 'rightadjust';    % don't start from zero by default
 timeUnitsDefault = 's';                 % return seconds by default
 samplingRateHzDefault = [];             % set by match_reciprocals.m
@@ -105,22 +111,18 @@ samplingIntervalUsDefault = [];         % set by match_reciprocals.m
 samplingIntervalMsDefault = [];         % set by match_reciprocals.m
 samplingIntervalSecDefault = [];        % set by match_reciprocals.m
 timeStartDefault = 0;                   % start at 0 by default
+vectorsDefault = [];
 forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'nSamples', ...
+addOptional(iP, 'nSamples', nSamplesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive', 'integer'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -138,11 +140,16 @@ addParameter(iP, 'SamplingIntervalSeconds', samplingIntervalSecDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'TimeStart', timeStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'Vectors', vectorsDefault, ...
+    @(x) assert(isnumeric(x) || iscell(x), ...
+                ['Vectors must be either a numeric array', ...
+                    'or a cell array!']));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, nSamples, varargin{:});
+parse(iP, varargin{:});
+nSamples = iP.Results.nSamples;
 boundaryMode = validatestring(iP.Results.BoundaryMode, validBoundaryModes);
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 samplingRateHz = iP.Results.SamplingRateHz;
@@ -150,11 +157,21 @@ samplingIntervalUs = iP.Results.SamplingIntervalUs;
 samplingIntervalMs = iP.Results.SamplingIntervalMs;
 samplingIntervalSec = iP.Results.SamplingIntervalSeconds;
 tStart = iP.Results.TimeStart;
+vectors = iP.Results.Vectors;
 forceCellOutput = iP.Results.ForceCellOutput;
 
 %% Preparation
 % TODO: Display warning if more than one sampling rate/interval is provided
 %   esp. that samplingIntervalUs overrides samplingIntervalMs, etc.
+
+% Decide on the number of samples
+if isempty(nSamples)
+    if ~isempty(vectors)
+        nSamples = count_samples(vectors);
+    else
+        error(create_error_for_nargin(mfilename));
+    end
+end
 
 % Convert any provided sampling interval(s) to seconds
 %   Note: if not provided, keep empty as default 
@@ -208,6 +225,12 @@ else
 end
 
 %% Output
+% Match with original vectors
+if ~isempty(vectors)
+    % Match the format
+    timeVecs = match_format_vector_sets(timeVecs, vectors);
+end
+
 % Force as a cell array if requested
 if forceCellOutput && ~iscell(timeVecs)
     timeVecs = {timeVecs};

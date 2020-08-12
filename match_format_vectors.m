@@ -9,6 +9,9 @@ function varargout = match_format_vectors (varargin)
 %       [a, b] = match_format_vectors(1:5, (2:6)', 'RowInstead', true)
 %       [a, b] = match_format_vectors(1:5, 2)
 %       [a, b] = match_format_vectors(1:5, 2:3)
+%       [a, b, c] = match_format_vectors(1:5, 2:3, 3:5)
+%       [a, b, c] = match_format_vectors(magic(3), 2, 3)
+%       [a, b, c] = match_format_vectors(1:5, 2, 3)
 %
 % Outputs:
 %       varargout   - matched outputs
@@ -29,6 +32,7 @@ function varargout = match_format_vectors (varargin)
 %
 % Used by:
 %       cd/compute_gabab_conductance.m
+%       cd/compute_running_windows.m
 %       cd/compute_time_window.m
 %       cd/create_indices.m
 %       cd/create_time_vectors.m
@@ -74,7 +78,8 @@ end
 %% Do the job
 % Force as column vectors
 vararginTransformed = ...
-    cellfun(@(x) force_column_vector(x, 'RowInstead', rowInstead), ...
+    cellfun(@(x) force_column_vector(x, 'RowInstead', rowInstead, ...
+                                    'IgnoreNonvectors', false), ...
             varargin, 'UniformOutput', false);
 
 % Compute the maximum number of values over all vectors

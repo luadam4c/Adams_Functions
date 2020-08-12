@@ -77,6 +77,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
+%       cd/create_time_vectors.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m

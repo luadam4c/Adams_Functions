@@ -17,6 +17,7 @@ function isPositiveVector = ispositivevector (x)
 % Requires: 
 %
 % Used by:
+%       cd/compute_running_windows.m
 %       cd/match_time_info.m
 %       cd/parse_pulse.m
 

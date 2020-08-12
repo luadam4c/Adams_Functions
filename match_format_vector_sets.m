@@ -90,6 +90,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/compute_sampsizepwr.m
 %       cd/construct_fullpath.m
 %       cd/create_indices.m
+%       cd/create_time_vectors.m
 %       cd/create_trace_plot_movie.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
