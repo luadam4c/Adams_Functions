@@ -20,7 +20,7 @@ function varargout = array_fun (myFunc, varargin)
 %       varargin    - 2nd to last arguments to cellfun or arrayfun
 %                   - 'RenewParpool': whether to renew parallel parpool 
 %                                       every batch to release memory
-%                   must be logical 1 (true) or 0 (false)
+%                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
 % Requires:

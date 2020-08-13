@@ -7,7 +7,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 % Example(s):
 %       convert_units(magic(3), 'mQ', 'nQ')
 %       convert_units(magic(3), 'ms', 's')
-%       TODO: convert_units(magic(3), 'hour', 'min')
+%       convert_units(magic(3), 'hour', 'min')
 %
 % Outputs:
 %       newValues   - new numeric values
@@ -44,8 +44,9 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 
 % File History:
 % 2020-01-22 Created by Adam Lu
+% 2020-08-13 Now converts between all time units
+% TODO: Convert between metric and non-metric units
 % TODO: Use transform_vectors.m?
-% TODO: Convert between time units
 
 %% Hard-coded parameters
 
@@ -129,6 +130,14 @@ newValues = apply_to_all_cells(@(x) x .* scaleFactor, oldValues);
 
 function magnitude = decide_on_magnitude (prefix)
 
+%% Hard-coded constants
+MIN_PER_S = 60;
+HOUR_PER_S = 3600;
+DAY_PER_S = 86400;
+WEEK_PER_S = 604800;
+YEAR_PER_S = 31536000;
+
+%% Do the job
 switch prefix
     case 'G'
         magnitude = 1e9;
@@ -148,6 +157,16 @@ switch prefix
         magnitude = 1e-9;
     case 'p'
         magnitude = 1e-12;
+    case 's'
+        magnitude = 1;
+    case 'min'
+        magnitude = MIN_PER_S;
+    case 'hour'
+        magnitude = HOUR_PER_S;
+    case 'day'
+        magnitude = DAY_PER_S;
+    case 'year'
+        magnitude = DAY_PER_S;
     otherwise
         error('prefix not implemented yet!');
 end
