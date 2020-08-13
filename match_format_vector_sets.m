@@ -101,6 +101,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/match_and_combine_vectors.m
 %       cd/nan_except.m
 %       cd/parse_phase_info.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_table_parallel.m
 %       cd/plot_vertical_line.m

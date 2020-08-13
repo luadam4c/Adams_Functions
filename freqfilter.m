@@ -4,8 +4,10 @@ function filteredData = freqfilter (data, fc, varargin)
 % Explanation: 
 %       A Butterworth filter is applied twice (once forward, once backward)
 %       to remove lag effect of filter.
+%
 % Outputs:
 %       filteredData - the filtered version of data
+%
 % Arguments:    
 %       data        - data where each column is a vector of samples
 %                   must be a nonempty numeric array
@@ -39,6 +41,7 @@ function filteredData = freqfilter (data, fc, varargin)
 %       cd/detect_spikes_multiunit.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/identify_CI_protocol.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_calcium_imaging_traces.m
 %       /home/Matlab/minEASE/minEASE.m
 %           many others; apply this command in a LINUX terminal to find them:

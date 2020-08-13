@@ -61,6 +61,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure08.m
 %       cd/parse_atf_swd.m
+%       cd/parse_pleth_trace.m
 %       cd/sscanf_full.m
 %       cd/vecfun.m
 

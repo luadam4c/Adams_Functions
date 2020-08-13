@@ -29,6 +29,7 @@ function [parsedParams, parsedData] = parse_psd (dataVec, varargin)
 %
 % Used by:
 %       cd/parse_atf_swd.m
+%       cd/parse_pleth_trace.m
 %       ~/EEG_gui/EEG_gui.m
 
 % File History:
@@ -99,7 +100,7 @@ psd(end) = psd(end)/2;
 freqSpacing = freqVec(2) - freqVec(1);
 
 % Compute the number of frequencies within a median filter window
-medianFilterWindowFreqs = round(filterWindowHz / freqSpacing);
+medianFilterWindowFreqs = min([1, round(filterWindowHz / freqSpacing)]);
 
 % Take the median filter of the PSD
 psdFiltered = medfilt1(psd, medianFilterWindowFreqs);
@@ -120,8 +121,11 @@ nPeaks = length(idxPeaks);
 % Find the top three frequencies
 if nPeaks == 0
     % If there are no peaks, make all frequencies NaN
+    freqSelected = [];
+    idxSelected = [];
     freqSorted = [];
     idxSorted = [];
+    peakFrequency = NaN;
 else
     % Sort the peaks by amplitude
     [~, peakNoSorted] = sort(ampPeaks, 'descend');
@@ -134,6 +138,7 @@ else
     % Find the first peak
     idxSelected(1) = idxPeaks(peakNoSorted(1));
     freqSelected(1) = freqVec(idxSelected(1));
+    peakFrequency = freqSelected(1);
 
     % Find the second peak
     last1 = 1;
@@ -197,6 +202,7 @@ parsedParams.samplingFrequencyHz = samplingFrequencyHz;
 parsedParams.filterWindowHz = filterWindowHz;
 parsedParams.transformLength = transformLength;
 parsedParams.freqSpacing = freqSpacing;
+parsedParams.peakFrequency = peakFrequency;
 
 parsedData.dft = dft;
 parsedData.psd = psd;
@@ -207,7 +213,6 @@ parsedData.freqSelected = freqSelected;
 parsedData.idxSelected = idxSelected;
 parsedData.freqSorted = freqSorted;
 parsedData.idxSorted = idxSorted;
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

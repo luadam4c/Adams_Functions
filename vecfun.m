@@ -36,6 +36,7 @@ function varargout = vecfun (myFunction, inVecs, varargin)
 %
 % Used by:
 %       cd/compute_pairwise_differences.m
+%       cd/compute_running_windows.m
 %       cd/compute_sampling_interval.m
 %       cd/medianfilter.m
 %       cd/movingaveragefilter.m

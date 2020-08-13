@@ -30,6 +30,7 @@ function isEmpty = isemptycell (cellArray)
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/parse_pleth_trace.m
 %       cd/parse_repetitive_pulses.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_grouped_scatter.m

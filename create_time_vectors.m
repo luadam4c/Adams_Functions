@@ -79,6 +79,7 @@ function timeVecs = create_time_vectors (varargin)
 %       cd/parse_atf_swd.m
 %       cd/parse_gas_trace.m
 %       cd/parse_multiunit.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/write_data_atf.m

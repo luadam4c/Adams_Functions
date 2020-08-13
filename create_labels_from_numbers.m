@@ -69,6 +69,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m
+%       cd/parse_pleth_trace.m
 %       cd/parse_repetitive_pulses.m
 %       cd/plot_chevron.m
 %       cd/plot_grouped_histogram.m

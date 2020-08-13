@@ -61,6 +61,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/parse_current_family.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
+%       cd/parse_pleth_trace.m
 %       cd/parse_pulse_response.m
 %       cd/parse_repetitive_pulses.m
 %       cd/plot_measures.m

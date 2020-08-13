@@ -135,6 +135,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_relative_event_times.m
 %       cd/compute_rms_error.m
+%       cd/compute_running_windows.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/compute_value_boundaries.m
@@ -160,6 +161,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %       cd/parse_ipsc.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
+%       cd/parse_pleth_trace.m
 %       cd/parse_pulse_response.m
 %       cd/parse_repetitive_pulses.m
 %       cd/parse_spike2_mat.m

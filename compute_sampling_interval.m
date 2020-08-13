@@ -21,12 +21,14 @@ function samplingIntervals = compute_sampling_interval (timeVecs, varargin)
 %                   default == true
 %
 % Requires:
+%       cd/force_column_vector.m
 %       cd/isnum.m
 %       cd/vecfun.m
 %
 % Used by:
 %       cd/compute_all_pulse_responses.m
 %       cd/compute_average_pulse_response.m
+%       cd/compute_running_windows.m
 %       cd/create_average_time_vector.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -69,6 +71,10 @@ addParameter(iP, 'IsRegular', isRegularDefault, ...
 % Read from the Input Parser
 parse(iP, timeVecs, varargin{:});
 isRegular = iP.Results.IsRegular;
+
+%% Preparation
+% Force as column vectors
+timeVecs = force_column_vector(timeVecs, 'IgnoreNonvectors', true);
 
 %% Do the job
 samplingIntervals = ...

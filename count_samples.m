@@ -87,6 +87,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
+%       cd/parse_pleth_trace.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/parse_repetitive_pulses.m

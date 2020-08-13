@@ -69,6 +69,8 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/isnum.m
 %
 % Used by:
+%       cd/compute_running_windows.m
+%       cd/compute_sampling_interval.m
 %       cd/plot_correlation_coefficient.m
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
@@ -123,6 +125,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/movingaveragefilter.m
 %       cd/nan_except.m
 %       cd/parse_peaks.m
+%       cd/parse_pleth_trace.m
 %       cd/parse_repetitive_pulses.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_bar.m
