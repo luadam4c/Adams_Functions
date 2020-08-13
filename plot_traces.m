@@ -265,6 +265,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_raw_multiunit.m

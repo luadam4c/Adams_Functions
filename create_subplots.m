@@ -86,6 +86,7 @@ function [fig, ax] = create_subplots (varargin)
 %       cd/m3ha_plot_figure08.m
 %       cd/parse_current_family.m
 %       cd/parse_multiunit.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_table_parallel.m
 %       cd/plot_relative_events.m
 %       cd/plot_small_chevrons.m

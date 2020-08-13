@@ -37,6 +37,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m
 %       cd/parse_current_family.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m

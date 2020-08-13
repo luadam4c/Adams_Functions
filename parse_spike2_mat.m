@@ -296,7 +296,7 @@ if any(isPlethTrace) && parsePleth
     % Get the sampling interval in ms
     siSecondsPleth = siSeconds(isPlethTrace);
 
-    % Parse pleth vectors
+    % Parse pleth vectors to get respiratory measure tables
     parse_pleth_trace(plethVec, siSecondsPleth, 'TraceFileName', spike2MatPath);
 end
 

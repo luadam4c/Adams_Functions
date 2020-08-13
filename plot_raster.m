@@ -395,7 +395,7 @@ end
 if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
     if ~isempty(yTickLabels)
         % If provided, use custom Y tick labels instead
-        yTicks.labels = yTickLabels;
+        yTicks.labels = force_column_vector(yTickLabels);
     else
 %        if ~isempty(labels)
             % TODO: Not Implemented yet!

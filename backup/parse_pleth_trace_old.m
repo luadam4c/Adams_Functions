@@ -55,7 +55,6 @@ function varargout = parse_pleth_trace (vector, siSeconds, varargin)
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
-%       cd/create_subplots.m
 %       cd/create_time_vectors.m
 %       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
@@ -65,8 +64,9 @@ function varargout = parse_pleth_trace (vector, siSeconds, varargin)
 %       cd/match_row_count.m
 %       cd/match_format_vector_sets.m
 %       cd/parse_psd.m
-%       cd/plot_traces.m
-%       cd/save_all_figtypes.m
+% plot_traces
+% save_all_figtypes
+% create_subplots
 %
 % Used by:
 %       cd/parse_spike2_mat.m
