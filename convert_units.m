@@ -8,6 +8,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 %       convert_units(magic(3), 'mQ', 'nQ')
 %       convert_units(magic(3), 'ms', 's')
 %       convert_units(magic(3), 'hour', 'min')
+%       convert_units(magic(3), 'Hz', 'rpm')
 %
 % Outputs:
 %       newValues   - new numeric values
@@ -38,6 +39,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
+%       cd/parse_pleth_trace.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_spectrogram_multiunit.m
 %       cd/read_data_atf.m
@@ -165,8 +167,14 @@ switch prefix
         magnitude = HOUR_PER_S;
     case 'day'
         magnitude = DAY_PER_S;
+    case 'week'
+        magnitude = WEEK_PER_S;
     case 'year'
-        magnitude = DAY_PER_S;
+        magnitude = YEAR_PER_S;
+    case 'Hz'
+        magnitude = 1;
+    case 'rpm'
+        magnitude = 1/60;
     otherwise
         error('prefix not implemented yet!');
 end

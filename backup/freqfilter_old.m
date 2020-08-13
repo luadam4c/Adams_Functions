@@ -51,22 +51,17 @@ function filteredData = freqfilter (data, fc, varargin)
 % 2018-08-03 AL - Adapted from /home/Matlab/Marks_Functions/zof_mark.m
 % 2018-08-03 Made npoles an optional parameter 'FilterOrder'
 % 2018-08-03 Made si an optional parameter
-% 2020-08-13 Improved bandpass filter design based on 
-%               https://dsp.stackexchange.com/questions/42797/why-butterworth-bandpass-filter-changes-signal-in-the-passband
 % TODO: Check lower and upper bounds for fc (0, Nyquist frequency)
 % TODO: Allow data to be a cell array but attempt to concatenate
 %           into array 
 
 %% Hard-coded parameters
 validFilterTypes = {'low', 'high', 'bandpass', 'stop', 'auto'};
-passBandRipple = 3;
-stopBandAttenuation = 40;
-passStopBandDiffHz = 0.5;
 
 %% Default values for optional arguments
 defaultSamplingInterval = [];       % to be set later
 defaultFilterType = 'auto';         % to be set later
-defaultFilterOrder = [];            % use an 8th order Butterworth filter
+defaultFilterOrder = 8;             % use an 8th order Butterworth filter
                                     %   by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,18 +126,6 @@ if numel(fc) > 1 && ~any(strcmp(ftype, {'bandpass', 'stop'}))
             'if two cutoff frequencies are provided!']);
 end
 
-% Change bandpass to lowpass if necessary
-if strcmp(ftype, 'bandpass') && fc(1) <= 0
-    ftype = 'low';
-    fc = fc(2);
-end
-
-% Change bandstop to highpass if necessary
-if strcmp(ftype, 'stop') && fc(1) <= 0
-    ftype = 'high';
-    fc = fc(2);
-end
-
 % If data is a vector, make sure it is a column
 if isvector(data)
     data = data(:);
@@ -154,41 +137,10 @@ nTraces = size(data, 2);
 % Count the number of samples per trace
 nSamples = size(data, 1);
 
-% Force as a column vector
-fc = fc(:);
-
-% Compute filter order and cutoff frequencies
-if isempty(nPoles)
-    % Compute the pass band frequencies
-    passBandFrequency = fc * 2 * si;
-
-    % Compute the stop band frequencies
-    switch ftype
-        case 'low'
-            stopBandFrequency = (fc + passStopBandDiffHz) * 2 * si;
-        case 'high'
-            stopBandFrequency = (fc - passStopBandDiffHz) * 2 * si;
-        case 'bandpass'
-            stopBandFrequency = (fc + passStopBandDiffHz * [-1; 1]) * 2 * si;
-        case 'stop'
-            stopBandFrequency = (fc + passStopBandDiffHz * [1; -1]) * 2 * si;
-    end
-
-    % Fix values if out of range
-    stopBandFrequency(stopBandFrequency >= 1) = ...
-        (passBandFrequency(stopBandFrequency >= 1) + 1) / 2;
-    stopBandFrequency(stopBandFrequency <= 0) = ...
-        (passBandFrequency(stopBandFrequency <= 0) + 0) / 2;
-    
-    % Compute an appropriate filter order if not provided
-    [nPoles, Wn] = buttord(passBandFrequency, stopBandFrequency, ...
-                            passBandRipple, stopBandAttenuation);
-else
-    % Find the normalized cutoff frequency(ies) Wn = fc/(fs/2), 
-    %   where fs = sampling frequency (Hz) = 1/si
-    %   and fs/2 is the Nyquist frequency
-    Wn = fc * 2 * si;           % normalized cutoff frequency (half-cycles/sample)
-end
+% Find the normalized cutoff frequency(ies) Wn = fc/(fs/2), 
+%   where fs = sampling frequency (Hz) = 1/si
+%   and fs/2 is the Nyquist frequency
+Wn = fc * 2 * si;           % normalized cutoff frequency (half-cycles/sample)
 
 % Find the transfer function coefficients of a Butterworth filter
 %   with order npoles and normalized cutoff frequency(ies) Wn

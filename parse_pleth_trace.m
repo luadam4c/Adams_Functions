@@ -16,8 +16,18 @@ function varargout = parse_pleth_trace (vector, siSeconds, varargin)
 %       [respParams, respData] = parse_pleth_trace(plethVec, siSeconds, 'TraceFileName', spike2MatPath, 'PlotPsdFlag', true, 'PlotRespFlag', true);
 %
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       respParams  - respiration measure parameters, including:
+%                       traceFileName
+%                       pathBase
+%                       plethWindowSeconds
+%                       resolutionSeconds
+%                   specified as a scalar structure
+%       respParams  - respiration measure data
+%                       endPointsWindows
+%                       timeInstantsSec
+%                       respRates   - respiratory rates in rpm
+%                       respAmps    - respiratory amplitudes in Volts
+%                   specified as a scalar structure
 %
 % Arguments:
 %       vector     - pleth trace
@@ -49,8 +59,10 @@ function varargout = parse_pleth_trace (vector, siSeconds, varargin)
 %                   default == false
 %
 % Requires:
+%       cd/argfun.m
 %       cd/array_fun.m
 %       cd/compute_running_windows.m
+%       cd/convert_units.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
@@ -254,13 +266,19 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [respRate, respAmp] = parse_pleth_trace_helper (vector, endPoints, ...
-                                                siSeconds, pathBase, plotFlag)
+function [respRateRpm, respAmp] = ...
+                parse_pleth_trace_helper (vector, endPoints, ...
+                                            siSeconds, pathBase, plotFlag)
 %% Parses one pleth trace window
 
 %% Hard-coded parameters
-smoothWindowHz = 0.1;
-bandWidthHz = 1;
+smoothWindowRpm = 1;
+bandWidthRpm = 2;
+xLimitsRpm = [0, 150];
+
+% Convert to Hz
+[smoothWindowHz, bandWidthHz] = ...
+    argfun(@(x) convert_units(x, 'rpm', 'Hz'), smoothWindowRpm, bandWidthRpm);
 
 % Extract the file base
 fileBase = extract_fileparts(pathBase, 'base');
@@ -283,47 +301,64 @@ nSamples = numel(pieceCentered);
                                 'FilterWindowHz', smoothWindowHz);
 
 % Extract peak frequency as respiratory rate
-respRate = psdParams.peakFrequency;
+respRateHz = psdParams.peakFrequency;
 
-freqVec = psdData.freqVec;
+freqVecHz = psdData.freqVec;
 psd = psdData.psd;
 psdFiltered = psdData.psdFiltered;
 psdSmoothed = psdData.psdSmoothed;
 
 % Filter the trace about the peak frequency
-% cutoffFreq = respRate + [-1, 1] * bandWidthHz/2;
-if isnan(respRate)
+if isnan(respRateHz)
     pieceFiltered = pieceCentered;
 else
-    cutoffFreq = respRate + bandWidthHz/2;
+    % cutoffFreq = respRateHz + bandWidthHz/2;
+    cutoffFreq = respRateHz + [-1, 1] * bandWidthHz/2;
     pieceFiltered = freqfilter(pieceCentered, cutoffFreq, siSeconds);
 end
 
 % endPointsMiddle = [ceil(nSamples/4); floor(nSamples * 3/4)];
-endPointsMiddle = [1; nSamples];
-pieceMiddle = extract_subvectors(pieceFiltered, 'EndPoints', endPointsMiddle);
+% endPointsMiddle = [1; nSamples];
+% pieceMiddle = extract_subvectors(pieceFiltered, 'EndPoints', endPointsMiddle);
+
+% Create a time vector
+tVec = siSeconds * (1:nSamples)';
+% tVecMiddle = extract_subvectors(tVec, 'EndPoints', endPointsMiddle);
 
 % Compute the respiratory amplitude
-respAmp = max(pieceMiddle) - min(pieceMiddle);
+% respAmp = max(pieceMiddle) - min(pieceMiddle);
+% TODO: Add to compute_weight_average.m
+respAmp = trapz(tVec, abs(pieceCentered)) / (tVec(end) - tVec(1));
+
+% Convert to rpm
+respRateRpm = convert_units(respRateHz, 'Hz', 'rpm');
 
 % Plot stuff
 if plotFlag
-    % Create a time vector
-    tVec = siSeconds .* (1:nSamples)';
-    tVecMiddle = extract_subvectors(tVec, 'EndPoints', endPointsMiddle);
+    % Create strings
+    respRateStr = sprintf('Resp rate = %.0f / min', respRateRpm);
+    respAmpStr = sprintf('Resp amp = %.3g Volts', respAmp);
 
-    [fig, ax] = create_subplots(2, 1, 'AlwaysNew', true, 'FigExpansion', [1, 1]);
+    % Convert to rpm
+    freqVecRpm = convert_units(freqVecHz, 'Hz', 'rpm');
+
+    [fig, ax] = create_subplots(2, 1, 'AlwaysNew', true, ...
+                                'FigExpansion', [1, 1]);
     subplot(ax(1));
     plot_traces(tVec, pieceCentered, 'Color', 'k', 'XLabel', 'Time (s)', ...
                 'YLabel', 'Pleth (V)', 'FigTitle', titleBase);
-    plot_traces(tVecMiddle, pieceMiddle, 'Color', 'b', 'PlotOnly', true);
+    plot_traces(tVec, pieceFiltered, 'Color', 'b', 'PlotOnly', true);
+    plot_horizontal_line(respAmp, 'Color', 'g');
+    % plot_traces(tVecMiddle, pieceMiddle, 'Color', 'b', 'PlotOnly', true);
 
     subplot(ax(2));
-    plot_traces(freqVec, psd, 'Color', 'k', 'XLabel', 'Frequency (Hz)', ...
+    plot_traces(freqVecRpm, psd, 'Color', 'k', 'XLabel', 'Frequency (rpm)', ...
                 'YLabel', 'Power (V^2/Hz)', 'FigTitle', 'Power spectrum');
-    plot_traces(freqVec, psdFiltered, 'Color', 'b', 'PlotOnly', true);
-    plot_traces(freqVec, psdSmoothed, 'Color', 'r', 'PlotOnly', true);
-    xlim([0, 20]);
+    plot_traces(freqVecRpm, psdFiltered, 'Color', 'b', 'PlotOnly', true);
+    plot_traces(freqVecRpm, psdSmoothed, 'Color', 'r', 'PlotOnly', true);
+    text(0.05, 0.95, respRateStr, 'Units', 'normalized');
+    text(0.05, 0.85, respAmpStr, 'Units', 'normalized');
+    xlim(xLimitsRpm);
 
     save_all_figtypes(fig, pathBase, {'png'});
     close(fig);
@@ -358,7 +393,7 @@ plot_traces(timeVecsMin, vector, 'Color', 'k', ...
 subplot(ax(2))
 plot_traces(timeInstantsMin, respRates, 'Color', 'k', ...
             'XLimits', xLimitsMin, 'YLimits', yLimitsRespRate, ...
-            'XLabel', 'Time (min)', 'YLabel', 'Resp rate (Hz)', ...
+            'XLabel', 'Time (min)', 'YLabel', 'Resp rate (rpm)', ...
             'FigTitle', 'suppress');
 
 % Plot resp amp
@@ -385,11 +420,6 @@ handles.ax = ax;
 
 %{
 OLD CODE:
-
-% Subtract the vector by its mean
-vectorCentered = vector - mean(vector);
-vectorFiltered = freqfilter(vectorCentered, cutoffFreqs, siSeconds);
-pieceFiltered = extract_subvectors(vectorFiltered, 'EndPoints', endPoints);
 
 %}
 
