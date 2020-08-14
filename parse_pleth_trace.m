@@ -296,6 +296,7 @@ pieceCentered = piece - mean(piece);
 nSamples = numel(pieceCentered);
 
 % Compute the power spectral density of the piece
+% TODO: Choose peak frequencies within the range 30-150 /min
 [psdParams, psdData] = ...
     parse_psd(pieceCentered, 'SamplingFrequencyHz', 1/siSeconds, ...
                                 'FilterWindowHz', smoothWindowHz);

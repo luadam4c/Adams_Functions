@@ -260,16 +260,18 @@ otherArguments = iP.Unmatched;
 
 %% Preparation
 % Set default flags
-if ischar(data) || isstring(data)
-    alwaysNew = true;
-    if isempty(figName)
-        figName = extract_fileparts(data, 'pathbase');
+if isempty(alwaysNew)
+    if ischar(data) || isstring(data)
+        alwaysNew = true;
+        if isempty(figName)
+            figName = extract_fileparts(data, 'pathbase');
+        end
+    else
+        alwaysNew = false;
     end
-else
-    alwaysNew = false;
 end
 
-% Force data values as a numeric matrix 
+% Force data values as a numeric matrix
 %   where each group is a column and each row is a sample
 [dataValues, groupLabelsAuto, sampleLabelsAuto] = force_data_as_matrix(data);
 
