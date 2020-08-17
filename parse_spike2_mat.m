@@ -199,6 +199,12 @@ else
     clear spike2FileContents allChannelStructs
 end
 
+% Return if not a Spike2-exported .mat file
+if isempty(channelStructs)
+    parsedDataTable = table.empty;
+    return;
+end
+
 % Get all the channel names
 channelNames = extract_fields(channelStructs, 'title', 'UniformOutput', false);
 
