@@ -51,6 +51,7 @@ function varargout = find_first_match (candidates, array, varargin)
 %       cd/parse_spike2_mat.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_table_parallel.m
+%       cd/read_data_atf.m
 
 % File History:
 % 2019-01-09 Created by Adam Lu

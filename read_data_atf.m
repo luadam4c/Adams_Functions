@@ -38,14 +38,17 @@ function [dataTable, atfParams] = read_data_atf (varargin)
 %       cd/compute_sampling_interval.m
 %       cd/construct_and_check_fullpath.m
 %       cd/convert_units.m
+%       cd/find_first_match.m
 %       cd/read_lines_from_file.m
 %       cd/sscanf_full.m
 %
 % Used by:
+%       cd/concatenate_swd_files.m
 %       cd/parse_atf_swd.m
 
 % File History:
 % 2020-06-28 Modified from write_data_atf.m
+% 2020-08-16 Added timeEndSec
 % TODO: Don't read ATF scored files
 % TODO: Utilize pieceStr to combine data across files as an option
 
@@ -169,15 +172,27 @@ dataTable = readtable(filePath, 'FileType', 'text', ...
 dataTable.Properties.VariableNames = signalNames;
 
 % Extract time column if exists
-timeVec = dataTable.Time;
+if any(contains(signalNames, 'Time'))
+    [~, timeStr] = find_first_match('Time', signalNames);
 
-% Compute sampling interval in seconds
-siSeconds = compute_sampling_interval(timeVec);
+    % Extract time column if exists
+    timeVec = dataTable.(timeStr);
+
+    % Compute sampling interval in seconds
+    siSeconds = compute_sampling_interval(timeVec);
+
+    % Store time end
+    timeEndSec = timeVec(end);
+else
+    siSeconds = NaN;
+    timeEndSec = NaN;
+end
 
 % Save parameters
 atfParams.acquisitionMode = acquisitionMode;
 atfParams.comment = comment;
 atfParams.timeStartSec = timeStartSec;
+atfParams.timeEndSec = timeEndSec;
 atfParams.siSeconds = siSeconds;
 atfParams.signalNames = signalNames;
 atfParams.signalUnits = signalUnits;

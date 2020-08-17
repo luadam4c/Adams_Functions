@@ -22,6 +22,9 @@ function [parsedParams, parsedData] = parse_psd (dataVec, varargin)
 %                   - 'FilterWindowHz': filter window for PSD in Hz
 %                   must be a positive scalar
 %                   default == 2 Hz
+%                   - 'PeakRangeHz': range to look for frequency peaks
+%                   must be a positive scalar
+%                   default == [] (no restrictions)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -34,13 +37,14 @@ function [parsedParams, parsedData] = parse_psd (dataVec, varargin)
 
 % File History:
 % 2020-06-28 Moved from EEG_gui.m
-% 
+% 2020-08-14 Added 'PeakRangeHz' as an optional argument
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 samplingFrequencyHzDefault = 1;
 filterWindowHzDefault = 2;          % 2 Hz window
+peakRangeHzDefault = [];            % No restrictions by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,11 +66,14 @@ addParameter(iP, 'SamplingFrequencyHz', samplingFrequencyHzDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'FilterWindowHz', filterWindowHzDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'PeakRangeHz', peakRangeHzDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, dataVec, varargin{:});
 samplingFrequencyHz = iP.Results.SamplingFrequencyHz;
 filterWindowHz = iP.Results.FilterWindowHz;
+peakRangeHz = iP.Results.PeakRangeHz;
 
 %% Do the job
 % Subtract the data by its mean to get the signal
@@ -114,6 +121,14 @@ psdSmoothed = smooth(psdFiltered, span);
 
 % Use findpeaks to find local maximums
 [ampPeaks, idxPeaks] = findpeaks(psdSmoothed);
+
+% Restrict to a frequency range if requested
+if ~isempty(peakRangeHz)
+    freqPeaks = freqVec(idxPeaks);
+    toKeep = freqPeaks >= peakRangeHz(1) & freqPeaks <= peakRangeHz(2);
+    ampPeaks = ampPeaks(toKeep);
+    idxPeaks = idxPeaks(toKeep);
+end
 
 % Find the number of peaks
 nPeaks = length(idxPeaks);

@@ -86,6 +86,7 @@ function varargout = parse_pleth_trace (vector, siSeconds, varargin)
 % File History:
 % 2020-08-12 Modified from parse_laser_trace.m
 % 2020-08-13 Now outputs a resp table
+% 2020-08-14 Now restricts respRate to a range
 
 %% Hard-coded parameters
 % Decide on x and y limits to plot
@@ -97,6 +98,7 @@ yLimitsRespAmp = [];
 
 % TODO: Make optional argument
 nWindowsToPlot = 10;            % Number of windows to plot
+respRateRangeRpm = [30, 150];   % Resp rate range in rpm
 
 %% Default values for optional arguments
 traceFileNameDefault = '';      % set later
@@ -215,7 +217,7 @@ plotFlagsEachWindow = plotPsdFlag & mod(windowNumbers, windowNumberBase) == 0;
 % Compute respiratory rates and amplitudes for each running window
 [respRates, respAmps] = ...
     array_fun(@(x, y) parse_pleth_trace_helper(vector, endPointsWindows(:, x), ...
-                            siSeconds, pathBases{x}, y), ...
+                            siSeconds, pathBases{x}, y, respRateRangeRpm), ...
         	windowNumbers, plotFlagsEachWindow);
 
 %% Plot results
@@ -268,7 +270,8 @@ end
 
 function [respRateRpm, respAmp] = ...
                 parse_pleth_trace_helper (vector, endPoints, ...
-                                            siSeconds, pathBase, plotFlag)
+                                            siSeconds, pathBase, ...
+                                            plotFlag, respRateRangeRpm)
 %% Parses one pleth trace window
 
 %% Hard-coded parameters
@@ -277,8 +280,9 @@ bandWidthRpm = 2;
 xLimitsRpm = [0, 150];
 
 % Convert to Hz
-[smoothWindowHz, bandWidthHz] = ...
-    argfun(@(x) convert_units(x, 'rpm', 'Hz'), smoothWindowRpm, bandWidthRpm);
+[smoothWindowHz, bandWidthHz, respRateRangeHz] = ...
+    argfun(@(x) convert_units(x, 'rpm', 'Hz'), ...
+            smoothWindowRpm, bandWidthRpm, respRateRangeRpm);
 
 % Extract the file base
 fileBase = extract_fileparts(pathBase, 'base');
@@ -299,7 +303,8 @@ nSamples = numel(pieceCentered);
 % TODO: Choose peak frequencies within the range 30-150 /min
 [psdParams, psdData] = ...
     parse_psd(pieceCentered, 'SamplingFrequencyHz', 1/siSeconds, ...
-                                'FilterWindowHz', smoothWindowHz);
+                                'FilterWindowHz', smoothWindowHz, ...
+                                'PeakRangeHz', respRateRangeHz);
 
 % Extract peak frequency as respiratory rate
 respRateHz = psdParams.peakFrequency;

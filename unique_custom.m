@@ -53,6 +53,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       cd/adjust_edges.m
 %       cd/compute_combined_trace.m
 %       cd/compute_confidence_ellipse.m
+%       cd/concatenate_swd_files.m
 %       cd/convert_to_rank.m
 %       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
