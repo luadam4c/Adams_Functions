@@ -78,6 +78,7 @@ function handles = plot_relative_events (varargin)
 %       cd/argfun.m
 %       cd/apply_iteratively.m
 %       cd/compute_relative_event_times.m
+%       cd/count_events.m
 %       cd/create_label_from_sequence.m
 %       cd/create_subplots.m
 %       cd/extract_subvectors.m
@@ -413,12 +414,11 @@ case 'chevron'
     % Transpose so that each column is a stim
     relEventTimesTrans = transpose(relEventTimes);
     
-    % TODO: Make a function count_events(eventTimes, 'StimTime', 0)
     % Compute the number of events before and after, 
     %       summing across stims for each file
     %   Note: relEventTimes must be a cell array of numeric vectors
-    nEventsBeforeEachStim = cellfun(@(x) numel(x(x < 0)), relEventTimesTrans);
-    nEventsAfterEachStim = cellfun(@(x) numel(x(x >= 0)), relEventTimesTrans);
+    [nEventsBeforeEachStim, nEventsAfterEachStim] = ...
+        count_events(relEventTimesTrans, 'StimTime', 0);
     [nEventsBefore, nEventsAfter] = ...
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 

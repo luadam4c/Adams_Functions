@@ -66,6 +66,7 @@ function [relEventTimes, relativeTimeWindow, origInd] = ...
 %       cd/argfun.m
 %       cd/compare_events_pre_post_stim.m
 %       cd/create_error_for_nargin.m
+%       cd/create_shifted_vectors.m
 %       cd/extract_subvectors.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
@@ -240,7 +241,7 @@ function [relEventTimes, origInd] = ...
 %% Computes the relative event times from event times and stimulus times
 
 % Extract a time window for each stimulus time
-windows = compute_time_windows(stimTimes, relativeTimeWindow);
+windows = create_shifted_vectors(relativeTimeWindow, stimTimes);
 
 % Extract the event times corresponding to each time window
 [eventTimesEachWindow, origInd] = ...
@@ -262,20 +263,20 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function windows = compute_time_windows (centerTimes, relativeTimeWindow)
-%% Computes time windows based on center times and a relative time window
-% TODO: Either merge with compute_time_window.m or pull out as its own function
+function vecsNew = create_shifted_vectors (vecOrig, shiftValues)
+%% Creates shifted vectors based on values to shift
+% TODO: Pull out as its own function
 
-% Force the relative time window as a column vector
-relativeTimeWindow = force_column_vector(relativeTimeWindow);
+% Force the original vector as a column vector
+vecOrig = force_column_vector(vecOrig);
 
-% Force the center times as a row vector
-centerTimes = force_row_vector(centerTimes);
+% Force the values to shift as a row vector
+shiftValues = force_row_vector(shiftValues);
 
-% Compute the time windows
+% Create shifted vectors
 %   Note: Each column corresponds to a time window
-windows = repmat(centerTimes, size(relativeTimeWindow)) + ...
-            repmat(relativeTimeWindow, size(centerTimes));
+vecsNew = repmat(shiftValues, size(vecOrig)) + ...
+            repmat(vecOrig, size(shiftValues));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

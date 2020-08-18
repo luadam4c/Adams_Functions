@@ -28,6 +28,7 @@ function vectors = force_row_vector (vectors, varargin)
 %       cd/compute_centers_from_edges.m
 %       cd/compute_gabab_conductance.m
 %       cd/compute_relative_event_times.m
+%       cd/create_shifted_vectors.m
 %       cd/extract_columns.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/piecelinspace.m
