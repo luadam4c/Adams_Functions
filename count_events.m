@@ -17,11 +17,18 @@ function [nEventsBefore, nEventsAfter] = count_events (eventTimes, varargin)
 %
 % Arguments:
 %       eventTimes  - an array or a cell array of event times
-%                   must be a TODO
+%                   must be a numeric array
+%                       or a cell array of numeric arrays
 %       varargin    - 'StimTime': stimulation time
-%                   must be a TODO
-%                   default == TODO
-%
+%                   must be a numeric scalar
+%                   default == 0
+%                   - 'BeforeWindow': time window before stim
+%                   must be empty or a 2-element numeric vector
+%                   default == [-Inf, stimTime]
+%                   - 'AfterWindow': time window after stim
+%                   must be empty or a 2-element numeric vector
+%                   default == [stimTime, Inf]
+
 % Requires:
 %       cd/create_error_for_nargin.m
 %
@@ -36,6 +43,8 @@ function [nEventsBefore, nEventsAfter] = count_events (eventTimes, varargin)
 
 %% Default values for optional arguments
 stimTimeDefault = 0;
+beforeWindowDefault = [];
+afterWindowDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -53,27 +62,49 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'eventTimes');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'StimTime', stimTimeDefault);
+addParameter(iP, 'StimTime', stimTimeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'BeforeWindow', beforeWindowDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'AfterWindow', afterWindowDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, eventTimes, varargin{:});
 stimTime = iP.Results.StimTime;
+beforeWindow = iP.Results.BeforeWindow;
+afterWindow = iP.Results.AfterWindow;
+
+%% Preparation
+% Set default windows
+if isempty(beforeWindow)
+    beforeWindow = [-Inf, stimTime];
+end
+
+if isempty(afterWindow)
+    afterWindow = [stimTime, Inf];
+end
+
 
 %% Do the job
 if iscell(eventTimes)
     [nEventsBefore, nEventsAfter] = ...
-        cellfun(@(x) count_events_helper(x, stimTime), eventTimes);
+        cellfun(@(x) count_events_helper(x, beforeWindow, afterWindow), ...
+                eventTimes);
 else
-    [nEventsBefore, nEventsAfter] = count_events_helper(eventTimes, stimTime);
+    [nEventsBefore, nEventsAfter] = ...
+        count_events_helper(eventTimes, beforeWindow, afterWindow);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [nEventsBefore, nEventsAfter] = ...
-                count_events_helper (eventTimes, stimTime)
+                count_events_helper (eventTimes, beforeWindow, afterWindow)
 
-nEventsBefore = numel(eventTimes(eventTimes < stimTime));
-nEventsAfter = numel(eventTimes(eventTimes >= stimTime));
+nEventsBefore = numel(eventTimes(eventTimes >= beforeWindow(1) & ...
+                                    eventTimes < beforeWindow(2)));
+nEventsAfter = numel(eventTimes(eventTimes >= afterWindow(1) & ...
+                                    eventTimes < afterWindow(2)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

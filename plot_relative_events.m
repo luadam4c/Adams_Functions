@@ -46,6 +46,12 @@ function handles = plot_relative_events (varargin)
 %                   - 'RelativeTimeWindowMin': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'BeforeWindowMin': time window before stim
+%                   must be empty or a 2-element numeric vector
+%                   default == set in count_events.m
+%                   - 'AfterWindowMin': time window after stim
+%                   must be empty or a 2-element numeric vector
+%                   default == set in count_events.m
 %                   - 'StimDurationMin': stimulus duration for plotting
 %                                       (stim always occur at 0)
 %                   must be a positive scalar
@@ -106,7 +112,7 @@ function handles = plot_relative_events (varargin)
 % 2019-10-08 Now plot log2 data, then change y tick labels to reflect original values
 % 2019-10-08 Now conduct t-test on log2 data
 % 2020-07-23 Added stimulation window to raster plot
-% 
+% 2020-08-18 Added 'BeforeWindowMin' & 'AfterWindowMin' as optional arguments
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
@@ -128,6 +134,8 @@ eventTableSuffixDefault = '_SWDs';
 stimTableSuffixDefault = '_pulses';
 directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
+beforeWindowMinDefault = [];
+afterWindowMinDefault = [];
 stimDurationMinDefault = [];
 yLimitsDefault = [];            % set later
 yLimitsLog2RatioDefault = [];  % set later
@@ -156,6 +164,10 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'RelativeTimeWindowMin', relativeTimeWindowMinDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'BeforeWindowMin', beforeWindowMinDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'AfterWindowMin', afterWindowMinDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'StimDurationMin', stimDurationMinDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'YLimits', yLimitsDefault, ...
@@ -179,6 +191,8 @@ eventTableSuffix = iP.Results.EventTableSuffix;
 stimTableSuffix = iP.Results.StimTableSuffix;
 directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
+beforeWindowMin = iP.Results.BeforeWindowMin;
+afterWindowMin = iP.Results.AfterWindowMin;
 avgStimDurationMin = iP.Results.StimDurationMin;
 yLimits = iP.Results.YLimits;
 yLimitsLog2Ratio = iP.Results.YLimitsLog2Ratio;
@@ -209,6 +223,16 @@ if isempty(figSuffix)
         figSuffixAddition = ['all_', stimIndices, '_stims'];
     else
         error('stimNumber unrecognized!');
+    end
+
+    if ~isempty(beforeWindowMin)
+        figSuffixAddition = sprintf('%s_bef%gto%g', figSuffixAddition, ...
+                                    beforeWindowMin(1), beforeWindowMin(2));
+    end
+
+    if ~isempty(afterWindowMin)
+        figSuffixAddition = sprintf('%s_aft%gto%g', figSuffixAddition, ...
+                                    afterWindowMin(1), afterWindowMin(2));
     end
 
     figSuffix = [plotType, '_', figSuffixAddition];
@@ -418,7 +442,8 @@ case 'chevron'
     %       summing across stims for each file
     %   Note: relEventTimes must be a cell array of numeric vectors
     [nEventsBeforeEachStim, nEventsAfterEachStim] = ...
-        count_events(relEventTimesTrans, 'StimTime', 0);
+        count_events(relEventTimesTrans, 'BeforeWindow', beforeWindowMin, ...
+                    'AfterWindow', afterWindowMin);
     [nEventsBefore, nEventsAfter] = ...
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
