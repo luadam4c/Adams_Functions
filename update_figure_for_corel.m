@@ -89,7 +89,14 @@ function figHandle = update_figure_for_corel (varargin)
 %                                       have more than two data points
 %                   must be empty or a positive scalar
 %                   default == [] (don't change)
+%                   - 'ScatterMarkerSize': line width of Scatter objects
+%                                       or Line objects that have only one
+%                                       data point
+%                   must be empty or a positive scalar
+%                   default == [] (don't change)
 %                   - 'ScatterMarkerSize': marker size of Scatter objects
+%                                       or Line objects that have only one
+%                                       data point
 %                   must be empty or a positive scalar
 %                   default == [] (don't change)
 %                   - Any other parameter-value pair for set_figure_properties()
@@ -139,6 +146,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2020-02-06 Added 'BoxOn' as an optional argument
 % 2020-04-22 Added 'RemoveCircles' as an optional argument
 % 2020-08-03 Added 'RemovePlots' as an optional argument
+% 2020-08-19 Added 'ScatterLineWidth' as an optional argument
 
 
 %% Hard-coded parameters
@@ -175,6 +183,7 @@ textFontSizeDefault = 7;
 rulerLineWidthDefault = 1;
 plotLineWidthDefault = [];
 plotMarkerSizeDefault = [];
+scatterLineWidthDefault = [];
 scatterMarkerSizeDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -248,6 +257,8 @@ addParameter(iP, 'PlotLineWidth', plotLineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'PlotMarkerSize', plotMarkerSizeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'ScatterLineWidth', scatterLineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'ScatterMarkerSize', scatterMarkerSizeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
@@ -278,6 +289,7 @@ textFontSize = iP.Results.TextFontSize;
 rulerLineWidth = iP.Results.RulerLineWidth;
 plotLineWidth = iP.Results.PlotLineWidth;
 plotMarkerSize = iP.Results.PlotMarkerSize;
+scatterLineWidth = iP.Results.ScatterLineWidth;
 scatterMarkerSize = iP.Results.ScatterMarkerSize;
 
 % Keep unmatched arguments for set_figure_properties()
@@ -470,10 +482,24 @@ if ~isempty(plotMarkerSize)
     set(plots, 'MarkerSize', plotMarkerSize);
 end
 
+% Update Scatter object line widths
+if ~isempty(scatterLineWidth)
+    scatters = findobj(figHandle, 'Type', 'Scatter');
+    set(scatters, 'LineWidth', scatterLineWidth);
+
+    lines = findobj(figHandle, 'Type', 'Line');
+    scatterLike = lines(arrayfun(@(x) is_scatter_like(x), lines));
+    set(scatterLike, 'LineWidth', scatterLineWidth);
+end
+
 % Update Scatter object marker sizes
 if ~isempty(scatterMarkerSize)
     scatters = findobj(figHandle, 'Type', 'Scatter');
     set(scatters, 'SizeData', scatterMarkerSize^2);
+
+    lines = findobj(figHandle, 'Type', 'Line');
+    scatterLike = lines(arrayfun(@(x) is_scatter_like(x), lines));
+    set(scatterLike, 'MarkerSize', scatterMarkerSize);
 end
 
 % Update all face alphas to 1
@@ -525,6 +551,19 @@ zData = lineObject.ZData;
 
 % The line is a plot if there are more than two data points
 isPlot = numel(xData) > 2 || numel(yData) > 2 || numel(zData) > 2;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function isScatterLike = is_scatter_like (lineObject)
+%% Returns whether a Line object has more than two data points
+% TODO: Pull out as its own function
+
+% Get x, y and z data
+xData = lineObject.XData;
+yData = lineObject.YData;
+
+% The line is a plot if there are more than two data points
+isScatterLike = numel(xData) == 1 && numel(yData) == 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

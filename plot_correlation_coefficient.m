@@ -1,6 +1,6 @@
-function [textObject, isSignificant] = plot_correlation_coefficient (varargin)
+function [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
 %% Plots the correlation coefficient between x and y data
-% Usage: [textObject, isSignificant] = plot_correlation_coefficient (varargin)
+% Usage: [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
 % Explanation:
 %       TODO
 %
@@ -11,8 +11,8 @@ function [textObject, isSignificant] = plot_correlation_coefficient (varargin)
 %       plot_correlation_coefficient;
 %
 % Outputs:
-%       textObject  - correlation coefficient Text object returned
-%                   specified as a Text object
+%       textObjects     - correlation coefficient Text object returned
+%                       specified as an array of Text objects
 %       isSignificant   - whether correlation is deemed significant
 %                       specified as a logical scalar
 %
@@ -88,15 +88,24 @@ if isempty(yData)
     yData = apply_over_cells(@vertcat, yData);
 end
 
-%% Do the job
+%% Compute
 % Compute the 2D correlation coefficient
 corrValue = corr2(xData, yData);
 
-% Test the significance
-[isSignicant, pValue] = test_corr_significance(corrValue);
+% Count the number of data points
+nPoints = numel(xData);
 
+% Test the significance
+[isSignificant, pValue] = test_corr_significance(corrValue, nPoints);
+
+% Test using corrcoef, should be the same for vector data
+% [corrMatrix, pValues] = corrcoef(xData, yData);
+% corrValue2 = corrMatrix(2, 1);
+% pValue2 = pValues(2, 1);
+
+%% Plot
 % Decide on the text color
-if isSignicant && abs(corrValue) ~= 1
+if isSignificant && abs(corrValue) ~= 1
     textColor = 'r';
 else
     textColor = 'k';
@@ -106,21 +115,23 @@ end
 wasHold = hold_on;
 
 % Plot the correlation coefficient
-text(0.1, 0.95, ...
-    ['Correlation coefficient: ', num2str(corrValue, 3)], ...
-    'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
+textObjects(1, 1) = ...
+    text(0.1, 0.95, ...
+        ['Correlation coefficient: ', num2str(corrValue, 3)], ...
+        'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
 % Plot the p value
-text(0.1, 0.9, ...
-    ['p value = ', num2str(pValue, 3)], ...
-    'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
+textObjects(2, 1) = ...
+    text(0.1, 0.9, ...
+        ['p value = ', num2str(pValue, 3)], ...
+        'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
 % Hold off
 hold_off(wasHold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [isSignicant, pValue] = test_corr_significance (corrValue, nPoints)
+function [isSignificant, pValue] = test_corr_significance (corrValue, nPoints)
 %% Tests whether a correlation coefficient is significant
 
 %% Hard-coded parameters
@@ -135,7 +146,7 @@ degreeFreedom = (nPoints - 2);
 tStatistic = corrValue * sqrt(degreeFreedom / (1 - corrValue^2));
 
 % Compute a p value
-pValue = 1 - tcdf(abs(tStatistic), degreeFreedom);
+pValue = (1 - tcdf(abs(tStatistic), degreeFreedom)) * 2;
 
 % Decide whether the correlation coefficient is significant
 isSignificant = pValue < sigLevel;
