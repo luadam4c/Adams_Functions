@@ -340,7 +340,7 @@ colorMapCell = decide_on_colormap(colorMap, nGroups, 'ForceCellOutput', true);
 % Set legend location based on number of groups
 if strcmpi(legendLocation, 'auto')
     if nGroups > 1 && nGroups <= maxInFigure
-        legendLocation = 'northeast';
+        legendLocation = 'best';
     elseif nGroups > maxInFigure
         legendLocation = 'eastoutside';
     else

@@ -45,7 +45,8 @@ value = match_row_count(value, nRows);
 myTable.Properties.RowNames = value;
 
 % Add column to the table
-myTable = addvars(myTable, value, 'Before', 1, varargin{:});
+myTable = addvars(myTable, value, 'NewVariableNames', inputname(2), ...
+                    'Before', 1, varargin{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

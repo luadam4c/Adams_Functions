@@ -89,15 +89,16 @@ if isempty(yData)
 end
 
 %% Do the job
-% Compute the correlation coefficient
+% Compute the 2D correlation coefficient
 corrValue = corr2(xData, yData);
 
+% Test the significance
+[isSignicant, pValue] = test_corr_significance(corrValue);
+
 % Decide on the text color
-if abs(corrValue) > 0.6 && abs(corrValue) ~= 1
-    isSignificant = true;
+if isSignicant && abs(corrValue) ~= 1
     textColor = 'r';
 else
-    isSignificant = false;
     textColor = 'k';
 end
 
@@ -109,8 +110,35 @@ text(0.1, 0.95, ...
     ['Correlation coefficient: ', num2str(corrValue, 3)], ...
     'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
+% Plot the p value
+text(0.1, 0.9, ...
+    ['p value = ', num2str(pValue, 3)], ...
+    'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
+
 % Hold off
 hold_off(wasHold);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [isSignicant, pValue] = test_corr_significance (corrValue, nPoints)
+%% Tests whether a correlation coefficient is significant
+
+%% Hard-coded parameters
+sigLevel = 0.05;
+
+% Compute the degree of freedom
+degreeFreedom = (nPoints - 2);
+
+% Compute the t statistic
+%   Taken from Equation 34.5 of Analyzing Neural Time Series Data
+%       by Mike X Cohen
+tStatistic = corrValue * sqrt(degreeFreedom / (1 - corrValue^2));
+
+% Compute a p value
+pValue = 1 - tcdf(abs(tStatistic), degreeFreedom);
+
+% Decide whether the correlation coefficient is significant
+isSignificant = pValue < sigLevel;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

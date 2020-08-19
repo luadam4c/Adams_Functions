@@ -113,6 +113,7 @@ function handles = plot_relative_events (varargin)
 % 2019-10-08 Now conduct t-test on log2 data
 % 2020-07-23 Added stimulation window to raster plot
 % 2020-08-18 Added 'BeforeWindowMin' & 'AfterWindowMin' as optional arguments
+% 2020-08-18 Now writes row names for Chevron tables
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
@@ -454,12 +455,13 @@ case 'chevron'
     % Save the data in tables
     chevronTable = table(nEventsBefore, nEventsAfter, ...
                         'RowNames', labels);
-    writetable(chevronTable, sheetPath);
+    writetable(chevronTable, sheetPath, 'WriteRowNames', true);
 
     % Save log2 ratio data in a table
     log2ratioChevronTable = table(nEventsBeforeLog2Ratio, ...
                             nEventsAfterLog2Ratio, 'RowNames', labels);
-    writetable(log2ratioChevronTable, sheetPathLog2Ratio);
+    writetable(log2ratioChevronTable, sheetPathLog2Ratio, ...
+                'WriteRowNames', true);
 
     % TODO: Use plot_small_chevrons.m
     % Create subplots

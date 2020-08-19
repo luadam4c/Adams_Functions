@@ -49,7 +49,7 @@ function table = modify_table (table, varargin)
 %% Default values for optional arguments
 myFunctionDefault = function_handle.empty;
 variableNamesDefault = {};  % plot all variables by default
-useVarFunDefault = [];
+useVarFunDefault = false;
 sheetNameDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
