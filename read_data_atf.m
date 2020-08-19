@@ -43,7 +43,7 @@ function [dataTable, atfParams] = read_data_atf (varargin)
 %       cd/sscanf_full.m
 %
 % Used by:
-%       cd/concatenate_swd_files.m
+%       cd/combine_swd_pleth_data.m
 %       cd/parse_atf_swd.m
 
 % File History:

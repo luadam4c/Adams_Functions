@@ -1,6 +1,6 @@
-function [outFilePaths] = concatenate_swd_files (varargin)
-%% Parses and concatenates SWD files from different source data atf files
-% Usage: [outFilePaths] = concatenate_swd_files (varargin)
+function outFilePaths = combine_swd_pleth_data (varargin)
+%% Parses and concatenates SWD and pleth files from different source data .atf and .mat files
+% Usage: outFilePaths = combine_swd_pleth_data (varargin)
 % Explanation:
 %       TODO
 %
@@ -91,7 +91,7 @@ cellfun(@(a, b, c) parse_all_swds('Recursive', false, 'Keyword', a, ...
         uniqueAftBases, num2cell(fileStartTimeSec), pieceStrs, ...
         'UniformOutput', false);
 
-%% Concatenate files
+%% Concatenate SWD files
 % All subdirectories
 subDirs = {directory};
 % [~, subDirs] = all_subdirs('Prefix', 'cage');
@@ -118,6 +118,8 @@ outFilePaths = fullfile(subDirs, finalNames);
 % Concatenate SWD sheets
 cellfun(@(x, y) vertcat_spreadsheets(x, 'OutputFileName', y), ...
         swdSheets, outFilePaths, 'UniformOutput', false);
+
+%% Concatenate pleth files
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

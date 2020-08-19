@@ -81,7 +81,7 @@ function varargout = all_files (varargin)
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_swd_sheets.m
 %       cd/compile_mod_files.m
-%       cd/concatenate_swd_files.m
+%       cd/combine_swd_pleth_data.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/find_matching_files.m
 %       cd/force_string_start.m

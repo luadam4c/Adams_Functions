@@ -55,7 +55,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/force_string_end.m
 %
 % Used by:
-%       cd/concatenate_swd_files.m
+%       cd/combine_swd_pleth_data.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/create_power_tables.m
 %       cd/read_matching_sheets.m
