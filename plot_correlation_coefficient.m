@@ -38,7 +38,7 @@ function [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
 
 % File History:
 % 2020-08-04 Adapted from m3ha_simulation_population.m
-% 
+% 2020-08-19 Now computes and shows p values
 
 %% Hard-coded parameters
 
