@@ -533,7 +533,7 @@ case {'chevron', 'corr'}
             handles.fig = fig;
         case 'corr'
             % Modify the figure title
-            figTitle = replace(figTitle, 'SWD count around', 'For');
+            figTitle = replace(figTitle, 'SWD count around', 'Around');
 
             % Find matching correlation table paths
             [~, corrPaths] = ...
