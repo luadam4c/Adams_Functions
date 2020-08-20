@@ -1,0 +1,36 @@
+{
+	"folders":
+	[
+		{
+			"file_exclude_patterns":
+			[
+				"*.settings",
+				"*~",
+				"*.mat",
+				"*.pdf"
+			],
+			"folder_exclude_patterns":
+			[
+				"backup"
+			],
+			"path": "."
+		},
+		{
+			"file_exclude_patterns":
+			[
+				"*.settings",
+				"*~",
+				"*.mat",
+				"*.pdf"
+			],
+			"folder_exclude_patterns":
+			[
+				"backup"
+			],
+			"path": "../Adams_Functions"
+		},
+		{
+			"path": "../Settings_Matlab"
+		}
+	]
+}

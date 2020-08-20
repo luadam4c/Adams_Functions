@@ -55,9 +55,9 @@ function print_or_show_message (message, varargin)
 %       cd/parse_file_or_directory.m
 %       cd/plot_swd_raster.m
 %       /home/Matlab/minEASE/minEASE.m
-%       /home/Matlab/minEASE/combine_eventInfo.m
-%       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
-%       /home/Matlab/minEASE/detect_gapfree_events.m
+%       /home/Matlab/minEASE/minEASE_combine_events.m
+%       /home/Matlab/minEASE/minEASE_compute_plot_average_psc.m
+%       /home/Matlab/minEASE/minEASE_detect_gapfree_events.m
 %       /home/Matlab/Kojis_Functions/compute_average_PSC_trace.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m

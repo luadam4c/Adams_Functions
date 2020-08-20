@@ -39,9 +39,9 @@ function print_and_show_message(message, varargin)
 %       cd/combine_sweeps.m
 %       cd/parse_atf_swd.m
 %       /home/Matlab/minEASE/minEASE.m
-%       /home/Matlab/minEASE/combine_eventInfo.m
-%       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
-%       /home/Matlab/minEASE/detect_gapfree_events.m
+%       /home/Matlab/minEASE/minEASE_combine_events.m
+%       /home/Matlab/minEASE/minEASE_compute_plot_average_psc.m
+%       /home/Matlab/minEASE/minEASE_detect_gapfree_events.m
 %       /home/Matlab/Kojis_Functions/compute_average_PSC_trace.m
 %
 % File History:

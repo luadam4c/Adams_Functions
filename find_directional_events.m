@@ -70,7 +70,7 @@ function [eventInfo, dataSmooth, dataDirFilt, eventAmpThreshold, ...
 %       /home/Matlab/Adams_Functions/adjust_peaks.m
 %
 % Used by:
-%       /home/Matlab/minEASE/detect_gapfree_events.m
+%       /home/Matlab/minEASE/minEASE_detect_gapfree_events.m
 
 % File History:
 % ---------- Created by Koji Takahashi & Mark P Beenhakker
@@ -112,7 +112,7 @@ function [eventInfo, dataSmooth, dataDirFilt, eventAmpThreshold, ...
 % For arguments
 validDirections = {'Upward', 'Downward'};
 
-%   Used by minEASE.m, combine_eventInfo.m, detect_gapfree_events.m
+%   Used by minEASE.m, minEASE_combine_events.m, minEASE_detect_gapfree_events.m
 IDXBREAK_COLNUM      = 1;
 IDXPEAK_COLNUM       = 2;
 VALBREAK_COLNUM      = 3;

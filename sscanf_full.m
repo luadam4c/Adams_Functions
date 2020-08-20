@@ -30,7 +30,7 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 %       cd/parse_atf_swd.m
 %       cd/read_data_atf.m
 %       /media/adamX/m3ha/data_dclamp/CountSweeps.m
-%       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
+%       /home/Matlab/minEASE/minEASE_extract_from_output_filename.m
 
 % File History:
 % 2018-07-31 Created by Adam Lu

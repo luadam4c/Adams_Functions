@@ -75,7 +75,7 @@ function [eventInfoExpanded, varargout] = ...
 %                   default == 500
 %
 % Used by:
-%       /home/Matlab/minEASE/detect_gapfree_events.m
+%       /home/Matlab/minEASE/minEASE_detect_gapfree_events.m
 
 % File History:
 % ---------- Created by Koji Takahashi & Mark P Beenhakker

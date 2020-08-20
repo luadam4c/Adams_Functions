@@ -34,7 +34,7 @@ function strValidated = validate_string (str, validStrings, varargin)
 %
 % Used by:
 %       /home/Matlab/Adams_Functions/istype.m
-%       /home/Matlab/minEASE/gui_examine_events.m
+%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
 
 % File History:
 % 2017-05-25 Moved from isfigtype.m

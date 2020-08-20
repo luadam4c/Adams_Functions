@@ -4,10 +4,10 @@ function idxEnd = get_idxEnd(idxPeak, fullDecayTime, interStimulusInterval)
 %
 % Used by:
 %       /home/Matlab/minEASE/minEASE.m
-%       /home/Matlab/minEASE/gui_examine_events.m
+%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
 %
 % File History:
-%   2018-02-08 Moved from gui_examine_events.m
+%   2018-02-08 Moved from minEASE_gui_examine_events.m
 
 if ~isnan(fullDecayTime)
     % Use the index of "full decay point"

@@ -15,10 +15,10 @@ function newStr = increment_editbox(hEditBox, minNo, maxNo, incr, strings, varar
 %
 %
 % Used by:    
-%       /home/Matlab/minEASE/gui_examine_events.m
+%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
 %
 % File History:
-% 2017-06-09 Moved from gui_examine_events.m
+% 2017-06-09 Moved from minEASE_gui_examine_events.m
 % 2017-06-10 Now uses built-in strcmp() instead of find_in_strings.m
 % 2017-06-12 Now allows incr to be nonzero and sets the direction 
 %               according to the sign of incr

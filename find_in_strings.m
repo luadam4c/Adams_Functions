@@ -100,10 +100,10 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/ZG_extract_all_IEIs.m
 %       cd/ZG_extract_all_data.m
 %       /home/Matlab/minEASE/minEASE.m
-%       /home/Matlab/minEASE/combine_eventInfo.m
-%       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
+%       /home/Matlab/minEASE/minEASE_combine_events.m
+%       /home/Matlab/minEASE/minEASE_extract_from_output_filename.m
 %       /home/Matlab/minEASE/read_params.m
-%       /home/Matlab/minEASE/gui_examine_events.m
+%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %       /media/adamX/RTCl/neuronlaunch.m

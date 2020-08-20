@@ -13,7 +13,7 @@ function [structure] = my_closereq (hObject, varargin)
 %
 % Used by:
 %       cd/m3ha_optimizergui_4compgabab.m
-%       /home/Matlab/minEASE/gui_examine_events.m
+%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
 %
 % 2016-04-25 Adapted from Figure properties documentation
 % 2016-06-16 Added input parser scheme and added defaultOption
