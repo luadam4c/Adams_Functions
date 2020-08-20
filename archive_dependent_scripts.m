@@ -1,6 +1,6 @@
-function varargout = archive_dependent_scripts (mFileName, varargin)
+function varargout = archive_dependent_scripts (mScriptName, varargin)
 %% Archive all dependent scripts of a function
-% Usage: functionListTable = archive_dependent_scripts (mFileName, varargin)
+% Usage: fileListTable = archive_dependent_scripts (mScriptName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -12,11 +12,11 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %       for i = 1:numel(scriptBases); archive_dependent_scripts(scriptBases{i}); end
 %
 % Outputs:
-%       functionListTable       - see all_dependent_functions.m
+%       fileListTable       - see all_dependent_files.m
 %                               specified as a table
 %
 % Arguments:
-%       mFileName   - .m file name
+%       mScriptName   - .m file name
 %                   must be a string scalar or a character vector
 %       varargin    - 'OutFolder': directory to place archive file
 %                   must be a string scalar or a character vector
@@ -27,7 +27,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %                   - 'OutFileName': name of archive file
 %                       Note: If provided, OutFilePath will override this
 %                   must be a string scalar or a character vector
-%                   default == [mFileName, '_dependent_files_', create_time_stamp]
+%                   default == [mScriptName, '_dependent_files_', create_time_stamp]
 %                   - 'FileExt': file extension for the archive
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'zip'   - Windows zip
@@ -35,10 +35,10 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %                       'gz'    - GNU zip
 %                   default == 'zip'
 %                   - Any other parameter-value pair for 
-%                           all_dependent_functions.m
+%                           all_dependent_files.m
 %
 % Requires:
-%       cd/all_dependent_functions.m
+%       cd/all_dependent_files.m
 %       cd/check_dir.m
 %       cd/create_time_stamp.m
 %       cd/create_error_for_nargin.m
@@ -81,18 +81,18 @@ fileExtDefault = '';            % set later
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(create_error_for_nargin(mfilename));
+    error(create_error_for_nargin(mScriptName));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;
-iP.FunctionName = mfilename;
+iP.FunctionName = mScriptName;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'mFileName', ...
+addRequired(iP, 'mScriptName', ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-        ['mFileName must be a character array or a string array ', ...
+        ['mScriptName must be a character array or a string array ', ...
             'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -106,20 +106,20 @@ addParameter(iP, 'FileExt', fileExtDefault, ...
     @(x) any(validatestring(x, validFileExts)));
 
 % Read from the Input Parser
-parse(iP, mFileName, varargin{:});
+parse(iP, mScriptName, varargin{:});
 outFolder = iP.Results.OutFolder;
 outFilePath = iP.Results.OutFilePath;
 outFileName = iP.Results.OutFileName;
 fileExt = validatestring(iP.Results.FileExt, validFileExts);
 
-% Keep unmatched arguments for the all_dependent_functions() function
+% Keep unmatched arguments for the all_dependent_files() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % If an empty file name is provided, return error
-if exist(mFileName) ~= 2
-    mFileName = force_string_end(mFileName, '.m');
-    fprintf('The file %s cannot be found!\n', mFileName);
+if exist(mScriptName, 'file') ~= 2
+    mScriptName = force_string_end(mScriptName, '.m');
+    fprintf('The file %s cannot be found!\n', mScriptName);
     return
 end
 
@@ -153,7 +153,7 @@ if isempty(outFilePath)
     else
         % Create a default file path
         outFilePathBase = fullfile(outFolder, ...
-                        [mFileName, '_dependent_files_', create_time_stamp]);
+                        [mScriptName, '_dependent_files_', create_time_stamp]);
     end
 else
     % Extract just the part without the extension
@@ -166,8 +166,8 @@ check_dir(outFolderTemp);
 
 %% Do the job
 % Retrieve a cell array of function paths
-fprintf('Retrieving a list of all files dependent on %s ... \n', mFileName);
-functionListTable = all_dependent_functions(mFileName, ...
+fprintf('Retrieving a list of all files dependent on %s ... \n', mScriptName);
+fileListTable = all_dependent_files(mScriptName, ...
                         'OutFolder', outFolderTemp, ...
                         'OriginalOutput', false, ...
                         'SaveFlag', saveListFlag, ...
@@ -175,7 +175,7 @@ functionListTable = all_dependent_functions(mFileName, ...
                         otherArguments{:});
 
 % Extract the full paths
-pathList = functionListTable.fullPath;
+pathList = fileListTable.fullPath;
 
 % Count the number of files
 nFiles = numel(pathList);
@@ -212,7 +212,7 @@ fprintf('Removing temporary directory %s ... \n', outFolderTemp);
 rmdir(outFolderTemp, 's');
 
 %% Output results
-varargout{1} = functionListTable;
+varargout{1} = fileListTable;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

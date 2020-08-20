@@ -62,7 +62,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/extract_distinct_fileparts.m
 %
 % Used by:
-%       cd/all_dependent_functions.m
+%       cd/all_dependent_files.m
 %       cd/all_file_bases.m
 %       cd/archive_dependent_scripts.m
 %       cd/write_data_atf.m

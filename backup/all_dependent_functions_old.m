@@ -1,21 +1,22 @@
-function varargout = all_dependent_functions (mFileName, varargin)
+function varargout = all_dependent_files (mScriptName, varargin)
 %% Prints all dependent files used by a given MATLAB script/function
-% Usage: [fTableOrList, pTableOrList] = all_dependent_functions (mFileName, varargin)
+% Usage: [fTableOrList, pTableOrList] = all_dependent_files (mScriptName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       all_dependent_functions('parse_pulse')
-%       all_dependent_functions('parse_pulse.m')
-%       [fTable, pTable] = all_dependent_functions('parse_pulse')
-%       [fList, pList] = all_dependent_functions('parse_pulse', 'OriginalOutput', true)
+%       all_dependent_files('parse_pulse')
+%       all_dependent_files('parse_pulse.m')
+%       [fTable, pTable] = all_dependent_files('parse_pulse')
+%       [fList, pList] = all_dependent_files('parse_pulse', 'OriginalOutput', true)
 %
 % Outputs:
 %       fTableOrList    - a table or cell array of function paths
 %                       specified as a table or cell
 %       pTableOrList    - a table or structure of MATLAB products
 %                       specified as a table or struct
+%
 % Arguments:
-%       mFileName   - .m file name
+%       mScriptName - .m script name
 %                   must be a string scalar or a character vector
 %       varargin    - 'TopOnly': display only the functions used directly 
 %                                   by the given script/function
@@ -76,17 +77,17 @@ outFolderDefault = pwd;
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(create_error_for_nargin(mfilename));
+    error(create_error_for_nargin(mScriptName));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;
-iP.FunctionName = mfilename;
+iP.FunctionName = mScriptName;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'mFileName', ...
+addRequired(iP, 'mScriptName', ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-        ['mFileName must be a character array or a string array ', ...
+        ['mScriptName must be a character array or a string array ', ...
             'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -102,7 +103,7 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
-parse(iP, mFileName, varargin{:});
+parse(iP, mScriptName, varargin{:});
 topOnly = iP.Results.TopOnly;
 originalOutput = iP.Results.OriginalOutput;
 saveFlag = iP.Results.SaveFlag;
@@ -111,10 +112,10 @@ outFolder = iP.Results.OutFolder;
 
 %% Preparation 
 % Extract just the file name without '.m'
-if regexp(mFileName, '.m$')
-    mFileBase = extractBefore(mFileName, '.m');
+if regexp(mScriptName, '.m$')
+    mFileBase = extractBefore(mScriptName, '.m');
 else
-    mFileBase = mFileName;
+    mFileBase = mScriptName;
 end
 
 % Set default function list path
@@ -130,14 +131,14 @@ if isempty(matlabProductListPath)
 end
 
 %% Do the job
-% Retrieve dependent functions and MATLAB products
+% Retrieve dependent files and MATLAB products
 %   Note: Introduced in R2014a
 if topOnly
     [functionList, matlabProductList] = ...
-        matlab.codetools.requiredFilesAndProducts(mFileName, 'toponly');
+        matlab.codetools.requiredFilesAndProducts(mScriptName, 'toponly');
 else
     [functionList, matlabProductList] = ...
-        matlab.codetools.requiredFilesAndProducts(mFileName);
+        matlab.codetools.requiredFilesAndProducts(mScriptName);
 end
 
 if originalOutput
