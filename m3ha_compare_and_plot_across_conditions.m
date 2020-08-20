@@ -5,8 +5,8 @@ function m3ha_compare_and_plot_across_conditions (dirIdentifier, varargin)
 % Arguments: TODO
 %
 % Requires:
+%       cd/apply_over_cells.m
 %       cd/m3ha_compare_neuronparams2.m
-%       ~/Adams_Functions/apply_over_cells.m
 
 % File History:
 % 2017-09-15 Adapted from m3ha_compare_and_plot_across_IC2.m

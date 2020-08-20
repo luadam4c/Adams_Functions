@@ -8,7 +8,7 @@ function fileBases = all_file_bases (infolder, subdirs, fileext)
 %                   default == ''
 %
 % Used by:    
-%       /home/Matlab/Adams_Functions/m3ha_find_lts.m
+%       cd/m3ha_find_lts.m
 %
 % 2017-02-16 Created
 % 2018-11-27 Renamed find_filebases -> all_file_bases

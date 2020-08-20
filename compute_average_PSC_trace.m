@@ -72,7 +72,7 @@ function [averagePscTrace, allPscTraces] = ...
 %                   
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       cd/print_or_show_message.m
 %
 % Used by:
 %       cd/minEASE_detect_gapfree_events.m

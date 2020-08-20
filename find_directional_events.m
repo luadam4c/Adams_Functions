@@ -66,8 +66,8 @@ function [eventInfo, dataSmooth, dataDirFilt, eventAmpThreshold, ...
 %
 % Requires:
 %       /home/Matlab/Kojis_Functions/compute_rms_Gaussian.m
-%       /home/Matlab/Adams_Functions/find_custom.m
-%       /home/Matlab/Adams_Functions/adjust_peaks.m
+%       cd/find_custom.m
+%       cd/adjust_peaks.m
 %
 % Used by:
 %       cd/minEASE_detect_gapfree_events.m

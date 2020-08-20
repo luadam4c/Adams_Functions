@@ -27,10 +27,10 @@ function [model0, model1, pdfModel2, pdfModel3, pdfModel4, outparams] = fit_IEI 
 %                   default == true
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/stderr.m
+%       cd/stderr.m
 %
 % Used By:
-%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
+%       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m
 %
 % File History: 

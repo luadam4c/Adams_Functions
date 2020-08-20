@@ -6,7 +6,7 @@ function [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, 
 % Used by:
 %        /media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
 % Requires:
-%        /home/Matlab/Adams_Functions/m3ha_find_lts.m
+%        cd/m3ha_find_lts.m
 %
 % 2016-11-07 Moved from dclampDataExtractor.m
 % 2017-12-21 Changed tabs to spaces

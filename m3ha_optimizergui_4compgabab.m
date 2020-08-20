@@ -9,10 +9,10 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 %
 % Requires:
 %       cd/m3ha_optimizer_4compgabab.m
-%       /home/Matlab/Adams_Functions/set_fields_zero.m
-%       /home/Matlab/Adams_Functions/restore_fields.m
-%       /home/Matlab/Adams_Functions/find_in_strings.m
-%       /home/Matlab/Adams_Functions/my_closereq.m
+%       cd/set_fields_zero.m
+%       cd/restore_fields.m
+%       cd/find_in_strings.m
+%       cd/my_closereq.m
 %       /home/Matlab/Downloaded_Functions/rgb.m
 %
 % Used by:

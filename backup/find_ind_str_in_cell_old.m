@@ -29,7 +29,7 @@ function [indices, elements] = find_in_strings(str, cellarray, varargin)
 %                   default == false
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/intersectm.m
+%       cd/intersectm.m
 % Used by:    
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
 %       /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
@@ -42,8 +42,8 @@ function [indices, elements] = find_in_strings(str, cellarray, varargin)
 %       /media/adamX/RTCl/m3ha_network_raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/single_neuron.m
-%       /home/Matlab/Adams_Functions/m3ha_network_update_dependent_params.m
-%       /home/Matlab/Adams_Functions/isfigtype.m
+%       cd/m3ha_network_update_dependent_params.m
+%       cd/isfigtype.m
 %       /home/Matlab/Brians_Functions/minEASE/ExceltoGUIConverter.m
 %
 % 2016-09--- Created

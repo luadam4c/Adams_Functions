@@ -134,12 +134,12 @@ function [eventInfo, eventClass, dataLowpass, noiseLevel] = ...
 % Requires:
 %       cd/minEASE_plot_gapfree_events.m
 %       cd/minEASE_compute_plot_average_psc.m
-%       /home/Matlab/Adams_Functions/compute_rms_Gaussian.m
-%       /home/Matlab/Adams_Functions/find_directional_events.m
-%       /home/Matlab/Adams_Functions/identify_bursts.m
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
-%       /home/Matlab/Adams_Functions/save_all_figtypes.m
+%       cd/compute_rms_Gaussian.m
+%       cd/find_directional_events.m
+%       cd/identify_bursts.m
+%       cd/isfigtype.m
+%       cd/print_or_show_message.m
+%       cd/save_all_figtypes.m
 %
 % Used by:
 %       cd/minEASE.m

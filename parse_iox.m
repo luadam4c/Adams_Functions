@@ -39,7 +39,7 @@ function pulseTables = parse_iox (varargin)
 %       cd/force_column_cell.m
 %       cd/match_dimensions.m
 %       cd/read_lines_from_file.m
-%       ~/Adams_Functions/struct2arglist.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       /TODO:dir/TODO:file

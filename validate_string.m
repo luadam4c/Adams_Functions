@@ -30,10 +30,10 @@ function strValidated = validate_string (str, validStrings, varargin)
 %                   default == true
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/find_in_strings.m
+%       cd/find_in_strings.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/istype.m
+%       cd/istype.m
 %       cd/minEASE_gui_examine_events.m
 
 % File History:

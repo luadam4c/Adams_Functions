@@ -48,13 +48,13 @@ function waveformTrain = create_waveform_train (waveform, frequency, totalDurati
 %                   default == true
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/issheettype.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
-%       /home/Matlab/Adams_Functions/save_all_figtypes.m
+%       cd/isfigtype.m
+%       cd/issheettype.m
+%       cd/print_or_show_message.m
+%       cd/save_all_figtypes.m
 %
 % Used by:    
-%       /home/Matlab/Adams_Functions/create_pulse_train_series.m
+%       cd/create_pulse_train_series.m
 
 % File History:
 % 2018-08-08 Created by Adam Lu

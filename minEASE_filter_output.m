@@ -40,10 +40,10 @@ function output = minEASE_filter_output (varargin)
 % Requires:
 %       cd/minEASE_filter_events.m
 %       cd/minEASE_load_output.m
-%       /home/Matlab/Adams_Functions/dlmwrite_with_header.m
+%       cd/dlmwrite_with_header.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
+%       cd/ZG_extract_all_IEIs.m
 
 % File History:
 % 2018-07-29 Created by Adam Lu

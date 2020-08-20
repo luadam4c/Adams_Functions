@@ -10,8 +10,8 @@ function m3ha_network_plot_oscillations (infolder, oscFile)
 %               must be a csv
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/m3ha_network_autocorrelogram.m
-%       /home/Matlab/Adams_Functions/save_all_figtypes.m
+%       cd/m3ha_network_autocorrelogram.m
+%       cd/save_all_figtypes.m
 %       /home/Matlab/Downloaded_Functions/plotSpread/plotSpread.m
 % 
 % Used by:

@@ -51,7 +51,7 @@ function [output1, output2] = function_template (reqarg1, reqarg2, reqstr3, vara
 % Requires:
 %       TODO: place any custom functions used in this function/script here
 %       /TODO:dir/TODO:file
-%       /home/Matlab/Adams_Functions/isfigtype.m
+%       cd/isfigtype.m
 %
 % Used by:    
 %       TODO: place any custom functions/scripts that uses this function here

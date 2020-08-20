@@ -23,13 +23,13 @@ function hGUI = minEASE_gui_examine_events (dataRaw, dataLowpass, tVec, ...
 % Requires:
 %       cd/minEASE_plot_gapfree_events.m
 %       /home/Matlab/Downloaded_Functions/rgb.m
-%       /home/Matlab/Adams_Functions/compute_rms_Gaussian.m
-%       /home/Matlab/Adams_Functions/validate_string.m
-%       /home/Matlab/Adams_Functions/increment_editbox.m
-%       /home/Matlab/Adams_Functions/find_custom.m
-%       /home/Matlab/Adams_Functions/adjust_peaks.m
-%       /home/Matlab/Adams_Functions/my_closereq.m
-%       /home/Matlab/Adams_Functions/get_idxEnd.m
+%       cd/compute_rms_Gaussian.m
+%       cd/validate_string.m
+%       cd/increment_editbox.m
+%       cd/find_custom.m
+%       cd/adjust_peaks.m
+%       cd/my_closereq.m
+%       cd/get_idxEnd.m
 %
 % Used by:
 %       cd/minEASE_examine_gapfree_events.m

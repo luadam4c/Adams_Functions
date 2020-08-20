@@ -20,12 +20,10 @@ function vectorsInOrder = extract_in_order (vectorSets, varargin)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/create_error_for_nargin.m
+%       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
 
 % File History:
 % 2019-10-03 Moved from plot_relative_events.m

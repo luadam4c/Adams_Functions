@@ -3,7 +3,7 @@ function [eNa, eK, ehHigh, ehLow] = m3ha_compute_fixed_params(varargin)
 % Usage: [eNa, eK, ehHigh, ehLow] = m3ha_compute_fixed_params(varargin)
 %
 % Requires:    
-%       /home/Matlab/Adams_Functions/compute_eRev.m
+%       cd/compute_eRev.m
 %
 % File History:
 % 2017-08-05 - Created

@@ -17,11 +17,9 @@ function [output1] = m3ha_compute_and_compare_lts_statistics (ltsTablesSim, ltsT
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
-%                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
+%       cd/create_error_for_nargin.m
 %       TODO
 %       cd/plot_bar.m
 %
@@ -35,7 +33,7 @@ function [output1] = m3ha_compute_and_compare_lts_statistics (ltsTablesSim, ltsT
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+% param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -48,23 +46,16 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'reqarg1');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+% addParameter(iP, 'param1', param1Default);
 
 % Read from the Input Parser
 parse(iP, reqarg1, varargin{:});
-param1 = iP.Results.param1;
-
-% Keep unmatched arguments for the TODO() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
+% param1 = iP.Results.param1;
 
 %% Preparation
 % TODO

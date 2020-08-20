@@ -4,7 +4,7 @@ function CreateSubdirAndCopyPNGFiles (setindices, fnrow, prefix, tocopy_suffix, 
 % Arguments: 	%%% TO DO
 %
 % Requires:	
-%		/home/Matlab/Adams_Functions/check_subdir.m
+%		cd/check_subdir.m
 %
 % Used by:	
 %		/media/adamX/m3ha/data_dclamp/find_special_cases.m

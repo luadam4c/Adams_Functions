@@ -22,10 +22,10 @@ function thresholdsTable = ZG_extract_IEI_thresholds(fitsGrouped, varargin)
 %                   default == 'xlsx'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/issheettype.m
+%       cd/issheettype.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/ZG_compute_IEI_thresholds.m
+%       cd/ZG_compute_IEI_thresholds.m
 %
 % File History:
 % 2018-07-30 Adapted code from zgThreshold_MEANS.m

@@ -36,15 +36,15 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (i
 %       infolder/['sim_params_', pstring, '.csv'] for all the possible parameter strings
 %       /home/Matlab/Downloaded_Functions/dirr.m
 %       /home/Matlab/Downloaded_Functions/subaxis.m
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/save_all_figtypes.m
-%       /home/Matlab/Adams_Functions/plot_tuning_curve.m (through tuning_curves.m)
-%       /home/Matlab/Adams_Functions/plot_tuning_map.m (through tuning_maps.m)
-%       /home/Matlab/Adams_Functions/find_in_strings.m
-%       /home/Matlab/Adams_Functions/extract_looped_params.m
+%       cd/isfigtype.m
+%       cd/save_all_figtypes.m
+%       cd/plot_tuning_curve.m (through tuning_curves.m)
+%       cd/plot_tuning_map.m (through tuning_maps.m)
+%       cd/find_in_strings.m
+%       cd/extract_looped_params.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/m3ha_network_plot_oscillations.m
+%       cd/m3ha_network_plot_oscillations.m
 
 % 2018-02-09 BT - Adapted from raster_plot.m
 % 2018-04-03 BT - Correlogram made using weighted, binned spikes 

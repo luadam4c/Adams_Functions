@@ -23,8 +23,8 @@ function [paramvals] = m3ha_network_change_params (namesToChange, valsToChange, 
 %                   default == 'noexp'
 %
 % Requires:    
-%        /home/Matlab/Adams_Functions/find_in_strings.m
-%        /home/Matlab/Adams_Functions/m3ha_network_update_dependent_params.m
+%        cd/find_in_strings.m
+%        cd/m3ha_network_update_dependent_params.m
 %
 % Used by:    
 %        cd/m3ha_network_launch.m

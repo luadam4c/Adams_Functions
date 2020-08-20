@@ -34,8 +34,8 @@ function plot_tuning_curve(pvalues, readout, cols_to_plot, pislog, plabel, reado
 %                       default == 'png'
 %
 % Requires:
-%        /home/Matlab/Adams_Functions/isfigtype.m
-%        /home/Matlab/Adams_Functions/save_all_figtypes.m
+%        cd/isfigtype.m
+%        cd/save_all_figtypes.m
 %
 % Used by:
 %        /media/adamX/RTCl/tuning_curves.m

@@ -17,7 +17,7 @@ function print_cellstr (cellStr, varargin)
 % Requires:
 %
 % Used by:    
-%       /home/Matlab/Adams_Functions/print_structure.m
+%       cd/print_structure.m
 %       cd/m3ha_import_raw_traces.m
 %
 % File History:

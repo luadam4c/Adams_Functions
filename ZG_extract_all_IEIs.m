@@ -34,13 +34,13 @@ function [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFile
 %
 % Requires:
 %       /home/barrettlab/holySheet/CaImagingExperiments_MasterList.xlsx
-%       /home/Matlab/Adams_Functions/find_in_strings.m
-%       /home/Matlab/Adams_Functions/mat2sheet.m
-%       /home/Matlab/Adams_Functions/issheettype.m
+%       cd/find_in_strings.m
+%       cd/mat2sheet.m
+%       cd/issheettype.m
 %       cd/minEASE_filter_output.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/ZG_compute_IEI_thresholds.m
+%       cd/ZG_compute_IEI_thresholds.m
 %
 % File History:
 % 2018-07-30 Created by Adam Lu

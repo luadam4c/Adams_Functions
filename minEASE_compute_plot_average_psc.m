@@ -29,10 +29,10 @@ function minEASE_compute_plot_average_psc (eventInfo, eventClass, ...
 %                   default == 'png'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/compute_average_PSC_trace.m
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/save_all_figtypes.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       cd/compute_average_PSC_trace.m
+%       cd/isfigtype.m
+%       cd/save_all_figtypes.m
+%       cd/print_or_show_message.m
 %
 % Used by:
 %       cd/minEASE_detect_gapfree_events.m

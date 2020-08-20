@@ -24,7 +24,7 @@ function [toQuit, toRedo, eventInfoOut, eventClassOut, isCheckedOut] = ...
 %
 % Requires:
 %       cd/minEASE_gui_examine_events.m
-%       /home/Matlab/Adams_Functions/compute_rms_Gaussian.m
+%       cd/compute_rms_Gaussian.m
 %
 % Used by:
 %       cd/minEASE.m

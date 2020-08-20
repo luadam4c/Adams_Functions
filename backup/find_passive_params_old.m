@@ -72,8 +72,8 @@ function [params_final, cpa, pw, dv_rec, rmse_R, rmse_F, params_L_F2, params_S_R
 % Requires:	
 %		/media/adamX/m3ha/data_dclamp/specs_for_fitmode (if fitmode is used)
 %		/home/Matlab/Downloaded_Functions/subplotsqueeze.m
-%		/home/Matlab/Adams_Functions/check_subdir.m
-%		/home/Matlab/Adams_Functions/print_structure.m
+%		cd/check_subdir.m
+%		cd/print_structure.m
 %
 % Used by:
 %		/media/adamX/m3ha/data_dclamp/dclampDataExtractor.m

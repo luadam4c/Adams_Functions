@@ -4,7 +4,7 @@ function index = color_index(value, edges)
 %
 % Used by:
 %		/media/adamX/Paula_IEIs/paula_iei4.m
-%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
+%       cd/ZG_fit_IEI_distributions.m
 %
 % 2017-12-18 Created
 

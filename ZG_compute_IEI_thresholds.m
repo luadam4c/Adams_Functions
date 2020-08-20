@@ -21,10 +21,10 @@ function thresholdsTable = ZG_compute_IEI_thresholds (varargin)
 %                   default == [min(timeVector), max(timeVector)]
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/issheettype.m
-%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
-%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
-%       /home/Matlab/Adams_Functions/ZG_extract_IEI_thresholds.m
+%       cd/issheettype.m
+%       cd/ZG_extract_all_IEIs.m
+%       cd/ZG_fit_IEI_distributions.m
+%       cd/ZG_extract_IEI_thresholds.m
 %
 % File History:
 % 2018-07-30 Created by Adam Lu

@@ -14,7 +14,7 @@ function [harea, edges] = histproperties (X)
 %                       'numeric', 'logical', 'datetime', 'duration'
 %
 % Used by:    
-%       /home/Matlab/Adams_Functions/plot_pdf.m
+%       cd/plot_pdf.m
 %
 % File History:
 % 2018-06-12 Created by Adam Lu

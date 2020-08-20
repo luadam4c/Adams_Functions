@@ -36,9 +36,9 @@ function [eventInfo, eventClass, isChecked, siMs] = ...
 %                   default == false
 % Requires:
 %       cd/minEASE_extract_from_output_filename.m
-%       /home/Matlab/Adams_Functions/dlmwrite_with_header.m
-%       /home/Matlab/Adams_Functions/find_in_strings.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       cd/dlmwrite_with_header.m
+%       cd/find_in_strings.m
+%       cd/print_or_show_message.m
 %
 % Used by:
 %       cd/minEASE.m

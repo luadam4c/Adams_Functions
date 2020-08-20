@@ -6,7 +6,7 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 %		Examine cell plot must have figname rmse_*R/F*_row_Fit_traces and threshold plot must have figname rmse_*R/F*_row_Fit_threshold
 % 
 % Requires:	
-%		/home/Matlab/Adams_Functions/histg.m
+%		cd/histg.m
 %		/home/Matlab/Brians_Functions/reorder.m
 % Used by:	
 %		/media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m

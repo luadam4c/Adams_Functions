@@ -16,7 +16,7 @@ function [dataType, allDataFiles, nDataFiles, message] = all_data_files (dataTyp
 %
 % Used by:
 %       cd/minEASE.m
-%       /home/Matlab/Adams_Functions/combine_sweeps.m
+%       cd/combine_sweeps.m
 %
 % File History:
 %   2018-01-29 Moved from cd/minEASE.m

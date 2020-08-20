@@ -15,7 +15,7 @@ function plot_all_abfs_dir (directory, expmode)
 %		cd/plot_traces_abf.m
 %		cd/identify_channels.m
 %		/home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
-%		/home/Matlab/Adams_Functions/identify_channels.m
+%		cd/identify_channels.m
 %
 % File history: 
 % 2016-09-22 Created

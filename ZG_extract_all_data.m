@@ -3,7 +3,7 @@ function ZG_extract_all_data (varargin)
 % Usage: ZG_extract_all_data (varargin)
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/find_in_strings.m
+%       cd/find_in_strings.m
 %
 % Used by:
 %       /home/barrettlab/detect_with_minEASE/ZG_extract_all_data.sh

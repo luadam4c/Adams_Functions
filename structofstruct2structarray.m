@@ -19,15 +19,11 @@ function [structArray, structNames] = structofstruct2structarray (structOfStruct
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
-%                   - Any other parameter-value pair for the TODO() function
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/create_error_for_nargin.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
 
 % File History:
 % 2019-09-02 Created by Adam Lu
@@ -42,7 +38,7 @@ function [structArray, structNames] = structofstruct2structarray (structOfStruct
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -60,15 +56,6 @@ addRequired(iP, 'structOfStruct', @isstruct);
 % Read from the Input Parser
 parse(iP, structOfStruct, varargin{:});
 % param1 = iP.Results.param1;
-
-% Keep unmatched arguments for the TODO() function
-% otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
-
-%% Preparation
-% TODO
 
 %% Do the job
 % Get all the structure names

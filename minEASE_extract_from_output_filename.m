@@ -9,8 +9,8 @@ function infoStruct = extract_from_minEASE_outputfilename (fileName)
 %                           or the sweepLabel with be considered
 %                           part of the fileIdentifier
 % Requires:
-%       /home/Matlab/Adams_Functions/find_in_strings.m
-%       /home/Matlab/Adams_Functions/sscanf_full.m
+%       cd/find_in_strings.m
+%       cd/sscanf_full.m
 %
 % Used by:
 %       cd/minEASE_combine_events.m

@@ -68,8 +68,8 @@ function m3ha_compare_neuronparams2 (paramValues, paramNames, suffixes, varargin
 %       cd/m3ha_compute_and_plot_IA2.m
 %       cd/m3ha_compute_and_plot_INaP2.m
 %       cd/m3ha_compute_and_plot_all_IV2.m
-%       /home/Matlab/Adams_Functions/find_in_strings.m
-%       /home/Matlab/Adams_Functions/intersect_over_cells.m
+%       cd/find_in_strings.m
+%       cd/intersect_over_cells.m
 %
 % Used by:
 %       cd/m3ha_optimizer_4compgabab.m

@@ -54,7 +54,7 @@ function [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_
 %       cd/m3ha_compute_hinf_IT.m
 %       cd/m3ha_compute_taum_IT.m
 %       cd/m3ha_compute_tauh_IT.m
-%       /home/Matlab/Adams_Functions/compute_IMax_GHK.m
+%       cd/compute_IMax_GHK.m
 %
 % File History:
 % 2017-09-22 BT - Adapted from m3ha_compute_and_plot_IT.m

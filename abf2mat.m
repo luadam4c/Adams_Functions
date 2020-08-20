@@ -50,7 +50,7 @@ function abf2mat(abfFileOrDir, varargin)
 %                   must be a string scalar or a character vector
 %                   default == 'matfiles'
 % Requires:
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       cd/print_or_show_message.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m
 %       cd/check_dir.m
 

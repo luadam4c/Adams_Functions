@@ -27,7 +27,7 @@ function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData
 %                   default == true
 %
 % Used By:
-%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
+%       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei4.m
 %
 % File History: 
