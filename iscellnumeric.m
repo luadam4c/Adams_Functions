@@ -26,6 +26,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/compute_rms_error.m
 %       cd/compute_running_windows.m
 %       cd/compute_sampsizepwr.m
+%       cd/compute_time_average.m
 %       cd/count_samples.m
 %       cd/create_default_endpoints.m
 %       cd/create_default_grouping.m

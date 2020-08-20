@@ -41,6 +41,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 %       cd/m3ha_plot_violin.m
 %       cd/parse_pleth_trace.m
 %       cd/plot_raw_multiunit.m
+%       cd/plot_relative_events.m
 %       cd/plot_spectrogram_multiunit.m
 %       cd/read_data_atf.m
 

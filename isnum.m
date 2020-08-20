@@ -23,8 +23,10 @@ function isNum = isnum (x, varargin)
 %       cd/compute_combined_trace.m
 %       cd/compute_psth.m
 %       cd/compute_sampling_interval.m
+%       cd/compute_time_average.m
 %       cd/create_default_grouping.m
 %       cd/create_grouping_by_vectors.m
+%       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m

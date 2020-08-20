@@ -116,6 +116,7 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 % Used by:
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_simulate_population.m
+%       cd/plot_relative_events.m
 %
 
 % File History:

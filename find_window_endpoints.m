@@ -60,6 +60,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
+%       cd/isnum.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
@@ -68,6 +69,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/compute_running_windows.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/compute_time_average.m
 %       cd/extract_subvectors.m
 %       cd/find_closest.m
 %       cd/find_passive_params.m
@@ -117,11 +119,11 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'timeWindows', ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isnum(x) || iscellnumeric(x), ...
                 ['timeWindows must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addRequired(iP, 'timeVecs', ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isnum(x) || iscellnumeric(x), ...
                 ['timeVecs must be either a numeric array ', ...
                     'or a cell array of numeric vectors!']));
 

@@ -69,6 +69,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/compute_sampsizepwr.m
 %       cd/combine_swd_sheets.m
 %       cd/compute_running_windows.m
+%       cd/compute_time_average.m
 %       cd/construct_fullpath.m
 %       cd/copy_into.m
 %       cd/create_average_time_vector.m
@@ -99,6 +100,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/plot_all_abfs.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_measures.m
+%       cd/plot_relative_events.m
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_selected.m
 %       cd/plot_struct.m

@@ -35,10 +35,17 @@ function handles = plot_relative_events (varargin)
 %                   default == no restrictions
 %                   - 'EventTableSuffix': Suffix for the event table
 %                   must be a character vector or a string scalar 
-%                   default == '_SWDs'
+%                   default == 'SWDs'
 %                   - 'StimTableSuffix': Suffix for the stim table
 %                   must be a character vector or a string scalar 
-%                   default == '_pulses'
+%                   default == 'pulses'
+%                   - 'CorrTableSuffix': Suffix for the correlation table
+%                   must be a character vector or a string scalar 
+%                   default == 'resp_table'
+%                   - 'CorrMeasures': Variable names in the correlation table
+%                                       to correlate
+%                   must be a character vector or a string scalar 
+%                   default == {'respRates'; 'respAmps'}
 %                   - 'Directory': directory to look for event table
 %                                   and stim table files
 %                   must be a string scalar or a character vector
@@ -84,16 +91,26 @@ function handles = plot_relative_events (varargin)
 %       cd/argfun.m
 %       cd/apply_iteratively.m
 %       cd/compute_relative_event_times.m
+%       cd/compute_time_average.m
+%       cd/convert_units.m
 %       cd/count_events.m
 %       cd/create_label_from_sequence.m
+%       cd/create_shifted_vectors.m
 %       cd/create_subplots.m
 %       cd/extract_subvectors.m
 %       cd/extract_fileparts.m
+%       cd/extract_vars.m
+%       cd/find_matching_files.m
+%       cd/force_column_cell.m
 %       cd/read_matching_sheets.m
 %       cd/plot_chevron.m
+%       cd/plot_correlation_coefficient.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_psth.m
 %       cd/plot_raster.m
 %       cd/plot_vertical_shade.m
+%       cd/save_all_figtypes.m
+%       cd/update_figure_for_corel.m
 %
 % Used by:
 %       /home/Matlab/plethR01/plethR01_analyze.m
@@ -114,10 +131,11 @@ function handles = plot_relative_events (varargin)
 % 2020-07-23 Added stimulation window to raster plot
 % 2020-08-18 Added 'BeforeWindowMin' & 'AfterWindowMin' as optional arguments
 % 2020-08-18 Now writes row names for Chevron tables
+% 2020-08-19 Added 'corr' to valid plot types
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
-validPlotTypes = {'raster', 'psth', 'chevron'};
+validPlotTypes = {'raster', 'psth', 'chevron', 'corr'};
 plotLog2Ratio = true;
 
 % TODO: Make optional arguments
@@ -127,12 +145,15 @@ pathBase = '';
 sheetType = 'csv';
 figSuffix = '';
 labels = {};
+timeStr = 'timeInstantsSec';
 
 %% Default values for optional arguments
 plotTypeDefault = 'raster';
 stimIndicesDefault = [];        % take all stims by default
-eventTableSuffixDefault = '_SWDs';
-stimTableSuffixDefault = '_pulses';
+eventTableSuffixDefault = 'SWDs';
+stimTableSuffixDefault = 'pulses';
+corrTableSuffixDefault = 'resp_table';
+corrMeasuresDefault = {'respRates'; 'respAmps'};
 directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
 beforeWindowMinDefault = [];
@@ -161,6 +182,10 @@ addParameter(iP, 'EventTableSuffix', eventTableSuffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'StimTableSuffix', stimTableSuffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'CorrTableSuffix', corrTableSuffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'CorrMeasures', corrMeasuresDefault, ...
+    @(x) validateattributes(x, {'cell', 'char', 'string'}, {'2d'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'RelativeTimeWindowMin', relativeTimeWindowMinDefault, ...
@@ -190,6 +215,8 @@ plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 stimIndices = iP.Results.StimIndices;
 eventTableSuffix = iP.Results.EventTableSuffix;
 stimTableSuffix = iP.Results.StimTableSuffix;
+corrTableSuffix = iP.Results.CorrTableSuffix;
+corrMeasures = iP.Results.CorrMeasures;
 directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
 beforeWindowMin = iP.Results.BeforeWindowMin;
@@ -339,7 +366,7 @@ end
 
 %% Compute relative event times for each set
 switch plotType
-    case {'raster', 'chevron'}
+    case {'raster', 'chevron', 'corr'}
         % Compute the relative event times
         %   Note: this should return a cell matrix:
         %           Each column is a file
@@ -423,7 +450,7 @@ case 'psth'
                         'FigTitle', figTitle, ...
                         'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);
-case 'chevron'
+case {'chevron', 'corr'}
     %% Plot two Chevron plots
     % Decide on p tick labels
     pTickLabels = {'Before', 'After'};
@@ -439,6 +466,14 @@ case 'chevron'
     % Transpose so that each column is a stim
     relEventTimesTrans = transpose(relEventTimes);
     
+    % Decide on before and after time windows
+    if isempty(beforeWindowMin)
+        beforeWindowMin = [relTimeWindowMin(1), 0];
+    end
+    if isempty(afterWindowMin)
+        afterWindowMin = [0, relTimeWindowMin(2)];
+    end
+
     % Compute the number of events before and after, 
     %       summing across stims for each file
     %   Note: relEventTimes must be a cell array of numeric vectors
@@ -448,133 +483,176 @@ case 'chevron'
     [nEventsBefore, nEventsAfter] = ...
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
-    % Compute log2 ratio data
-    nEventsBeforeLog2Ratio = log2(nEventsBefore ./ nEventsBefore);
-    nEventsAfterLog2Ratio = log2(nEventsAfter ./ nEventsBefore);
+    switch plotType
+        case 'chevron'
+            % Compute log2 ratio data
+            nEventsBeforeLog2Ratio = log2(nEventsBefore ./ nEventsBefore);
+            nEventsAfterLog2Ratio = log2(nEventsAfter ./ nEventsBefore);
 
-    % Save the data in tables
-    chevronTable = table(nEventsBefore, nEventsAfter, ...
-                        'RowNames', labels);
-    writetable(chevronTable, sheetPath, 'WriteRowNames', true);
+            % Save the data in tables
+            chevronTable = table(nEventsBefore, nEventsAfter, ...
+                                'RowNames', labels);
+            writetable(chevronTable, sheetPath, 'WriteRowNames', true);
 
-    % Save log2 ratio data in a table
-    log2ratioChevronTable = table(nEventsBeforeLog2Ratio, ...
-                            nEventsAfterLog2Ratio, 'RowNames', labels);
-    writetable(log2ratioChevronTable, sheetPathLog2Ratio, ...
-                'WriteRowNames', true);
+            % Save log2 ratio data in a table
+            log2ratioChevronTable = table(nEventsBeforeLog2Ratio, ...
+                                    nEventsAfterLog2Ratio, 'RowNames', labels);
+            writetable(log2ratioChevronTable, sheetPathLog2Ratio, ...
+                        'WriteRowNames', true);
 
-    % TODO: Use plot_small_chevrons.m
-    % Create subplots
-    if plotLog2Ratio
-        [fig, ax] = create_subplots(1, 2, 'FigExpansion', [1, 1]);
-    else
-        [fig, ax] = create_subplots(1, 1);
-    end
+            % TODO: Use plot_small_chevrons.m
+            % Create subplots
+            if plotLog2Ratio
+                [fig, ax] = create_subplots(1, 2, 'FigExpansion', [1, 1]);
+            else
+                [fig, ax] = create_subplots(1, 1);
+            end
 
-    % Plot Chevron plot and save figure
-    plot_chevron(chevronTable, 'FigTitle', figTitle, ...
-                'ReadoutLabel', 'SWD Count', 'PTickLabels', pTickLabels, ...
-                'ReadoutLimits', yLimits, 'LegendLocation', 'northeast', ...
-                'AxesHandle', ax(1), 'FigExpansion', [], otherArguments);
+            % Plot Chevron plot and save figure
+            plot_chevron(chevronTable, 'FigTitle', figTitle, ...
+                    'ReadoutLabel', 'SWD Count', 'PTickLabels', pTickLabels, ...
+                    'ReadoutLimits', yLimits, 'LegendLocation', 'northeast', ...
+                    'AxesHandle', ax(1), 'FigExpansion', [], otherArguments);
 
-    % Plot log2 ratio Chevron plot and save figure
-    if plotLog2Ratio
-        plot_chevron(log2ratioChevronTable, 'FigTitle', figTitleRatio, ...
+            % Plot log2 ratio Chevron plot and save figure
+            if plotLog2Ratio
+                plot_chevron(log2ratioChevronTable, ...
+                    'FigTitle', figTitleRatio, ...
                     'IsLog2Data', true, ...
                     'ReadoutLabel', 'SWD Count Ratio', ...
                     'PTickLabels', pTickLabels, ...
                     'ReadoutLimits', yLimitsLog2Ratio, ...
                     'LegendLocation', 'northeast', ...
                     'AxesHandle', ax(2), 'FigExpansion', [], otherArguments);
+            end
+
+            % Save figure
+            save_all_figtypes(fig, figName, figTypes);
+
+            % Return in handles
+            handles.fig = fig;
+        case 'corr'
+            % Modify the figure title
+            figTitle = replace(figTitle, 'SWD count around', 'For');
+
+            % Find matching correlation table paths
+            [~, corrPaths] = ...
+                find_matching_files(distinctParts, 'Directory', directory, ...
+                                    'Suffix', corrTableSuffix, ...
+                                    'Extension', 'csv', 'ReturnEmpty', true);
+
+            % Read the tables
+            corrTables = cellfun(@readtable, corrPaths, 'UniformOutput', false);
+
+            % Force corrMeasures as a column cell array
+            corrMeasures = force_column_cell(corrMeasures);
+
+            % Plot for each correlation measure
+            handles = cellfun(@(x) plot_correlation_measure(timeStr, x, ...
+                                    corrTables, stimStartTimesMin, ...
+                                    beforeWindowMin, afterWindowMin, ...
+                                    nEventsBefore, nEventsAfter, ...
+                                    labels, figTitle, figName), ...
+                            corrMeasures);
+        otherwise     
     end
-
-    % Save figure
-    save_all_figtypes(fig, figName, figTypes);
-
-    % Return in handles
-    handles.fig = fig;
 otherwise
     error('plotType unrecognized!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function handles = plot_correlation_measure (timeStr, corrMeasure, ...
+                            corrTables, stimStartTimesMin, ...
+                            beforeWindowMin, afterWindowMin, ...
+                            nEventsBefore, nEventsAfter, labels, ...
+                            figTitle, figNameOrig)
+%% Plots the correlation of change in SWD count against change in a measure
+
+%% Hard-coded parameters
+figWidth = 3.4;
+figHeight = 3;
+isRegularSamples = true;
+
+% Replace in figure name
+figName = replace(figNameOrig, 'corr', ['corr_', corrMeasure]);
+
+% Prepare labels for legend
+labels = replace(labels, '_', '\_');
+
+% Extract path base
+figPathBase = extract_fileparts(figName, 'pathbase');
+
+% Extract the time instants from the tables
+timeVecsSec = cellfun(@(x) extract_vars(x, timeStr), ...
+                        corrTables, 'UniformOutput', false);
+
+% Convert time to minutes
+timeVecsMin = convert_units(timeVecsSec, 's', 'min');
+
+% Extract the measure values from the tables
+measureVecs = cellfun(@(x) extract_vars(x, corrMeasure), ...
+                        corrTables, 'UniformOutput', false);
+
+% Extract a time window for each stimulus time
+[beforeWindows, afterWindows] = ...
+    argfun(@(x) cellfun(@(y) create_shifted_vectors(x, y), ...
+                        stimStartTimesMin, 'UniformOutput', false), ...
+            beforeWindowMin, afterWindowMin);
+
+% Compute the average of the measure values before and after each stimuli
+[avgMeasureBeforeAllStims, avgMeasureAfterAllStims] = ...
+    argfun(@(x) cellfun(@(a, b, c) ...
+                            compute_time_average(a, b, 'TimeWindows', c, ...
+                                    'IsRegularSamples', isRegularSamples), ...
+                        timeVecsMin, measureVecs, x, ...
+                        'UniformOutput', false), ...
+            beforeWindows, afterWindows);
+
+% Combine across stims
+[avgMeasureBefore, avgMeasureAfter] = ...
+    argfun(@(x) cellfun(@mean, x), ...
+            avgMeasureBeforeAllStims, avgMeasureAfterAllStims);
+
+%% Compute percent changes
+measurePercChange = 100 * (avgMeasureAfter - avgMeasureBefore) ./ ...
+                        avgMeasureBefore;
+nEventsPercChange = 100 * (nEventsAfter - nEventsBefore) ./ nEventsBefore;
+
+%% Plot correlation
+xLabel = sprintf('\\Delta %s (%%)', corrMeasure);
+yLabel = '\Delta Event Count (%)';
+
+% Create new figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot scatter plot
+handles = plot_grouped_scatter(measurePercChange, nEventsPercChange, labels, ...
+                'XLabel', xLabel, 'YLabel', yLabel, 'FigTitle', figTitle, ...
+                'Markersize', 10, 'MarkerLineWidth', 3);
+
+% Plot correlation coefficient
+handles.corrText = plot_correlation_coefficient;
+
+% Save figure
+save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
+
+% Update for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth, ...
+                        'ScatterMarkerSize', 3, 'ScatterLineWidth', 1, ...
+                        'RemoveLegends', true, 'RemoveText', true);
+
+% Save figure
+save_all_figtypes(fig, figPathBase, {'epsc', 'png'});
+
+handles.fig = fig;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
-
-relEventTimes = extract_in_order(relEventTimesCellCell);
-
-% Extract the relevant event times
-if stimIndices
-    % Restrict to just the first event times
-    %   Note: this should return a cell array of numeric vectors
-    relEventTimes = cellfun(@(x) extract_element_by_index(x, 1, ...
-                                                            false), ...
-                        relEventTimesCellCell, 'UniformOutput', false);
-else
-    relEventTimes = extract_in_order(relEventTimesCellCell);
-end
-
-if stimIndices
-    % Create a figure title
-    figTitle = ['Events around stim #', num2str(1)];
-
-    % Plot raster
-    handles = plot_raster(relEventTimes, 'Labels', labels, ...
-                            'XLabel', 'Time (min)', ...
-                            'FigTitle', figTitle, ...
-                            'XLimits', relTimeWindowMin, otherArguments);
-
-    % Plot stim start line
-    plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
-else
-end
-
-% Count the appropriate number of subplots
-nSubplots = numel(relEventTimes);
-
-% Force as column vectors
-[nEventsBefore, nEventsAfter] = ...
-    argfun(@force_column_vector, nEventsBefore, nEventsAfter);
-
-% Generate the data for the Chevron plot
-chevronData = transpose([nEventsBefore, nEventsAfter]);
-
-if isempty(labels)
-    labels = replace(distinctParts, '_', '\_');
-end
-
-stimStartTimesSec = cellfun(@(x) x(stimIndices), stimStartTimesSec, ...
-                            'UniformOutput', false);
-stimDurationsSec = cellfun(@(x) x(stimIndices), stimDurationsSec, ...
-                            'UniformOutput', false);
-
-% Extract the relevant event times
-% TODO: May not be necessary
-if stimIndices
-    relEventTimes = relEventTimes(1, :);
-end
-
-figNameNormalized = strcat(figPathBase, '_normalized');
-
-fig(1) = set_figure_properties('AlwaysNew', true);
-save_all_figtypes(fig(1), figName, figTypes);
-fig(2) = set_figure_properties('AlwaysNew', true);
-save_all_figtypes(fig(2), figNameNormalized, figTypes);
-
-% Check if event times exist
-if isempty(relEventTimes)
-    disp('There are no relative event times to plot!');
-    return
-end
-
-figTitleNormalize = ['% ', figTitle];
-
-% Decide on y limits
-% TODO: Adjust to be integer?
-if isempty(yLimitsLog2Ratio)
-    yLimitsLog2Ratio = [-1, Inf];
-end
 
 %}
 

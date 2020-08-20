@@ -64,7 +64,7 @@ function [swdTables, swdSheetPaths, ...
 %       cd/parse_assyst_swd.m
 %
 % Used by:
-%       cd/combine_swd_pleth_data.m
+%       cd/combine_swd_resp_data.m
 %       cd/plot_swd_raster.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 

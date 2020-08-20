@@ -47,6 +47,7 @@ function varExtracted = extract_vars (tableOrPath, varNames, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_simulate_population.m
+%       cd/plot_relative_events.m
 %       cd/plot_table_parallel.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting75.m
 

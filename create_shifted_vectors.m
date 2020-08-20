@@ -27,6 +27,7 @@ function vecsNew = create_shifted_vectors (vecOrig, shiftValues, varargin)
 %
 % Used by:
 %       cd/compute_relative_event_times.m
+%       cd/plot_relative_events.m
 
 % File History:
 % 2020-08-18 Moved from compute_relative_event_times.m

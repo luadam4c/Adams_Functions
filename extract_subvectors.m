@@ -138,6 +138,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %       cd/compute_running_windows.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/compute_time_average.m
 %       cd/compute_value_boundaries.m
 %       cd/extract_columns.m
 %       cd/extract_common_directory.m

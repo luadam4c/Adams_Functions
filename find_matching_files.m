@@ -55,7 +55,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/force_string_end.m
 %
 % Used by:
-%       cd/combine_swd_pleth_data.m
+%       cd/combine_swd_resp_data.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/create_power_tables.m
 %       cd/read_matching_sheets.m
@@ -67,6 +67,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/m3ha_plot_figure05.m
 %       cd/m3ha_plot_figure08.m
 %       cd/m3ha_simulate_population.m
+%       cd/plot_relative_events.m
 %       cd/plot_traces_spike2_mat.m
 
 % File History:

@@ -43,6 +43,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/plot_chevron.m
 %       cd/plot_fitted_traces.m
 %       cd/plot_measures.m
+%       cd/plot_relative_events.m
 %       cd/plot_small_chevrons.m
 %       cd/plot_struct.m
 %       cd/plot_table_parallel.m

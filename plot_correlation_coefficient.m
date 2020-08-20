@@ -35,6 +35,7 @@ function [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
 %
 % Used by:
 %       cd/m3ha_plot_grouped_scatter.m
+%       cd/plot_relative_events.m
 
 % File History:
 % 2020-08-04 Adapted from m3ha_simulation_population.m

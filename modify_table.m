@@ -38,6 +38,7 @@ function table = modify_table (table, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/combine_swd_resp_data.m
 %       cd/plot_measures.m
 
 % File History:

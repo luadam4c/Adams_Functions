@@ -126,6 +126,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/m3ha_plot_violin.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_measures.m
+%       cd/plot_relative_events.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_traces_spike2_mat.m
 %       /home/Matlab/plethR01/plethR01_analyze.m

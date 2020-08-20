@@ -333,7 +333,7 @@ tVec = siSeconds * (1:nSamples)';
 
 % Compute the respiratory amplitude
 % respAmp = max(pieceMiddle) - min(pieceMiddle);
-% TODO: Add to compute_weight_average.m
+% TODO: Use compute_time_average.m
 respAmp = trapz(tVec, abs(pieceCentered)) / (tVec(end) - tVec(1));
 
 % Convert to rpm
