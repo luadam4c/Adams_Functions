@@ -37,7 +37,7 @@ function [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFile
 %       /home/Matlab/Adams_Functions/find_in_strings.m
 %       /home/Matlab/Adams_Functions/mat2sheet.m
 %       /home/Matlab/Adams_Functions/issheettype.m
-%       /home/Matlab/minEASE/filter_minEASE_output.m
+%       /home/Matlab/minEASE/minEASE_filter_output.m
 %
 % Used by:
 %       /home/Matlab/Adams_Functions/ZG_compute_IEI_thresholds.m
@@ -144,7 +144,7 @@ for iDir = 1:nSubdirs
     fullPath = fullfile(parentDir, groupSliceCellLabel);
 
     % Filter the output 
-    output = filter_minEASE_output('OutputDir', fullPath, ...
+    output = minEASE_filter_output('OutputDir', fullPath, ...
                                     'ClassesToInclude', classesToInclude, ...
                                     'TimeWindow', timeWindow);
 

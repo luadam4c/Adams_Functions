@@ -36,7 +36,7 @@ function dlmwrite_with_header (filename, M, varargin)
 %       cd/spike2Mat2Text.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
-%       /home/Matlab/minEASE/filter_minEASE_output.m
+%       /home/Matlab/minEASE/minEASE_filter_output.m
 
 % File History:
 % 2017-07-24 Moved from examine_gapfree_events
