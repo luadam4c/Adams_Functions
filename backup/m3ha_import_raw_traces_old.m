@@ -90,7 +90,7 @@ function [data, sweepInfo, dataCprAll] = ...
 %               out cpr traces with out-of-balance bridges
 % 2018-06-21 Fixed bugs
 % 2018-07-09 Added nSwpsCpr as output
-% 2018-07-09 Now uses compute_rms_error() instead of rms_Gaussian()
+% 2018-07-09 Now uses compute_rms_error() instead of compute_rms_Gaussian()
 % 2018-07-31 Use correct_unbalanced_bridge.m to correct for out-of-balance bridges
 % 2018-08-09 Now computes sweep weights here
 % 2018-08-10 baseNoiseIpscr and baseNoiseCpr are now column vectors
@@ -607,11 +607,11 @@ dataCpr{ct}(:, 4) = vertcat(gvecToPad, gvecShifted);    % conductance vector of 
 
 holdPotentialCpr = zeros(nSweeps, 1);          % stores the holding potentials right before cp application (mV)
 
-%       /home/Matlab/Kojis_Functions/rms_Gaussian.m
+%       /home/Matlab/Kojis_Functions/compute_rms_Gaussian.m
     addpath_custom(fullfile(functionsDirectory, 'Kojis_Functions')); 
-                                            % for rms_Gaussian.m
-    baseNoiseIpscr(ct) = rms_Gaussian(baseline);
-    cprBaselineNoise = rms_Gaussian(baselineCprThis);
+                                            % for compute_rms_Gaussian.m
+    baseNoiseIpscr(ct) = compute_rms_Gaussian(baseline);
+    cprBaselineNoise = compute_rms_Gaussian(baselineCprThis);
 
 % Take out traces that may have out-of-balance bridges if requested
 if outparams.toCorrectDcSteps

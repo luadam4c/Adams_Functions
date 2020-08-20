@@ -163,7 +163,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %               out cpr traces with out-of-balance bridges
 % 2018-06-21 Fixed bugs
 % 2018-07-09 Added nSwpsCpr as output
-% 2018-07-09 Now uses compute_rms_error() instead of rms_Gaussian()
+% 2018-07-09 Now uses compute_rms_error() instead of compute_rms_Gaussian()
 % 2018-07-31 Use correct_unbalanced_bridge.m to correct for out-of-balance bridges
 % 2018-08-09 Now computes sweep weights here
 % 2018-08-10 baseNoiseIpscr and baseNoiseCpr are now column vectors
