@@ -35,7 +35,7 @@ function check_subdir (parentDirectory, subDirectories, varargin)
 %       cd/save_all_zooms.m
 %       /media/adamX/m3ha/data_dclamp/take4/find_special_cases.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting22.m
-%       /home/Matlab/minEASE/minEASE.m
+%       cd/minEASE.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
 %       /home/Matlab/function_template.m
 

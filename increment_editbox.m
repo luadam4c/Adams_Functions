@@ -15,7 +15,7 @@ function newStr = increment_editbox(hEditBox, minNo, maxNo, incr, strings, varar
 %
 %
 % Used by:    
-%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
+%       cd/minEASE_gui_examine_events.m
 %
 % File History:
 % 2017-06-09 Moved from minEASE_gui_examine_events.m

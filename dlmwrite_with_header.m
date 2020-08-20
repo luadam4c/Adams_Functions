@@ -34,9 +34,9 @@ function dlmwrite_with_header (filename, M, varargin)
 %       cd/m3ha_network_autocorrelogram.m
 %       cd/m3ha_initial_slopes.m
 %       cd/spike2Mat2Text.m
-%       /home/Matlab/minEASE/minEASE.m
-%       /home/Matlab/minEASE/minEASE_combine_events.m
-%       /home/Matlab/minEASE/minEASE_filter_output.m
+%       cd/minEASE.m
+%       cd/minEASE_combine_events.m
+%       cd/minEASE_filter_output.m
 
 % File History:
 % 2017-07-24 Moved from minEASE_examine_gapfree_events

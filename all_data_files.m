@@ -15,11 +15,11 @@ function [dataType, allDataFiles, nDataFiles, message] = all_data_files (dataTyp
 %       cd/isemptycell.m
 %
 % Used by:
-%       /home/Matlab/minEASE/minEASE.m
+%       cd/minEASE.m
 %       /home/Matlab/Adams_Functions/combine_sweeps.m
 %
 % File History:
-%   2018-01-29 Moved from /home/Matlab/minEASE/minEASE.m
+%   2018-01-29 Moved from cd/minEASE.m
 %   2018-01-29 Added the case where dataTypeUser is not recognized 
 %   2018-01-29 Added FileIdentifier as an optional argument
 %   2018-02-14 Added ExcludedStrings as an optional argument

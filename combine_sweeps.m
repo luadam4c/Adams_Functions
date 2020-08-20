@@ -56,7 +56,7 @@ function [allData, timeVec] = combine_sweeps(varargin)
 %       /home/Matlab/Downloaded_Functions/abf2load.m
 %
 % Used by:    
-%       /home/Matlab/minEASE/minEASE.m
+%       cd/minEASE.m
 %       /home/Matlab/Katies_Functions/loadcell_attached_TimeSeries.m
 %       /home/Matlab/Katies_Functions/cell_attached_minEASE_filtered.m
 %

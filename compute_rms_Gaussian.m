@@ -57,9 +57,9 @@ function [rmsGauss, indGauss, message, vectorGauss, ...
 %
 % Used by:
 %       /home/Matlab/Kojis_Functions/find_directional_events.m
-%       /home/Matlab/minEASE/minEASE_detect_gapfree_events.m
-%       /home/Matlab/minEASE/minEASE_examine_gapfree_events.m
-%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
+%       cd/minEASE_detect_gapfree_events.m
+%       cd/minEASE_examine_gapfree_events.m
+%       cd/minEASE_gui_examine_events.m
 %       /home/EEG_gui/EEG_gui.m
 
 % File History:

@@ -19,11 +19,9 @@ function [toBeAnalyzedAll, paramsAll, errormsg] = ...
 %                   default == 0
 %
 % Requires:
-%       ~/Adams_Functions/addpath_custom
-%       ~/Adams_Functions/create_error_for_nargin
+%       ~/Adams_Functions/create_error_for_nargin.m
 %       ~/Adams_Functions/find_in_strings.m
 %       ~/Adams_Functions/isaninteger.m
-%       ~/Adams_Functions/locate_functionsdir
 %
 % Used by:
 %       cd/minEASE.m

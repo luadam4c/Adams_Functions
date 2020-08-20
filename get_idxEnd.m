@@ -3,8 +3,8 @@ function idxEnd = get_idxEnd(idxPeak, fullDecayTime, interStimulusInterval)
 % Usage: idxEnd = get_idxEnd(idxPeak, fullDecayTime, interStimulusInterval)
 %
 % Used by:
-%       /home/Matlab/minEASE/minEASE.m
-%       /home/Matlab/minEASE/minEASE_gui_examine_events.m
+%       cd/minEASE.m
+%       cd/minEASE_gui_examine_events.m
 %
 % File History:
 %   2018-02-08 Moved from minEASE_gui_examine_events.m

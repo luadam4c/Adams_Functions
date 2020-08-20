@@ -39,7 +39,7 @@ function [channelTypes, channelUnits, channelLabels] = ...
 %       TODO: use parse_abf instead for the following:
 %       cd/parse_current_family.m
 %       cd/combine_sweeps.m
-%       /home/Matlab/minEASE/minEASE.m
+%       cd/minEASE.m
 %
 % File History:
 % 2017-03-15 Created by BT, adapted from correct_patchannelLabels.m

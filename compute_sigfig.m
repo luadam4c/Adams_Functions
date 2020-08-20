@@ -168,7 +168,7 @@ maxSigFigDefault = 15;      % maximum number of significant figures by default
 % TODO: Change this
 maxSigFig = maxSigFigDefault;
 
-%       /home/Matlab/minEASE/minEASE.m
+%       cd/minEASE.m
 
 %}
 
