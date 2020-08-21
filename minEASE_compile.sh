@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Requires:
+#   adams_commands.sh (for checkdir)
 #   compile_script.m
 #
 # Used by:
@@ -12,6 +13,11 @@
 #   2018-02-28 - Changed folder path
 #   2018-03-15 - Always compile with /usr/local/MATLAB/R2015b/bin/mcc for now
 #   2020-08-20 - Now uses the newest version of MATLAB available
+
+################################################################################
+
+## Source functions from files
+source adams_commands.sh
 
 ################################################################################
 
@@ -28,12 +34,18 @@ version=$1
 
 ################################################################################
 
-# Compile code
-matlab -nodisplay -nosplash -r "compile_script('minEASE');exit;"
+# Create command for matlab
+command=$(echo "addpath('/home/Matlab/Adams_Functions');" \
+            "addpath('/home/Matlab/Downloaded_Functions');" \
+            "compile_script('minEASE', 'ExtraFileNames', 'local.settings');" \
+            "exit;")
+
+# Run MATLAB to compile code
+matlab -nodisplay -nosplash -r "${command}"
 
 # Move compiled code to a folder named by the version
 folder=/media/shareX/minEASE/minEASE_Linux_$version/
-mkdir $folder
+checkdir $folder
 mv minEASE run_minEASE.sh readme.txt requiredMCRProducts.txt \
     mccExcludedFiles.log $folder
 cp -p local.settings $folder

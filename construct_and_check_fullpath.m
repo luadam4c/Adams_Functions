@@ -27,6 +27,10 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ForceFullPath': whether to force as full path
+%                                       even if file exists as relative path
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for construct_fullpath()
 %
 % Requires:
@@ -36,6 +40,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 % Used by:
 %       cd/apply_to_all_subdirs.m
 %       cd/all_files.m
+%       cd/compile_script.m
 %       cd/read_data_atf.m
 %       cd/read_neuron_outputs.m
 %       cd/read_params.m
@@ -56,10 +61,11 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %                   construct_and_check_fullpath
 % 2018-11-21 - Updated Used by
 % 2019-11-28 - Now passes other arguments to construct_fullpath.m
-% 
+% 2020-08-21 - Added 'ForceFullPath' as an optional argument
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
+forceFullPathDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,10 +89,13 @@ addRequired(iP, 'pathName', ...
 % Add parameter-value pairs to the input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceFullPath', forceFullPathDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the input Parser
 parse(iP, pathName, varargin{:});
 verbose = iP.Results.Verbose;
+forceFullPath = iP.Results.ForceFullPath;
 
 % Keep unmatched arguments for the construct_fullpath() function
 otherArguments = iP.Unmatched;
@@ -95,7 +104,7 @@ otherArguments = iP.Unmatched;
 pathExists = check_fullpath(pathName, 'Verbose', verbose);
 
 %% Create full path(s) to file(s) robustly
-if any(~pathExists)
+if any(~pathExists) || forceFullPath
     [fullPath, pathType] = construct_fullpath(pathName, 'Verbose', verbose, ...
                                                 otherArguments);
 

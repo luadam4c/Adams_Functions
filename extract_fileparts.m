@@ -65,6 +65,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/all_dependent_files.m
 %       cd/all_file_bases.m
 %       cd/archive_dependent_scripts.m
+%       cd/compile_script.m
 %       cd/write_data_atf.m
 %       cd/combine_abf_data.m
 %       cd/combine_data_from_same_slice.m

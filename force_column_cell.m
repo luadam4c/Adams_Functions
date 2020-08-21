@@ -61,13 +61,13 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %
 % Used by:
 %       cd/array_fun.m
-%       cd/write_data_atf.m
 %       cd/all_dependent_files.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_sampsizepwr.m
 %       cd/combine_swd_sheets.m
+%       cd/compile_script.m
 %       cd/compute_running_windows.m
 %       cd/compute_time_average.m
 %       cd/construct_fullpath.m
@@ -116,6 +116,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/test_var_difference.m
 %       cd/update_figure_for_corel.m
 %       cd/vertcat_spreadsheets.m
+%       cd/write_data_atf.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu

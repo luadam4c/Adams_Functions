@@ -16,13 +16,22 @@ function compiledPath = compile_script (mScriptName, varargin)
 %                   must be a string scalar or a character vector
 %       varargin    - 'SaveFlag': whether to save spreadsheets
 %                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PrintFlag': whether to print to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ExtraFileNames': extra dependent file names
+%                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - Any other parameter-value pair 
 %                       for all_dependent_files()
 %
 % Requires:
 %       cd/all_dependent_files.m
+%       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
+%       cd/extract_fileparts.m
+%       cd/force_column_cell.m
 %       cd/force_string_end.m
 %
 % Used by:
@@ -36,6 +45,8 @@ function compiledPath = compile_script (mScriptName, varargin)
 
 %% Default values for optional arguments
 saveFlagDefault = false;
+printFlagDefault = false;
+extraFileNamesDefault = {};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -59,10 +70,18 @@ addRequired(iP, 'mScriptName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SaveFlag', saveFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PrintFlag', printFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ExtraFileNames', extraFileNamesDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['ExtraFileNames must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Read from the Input Parser
 parse(iP, mScriptName, varargin{:});
 saveFlag = iP.Results.SaveFlag;
+printFlag = iP.Results.PrintFlag;
+extraFileNames = iP.Results.ExtraFileNames;
 
 % Keep unmatched arguments for the all_dependent_files() function
 otherArguments = iP.Unmatched;
@@ -78,15 +97,41 @@ end
 %% Do the job
 % Find all dependent files
 fileListTable = all_dependent_files(mScriptName, 'SaveFlag', saveFlag, ...
-                                    otherArguments);
+                                    'PrintFlag', printFlag, otherArguments);
 
 % Extract the full paths
 fullPaths = fileListTable.fullPath;
 
+% Include extra files
+if ~isempty(extraFileNames)
+    % Find the full path to the script file
+    scriptFullPath = which(mScriptName);
+    
+    % Extract the directory
+    scriptDir = extract_fileparts(scriptFullPath, 'directory');
+    
+    % Construct and check existence of extra files
+    extraPaths = construct_and_check_fullpath(extraFileNames, ...
+                        'ForceFullPath', true, 'Directory', scriptDir);
+
+    % Force as a column cell array
+    extraPaths = force_column_cell(extraPaths);
+    
+    % Append to full paths
+    fullPaths = [fullPaths; extraPaths];
+end
+
+% Extract all directories
+allDirs = extract_fileparts(fullPaths, 'directory');
+
+% Find unique directories
+uniqueDirs = unique(allDirs);
+
 % Create command to compile script
-command = sprintf('mcc -m -v ');
-command = [command, char(join(strcat("-a ", fullPaths)))];
-command = [command, ' ', mScriptName];
+command = ['mcc -m -v ', ...
+            char(join(strcat("-I ", uniqueDirs), ' ')), ' ', ...
+            char(join(strcat("-a ", fullPaths), ' ')), ' ', ...
+            mScriptName];
 
 % Compile script
 eval(command);
