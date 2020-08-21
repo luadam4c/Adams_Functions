@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Requires:
-#   minEASE_compile.m
+#   compile_script.m
 #
 # Used by:
 #
@@ -29,7 +29,7 @@ version=$1
 ################################################################################
 
 # Compile code
-matlab -nodisplay -nosplash -r "minEASE_compile;exit;"
+matlab -nodisplay -nosplash -r "compile_script('minEASE');exit;"
 
 # Move compiled code to a folder named by the version
 folder=/media/shareX/minEASE/minEASE_Linux_$version/

@@ -5,27 +5,28 @@ function compiledPath = compile_script (mScriptName, varargin)
 %       TODO
 %
 % Example(s):
-%       compile_script('minEASE');
+%       compiledPath = compile_script('minEASE');
 %
 % Outputs:
-%       compiledPath     - TODO: Description of compiledPath
-%                   specified as a TODO
+%       compiledPath    - full path to compiled file
+%                       specified as a character vector
 %
 % Arguments:
 %       mScriptName - .m script name
 %                   must be a string scalar or a character vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'SaveFlag': whether to save spreadsheets
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - Any other parameter-value pair 
 %                       for all_dependent_files()
 %
 % Requires:
+%       cd/all_dependent_files.m
 %       cd/create_error_for_nargin.m
 %       cd/force_string_end.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/minEASE_compile.sh
 
 % File History:
 % 2020-08-20 Adapted from minEASE_compile.m
@@ -34,7 +35,7 @@ function compiledPath = compile_script (mScriptName, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+saveFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -56,17 +57,15 @@ addRequired(iP, 'mScriptName', ...
             'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, mScriptName, varargin{:});
-% param1 = iP.Results.param1;
+saveFlag = iP.Results.SaveFlag;
 
 % Keep unmatched arguments for the all_dependent_files() function
 otherArguments = iP.Unmatched;
-
-% Check relationships between arguments
-% TODO
 
 %% Preparation
 % If an empty file name is provided, return error
@@ -77,12 +76,24 @@ if exist(mScriptName, 'file') ~= 2
 end
 
 %% Do the job
-% Find all dependent functions
-functionTable = all_dependent_files(mScriptName, otherArguments);
+% Find all dependent files
+fileListTable = all_dependent_files(mScriptName, 'SaveFlag', saveFlag, ...
+                                    otherArguments);
+
+% Extract the full paths
+fullPaths = fileListTable.fullPath;
+
+% Create command to compile script
+command = sprintf('mcc -m -v ');
+command = [command, char(join(strcat("-a ", fullPaths)))];
+command = [command, ' ', mScriptName];
+
+% Compile script
+eval(command);
 
 %% Output results
-% TODO
-compiledPath = mScriptName;
+% Output compiled path
+compiledPath = fullfile(pwd, mScriptName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

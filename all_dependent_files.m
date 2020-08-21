@@ -44,6 +44,7 @@ function varargout = all_dependent_files (mScriptName, varargin)
 %
 % Used by:
 %       cd/archive_dependent_scripts.m
+%       cd/compile_script.m
 
 % File History:
 % 2019-08-09 Created by Adam Lu
@@ -151,7 +152,7 @@ end
 fullPath = force_column_cell(fileList);
 
 % Extract just the function name
-functionName = extract_fileparts(fullPath, 'name');
+fileName = extract_fileparts(fullPath, 'name');
 
 % Extract the containing directory
 directory = extract_fileparts(fullPath, 'directory');
@@ -170,7 +171,7 @@ relativePath = extractAfter(fullPath, parentDirectoryWithFileSep);
 commonDirectory = repmat({commonDirectory}, size(fullPath));
 
 % Convert to tables
-fileListTable = table(functionName, directory, commonDirectory, relativePath, fullPath);
+fileListTable = table(fileName, directory, commonDirectory, relativePath, fullPath);
 matlabProductListTable = struct2table(matlabProductList);
 
 %% Save tables
