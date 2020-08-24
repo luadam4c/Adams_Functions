@@ -204,19 +204,6 @@ interEventIntervals = diff(eventTimesToInclude);
 %{
 OLD CODE:
 
-% Include only events of classes 1~5
-indToInclude = (eventClass <= WRONGDECAY_CLASSNUM & ...
-                eventTimes >= minTime & ...
-                eventTimes <= maxTime);
-
-% Get the event times and amplitudes only if there are events
-
-% Use the relative peak amplitudes for the event amplitudes
-eventAmps = eventInfo(indToInclude, EVENTAMP_COLNUM);
-
-% Place event times and amplitudes in the minEASEevents cell array
-minEaseEvents = [eventTimes, eventAmps];
-
-eventTimes = timeVector(floor(indPeaks));
-
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

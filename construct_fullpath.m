@@ -73,6 +73,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/minEASE.m
 %       cd/parse_iox.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_scatter.m

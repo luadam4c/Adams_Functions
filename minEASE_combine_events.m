@@ -401,47 +401,8 @@ toc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
-
-fprintf('There is no output file to combine!');
-fprintf('Missing %s! Cannot combine eventInfo of sweeps!\n\n', ...
-            matfilename);
-fprintf('Eventinfo successfully combined!!\n\n')
-
-%                   - 'ShowMessage': whether to show messages in messages boxes
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
-showMessageDefault  = false;        % print to standard output by default
-addParameter(iP, 'ShowMessage', showMessageDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-showMessage = iP.Results.ShowMessage;
-        if showMessage
-            print_or_show_message(message, 'MessageMode', 'show', ...
-                                    'MTitle', mTitle, 'Icon', icon);
-        else
-            print_or_show_message(message, 'MessageMode', 'none', ...
-                                    'MTitle', mTitle, 'Icon', icon);
-        end
-
-files = dir(fullfile(folder, [expLabel, '_Swp*output.mat']));
-
-matFileName = ...
-    fullfile(folder, sprintf('%s_ALL_output_%s.mat', expLabel, timeUnits));
-csvFileName = ...
-    fullfile(folder, sprintf('%s_ALL_output_%s.csv', expLabel, timeUnits));
-csvFileNameWHeader = ...
-    fullfile(folder, sprintf('%s_ALL_output_%s_w_header.csv', expLabel, timeUnits));
-
-matfilename = fullfile(folder, ...
-                [expLabel, '_Swp', num2str(iSweep), '_output.mat']);
-m = matfile(matfilename);
-if isempty(whos(m))
-    % Show warning message
-    message = sprintf('Missing %s! Cannot combine eventInfo of sweeps!', ...
-                matfilename);
-
-sweepLabel = ['Swp', num2str(iSweep)];
-
-for iSweep = 76:nSweeps
-sweepLabelToMatch = ['_Swp', num2str(files.name{iSweep})), '_'];
+OLD CODE:
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

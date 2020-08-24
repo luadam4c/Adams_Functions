@@ -223,57 +223,6 @@ end
 %{
 OLD CODE:
 
-    fprintf(['No Type I PSCs satisfying criteria are found!\n']);
-    fprintf(['No Type II PSCs satisfying criteria are found!\n']);
-    fprintf(['No Type III PSCs satisfying criteria are found!\n']);
-
-%                   - 'ShowMessage': whether to show messages in messages boxes
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
-showMessageDefault  = false;        % print to standard output by default
-addParameter(iP, 'ShowMessage', showMessageDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-showMessage = iP.Results.ShowMessage;
-        if showMessage
-            print_or_show_message(message, 'MessageMode', 'show', ...
-                                    'MTitle', mTitle, 'Icon', icon);
-        else
-            print_or_show_message(message, 'MessageMode', 'none', ...
-                                    'MTitle', mTitle, 'Icon', icon);
-        end
-
-if iscell(figTypes)
-    for i = 1:numel(figTypes)
-        saveas(fig3, fullfile(outputDirectory, ...
-                ['Average_Type_I_PSC_Trace_', outputLabel, ...
-                 '_mode_', dealWithTooShort]), figTypes{i});
-    end
-else
-    saveas(fig3, fullfile(outputDirectory, ...
-            ['Average_Type_I_PSC_Trace_', outputLabel, ...
-             '_mode_', dealWithTooShort]), figTypes);
-end
-if iscell(figTypes)
-    for i = 1:numel(figTypes)
-        saveas(fig4, fullfile(outputDirectory, ...
-                ['Average_Type_II_PSC_Trace_', outputLabel, ...
-                 '_mode_', dealWithTooShort]), figTypes{i});
-    end
-else
-    saveas(fig4, fullfile(outputDirectory, ...
-            ['Average_Type_II_PSC_Trace_', outputLabel, ...
-             '_mode_', dealWithTooShort]), figTypes);
-end
-if iscell(figTypes)
-    for i = 1:numel(figTypes)
-        saveas(fig5, fullfile(outputDirectory, ...
-                ['Average_Type_III_PSC_Trace_', outputLabel, ...
-                 '_mode_', dealWithTooShort]), figTypes{i});
-    end
-else
-    saveas(fig5, fullfile(outputDirectory, ...
-            ['Average_Type_III_PSC_Trace_', outputLabel, ...
-             '_mode_', dealWithTooShort]), figTypes);
-end
-
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

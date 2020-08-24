@@ -193,13 +193,6 @@ end
 %{
 OLD CODE:
 
-%% Extract from arguments
-siMs = tVec(2) - tVec(1);                       % sampling interval in ms
-
-% Display text for PSC amplitudes
-text(pscInfo(:, 2) * siMs, pscInfo(:, 4) - 10, num2str(pscInfo(:, 5)), ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'top');
-
-legend('Location', legendLocation);
-
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

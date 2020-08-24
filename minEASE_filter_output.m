@@ -234,26 +234,6 @@ end
 %{
 OLD CODE:
 
-save(fullfile(outputDir, filteredOutputMatFileName), '-struct', 'output', '-v7.3');
-
-% Create filtered output matfile name
-filteredOutputMatFileName = [fileIdentifier, '_', directionLabel, '_', ...
-                             filteredOutputSuffix, '.mat'];
-filteredOutputCsvFileName = [fileIdentifier, '_', directionLabel, '_', ...
-                             filteredOutputSuffix, '.csv'];
-
-timeStart = prevSweepsDuration - siMs;
-
-outputDirDefault = pwd;
-
-output = minEASE_load_output('OutputFiles', outputFileNames, ...
-                             'OutputDir', outputDir, 'LoadMode', 'combined');
-
-if ~isfolder(outputDir)
-    fprintf('%s does not exist or is not readable!\n', outputDir);
-    return;
-end
-
-timeUnits = 'samples';
-
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
