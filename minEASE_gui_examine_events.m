@@ -148,6 +148,7 @@ function hGUI = minEASE_gui_examine_events (dataRaw, dataLowpass, tVec, ...
 %                   per Paula's request
 % 2018-08-03 AL - Renamed sweepLabel -> outputLabel
 % 2018-08-03 AL - Updated legend to turn 'AutoUpdate' off for R2017a and beyond
+% TODO: Update decay time after changing events
 % TODO: 2018-08-03 AL - Added button to remove events completely
 % TODO: Add scroll bar?
 % TODO: Update previous and next events that are not PSCs when 
@@ -1807,6 +1808,8 @@ else
     % Remove this event by force
     remove_by_force(eventNoToRemove)
 end
+
+%% TODO: Update peak decay values for the previous event
 
 % Execute callback function for EditClassNo 
 %   (this updates thisClassInfo, rankThisClass & nThisClass and 

@@ -51,7 +51,7 @@ function [toBeAnalyzedAll, paramsAll, errormsg] = ...
 % 2018-04-02 AL - Finished checks
 % 2018-07-27 AL - Changed all instances of isdir() to isfolder()
 % 2018-07-27 AL - Now Sweeps To Analyze does not have to exist
-
+% TODO: Add progress bars for parallel pool
 
 %% TODO: Put a list of parameters here
 %% TODO: Change all to idxXXX followed by if ~isempty(idxXXX)
@@ -59,6 +59,9 @@ function [toBeAnalyzedAll, paramsAll, errormsg] = ...
 
 %% Hard-coded parameters
 inputPattern1 = '\[[0-9]*:[0-9]*\]';    % input pattern #1: 
+                                        %   for Files to Analyze & 
+                                        %       Sweeps to Analyze
+inputPattern2 = '\[[0-9]*:[0-9]*:[0-9]*\]';    % input pattern #: 
                                         %   for Files to Analyze & 
                                         %       Sweeps to Analyze
 
@@ -397,7 +400,7 @@ if maxNumWorkers == 0
 
         % Read rowInfo into toBeAnalyzedAll and paramsAll
         [errormsg, toBeAnalyzedAll{row-1}, paramsAll{row-1}] = ...
-            read_to_params(row, rowInfo, inputPattern1, ...
+            read_to_params(row, rowInfo, inputPattern1, inputPattern2, ...
                             idxToBeAnalyzed, ...
                             idxDataHomeDirectory, idxDataSubdirectory, ...
                             idxOutputDirectory, idxFilesToAnalyze, ...
@@ -430,7 +433,7 @@ else
 
         % Read rowInfo into toBeAnalyzedAll and paramsAll
         [errormsg{row-1}, toBeAnalyzedAll{row-1}, paramsAll{row-1}] = ...
-            read_to_params(row, rowInfo, inputPattern1, ...
+            read_to_params(row, rowInfo, inputPattern1, inputPattern2, ...
                             idxToBeAnalyzed, ...
                             idxDataHomeDirectory, idxDataSubdirectory, ...
                             idxOutputDirectory, idxFilesToAnalyze, ...
@@ -462,7 +465,7 @@ errormsg = '';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [errormsg, toBeAnalyzed, params] = read_to_params(row, rowInfo, ...
-                            inputPattern1, ...
+                            inputPattern1, inputPattern2, ...
                             idxToBeAnalyzed, ...
                             idxDataHomeDirectory, idxDataSubdirectory, ...
                             idxOutputDirectory, idxFilesToAnalyze, ...
@@ -539,7 +542,7 @@ tempStr = rowInfo{idxFilesToAnalyze};   % 'all' or '[1:2]', etc.
 if ischar(tempStr) && strcmpi(tempStr, 'all')
                                         % if the input is 'all'
     params.filesToAnalyze = 'all';      % set to 'all'
-elseif ischar(tempStr) && regexp(tempStr, inputPattern1)
+elseif ischar(tempStr) && any(regexp(tempStr, inputPattern1))
                                         % if the input is of the form [%f:%f]
     % Scan for the first and last file numbers
     temp_cellarray = textscan(tempStr, '[%f:%f]');    
@@ -548,13 +551,25 @@ elseif ischar(tempStr) && regexp(tempStr, inputPattern1)
     
     % Set to a vector of file numbers to analyze
     params.filesToAnalyze = startFiles:endFiles;
+elseif ischar(tempStr) && any(regexp(tempStr, inputPattern2))
+                                        % if the input is of the form [%f:%f:%f]
+    % Scan for the first and last file numbers
+    temp_cellarray = textscan(tempStr, '[%f:%f:%f]');
+    startFiles = temp_cellarray{1};     % file # of first file
+    incFiles = temp_cellarray{2};       % increment file #
+    endFiles = temp_cellarray{3};       % file # of last file
+    
+    % Set to a vector of file numbers to analyze
+    params.filesToAnalyze = startFiles:incFiles:endFiles;
 else
     errormsg = sprintf(['Files To Analyze should be of the form', ...
-                        '[idxStart:idxEnd] (e.g. [1:10])!!']);
+                        '[idxStart:idxEnd] (e.g. [1:10]) or ', ...
+                        '[idxStart:idxInc:idxEnd] (1:2:36)!!']);
     return;
 end
 
 %% Sweeps to analyze (default: 'all')
+% TODO: Improve to read 'end' or 'Inf'
 if ~isempty(idxSweepsToAnalyze)
     tempStr = rowInfo{idxSweepsToAnalyze};  % 'all' or '[1:2]', etc.
     if ischar(tempStr) && strcmpi(tempStr, 'all')
@@ -562,16 +577,27 @@ if ~isempty(idxSweepsToAnalyze)
         params.sweepsToAnalyze = 'all';     % set to 'all'
     elseif ischar(tempStr) && regexp(tempStr, inputPattern1)
                                             % if the input is of the form [%f:%f]
-        % Scan for the first and last file numbers
+        % Scan for the first and last sweep numbers
         temp_cellarray = textscan(tempStr, '[%f:%f]');    
         startFiles = temp_cellarray{1};     % file # of first file
         endFiles = temp_cellarray{2};       % file # of last file
         
-        % Set to a vector of file numbers to analyze
+        % Set to a vector of sweep numbers to analyze
         params.sweepsToAnalyze = startFiles:endFiles;
+    elseif ischar(tempStr) && any(regexp(tempStr, inputPattern2))
+                                            % if the input is of the form [%f:%f:%f]
+        % Scan for the first and last sweep numbers
+        temp_cellarray = textscan(tempStr, '[%f:%f:%f]');
+        startFiles = temp_cellarray{1};     % file # of first file
+        incFiles = temp_cellarray{2};       % increment file #
+        endFiles = temp_cellarray{3};       % file # of last file
+        
+        % Set to a vector of sweep numbers to analyze
+        params.sweepsToAnalyze = startFiles:incFiles:endFiles;
     else
         errormsg = sprintf(['Sweeps To Analyze should be of the form', ...
-                            '[idxStart:idxEnd] (e.g. [1:10])!!']);
+                            '[idxStart:idxEnd] (e.g. [1:10]) or ', ...
+                            '[idxStart:idxInc:idxEnd] (1:2:36)!!']);
         return;
     end
 else

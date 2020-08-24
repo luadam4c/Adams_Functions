@@ -375,7 +375,7 @@ function minEASE (varargin)
 % 2018-08-03 AL - Renamed sweepLabel -> outputLabel
 % 2018-08-03 AL - Now saves auto-detected results immediately upon new detection
 % 2018-09-19 AL - Now uses the first channel that is identified to be current
-%
+% 2020-08-24 AL - Now makes sure input Excel file is a full path
 % TODO: Change warn messages to 'show' and error messages to 'wait'?
 % TODO: How to deal with EPSCs mixed in IPSCs
 % TODO: Online detection
@@ -604,6 +604,7 @@ while ~inputs1Valid
 
     % Read in user inputs
     excelFile = inputs1{1};
+    excelFile = construct_fullpath(excelFile);
     [isFigType, figTypes] = isfigtype(strsplit(inputs1{2}));
     dataTypeEntered = validate_string(inputs1{3}, ...
                         [possibleDataTypes, {'auto'}]);
@@ -669,7 +670,7 @@ while ~inputs1Valid
     else
         % Show error message and wait for user to close it
         %   before reloading session preferences dialog box
-        uiwait(msgbox(msg, mTitle, 'custom', [icondata, iconcmap], 'modal'));    
+        uiwait(msgbox(msg, mTitle, 'custom', icondata, iconcmap, 'modal'));    
     end
 end
 
@@ -847,7 +848,7 @@ while ~inputs2Valid
     else
         % Show error message and wait for user to close it
         %   before reloading session preferences dialog box
-        uiwait(msgbox(msg, mTitle, 'custom', [icondata, iconcmap],'modal'));    
+        uiwait(msgbox(msg, mTitle, 'custom', icondata, iconcmap,'modal'));    
     end
 end
 
