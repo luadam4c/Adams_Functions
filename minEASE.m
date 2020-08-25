@@ -259,8 +259,7 @@ function minEASE (varargin)
 % TODO: How to deal with EPSCs mixed in IPSCs
 % TODO: Online detection
 % TODO: Only update parts of an existing CSV file? In Linux only?
-% 
-%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -870,7 +869,9 @@ if ~openGui && ~toPrompt && strcmp(messageMode, 'none')
     %     if isunix && maxNumWorkers ~= 0
     if maxNumWorkers ~= 0
     % TODO: See if this fixes parpool in Windows
-        setmcruserdata('ParallelProfile', 'local.settings');
+        if ~isdeployed
+            setmcruserdata('ParallelProfile', 'local.settings');
+        end
         p = gcp('nocreate');
         if isempty(p)
             parpool;

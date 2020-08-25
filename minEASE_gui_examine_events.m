@@ -1185,6 +1185,7 @@ set(hLegend, 'AutoUpdate', 'off');                  % For R2017a and beyond
 
 function [classNoAuto, qString] = classify_PSC (eventNoThis, classNoUser, strMod)
 % Automatically classify PSC and check if the same as user input
+% TODO: Check if decay time is correct
 
 global eventClass eventInfo                             % used
 global nEvents                                          % used
@@ -1271,7 +1272,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [classNoNew, prevClassNoOld, prevClassNoAuto, nextClassNoOld, nextClassNoAuto] = change_class(eventNoThis, classNoNewUser, classNoOld)
+function [classNoNew, prevClassNoOld, prevClassNoAuto, ...
+                    nextClassNoOld, nextClassNoAuto] = ...
+                change_class(eventNoThis, classNoNewUser, classNoOld)
 % Change class number for given event to classNoNew
 %   Note: assumes that eventNoThis is a number in range
 %           and that classNoNewUser is different from classNoOld
@@ -1523,6 +1526,8 @@ if eventNoPrev ~= 0                     % a previous event exists
         else
             % Don't need to reclassify previous peak
         end
+    elseif prevClassNoOld == 5
+        % TODO: Check if still wrong decay
     else
         % Don't need to reclassify previous peak
     end
@@ -1808,8 +1813,6 @@ else
     % Remove this event by force
     remove_by_force(eventNoToRemove)
 end
-
-%% TODO: Update peak decay values for the previous event
 
 % Execute callback function for EditClassNo 
 %   (this updates thisClassInfo, rankThisClass & nThisClass and 

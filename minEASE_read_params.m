@@ -7,6 +7,7 @@ function [toBeAnalyzedAll, paramsAll, errormsg] = ...
 %       toBeAnalyzedAll - a cell array of whether to analyze this subdirectory 
 %                           ('Y' or 'N')
 %       paramsAll       - a cell array of input parameter structures
+%
 % Arguments:
 %       xlInfo      - a cell array containing information to read
 %                       the first row must be a header

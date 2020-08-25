@@ -45,10 +45,14 @@ matlab -nodisplay -nosplash -r "${command}"
 
 # Move compiled code to a folder named by the version
 folder=/media/shareX/minEASE/minEASE_Linux_$version/
-checkdir $folder
+checkdir "$folder"
 mv minEASE run_minEASE.sh readme.txt requiredMCRProducts.txt \
-    mccExcludedFiles.log $folder
-cp -p local.settings $folder
+    mccExcludedFiles.log "$folder"
+cp -p local.settings "$folder"
+
+# Change permissions to be group writeable and group executable
+chmodRgw "$folder"
+chmodRgX "$folder"
 
 ## Return exit status upon success
 exit 0
