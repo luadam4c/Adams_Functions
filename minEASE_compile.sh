@@ -13,6 +13,7 @@
 #   2018-02-28 - Changed folder path
 #   2018-03-15 - Always compile with /usr/local/MATLAB/R2015b/bin/mcc for now
 #   2020-08-20 - Now uses the newest version of MATLAB available
+#   2020-08-25 - Now changes permissions of files
 
 ################################################################################
 
@@ -51,8 +52,8 @@ mv minEASE run_minEASE.sh readme.txt requiredMCRProducts.txt \
 cp -p local.settings "$folder"
 
 # Change permissions to be group writeable and group executable
-chmodRgw "$folder"
-chmodRgX "$folder"
+chmod -R g+w "$folder"
+chmod -R g+X "$folder"
 
 ## Return exit status upon success
 exit 0
