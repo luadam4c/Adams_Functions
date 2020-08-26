@@ -93,6 +93,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_select_sweeps.m
+%       cd/minEASE.m
 %       cd/parse_atf_swd.m
 %       cd/parse_current_family.m
 %       cd/parse_iox.m

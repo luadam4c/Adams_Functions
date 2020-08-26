@@ -327,7 +327,6 @@ for iSweep = 1:nSweeps
         prevSweepsDurationInitial = prevSweepsDuration;
     end
 
-
     % Compute current sweep duration
     sweepDuration = siMs * nSamplesThis;    % sweep duration in ms
 

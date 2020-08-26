@@ -7,11 +7,12 @@ function minEASE (varargin)
 %       Output event info and used parameters are saved as .csv files 
 %   Note: Run mode specifications:
 %   Mode        openGui    toPrompt    messageMode prevResultAction combineOutputs  verbose
-%   'init'      'No'       'No'        'done'      'skip'       'No'            'No' 
-%   'rerun'     'No'       'No'        'show'      'archive'    'No'            'No' 
-%   'check'     'Yes'      'No'        'show'      'load'       'No'            'No' 
-%   'modify'    'Yes'      'Yes'       'wait'      'load' (p)   'No'  (p)       'No' 
-%   'debug'     'Yes'      'Yes'       'wait'      'archive'(p) 'Yes' (p)       'Yes'
+%   'init'      'No'       'No'        'done'      'skip'           'No'            'No' 
+%   'combine'   'No'       'No'        'done'      'skip'           'Yes'           'No' 
+%   'rerun'     'No'       'No'        'show'      'archive'        'No'            'No' 
+%   'check'     'Yes'      'No'        'show'      'load'           'No'            'No' 
+%   'modify'    'Yes'      'Yes'       'wait'      'load' (p)       'No'  (p)       'No' 
+%   'debug'     'Yes'      'Yes'       'wait'      'archive'(p)     'Yes' (p)       'Yes'
 %   Note: If the data files might be .mat files, 
 %           they must not contain the string 'output' or 'param' in the name!
 %
@@ -38,6 +39,7 @@ function minEASE (varargin)
 %                   - 'RunMode': mode for running minEASE
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'init'   - initial automatic run through data
+%                       'combine'- combine outputs without opening GUI
 %                       'rerun'  - rerun with changed input parameters
 %                       'check'  - check results manually
 %                       'modify' - modify results manually
@@ -100,6 +102,7 @@ function minEASE (varargin)
 %       cd/combine_sweeps.m
 %       cd/construct_fullpath.m
 %       cd/dlmwrite_with_header.m
+%       cd/extract_fileparts.m
 %       cd/find_in_strings.m
 %       cd/identify_channels.m
 %       cd/locate_functionsdir.m
@@ -254,6 +257,8 @@ function minEASE (varargin)
 % 2018-08-03 AL - Now saves auto-detected results immediately upon new detection
 % 2018-09-19 AL - Now uses the first channel that is identified to be current
 % 2020-08-24 AL - Now makes sure input Excel file is a full path
+% 2020-08-26 AL - Added 'combine' to possible run modes
+% TODO: Implement ATF Text file output (writeAtfFlag)
 % TODO: Implement autoExcelFile
 % TODO: Change warn messages to 'show' and error messages to 'wait'?
 % TODO: How to deal with EPSCs mixed in IPSCs
@@ -268,7 +273,7 @@ debugFlag = 0;      % Skip time-consuming operations under debug mode
 
 %% Hard-coded parameters
 formatDateString = 'yyyymmddTHHMMSS';
-validRunModes = {'init', 'rerun', 'check', 'modify', 'debug'};
+validRunModes = {'init', 'combine', 'rerun', 'check', 'modify', 'debug'};
 validMessageModes = {'wait', 'show', 'done'};
 validPrevResultActions = {'skip', 'archive', 'load'};
 validAnswers = {'yes', 'no'};
@@ -468,7 +473,6 @@ defaultAns1 = {excelFile, figTypesDisplay, dataTypeUser, ...
 %   Reopen dialog box if any of the inputs are not valid
 inputs1Valid = false;           % always do this at least once
 mTitle = 'Preference invalid';  % for a message box if needed
-% TODO: implement icon: icon = imread('minEASE_Logo1.png');
 while ~inputs1Valid
     % Open input dialog box
     inputs1 = inputdlg(prompt1, dialogTitle1, numLines1, defaultAns1, 'on');
@@ -556,7 +560,7 @@ end
 % Update runMode-dependent arguments if set to 'auto'
 if strcmp(openGuiUser, 'auto')
     switch runModeEntered
-    case {'init', 'rerun'}
+    case {'init', 'combine', 'rerun'}
         openGuiUser = 'no';
     case {'check', 'modify', 'debug'}
         openGuiUser = 'yes';
@@ -566,7 +570,7 @@ if strcmp(openGuiUser, 'auto')
 end
 if strcmp(toPromptUser, 'auto')
     switch runModeEntered
-    case {'init', 'rerun', 'check'}
+    case {'init', 'combine', 'rerun', 'check'}
         toPromptUser = 'no';
     case {'modify', 'debug'}
         toPromptUser = 'yes';
@@ -576,7 +580,7 @@ if strcmp(toPromptUser, 'auto')
 end
 if strcmp(messageModeUser, 'auto')
     switch runModeEntered
-    case 'init'
+    case {'init', 'combine'}
         messageModeUser = 'done';
     case {'rerun', 'check'}
         messageModeUser = 'show';
@@ -588,7 +592,7 @@ if strcmp(messageModeUser, 'auto')
 end
 if strcmp(prevResultActionUser, 'auto')
     switch runModeEntered
-    case 'init'
+    case {'init', 'combine'}
         prevResultActionUser = 'skip';
     case {'rerun', 'debug'}
         prevResultActionUser = 'archive';
@@ -602,7 +606,7 @@ if strcmp(combineOutputsUser, 'auto')
     switch runModeEntered
     case {'init', 'rerun', 'check', 'modify'}
         combineOutputsUser = 'no';
-    case 'debug'
+    case {'combine', 'debug'}
         combineOutputsUser = 'yes';
     otherwise
         error('Error with code!');
@@ -610,7 +614,7 @@ if strcmp(combineOutputsUser, 'auto')
 end
 if strcmp(verboseUser, 'auto')
     switch runModeEntered
-    case {'init', 'rerun', 'check', 'modify'}
+    case {'init', 'combine', 'rerun', 'check', 'modify'}
         verboseUser = 'no';
     case 'debug'
         verboseUser = 'yes';
@@ -644,7 +648,6 @@ defaultAns2 = {openGuiUser, toPromptUser, messageModeUser, ...
 %   Reopen dialog box if any of the inputs are not valid
 inputs2Valid = false;           % always do this at least once
 mTitle = 'Preference invalid';  % for a message box if needed
-% TODO: implement icon
 while ~inputs2Valid
     % Open input dialog box
     inputs2 = inputdlg(prompt2, dialogTitle2, numLines2, defaultAns2, 'on');
@@ -1272,35 +1275,18 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
                                             'MaxNum', 1);
     end
 
-    % Create file identifier and experiment label
-    %   if there is only one sweep per file, also create sweep label here
+    % Create file identifier
     [~, fileBase, ~] = fileparts(dataFileName); % get filebase
-    switch dataMode
-    case '2d'                        % if there is only one sweep
-        % Create labels compatible with Katie's file names
-        %   If file begin with the format Cyyyymmdd, 
-        %   where C is a letter and yyyymmdd are numbers, 
-        %   then take only this part of the filename;
-        %   Otherwise, take the entire file base
-        if isnan(str2double(fileBase(1))) && ...
-            ~isnan(str2double(fileBase(2:9))) && ...
-            str2double(fileBase(2:9)) > 10000000
-            fileIdentifier = fileBase(1:9);
-        else
-            fileIdentifier = fileBase;
-        end
+    fileIdentifier = fileBase;
 
-        % Create output label
-        outputLabel = [fileIdentifier, '_', directionLabel, ...
-                        '_Swp', num2str(iFile)];   % output label
-    case '3d'                        % if there are multiple sweeps
-        % Create labels compatible with Peter's file names
-        fileIdentifier = fileBase;
-    otherwise
-        % Create label
-        fileIdentifier = fileBase;
-    end
+    % Create experiment label
     expLabel = [fileIdentifier, '_', directionLabel];
+
+    % If there is only one sweep per file, create output label here
+    if strcmpi(dataMode, '2d')       % if there is only one sweep
+        % Create output label
+        outputLabel = [expLabel, '_Swp', num2str(iFile)];
+    end
 
     % Create output subdirectory if there are multiple sweeps per file
     if strcmpi(dataMode, '3d')
@@ -1393,10 +1379,9 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
         maxData = max(current);     % maximum value for this trace
         rangeData = maxData - minData;          % range for this trace
 
-        % Create output label here if there is only one sweep per file
+        % Create output label here if there are multiple sweeps per file
         if strcmpi(dataMode, '3d')       % if there are multiple sweeps
-            outputLabel = [fileIdentifier, '_', directionLabel, ...
-                            '_Swp', num2str(iSwp)];   % output label
+            outputLabel = [expLabel, '_Swp', num2str(iSwp)];
         end
 
         % Create output file names
@@ -1800,7 +1785,7 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
                     outputDirectory)};
         answer = combine_outputs_if_needed(combineOutputs, toPrompt, ...
                     messageMode, qString, outputDirectory, ...
-                    expLabel, dataDirectory, dataMode, ...
+                    dataDirectory, dataMode, ...
                     plotAverageTraceFlag, traceLengthMs, ...
                     beforePeakMs, figTypes);
         if isempty(answer)
@@ -1822,7 +1807,7 @@ if strcmp(dataMode, '2d')    % if there is one sweep per file
                 outputDirectory)};
     answer = combine_outputs_if_needed(combineOutputs, toPrompt, ...
                 messageMode, qString, outputDirectory, ...
-                expLabel, dataDirectory, dataMode, ...
+                dataDirectory, dataMode, ...
                 plotAverageTraceFlag, traceLengthMs, ...
                 beforePeakMs, figTypes);
     if isempty(answer)
@@ -1836,7 +1821,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function answer = combine_outputs_if_needed (combineOutputs, toPrompt, ...
-                messageMode, qString, outputDirectory, expLabel, ...
+                messageMode, qString, outputDirectory, ...
                 dataDirectory, dataMode, plotAverageTraceFlag, ...
                 traceLengthMs, beforePeakMs, figTypes)
 % Prompt to combine outputs
@@ -1869,7 +1854,7 @@ end
 switch answer
 case choice1
     % Combine outputs from all sweeps that are finished
-    combine_outputs(messageMode, outputDirectory, expLabel, ...
+    combine_outputs(messageMode, outputDirectory, ...
                     dataDirectory, dataMode, ...
                     plotAverageTraceFlag, ...
                     traceLengthMs, beforePeakMs, ...
@@ -1882,37 +1867,36 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_outputs (messageMode, outputDirectory, expLabel, ...
+function combine_outputs (messageMode, outputDirectory, ...
                         dataDirectory, dataMode, plotAverageTraceFlag, ...
                         traceLengthMs, beforePeakMs, figTypes)
 % TODO: combine params files into ALL_params.mat
+% TODO: Create ATF Text files
+
+% Extract the output directory base name
+outDirBase = extract_fileparts(outputDirectory, 'base');
 
 % Combine all eventInfo of sweeps from the current experiment
-minEASE_combine_events('Folder', outputDirectory, 'ExpLabel', expLabel, ...
-                        'TimeUnits', 'ms', ...
-                        'MessageMode', messageMode);
+minEASE_combine_events('Folder', outputDirectory, ...
+                        'TimeUnits', 'ms', 'MessageMode', messageMode);
 [allEventInfo, allEventClass, ~, siMs] = ...
-    minEASE_combine_events('Folder', outputDirectory, 'ExpLabel', expLabel, ...
-                        'TimeUnits', 'samples', ...
-                        'MessageMode', messageMode);
+    minEASE_combine_events('Folder', outputDirectory, ...
+                        'TimeUnits', 'samples', 'MessageMode', messageMode);
 if isempty(allEventInfo)
     return;
 end
 
-% Find the number of output matfiles in this outputDirectory with this expLabel
-files = dir(fullfile(outputDirectory, [expLabel, '_Swp*_output.mat']));
+% Find the number of output matfiles in this outputDirectory
+files = dir(fullfile(outputDirectory, '*Swp*_output.mat'));
 nSweeps = length(files);
-
-% Get file identifier from expLabel
-fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
 
 % Combine the corresponding sweep data
 allData = combine_sweeps('DataDirectory', dataDirectory, ...
-                            'ExpLabel', expLabel, ...
-                            'FileIdentifier', fileIdentifier, ...
                             'DataMode', dataMode, ...
                             'SweepNumbers', 1:nSweeps, ...
                             'MessageMode', messageMode);
+
+% TODO: Write data to ATF Text files
 
 % Find average PSC trace for the experiment
 if plotAverageTraceFlag
@@ -1920,11 +1904,12 @@ if plotAverageTraceFlag
     nMethods = numel(possibleDealWithTooShort);
     for iMethod = 1:nMethods
         minEASE_compute_plot_average_psc(allEventInfo, allEventClass, ...
-                                        allData, siMs, ...
-                                        traceLengthMs, beforePeakMs, ...
-                                        possibleDealWithTooShort{iMethod}, ...
-                                        outputDirectory, expLabel, figTypes, ...
-                                        'MessageMode', messageMode);
+                                    allData, siMs, ...
+                                    traceLengthMs, beforePeakMs, ...
+                                    possibleDealWithTooShort{iMethod}, ...
+                                    outputDirectory, outDirBase, ...
+                                    'FigTypes', figTypes, ...
+                                    'MessageMode', messageMode);
     end
 end
 

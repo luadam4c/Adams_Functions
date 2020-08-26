@@ -39,10 +39,10 @@ function minEASE_compute_plot_average_psc (eventInfo, eventClass, ...
 
 % File History:
 % 2017-07-25 AL - Moved from minEASE_detect_gapfree_events.m
-% 2018-02-02 AL - Added showMessage as an optional parameter-value pair argument
+% 2018-02-02 AL - Added messageMode as an optional parameter-value pair argument
 % 2018-02-02 AL - Now uses print_or_show_message.m for output
 % 2018-02-07 MD - Changed usage of print_or_show_message()
-% 2018-02-27 AL - Changed showMessages to messageMode with possible values:
+% 2018-02-27 AL - Changed messageModes to messageMode with possible values:
 %                   'wait', 'show', 'none'
 % 2018-03-02 MD - Defined verbose parameter for print_or_show_message
 % 2018-08-03 AL - Renamed sweepLabel -> outputLabel
@@ -86,7 +86,7 @@ if ~isempty(typeOneInfo)
                                     'TraceLengthMs', traceLengthMs, ...
                                     'BeforePeakMs', beforePeakMs, ...
                                     'DealWithTooShort', dealWithTooShort, ...
-                                    'ShowMessage', showMessage);
+                                    'MessageMode', messageMode);
 end
 
 
@@ -122,7 +122,7 @@ else
     figName3 = fullfile(outputDirectory, ...
                 ['Average_Type_I_PSC_Trace_', outputLabel, ...
                  '_mode_', dealWithTooShort]);
-    save_all_figTypes(fig3, figName3, figTypes);
+    save_all_figtypes(fig3, figName3, figTypes);
 
     % Close figure
     % close(fig3);
@@ -136,7 +136,7 @@ if ~isempty(typeTwoInfo)
                                     'TraceLengthMs', traceLengthMs, ...
                                     'BeforePeakMs', beforePeakMs, ...
                                     'DealWithTooShort', dealWithTooShort, ...
-                                    'ShowMessage', showMessage);
+                                    'MessageMode', messageMode);
 end
 
 % Plot "average Type II PSC trace"
@@ -163,7 +163,7 @@ else
     figName4 = fullfile(outputDirectory, ...
                 ['Average_Type_II_PSC_Trace_', outputLabel, ...
                  '_mode_', dealWithTooShort]);
-    save_all_figTypes(fig4, figName4, figTypes);
+    save_all_figtypes(fig4, figName4, figTypes);
 
     % Close figure
     % close(fig4);
@@ -177,7 +177,7 @@ if ~isempty(typeThreeInfo)
                                     'TraceLengthMs', traceLengthMs, ...
                                     'BeforePeakMs', beforePeakMs, ...
                                     'DealWithTooShort', dealWithTooShort, ...
-                                    'ShowMessage', showMessage);
+                                    'MessageMode', messageMode);
 end
 
 % Plot "average Type III PSC trace"
@@ -204,7 +204,7 @@ else
     figName5 = fullfile(outputDirectory, ...
                 ['Average_Type_III_PSC_Trace_', outputLabel, ...
                  '_mode_', dealWithTooShort]);
-    save_all_figTypes(fig5, figName5, figTypes);
+    save_all_figtypes(fig5, figName5, figTypes);
 
     % Close figure
     % close(fig5);
