@@ -56,7 +56,7 @@ function [rmsGauss, indGauss, message, vectorGauss, ...
 %                   default == false (use bias correction)
 %
 % Used by:
-%       /home/Matlab/Kojis_Functions/find_directional_events.m
+%       cd/find_directional_events.m
 %       cd/minEASE_detect_gapfree_events.m
 %       cd/minEASE_examine_gapfree_events.m
 %       cd/minEASE_gui_examine_events.m
@@ -107,13 +107,12 @@ noBiasStdDefault        = 0;        % whether to apply population stdev
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help compute_rms_Gaussian'' for usage']);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
-iP = inputParser;         
-iP.FunctionName = 'compute_rms_Gaussian';
+iP = inputParser;
+iP.FunctionName = mfilename;
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'dataVector', ...               % data vector to analyze

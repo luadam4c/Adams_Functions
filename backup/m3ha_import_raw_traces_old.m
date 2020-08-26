@@ -607,7 +607,7 @@ dataCpr{ct}(:, 4) = vertcat(gvecToPad, gvecShifted);    % conductance vector of 
 
 holdPotentialCpr = zeros(nSweeps, 1);          % stores the holding potentials right before cp application (mV)
 
-%       /home/Matlab/Kojis_Functions/compute_rms_Gaussian.m
+%       cd/compute_rms_Gaussian.m
     addpath_custom(fullfile(functionsDirectory, 'Kojis_Functions')); 
                                             % for compute_rms_Gaussian.m
     baseNoiseIpscr(ct) = compute_rms_Gaussian(baseline);

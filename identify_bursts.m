@@ -110,13 +110,12 @@ maxIsiDefault = 500;            % Default maximum interstimulus interval (sample
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help identify_bursts'' for usage']);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'identify_bursts';
+iP.FunctionName = mfilename;
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'eventInfo', ...                  % information for found PSCs

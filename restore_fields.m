@@ -1,10 +1,13 @@
-function [structure] = restore_fields (structure, varargin)
+function structure = restore_fields (structure, varargin)
 %% Set each field specified in varargin to previous values from the field strcat(field, '_prev')
-% Usage: [structure] = restore_fields (structure, varargin)
+% Usage: structure = restore_fields (structure, varargin)
 % Arguments:
 %   structure    - must include field & strcat(field, '_prev') for each field specified by varargin
 %   varargin    - must include at least one argument
 %              must be character arrays corresponding to numerical field values in structure
+%
+% Requires:
+%       cd/create_error_for_nargin.m
 %
 % Used by:
 %       cd/m3ha_fminsearch3.m
@@ -20,7 +23,7 @@ function [structure] = restore_fields (structure, varargin)
 
 %% Check arguments
 if nargin < 2
-    error('Not enough input arguments, type ''help restore_fields'' for usage');
+    error(create_error_for_nargin(mfilename));
 elseif ~isstruct(structure)
     error('First argument must be a structure array!');
 elseif min(cellfun(@ischar, varargin)) < 1

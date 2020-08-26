@@ -32,7 +32,7 @@ function [idxPeaks, valPeaks] = adjust_peaks (data, idxPeaksAppr, directionFacto
 %                       default == []
 %
 % Used by:    
-%       /home/Matlab/Kojis_Functions/find_directional_events.m
+%       cd/find_directional_events.m
 %       cd/minEASE_gui_examine_events.m
 %
 % File History:

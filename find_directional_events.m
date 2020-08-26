@@ -65,7 +65,7 @@ function [eventInfo, dataSmooth, dataDirFilt, eventAmpThreshold, ...
 %
 %
 % Requires:
-%       /home/Matlab/Kojis_Functions/compute_rms_Gaussian.m
+%       cd/compute_rms_Gaussian.m
 %       cd/find_custom.m
 %       cd/adjust_peaks.m
 %
@@ -143,30 +143,15 @@ smoothWindowDefault = 5;    % default moving average filter window (samples)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Add directories to search path for required functions
-if ~isdeployed
-    if exist('/home/Matlab/', 'dir') == 7
-        functionsdirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsdirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsdirectory does not exist!');
-    end
-    addpath(fullfile(functionsdirectory, '/Kojis_Functions/'));    
-                                        % for compute_rms_Gaussian.m
-    addpath(fullfile(functionsdirectory, '/Adams_Functions/'));    
-                                        % for find_custom.m
-end
-
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error('Not enough input arguments, type ''help find_directional_events'' for usage');
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
-iP = inputParser;         
-iP.FunctionName = 'find_directional_events';
+iP = inputParser;
+iP.FunctionName = mfilename;
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'data', ...                     % vector of current data

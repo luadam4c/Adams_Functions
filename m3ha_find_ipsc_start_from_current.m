@@ -45,7 +45,7 @@ directories = {'/istart/'};
 
 %% Check arguments
 if nargin < 2
-	error('Not enough input arguments, type ''help m3ha_find_ipsc_start_from_current'' for usage');
+    error(create_error_for_nargin(mfilename));
 elseif isempty(tvec0) || isempty(ivec0s)
 	error('First two inputs cannot be empty!');
 elseif ~isnumeric(tvec0) || ~isnumeric(ivec0s)

@@ -5,6 +5,9 @@ function structure = set_fields_zero (structure, varargin)
 %   varargin    - must include at least one argument
 %               must be character arrays corresponding to numerical field values in structure
 %
+% Requires:
+%       cd/create_error_for_nargin.m
+%
 % Used by:
 %       cd/m3ha_fminsearch3.m
 %       cd/m3ha_neuron_choose_best_params.m
@@ -23,7 +26,7 @@ verbose = false;
 
 %% Check arguments
 if nargin < 2
-    error('Not enough input arguments, type ''help set_fields_zero'' for usage');
+    error(create_error_for_nargin(mfilename));
 elseif ~isstruct(structure)
     error('First argument must be a structure array!');
 elseif min(cellfun(@ischar, varargin)) < 1

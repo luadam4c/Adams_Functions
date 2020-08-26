@@ -1,8 +1,8 @@
 function [averagePscTrace, allPscTraces] = ...
-                compute_average_PSC_trace (pscInfo, data, varargin)
+                compute_average_psc_trace (pscInfo, data, varargin)
 %% Compute the "average PSC trace"
 % Usage: [averagePscTrace, allPscTraces] = ...
-%               compute_average_PSC_trace (pscInfo, data, varargin)
+%               compute_average_psc_trace (pscInfo, data, varargin)
 % Explanation: 
 %       TODO: takes in the sorted epscs array from freEpsc analysis and then returns
 %       a data array containing the values for the raw trace.  traces are
@@ -79,7 +79,7 @@ function [averagePscTrace, allPscTraces] = ...
 
 % File History:
 % ---------- Created by Koji Takahashi & Mark P Beenhakker
-% 2017-05-25 AL - Renamed getAverageTrace.m -> compute_average_PSC_trace.m
+% 2017-05-25 AL - Renamed getAverageTrace.m -> compute_average_psc_trace.m
 % 2017-05-25 AL - Organized, simplified and annotated code
 % 2017-05-25 AL - Now returns empty matrices if no PSC satisfies criteria
 % 2017-05-25 AL - Added input parser scheme
@@ -129,13 +129,12 @@ verboseDefault = false;             % default: Program does not print message
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help compute_average_PSC_trace'' for usage']);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
-iP = inputParser;         
-iP.FunctionName = 'compute_average_PSC_trace';
+iP = inputParser;
+iP.FunctionName = mfilename;
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'pscInfo', ...                  % information for found PSCs

@@ -87,7 +87,7 @@ There are 2 MATLAB scripts in this directory:
 - [**compute_and_plot_concatenated_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_concatenated_trace.m): Computes and plots concatenated traces from parsed ABF file results
 - [**compute_and_plot_values_online.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_values_online.m): Computes and plots a value whenever a new .abf file is completed
 - [**compute_autocorrelogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_autocorrelogram.m): Computes an autocorrelogram and compute the oscillatory index and period from an array of event times
-- [**compute_average_PSC_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_PSC_trace.m): Compute the "average PSC trace"
+- [**compute_average_psc_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_psc_trace.m): Compute the "average PSC trace"
 - [**compute_average_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_pulse_response.m): Computes an average pulse response as well as its features
 - [**compute_average_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_trace.m): Computes the average of traces that are not necessarily the same length
 - [**compute_axis_limits.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_axis_limits.m): Computes x or y axis limits from data (works also for a range [min(data), max(data)])
