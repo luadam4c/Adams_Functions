@@ -179,7 +179,6 @@ timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 verbose = iP.Results.Verbose;
 
-
 %% Preparation
 tic;
 
