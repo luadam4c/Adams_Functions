@@ -1873,6 +1873,9 @@ function combine_outputs (messageMode, outputDirectory, ...
 % TODO: combine params files into ALL_params.mat
 % TODO: Create ATF Text files
 
+%% TODO: Make argument
+writeAtfFlag = true;
+
 % Extract the output directory base name
 outDirBase = extract_fileparts(outputDirectory, 'base');
 
@@ -1891,12 +1894,13 @@ files = dir(fullfile(outputDirectory, '*Swp*_output.mat'));
 nSweeps = length(files);
 
 % Combine the corresponding sweep data
-allData = combine_sweeps('DataDirectory', dataDirectory, ...
-                            'DataMode', dataMode, ...
-                            'SweepNumbers', 1:nSweeps, ...
-                            'MessageMode', messageMode);
+allData = ...
+    combine_sweeps('DataDirectory', dataDirectory, 'DataMode', dataMode, ...
+                    'SweepNumbers', 1:nSweeps, 'MessageMode', messageMode);
 
 % TODO: Write data to ATF Text files
+if writeAtfFlag
+end
 
 % Find average PSC trace for the experiment
 if plotAverageTraceFlag

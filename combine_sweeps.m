@@ -1,6 +1,6 @@
-function [allData, timeVec] = combine_sweeps(varargin)
+function [allData, timeVec] = combine_sweeps (varargin)
 %% Combines sweeps that begin with expLabel in dataDirectory under dataMode
-% Usage: [allData, timeVec] = combine_sweeps(varargin)
+% Usage: [allData, timeVec] = combine_sweeps (varargin)
 % Explanation:
 %       TODO
 % Outputs:

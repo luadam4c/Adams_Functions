@@ -11,25 +11,24 @@ function [dataType, allDataFiles, nDataFiles, message] = ...
 %       varargin    - 'FileIdentifier': data file identifier (may be empty)
 %                   must be a string scalar or a character vector
 %                   default == ''
-%                   - 'ExcludedStrings': excluded strings from data file names
+%                   - 'ExcludedStrings': excluded strings from the filename
 %                   must be a cell array of character vectors
 %                   default == {}
 %
 % Requires:
-%       cd/all_files.m
 %       cd/isemptycell.m
 %
 % Used by:
 %       cd/minEASE.m
 %       cd/combine_sweeps.m
-
+%
 % File History:
 %   2018-01-29 Moved from cd/minEASE.m
 %   2018-01-29 Added the case where dataTypeUser is not recognized 
 %   2018-01-29 Added FileIdentifier as an optional argument
 %   2018-02-14 Added ExcludedStrings as an optional argument
-%   2020-08-26 Now uses all_files.m and sorts files by datenum
 %   TODO: Make possibleDataTypes an optional argument? Default?
+%   TODO: Use all_files.m?
 %
 
 %% Default values for optional arguments
@@ -117,13 +116,12 @@ function allDataFiles = find_valid_files (dataDirectory, fileIdentifier, ...
                                             fileType, excludedStrings)
 
 % Find all files with the given name
-allDataFiles = all_files('Directory', dataDirectory, 'SortBy', 'datenum', ...
-                        'Keyword', fileIdentifier, 'Extension', fileType);
+allDataFiles = dir(fullfile(dataDirectory, [fileIdentifier, '*.', fileType]));
 
 % Exclude invalid entries by testing the date field
 allDataFiles = allDataFiles(~isemptycell({allDataFiles.date}));
 
-% Exclude entries with an excluded string in the file name
+% Exclude entries with an excluded string in the name
 for iString = 1:numel(excludedStrings)
     if ~isempty(allDataFiles)       % if allDataFiles not already empty
         % Get this excluded string
@@ -145,6 +143,27 @@ end
 %{
 OLD CODE:
 
+message = [message, sprintf('%s', possibleDataTypes{iDataType})];
+if iDataType < nDataTypes
+    message = [message, ', '];
+else
+    message = [message, '\n'];
+end
+
+% Print possible data types in a line
+for iDataType = 1:nDataTypes
+    message = [message, sprintf('%s', possibleDataTypes{iDataType})];
+    if iDataType < nDataTypes
+        message = [message, ', '];
+    else
+        message = [message, '\n'];
+    end
+end
+
+    allDataFiles = dir(fullfile(dataDirectory, ...
+                    [fileIdentifier, '*.', dataTypeUser]));
+        allDataFiles = dir(fullfile(dataDirectory, ...
+                        [fileIdentifier, '*.', tempType]));
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

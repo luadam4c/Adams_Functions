@@ -75,6 +75,7 @@ function varargout = all_files (varargin)
 %       cd/print_or_show_message.m
 %
 % Used by:
+%       cd/all_data_files.m
 %       cd/all_subdirs.m
 %       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
