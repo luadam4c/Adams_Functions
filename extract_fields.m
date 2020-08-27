@@ -45,6 +45,7 @@ function varargout = extract_fields (structs, varargin)
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
+%       cd/minEASE.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_correlation_coefficient.m
 %       cd/update_figure_for_corel.m

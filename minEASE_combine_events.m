@@ -3,20 +3,29 @@ function [eventInfo, eventClass, isChecked, siMs] = ...
 %% Convert info from Excel file into a structure for GUI
 % Usage: [eventInfo, eventClass, isChecked, siMs] = ...
 %               minEASE_combine_events (varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       TODO
+%
 % Outputs:
-%   TODO
+%       TODO
 %
 % Arguments:
-%   TODO
-%       varargin    - 'Folder': folder containing files to combine
+%       varargin    - 'Directory': directory containing files to combine
 %                   must be a string scalar or a character vector
-%                   default == pwd
+%                   default == set in all_files.m
+%                   - 'FilePaths': names of '.mat' output files to combine
+%                   must be empty, a characeter vector, a string array 
+%                       or a cell array of character arrays
+%                   default == detect from directory
 %                   - 'ExpLabel': experiment label for files to combine
 %                   must be a string scalar or a character vector
 %                   default == '' 
 %                   - 'OutputLabel': experiment label for output file names
 %                   must be a string scalar or a character vector
-%                   default == expLabel if provided and folder name otherwise
+%                   default == expLabel if provided and directory name otherwise
 %                   - 'TimeUnits': units used for time
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'ms'        - milliseconds
@@ -34,7 +43,12 @@ function [eventInfo, eventClass, isChecked, siMs] = ...
 %                                   regardless of message mode
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%
 % Requires:
+%       cd/all_files.m
+%       cd/construct_fullpath.m
+%       cd/extract_common_directory.m
+%       cd/extract_fileparts.m
 %       cd/minEASE_extract_from_output_filename.m
 %       cd/dlmwrite_with_header.m
 %       cd/find_in_strings.m
@@ -42,7 +56,7 @@ function [eventInfo, eventClass, isChecked, siMs] = ...
 %
 % Used by:
 %       cd/minEASE.m
-%
+
 % File History:
 % 2017-07-24 Created by AL
 % 2017-07-25 AL - Added 'units'; now saves two versions -- 
@@ -67,11 +81,13 @@ function [eventInfo, eventClass, isChecked, siMs] = ...
 % 2018-08-02 AL - Made 'OutputLabel' an optional parameter and 
 %                   changed it to use the provided ExpLabel or 
 %                   the output directory name as the default
-% 2018-08-02 AL - Made 'Folder' an optional parameter
+% 2018-08-02 AL - Made 'Directory' an optional parameter
 % 2018-08-02 AL - Changed eventInfo -> eventInfoThis; allEventInfo -> eventInfo
 %                   eventClass -> eventClassThis; allEventClass -> eventClass
 % 2018-08-02 AL - Now stores nSamples, siMs, prevSweepsDuration, sweepLabel
 % 2018-08-03 AL - Updated sweepLabelToMatch to include underscores on each side
+% 2020-08-27 AL - Now uses all_files.m
+% 2020-08-27 AL - Added 'FilePaths' as an optional argument
 % TODO: Improve performance by storing and using nEvents for each 
 %           individual matfile
 % TODO: Check if siMs are the same for each cell
@@ -82,7 +98,6 @@ function [eventInfo, eventClass, isChecked, siMs] = ...
 %% Hard-coded parameters
 validMessageModes = {'wait', 'show', 'none'};
 validTimeUnits = {'samples', 'ms'};
-individualOutputSuffix = '_output.mat';
 
 %% Constants to be consistent with find_directional_events.m
 IDXBREAK_COLNUM      = 1;
@@ -141,7 +156,8 @@ outputColumnHeaderMs = {'Breakpoint Time (ms)', ...
                         'Whether Examined'};
 
 %% Default values for optional arguments
-folderDefault = pwd;            % use the present working directory by default
+directoryDefault = '';          % set in all_files.m
+filePathsDefault = {};          % set later
 expLabelDefault = '';           % disregard any experiment label by default
 outputLabelDefault = '';        % (will be changed later)
 timeUnitsDefault = 'samples';   % use samples for the time units by default
@@ -157,8 +173,10 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'Folder', folderDefault, ...
+addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FilePaths', filePathsDefault, ...
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ExpLabel', expLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutputLabel', outputLabelDefault, ...
@@ -172,7 +190,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-folder = iP.Results.Folder;
+directory = iP.Results.Directory;
+filePaths = iP.Results.FilePaths;
 expLabel = iP.Results.ExpLabel;
 outputLabel = iP.Results.OutputLabel;
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
@@ -194,9 +213,24 @@ end
 
 % TODO: Check whether outputs already exist, and deal with them
 
-% Find all matfiles in this folder with this expLabel (may be empty)
-files = dir(fullfile(folder, [expLabel, '*Swp*', individualOutputSuffix]));
-fileNames = {files.name};
+% Decide on files to combine
+if isempty(filePaths)
+    % Set default directory
+    if isempty(directory)
+        directory = pwd;
+    end
+
+    % Find all matfiles in this directory with this expLabel (may be empty)
+    [~, filePaths] = all_files('Directory', directory, 'SortBy', 'sweep', ...
+                        'SweepStr', 'Swp', 'Keyword', expLabel, ...
+                        'Suffix', 'output', 'Extension', 'mat');
+else
+    filePaths = construct_fullpath(filePaths, 'Directory', directory);
+    directory = extract_common_directory(filePaths);
+end
+
+% Extract the file names
+fileNames = extract_fileparts(filePaths, 'name');
 
 % Count the number of output matfiles (number of sweeps)
 nFiles = numel(fileNames);
@@ -217,22 +251,22 @@ infoStruct = minEASE_extract_from_output_filename(fileNames{1});
 directionLabel = infoStruct.directionLabel;
 
 % Decide on the output label
-[~, folderName, ~] = fileparts(folder);
 if isempty(outputLabel)
     if ~isempty(expLabel)
         outputLabel = expLabel;
     else
-        outputLabel = [folderName, '_', directionLabel];
+        [~, directoryName, ~] = fileparts(directory);
+        outputLabel = [directoryName, '_', directionLabel];
     end
 end
 
 % Decide on the output file names
 matFileName = ...
-    fullfile(folder, sprintf('%s_ALL_output_%s.mat', outputLabel, timeUnits));
+    fullfile(directory, sprintf('%s_ALL_output_%s.mat', outputLabel, timeUnits));
 csvFileName = ...
-    fullfile(folder, sprintf('%s_ALL_output_%s.csv', outputLabel, timeUnits));
+    fullfile(directory, sprintf('%s_ALL_output_%s.csv', outputLabel, timeUnits));
 csvFileNameWHeader = ...
-    fullfile(folder, sprintf('%s_ALL_output_%s_w_header.csv', ...
+    fullfile(directory, sprintf('%s_ALL_output_%s_w_header.csv', ...
                             outputLabel, timeUnits));
 
 % Initialize outputs
@@ -313,7 +347,7 @@ for iSweep = 1:nSweeps
     end
 
     % Extract eventInfo, eventClass, isChecked from mat file
-    m = matfile(fullfile(folder, matchedFile));
+    m = matfile(fullfile(directory, matchedFile));
     eventInfoThis = m.eventInfo;
     eventClassThis = m.eventClass;
     isCheckedThis = m.isChecked;

@@ -3,21 +3,12 @@ function [allData, timeVec] = combine_sweeps (varargin)
 % Usage: [allData, timeVec] = combine_sweeps (varargin)
 % Explanation:
 %       TODO
-%
-% Example(s):
-%       TODO
-%
 % Outputs:
 %       TODO
-%
 % Arguments:    
 %       varargin    - 'DataDirectory'- dataDirectory containing files to combine
 %                   must be a string scalar or a character vector
-%                   default == set in all_data_files.m
-%                   - 'FilePaths': names of '.mat' output files to combine
-%                   must be empty, a characeter vector, a string array 
-%                       or a cell array of character arrays
-%                   default == detect from dataDirectory
+%                   default == pwd
 %                   - 'ExpLabel'    - experiment label for files to combine
 %                   must be a string scalar or a character vector
 %                   default == '' 
@@ -31,7 +22,7 @@ function [allData, timeVec] = combine_sweeps (varargin)
 %                   - 'SweepNumbers' - the sweep numbers to combine
 %                   must be a numeric vector or 'all'
 %                   default == 'all'
-%                   - 'Extension': input data type
+%                   - 'DataType': input data type
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'abf'   - AXON binary files
 %                       'mat'   - MATLAB data files
@@ -58,28 +49,23 @@ function [allData, timeVec] = combine_sweeps (varargin)
 %                   default == false
 %
 % Requires:
-%       cd/all_data_files.m
-%       cd/construct_fullpath.m
-%       cd/extract_common_directory.m
-%       cd/extract_fileparts.m
 %       cd/identify_channels.m
+%       cd/all_data_files.m
 %       cd/locate_functionsdir.m
 %       cd/print_or_show_message.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m
 %
 % Used by:    
 %       cd/minEASE.m
-%       /home/Matlab/Katies_Functions/Glucose/cell_attached_minEASE_filtered.m
-%       /home/Matlab/Katies_Functions/Glucose/GABAB_puff.m
-%       /home/Matlab/Katies_Functions/Glucose/GABAB_puff_test.m
-%       /home/Matlab/Katies_Functions/Glucose/loadcell_attached_TimeSeries.m
-
+%       /home/Matlab/Katies_Functions/loadcell_attached_TimeSeries.m
+%       /home/Matlab/Katies_Functions/cell_attached_minEASE_filtered.m
+%
 % File History:
 % 2017-07-25 Created by AL
 % 2017-10-15 Added success message
 % 2018-01-24 Added isdeployed
 % 2018-01-29 Now uses all_data_files.m
-% 2018-01-29 Added extension as an optional parameter-value pair argument
+% 2018-01-29 Added dataType as an optional parameter-value pair argument
 % 2018-02-02 Added showMessage as an optional parameter-value pair argument
 % 2018-02-02 Now uses print_or_show_message.m for output
 % 2018-02-07 MD - Changed usage of print_or_show_message()
@@ -90,28 +76,26 @@ function [allData, timeVec] = combine_sweeps (varargin)
 %                   optional arguments
 % 2018-08-12 AL - Now detects data mode automatically
 % 2018-09-23 AL - Added FileIdentifier as an optional argument
-% 2020-08-27 AL - Added 'FilePaths' as an optional argument
 % 
 
 %% Hard-coded constants
 US_PER_MS = 1000;
 
 %% Hard-coded parameters
-possibleExtensions = {'abf', 'mat', 'txt'};     
+possibleDataTypes = {'abf', 'mat', 'txt'};     
                     % Precedence: .abf > .mat > .txt
 possibleDataModes = {'2d', '3d'};
 validMessageModes = {'wait', 'show', 'none'};
 expMode = 'patch';              % TODO: Make an optional argument
 
 %% Default values for optional arguments
-dataDirectoryDefault = pwd;     % use the present working directory by default
-filePathsDefault = {};          % set later
+dataDirectoryDefault = pwd;            % use the present working directory by default
 expLabelDefault = '';           % disregard any experiment label by default
 fileIdentifierDefault = '';     % no file identifier by default
 outputLabelDefault = '';        % (will be changed later)
 sweepNumbersDefault = 'all';    % combine all sweeps by default
-extensionDefault     = 'auto';  % to detect input data type 
-                                %   from possibleExtensions
+dataTypeDefault     = 'auto';   % to detect input data type 
+                                %   from possibleDataTypes
 dataModeDefault     = 'auto';   % to detect input data type
 messageModeDefault  = 'none';   % print to standard output by default
 verboseDefault = false;         % default: Program does not print message
@@ -135,8 +119,6 @@ iP.FunctionName = mfilename;
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'DataDirectory', dataDirectoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'FilePaths', filePathsDefault, ...
-    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ExpLabel', expLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileIdentifier', fileIdentifierDefault, ...
@@ -144,8 +126,8 @@ addParameter(iP, 'FileIdentifier', fileIdentifierDefault, ...
 addParameter(iP, 'OutputLabel', outputLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SweepNumbers', sweepNumbersDefault);
-addParameter(iP, 'Extension', extensionDefault, ...
-    @(x) any(validatestring(x, possibleExtensions)));
+addParameter(iP, 'DataType', dataTypeDefault, ...
+    @(x) any(validatestring(x, possibleDataTypes)));
 addParameter(iP, 'DataMode', dataModeDefault, ...
     @(x) any(validatestring(x, possibleDataModes)));
 addParameter(iP, 'MessageMode', messageModeDefault, ...
@@ -156,51 +138,32 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 dataDirectory = iP.Results.DataDirectory;
-filePaths = iP.Results.FilePaths;
 expLabel = iP.Results.ExpLabel;
 fileIdentifier = iP.Results.FileIdentifier;
 outputLabel = iP.Results.OutputLabel;
 sweepNumbers = iP.Results.SweepNumbers;
-dataModeUser = validatestring(iP.Results.Extension, ...
+dataModeUser = validatestring(iP.Results.DataType, ...
                     [possibleDataModes, {'auto'}]);
-extensionUser = validatestring(iP.Results.Extension, ...
-                    [possibleExtensions, {'auto'}]);
+dataTypeUser = validatestring(iP.Results.DataType, ...
+                    [possibleDataTypes, {'auto'}]);
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 verbose = iP.Results.Verbose;
 
 % Extract from experiment label if requested
 if strcmpi(fileIdentifier, 'fromExpLabel')
-    fileIdentifier = replace(expLabel, {'_IPSC', '_EPSC'}, {'', ''});
+    fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
 end
 
-% Decide on files to combine
-if isempty(filePaths)
-    % Set default directory
-    if isempty(directory)
-        directory = pwd;
-    end
-
-    % Determine data type, list all .abf, .mat or .txt files from data directory
-    [~, filePaths, extension, message] = ...
-        all_data_files('Directory', dataDirectory, ...
-                        'ExtensionUser', extensionUser, ...
-                        'PossibleExtensions', possibleExtensions, ...
-                        'Keyword', fileIdentifier, 'ShowFlag', false);
-else
-    filePaths = construct_fullpath(filePaths, 'Directory', dataDirectory);
-    dataDirectory = extract_common_directory(filePaths);
-    extension = extract_fileparts(filePaths, 'Extension');
-    extension = unique(extension);
-    message = {'Sweeps from: ', filePaths{:}};
-end
-
-% Count the number of data files
-nDataFiles = numel(filePaths);
+% Determine data type, list all .abf, .mat or .txt files from 
+%   data subdirectory
+[dataType, allDataFiles, nDataFiles, message] = ...
+    all_data_files(dataTypeUser, dataDirectory, possibleDataTypes, ...
+                        'FileIdentifier', fileIdentifier);
 
 % Check if files are found
 if nDataFiles <= 0
     if iscell(message)
-        message = [message, {'Failed to combine sweeps!'}];
+        message = [message, 'Failed to combine sweeps!'];
     else
         message = {message, 'Failed to combine sweeps!'};
     end
@@ -223,14 +186,13 @@ end
 
 % Decide on the data mode and the sampling interval if any
 if strcmpi(dataModeUser, 'auto')
-    if strcmpi(extension, 'abf')
+    if strcmpi(dataType, 'abf')
         % Get the first data file name
-        firstDataPath = filePaths{1};
+        firstDataFileName = fullfile(dataDirectory, allDataFiles(1).name);
 
         % Load it
-        % TODO: Use parse_abf.m
-        [data, siUs, ~] = abf2load(firstDataPath);
-%         [data, siUs] = abfload(firstDataPath);
+        [data, siUs, ~] = abf2load(firstDataFileName);
+%         [data, siUs] = abfload(firstDataFileName);
 
         % Determine the dimensions of the data structure
         nDims = length(size(data));
@@ -283,20 +245,20 @@ if strcmpi(dataMode, '2d')       % if there is only one sweep per file
     % Do for each sweep/file
     for iFile = sweepNumbers
         % Get current data file name
-        filePathThis = filePaths{iFile};
+        dataFileName = fullfile(dataDirectory, allDataFiles(iFile).name);
         
         % Import data based on data type
-        switch extension
+        switch dataType
         case 'abf'
             % Load abf data for this sweep
-            [data, ~] = abf2load(filePathThis);
+            [data, ~] = abf2load(dataFileName);
         case {'mat', 'txt'}
             % Import data (the current vector must be one of the columns)
             %   Only one cell per file!
-            data = importdata(filePathThis);            
+            data = importdata(dataFileName);            
         otherwise
             message = {sprintf('The data type .%s is not supported yet!', ...
-                        extension), 'Failed to combine sweeps!'};
+                        dataType), 'Failed to combine sweeps!'};
             mTitle = 'Combine sweep error';
             icon = 'error';
             print_or_show_message(message, 'MessageMode', messageMode, ...
@@ -334,7 +296,7 @@ elseif strcmpi(dataMode, '3d')   % if there are multiple sweeps per file
     end
 
     % Get current data file name
-    filePathThis = filePaths{1};
+    dataFileName = fullfile(dataDirectory, allDataFiles(1).name);
 
     % Load abf data for all sweeps
     [data, ~] = abf2load(abfFileName);
@@ -397,6 +359,43 @@ print_or_show_message(message, 'MessageMode', messageMode, ...
 
 %{
 OLD CODE:
+
+% Find all the .abf files in the dataDirectory with this fileIdentifier
+abfFiles = dir(fullfile(dataDirectory, [fileIdentifier, '*.abf']));
+nAbfFiles = length(abfFiles);
+
+% Check if files are found
+if nAbfFiles <= 0 
+    fprintf('Cannot find abf files! Failed to combine sweeps!\n\n');
+    return;
+end
+
+fprintf('Cannot find data files! Failed to combine sweeps!\n\n');
+fprintf('Too few data files! Failed to combine sweeps!');
+fprintf(['The data type .%s is not supported yet!\n', ...
+        ' Failed to combine sweeps!\n\n'], dataType);
+fprintf('Too many data files! Failed to combine sweeps!\n\n');
+fprintf('Sweeps successfully combined!!\n\n');
+
+%                   - 'ShowMessage': whether to show messages in messages boxes
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+showMessageDefault  = false;        % print to standard output by default
+addParameter(iP, 'ShowMessage', showMessageDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+showMessage = iP.Results.ShowMessage;
+        if showMessage
+            print_or_show_message(message, 'MessageMode', 'show', ...
+                                    'MTitle', mTitle, 'Icon', icon);
+        else
+            print_or_show_message(message, 'MessageMode', 'none', ...
+                                    'MTitle', mTitle, 'Icon', icon);
+        end
+
+addpath(fullfile(functionsDirectory, '/Brians_Functions/'));
+                                            % for identify_channels.m
+addpath(fullfile(functionsDirectory, '/Adams_Functions/'));
+                                            % for all_data_files.m
 
 %}
 

@@ -65,14 +65,14 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/all_dependent_files.m
 %       cd/all_file_bases.m
 %       cd/archive_dependent_scripts.m
-%       cd/compile_script.m
-%       cd/write_data_atf.m
 %       cd/combine_abf_data.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_param_tables.m
+%       cd/combine_sweeps.m
 %       cd/combine_swd_sheets.m
 %       cd/combine_variables_across_tables.m
 %       cd/combine_swd_resp_data.m
+%       cd/compile_script.m
 %       cd/copy_into.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/decide_on_filebases.m
@@ -94,6 +94,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_select_sweeps.m
 %       cd/minEASE.m
+%       cd/minEASE_combine_events.m
 %       cd/parse_atf_swd.m
 %       cd/parse_current_family.m
 %       cd/parse_iox.m
@@ -111,6 +112,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/save_all_zooms.m
 %       cd/update_file_base_in_matfiles.m
+%       cd/write_data_atf.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:

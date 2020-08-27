@@ -66,20 +66,22 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
-%       cd/write_data_atf.m
 %       cd/check_dir.m
 %       cd/combine_swd_sheets.m
+%       cd/combine_sweeps.m
 %       cd/locate_dir.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/minEASE.m
+%       cd/minEASE_combine_events.m
 %       cd/parse_iox.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_grouped_scatter.m
 %       cd/plot_histogram.m
 %       cd/save_params.m
 %       cd/test_var_difference.m
+%       cd/write_data_atf.m
 %       cd/write_frames.m
 %       ~/RTCl/neuronlaunch.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m

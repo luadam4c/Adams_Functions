@@ -39,6 +39,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_plot_violin.m
+%       cd/minEASE.m
 %       cd/parse_pleth_trace.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_relative_events.m

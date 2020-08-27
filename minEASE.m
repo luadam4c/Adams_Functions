@@ -26,7 +26,7 @@ function minEASE (varargin)
 %                   could be anything recognised by the saveas() function 
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - 'DataType': input data type
+%                   - 'Extension': input data type
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'abf'       - AXON binary files
 %                       'mat'       - MATLAB data files
@@ -98,12 +98,16 @@ function minEASE (varargin)
 %
 % Requires:
 %       cd/all_data_files.m
+%       cd/all_files.m
 %       cd/check_subdir.m
 %       cd/combine_sweeps.m
+%       cd/convert_units.m
 %       cd/construct_fullpath.m
 %       cd/dlmwrite_with_header.m
+%       cd/extract_fields.m
 %       cd/extract_fileparts.m
 %       cd/find_in_strings.m
+%       cd/find_matching_files.m
 %       cd/identify_channels.m
 %       cd/locate_functionsdir.m
 %       cd/local.settings
@@ -147,7 +151,7 @@ function minEASE (varargin)
 % 2017-07-24 AL - Added ability to load unfinished work
 % 2017-07-25 AL - Added figTypes, dataMode, dataDirectory
 % 2017-08-01 AL - AddedNow reads .mat files that contain a data matrix. 
-% 2017-07-31 AL - Added DataType (‘abf’ or ‘mat’) as 
+% 2017-07-31 AL - Added Extension (‘abf’ or ‘mat’) as 
 %                   an optional parameter-value pair argument. 
 %                   If no data type is provided, the program first searches 
 %                   for ABF files in the data subdirectory, then searches 
@@ -281,14 +285,14 @@ logo = 'minEASE_Logo_1.png';
 
 %% Default files
 excelFileDefault = '';          % no default excelFile, the program will
-                                %   go through the possible data types
-possibleDataTypes = {'abf', 'mat', 'txt'};     
+                                %   open a GUI for Excel file selection
+possibleExtensions = {'abf', 'mat', 'txt'};     
                     % Precedence: .abf > .mat > .txt
 
 %% Default for optional arguments
 figTypesDefault = 'png';        % default figure type(s) for saving
-dataTypeDefault = 'auto';       % to detect input data type 
-                                %   from possibleDataTypes
+extensionDefault = 'auto';      % to detect input data extension 
+                                %   from possibleExtensions
 srkHzDefault = 20;              % default sampling rate in kHz 
                                 %   for .mat files and .txt files
                                 % Paula's calcium imaging data are 20 Hz
@@ -367,8 +371,8 @@ addOptional(iP, 'excelFile', excelFileDefault, @ischar);
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) min(isfigtype(x, 'ValidateMode', true)));
-addParameter(iP, 'DataType', dataTypeDefault, ...
-    @(x) any(validatestring(x, possibleDataTypes)));
+addParameter(iP, 'Extension', extensionDefault, ...
+    @(x) any(validatestring(x, possibleExtensions)));
 addParameter(iP, 'SamplingRate', srkHzDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'RunMode', runModeDefault, ...
@@ -401,8 +405,8 @@ addParameter(iP, 'AutoExcelFile', autoExcelFileDefault, ...
 parse(iP, varargin{:});
 excelFile           = iP.Results.excelFile;
 [~, figTypes]       = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
-dataTypeUser        = validatestring(iP.Results.DataType, ...
-                        [possibleDataTypes, {'auto'}]);
+extensionUser       = validatestring(iP.Results.Extension, ...
+                        [possibleExtensions, {'auto'}]);
 srkHz               = iP.Results.SamplingRate;
 runModeUser         = validatestring(iP.Results.RunMode, validRunModes);
 maxNumWorkersUser   = iP.Results.MaxNumWorkers;
@@ -449,7 +453,7 @@ end
 prompt1 = {'Input Excel file (leave blank if to be selected):', ...
             'Figure type for saving (''png'', ''jpg'', ''gif'', etc.):', ...
             ['Data type (''', ...
-                strjoin(possibleDataTypes, ''', '''), ''' or ''auto''):'], ...
+                strjoin(possibleExtensions, ''', '''), ''' or ''auto''):'], ...
             'Sampling rate (kHz) (ignored if ABF files used):', ...
             ['Run mode (''', strjoin(validRunModes, ''', '''), '''):'], ...
             ['Output Clampfit files: (''', ...
@@ -463,7 +467,7 @@ prompt1 = {'Input Excel file (leave blank if to be selected):', ...
             %}    
 dialogTitle1 = 'Session preferences #1';
 numLines1 = [1, 60; 1, 60; 1, 60; 1, 60; 1, 60; 1, 60; 1, 60];
-defaultAns1 = {excelFile, figTypesDisplay, dataTypeUser, ...
+defaultAns1 = {excelFile, figTypesDisplay, extensionUser, ...
                 num2str(srkHz), runModeUser, outputClampfitUser, ...
                 roiPlotDisplay};
 % Open session preferences dialog box #1:
@@ -489,8 +493,8 @@ while ~inputs1Valid
         excelFile = construct_fullpath(excelFile);
     end
     [isFigType, figTypes] = isfigtype(strsplit(inputs1{2}));
-    dataTypeEntered = validate_string(inputs1{3}, ...
-                        [possibleDataTypes, {'auto'}]);
+    extensionEntered = validate_string(inputs1{3}, ...
+                        [possibleExtensions, {'auto'}]);
     srkHz = str2double(inputs1{4});
     runModeEntered = validate_string(inputs1{5}, validRunModes);
     outputClampfitEntered = validate_string(inputs1{6}, validAnswers);
@@ -508,11 +512,11 @@ while ~inputs1Valid
                 'Leave it blank if you want to select it interactively.'};
     elseif ~all(isFigType)      % if a figure type is not valid
         msg = 'One of the entered figure types is not valid!';
-    elseif isempty(dataTypeEntered) % if the data type is invalid
+    elseif isempty(extensionEntered) % if the data type is invalid
         msg = {'The data type must be one of the following: ', ...
-                    ['''', strjoin(possibleDataTypes, ''', '''), ''''], ...
+                    ['''', strjoin(possibleExtensions, ''', '''), ''''], ...
                     'Or type ''auto'' for automatic detection.'};
-    elseif any(strcmp(dataTypeEntered, {'mat', 'txt'})) && isnan(srkHz)
+    elseif any(strcmp(extensionEntered, {'mat', 'txt'})) && isnan(srkHz)
                                 % if no sampling rate provided
         msg = {['You must provide a sampling rate ', ...
                 'if .mat or .txt files are used as data!']};
@@ -894,7 +898,7 @@ logFileName = [mfilename, '_', dateString, '.log'];
 diary(fullfile(excelPath, logFileName));
 
 % Display warning message if user-defined sampling rate might be ignored
-if strcmp(dataTypeEntered, 'abf') && ~isempty(srkHz)
+if strcmp(extensionEntered, 'abf') && ~isempty(srkHz)
     % User input for srkHz will be ignored, set to empty
     srkHz = [];
     message = 'ABF file used! User defined sampling rate ignored!';
@@ -981,8 +985,8 @@ if maxNumWorkers == 0
         % Process this row
         [exitFlag, ~, ~, ~] = ...
                 process_row(toBeAnalyzed, params, formatDateString, ...
-                            possibleDataTypes, outputCellHeader, ...
-                            dataTypeEntered, figTypes, srkHz, ...
+                            possibleExtensions, outputCellHeader, ...
+                            extensionEntered, figTypes, srkHz, ...
                             openGui, toPrompt, messageMode, ...
                             prevResultActionEntered, combineOutputs, ...
                             verbose, outputClampfit, icondata, iconcmap);
@@ -998,8 +1002,8 @@ else
     errormsgs = cell(nRows, 1);
     warnFlags = zeros(nRows, 1);
     warnmsgs = cell(nRows, 1);
-    parfor (row = 2:nRows, maxNumWorkers)
-%    for row = 2:nRows
+%    parfor (row = 2:nRows, maxNumWorkers)
+    for row = 2:nRows
         % Extract whether to analyze and the input parameters for this row 
         %   (this data subdirectory)
         toBeAnalyzed = toBeAnalyzedAll{row - 1};
@@ -1008,8 +1012,8 @@ else
         % Process this row
         [exitFlags(row), errormsgs{row}, warnFlags(row), warnmsgs{row}] = ...
                 process_row(toBeAnalyzed, params, formatDateString, ...
-                            possibleDataTypes, outputCellHeader, ...
-                            dataTypeEntered, figTypes, srkHz, ...
+                            possibleExtensions, outputCellHeader, ...
+                            extensionEntered, figTypes, srkHz, ...
                             openGui, toPrompt, messageMode, ...
                             prevResultActionEntered, combineOutputs, ...
                             verbose, outputClampfit, icondata, iconcmap);
@@ -1077,15 +1081,14 @@ return
 
 function [exitFlag, errormsg, warnFlag, warnmsg] = ...
                 process_row(toBeAnalyzed, params, formatDateString, ...
-                            possibleDataTypes, outputCellHeader, ...
-                            dataTypeUser, figTypes, srkHz, openGui, ...
+                            possibleExtensions, outputCellHeader, ...
+                            extensionUser, figTypes, srkHz, openGui, ...
                             toPrompt, messageMode, prevResultActionEntered, ...
                             combineOutputs, verbose, outputClampfit, ...
                             icondata, iconcmap)
 
 %% Conversion constants
 US_PER_MS = 1e3;    % microseconds per millisecond
-MS_PER_S = 1e3;     % milliseconds per second
 
 %% Constants to be consistent with find_directional_events.m
 IDXBREAK_COLNUM      = 1;
@@ -1157,15 +1160,21 @@ dataDirectory = fullfile(dataHomeDirectory, dataSubdirectory);
 
 % Determine data type, list all .abf, .mat or .txt files from 
 %   data subdirectory and skip to next row if no abffiles available
-%   Note: data files must not contain 'output' or 'param' in the name!
-if strcmp(dataTypeUser, 'abf') || strcmp(dataTypeUser, 'txt')
-    [dataType, allDataFiles, nDataFiles, message] = ...
-        all_data_files (dataTypeUser, dataDirectory, possibleDataTypes);
+%   Note: data files must not contain 'output' or 'param' in the name
+%           if it's a .mat file
+if strcmp(extensionUser, 'mat') || strcmp(extensionUser, 'auto')
+    excludedStrings = {'output', 'param'};
 else
-    [dataType, allDataFiles, nDataFiles, message] = ...
-        all_data_files (dataTypeUser, dataDirectory, possibleDataTypes, ...
-                        'ExcludedStrings', {'output', 'param'});
+    excludedStrings = {};
 end
+[allDataFiles, ~, extension, message] = ...
+    all_data_files('Directory', dataDirectory, ...
+                    'ExtensionUser', extensionUser, ...
+                    'PossibleExtensions', possibleExtensions, ...
+                    'ExcludedStrings', excludedStrings, 'ShowFlag', false);
+
+% Count the number of data files
+nDataFiles = numel(allDataFiles);
 
 % Display message
 if nDataFiles == 0
@@ -1206,11 +1215,6 @@ if isnumeric(filesToAnalyze) && ...
     return;
 end
 
-% Reset sweep durations here if there is only one sweep per file
-prevSweepsDuration = 0;         % durations of previous sweeps 
-                                %   for this experiment (ms)
-sweepDuration = 0;              % current sweep duration (ms)
-  
 % Work through each file
 for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
     % Timer start
@@ -1218,7 +1222,7 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
 
     % Load data
     dataFileName = fullfile(dataDirectory, allDataFiles(iFile).name);
-    switch dataType
+    switch extension
     case 'abf'
         % Use abf2load.m to import data
         [allData, siUs] = abf2load(dataFileName);
@@ -1349,20 +1353,13 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
         sweepsToAnalyze = 1;
     end        
 
-    % Reset sweep durations here if there are multiple sweeps per file
-    if strcmpi(dataMode, '3d')       % if there are multiple sweeps
-        prevSweepsDuration = (sweepsToAnalyze(1)-1) * ...
-                                size(allData, 1) * siMs;
-                                        % durations of previous sweeps 
-                                        %   for this experiment (ms)
-        sweepDuration = 0;              % current sweep duration (ms)
-    end
-
     for iSwp = sweepsToAnalyze
-        % Update durations of previous sweeps
-        if sweepDuration > 0
-            prevSweepsDuration = prevSweepsDuration + sweepDuration;  
-                                        % durations of previous sweeps in ms
+        % Update combined duration of previous sweeps in ms
+        %   Note: This is only valid for sweeps of regular length
+        if strcmpi(dataMode, '3d')
+            prevSweepsDuration = (iSwp-1) * size(allData, 1) * siMs;
+        elseif strcmpi(dataMode, '2d')
+            prevSweepsDuration = (iFile-1) * size(allData, 1) * siMs;
         end
 
         % Get the current vector (usually pA) for this file/sweep
@@ -1393,9 +1390,10 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
                              sprintf('%s_output_w_header.csv', outputLabel));
 
         % TODO: Check units: force current to be in pA and voltage in mV
-        if abs(maxData) < 1  % probably in nA  %TODO: this is probably not good enough
+        % TODO: this is probably not good enough, make a parameter instead
+        if abs(maxData) < 1  % probably in nA
             % Convert to pA
-            current = current * 1000;
+            current = convert_units(current, 'nA', 'pA');
         end
 
         % Get number of sample points
@@ -1406,7 +1404,11 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
 
         % Place output label, prevSweepsDuration, 
         %   siMs, nSamples in params structure
+        params.fileIdentifier = fileIdentifier;
+        params.directionLabel = directionLabel;
+        params.expLabel = expLabel;
         params.outputLabel = outputLabel;
+        params.sweepDuration = sweepDuration;
         params.prevSweepsDuration = prevSweepsDuration;
         params.siMs = siMs;
         params.nSamples = nSamples;
@@ -1544,6 +1546,8 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
             % Save as a new v7.3 matfile
             save(matFileName, 'eventInfo', 'eventClass', 'isChecked', ...
                             'siMs', 'nSamples', 'prevSweepsDuration', ...
+                            'sweepDuration', 'fileIdentifier', ...
+                            'directionLabel', 'expLabel', ...
                             'outputLabel', '-v7.3');
 
             % Place all outputs in a big matrix
@@ -1709,6 +1713,8 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
                 % Save as a new v7.3 matfile
                 save(matFileName, 'eventInfo', 'eventClass', 'isChecked', ...
                                 'siMs', 'nSamples', 'prevSweepsDuration', ...
+                                'sweepDuration', 'fileIdentifier', ...
+                                'directionLabel', 'expLabel', ...
                                 'outputLabel', '-v7.3');
             end
 
@@ -1785,7 +1791,7 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
                     outputDirectory)};
         answer = combine_outputs_if_needed(combineOutputs, toPrompt, ...
                     messageMode, qString, outputDirectory, ...
-                    dataDirectory, dataMode, ...
+                    expLabel, dataDirectory, dataMode, ...
                     plotAverageTraceFlag, traceLengthMs, ...
                     beforePeakMs, figTypes);
         if isempty(answer)
@@ -1807,7 +1813,7 @@ if strcmp(dataMode, '2d')    % if there is one sweep per file
                 outputDirectory)};
     answer = combine_outputs_if_needed(combineOutputs, toPrompt, ...
                 messageMode, qString, outputDirectory, ...
-                dataDirectory, dataMode, ...
+                expLabel, dataDirectory, dataMode, ...
                 plotAverageTraceFlag, traceLengthMs, ...
                 beforePeakMs, figTypes);
     if isempty(answer)
@@ -1822,7 +1828,7 @@ end
 
 function answer = combine_outputs_if_needed (combineOutputs, toPrompt, ...
                 messageMode, qString, outputDirectory, ...
-                dataDirectory, dataMode, plotAverageTraceFlag, ...
+                expLabel, dataDirectory, dataMode, plotAverageTraceFlag, ...
                 traceLengthMs, beforePeakMs, figTypes)
 % Prompt to combine outputs
 
@@ -1855,7 +1861,7 @@ switch answer
 case choice1
     % Combine outputs from all sweeps that are finished
     combine_outputs(messageMode, outputDirectory, ...
-                    dataDirectory, dataMode, ...
+                    expLabel, dataDirectory, dataMode, ...
                     plotAverageTraceFlag, ...
                     traceLengthMs, beforePeakMs, ...
                     figTypes);
@@ -1867,36 +1873,49 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combine_outputs (messageMode, outputDirectory, ...
+function combine_outputs (messageMode, outputDirectory, expLabel, ...
                         dataDirectory, dataMode, plotAverageTraceFlag, ...
                         traceLengthMs, beforePeakMs, figTypes)
 % TODO: combine params files into ALL_params.mat
 % TODO: Create ATF Text files
 
-%% TODO: Make argument
+%% TODO: Make this an argument
 writeAtfFlag = true;
 
 % Extract the output directory base name
 outDirBase = extract_fileparts(outputDirectory, 'base');
 
-% Combine all eventInfo of sweeps from the current experiment
-minEASE_combine_events('Folder', outputDirectory, ...
+% Find the output matfiles in this outputDirectory
+[~, matPaths] = all_files('Directory', outputDirectory, 'SortBy', 'sweep', ...
+                        'SweepStr', 'Swp', 'Keyword', expLabel, ...
+                        'Suffix', 'output', 'Extension', 'mat');
+
+% Combine all eventInfo of sweeps from the current experiment in ms
+minEASE_combine_events('FilePaths', matPaths, 'ExpLabel', expLabel, ...
                         'TimeUnits', 'ms', 'MessageMode', messageMode);
+
+% Combine all eventInfo of sweeps from the current experiment in samples
 [allEventInfo, allEventClass, ~, siMs] = ...
-    minEASE_combine_events('Folder', outputDirectory, ...
+    minEASE_combine_events('FilePaths', matPaths, 'ExpLabel', expLabel, ...
                         'TimeUnits', 'samples', 'MessageMode', messageMode);
+
+% Return if nothing combined
 if isempty(allEventInfo)
     return;
 end
 
-% Find the number of output matfiles in this outputDirectory
-files = dir(fullfile(outputDirectory, '*Swp*_output.mat'));
-nSweeps = length(files);
+% Read the .mat files
+matStructs = cellfun(@(x) matfile(x), matPaths);
+
+% Extract file identifiers
+fileIdentifiers = extract_fields(matStructs, 'fileIdentifier');
+
+% Find the data file paths corresponding to the output files
+filePaths = find_matching_files(fileIdentifiers, 'Directory', dataDirectory);  
 
 % Combine the corresponding sweep data
-allData = ...
-    combine_sweeps('DataDirectory', dataDirectory, 'DataMode', dataMode, ...
-                    'SweepNumbers', 1:nSweeps, 'MessageMode', messageMode);
+allData = combine_sweeps('FilePaths', filePaths, 'DataMode', dataMode, ...
+                            'MessageMode', messageMode);
 
 % TODO: Write data to ATF Text files
 if writeAtfFlag
@@ -1908,12 +1927,10 @@ if plotAverageTraceFlag
     nMethods = numel(possibleDealWithTooShort);
     for iMethod = 1:nMethods
         minEASE_compute_plot_average_psc(allEventInfo, allEventClass, ...
-                                    allData, siMs, ...
-                                    traceLengthMs, beforePeakMs, ...
-                                    possibleDealWithTooShort{iMethod}, ...
-                                    outputDirectory, outDirBase, ...
-                                    'FigTypes', figTypes, ...
-                                    'MessageMode', messageMode);
+                            allData, siMs, traceLengthMs, beforePeakMs, ...
+                            possibleDealWithTooShort{iMethod}, ...
+                            outputDirectory, outDirBase, ...
+                            'FigTypes', figTypes, 'MessageMode', messageMode);
     end
 end
 

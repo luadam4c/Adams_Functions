@@ -31,11 +31,13 @@ function parentDir = extract_common_directory (paths, varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:
-%       cd/parse_all_abfs.m
 %       cd/all_dependent_files.m
+%       cd/combine_sweeps.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m
 %       cd/m3ha_plot_figure08.m
+%       cd/minEASE_combine_events.m
+%       cd/parse_all_abfs.m
 %       cd/parse_iox.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m

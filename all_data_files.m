@@ -1,22 +1,41 @@
-function [dataType, allDataFiles, nDataFiles, message] = ...
-                all_data_files (dataTypeUser, dataDirectory, ...
-                                possibleDataTypes, varargin)
-%% Looks for data files in a dataDirectory according to either dataTypeUser or going through a list of possibleDataTypes
-% Usage: [dataType, allDataFiles, nDataFiles, message] = ...
-%               all_data_files (dataTypeUser, dataDirectory, ...
-%                               possibleDataTypes, varargin)
+function [dataFiles, dataPaths, extension, message] = all_data_files (varargin)
+%% Looks for data files in a directory according to either extensionUser or going through a list of possibleExtensions
+% Usage: [dataFiles, dataPaths, extension, message] = all_data_files (varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       [dataFiles, dataPaths, extension, message] = all_data_files;
+%
+% Outputs:
+%       TODO
 %
 % Arguments:
-%       TODO    
-%       varargin    - 'FileIdentifier': data file identifier (may be empty)
+%       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ShowFlag': whether to show message
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'WarnFlag': whether to warn if no files found
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'ExtensionUser'- data file extension provided by user
+%                                       or 'auto' for automatic detection
 %                   must be a string scalar or a character vector
-%                   default == ''
+%                   default == 'auto'
+%                   - 'PossibleExtensions': possible data file extensions
+%                                           ordered by precedence
+%                   must be a string scalar or a character vector
+%                   default == {'abf', 'mat', 'txt'}
 %                   - 'ExcludedStrings': excluded strings from data file names
 %                   must be a cell array of character vectors
 %                   default == {}
+%                   - Any other parameter-value pair for all_files()
 %
 % Requires:
 %       cd/all_files.m
+%       cd/construct_and_check_fullpath.m
 %       cd/isemptycell.m
 %
 % Used by:
@@ -25,118 +44,163 @@ function [dataType, allDataFiles, nDataFiles, message] = ...
 
 % File History:
 %   2018-01-29 Moved from cd/minEASE.m
-%   2018-01-29 Added the case where dataTypeUser is not recognized 
-%   2018-01-29 Added FileIdentifier as an optional argument
+%   2018-01-29 Added the case where extensionUser is not recognized 
+%   2018-01-29 Added Keyword as an optional argument
 %   2018-02-14 Added ExcludedStrings as an optional argument
 %   2020-08-26 Now uses all_files.m and sorts files by datenum
-%   TODO: Make possibleDataTypes an optional argument? Default?
-%
+%   2020-08-26 Made all arguments optional
+%   2020-08-26 Redefined outputs to be consistent with all_files.m
+%   2020-08-26 Removed 'FileIdentifier' and passes extra arguments
+%                tod all_files.m instead
+%   2020-08-26 Added 'Verbose' and 'ShowFlag' as optional arguments
+%   2020-08-27 Added 'WarnFlag' as an optional argument
 
 %% Default values for optional arguments
-fileIdentifierDefault = '';     % no file identifier by default
+verboseDefault = false;         % don't print to standard output by default
+showFlagDefault = true;         % show message by default
+warnFlagDefault = false;        % don't warn if no files found by default
+directoryDefault = '';          % construct_and_check_fullpath('') == pwd
+extensionUserDefault = 'auto';
+possibleExtensionsDefault = {'abf', 'mat', 'txt'};     
 excludedStringsDefault = {};    % no excluded strings by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 3
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;         
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'FileIdentifier', fileIdentifierDefault, ...
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ShowFlag', showFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'WarnFlag', warnFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['Directory must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'ExtensionUser', extensionUserDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'ExcludedStrings', excludedStringsDefault, @iscellstr);
+addParameter(iP, 'PossibleExtensions', possibleExtensionsDefault, ...
+    @iscellstr);
+addParameter(iP, 'ExcludedStrings', excludedStringsDefault, ...
+    @iscellstr);
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-fileIdentifier = iP.Results.FileIdentifier;
+verbose = iP.Results.Verbose;
+showFlag = iP.Results.ShowFlag;
+warnFlag = iP.Results.WarnFlag;
+directory = iP.Results.Directory;
+extensionUser = iP.Results.ExtensionUser;
+possibleExtensions = iP.Results.PossibleExtensions;
 excludedStrings = iP.Results.ExcludedStrings;
 
-%% Perform job
+% Keep unmatched arguments for the all_files() function
+otherArguments = iP.Unmatched;
+
+%% Preparation
+% Make sure the directory is an existing full path
+directory = construct_and_check_fullpath(directory);
+
+%% Find all data files
 % Extract the number of possible data types
-nDataTypes = numel(possibleDataTypes);
+nDataTypes = numel(possibleExtensions);
 
 % Find data files according to data type
-switch dataTypeUser
-case possibleDataTypes              % if user provided a possible data type
-    dataType = dataTypeUser;
-    allDataFiles = find_valid_files(dataDirectory, fileIdentifier, ...
-                                    dataTypeUser, excludedStrings);
-    nDataFiles = length(allDataFiles);  % # of files in data subdirectory
-    if nDataFiles == 0
-        message = {sprintf('There are no .%s files in this directory:', ...
-                            dataTypeUser), sprintf('%s', dataDirectory)};
-    else
-        message = {sprintf(['The .%s files in this directory ', ...
-                            'will be used as data:'], dataType), ...
-                    sprintf('%s', dataDirectory)};
-    end
+switch extensionUser
 case 'auto'                         % if automatically detecting data types
-    % Iterate through possibleDataTypes to look for possible data type
+    % Iterate through possibleExtensions to look for possible data type
     for iDataType = 1:nDataTypes
-        tempType = possibleDataTypes{iDataType};
-        allDataFiles = find_valid_files(dataDirectory, fileIdentifier, ...
-                                        tempType, excludedStrings);
-        nDataFiles = length(allDataFiles);% # of files in data subdirectory
-        if nDataFiles > 0
-            dataType = tempType;
+        tempExtension = possibleExtensions{iDataType};
+        [dataFiles, dataPaths] = ...
+            find_valid_files(directory, tempExtension, ...
+                                excludedStrings, warnFlag, otherArguments);
+        if numel(dataFiles) > 0
+            extension = tempExtension;
+            icon = 'none';
             message = {sprintf(['The .%s files in this directory ', ...
-                                'will be used as data:'], dataType), ...
-                        sprintf('%s', dataDirectory)};
+                                'will be used as data:'], extension), ...
+                        sprintf('%s', directory)};
             break;
         end
     end
-    if nDataFiles == 0
-        dataType = '';
+    if numel(dataFiles) == 0
+        extension = '';
+        icon = 'warn';
         message = {'There are no acceptable data files in this directory:', ...
-                        sprintf('%s', dataDirectory)};
+                        sprintf('%s', directory)};
+    end
+case possibleExtensions              % if user provided a possible data type
+    extension = extensionUser;
+    [dataFiles, dataPaths] = ...
+            find_valid_files(directory, extensionUser, ...
+                                excludedStrings, warnFlag, otherArguments);
+    if numel(dataFiles) == 0
+        icon = 'warn';
+        message = {sprintf('There are no .%s files in this directory:', ...
+                            extensionUser), sprintf('%s', directory)};
+    else
+        icon = 'none';
+        message = {sprintf(['The .%s files in this directory ', ...
+                            'will be used as data:'], extension), ...
+                    sprintf('%s', directory)};
     end
 otherwise
-    dataType = '';
-    allDataFiles = [];
-    nDataFiles = 0;
+    extension = '';
+    dataFiles = [];
+    icon = 'none';
 
     % Start message
-    message = {sprintf('The data type %s is not recognized!', dataTypeUser), ...
-                sprintf('The possible data types are: %s'), ...
-                        strjoin(possibleDataTypes, ', ')};                     
+    message = {sprintf('The data type %s is not recognized!', extensionUser), ...
+                sprintf('The possible data types are: %s', ...
+                        strjoin(possibleExtensions, ', '))};                     
   
     % End message
     message = [message, 'You could also say ''auto''.\n'];
 end
 
+%% Print appropriate message
+if showFlag
+    print_or_show_message(message, 'Icon', icon, ...
+                            'MessageMode', 'show', 'Verbose', verbose);
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function allDataFiles = find_valid_files (dataDirectory, fileIdentifier, ...
-                                            fileType, excludedStrings)
+function [dataFiles, dataPaths] = ...
+                find_valid_files (directory, extension, ...
+                                    excludedStrings, warnFlag, otherArguments)
 
 % Find all files with the given name
-allDataFiles = all_files('Directory', dataDirectory, 'SortBy', 'datenum', ...
-                        'Keyword', fileIdentifier, 'Extension', fileType);
+[dataFiles, dataPaths] = ...
+    all_files('Directory', directory, 'SortBy', 'datenum', ...
+                'Extension', extension, 'WarnFlag', warnFlag, otherArguments);
 
 % Exclude invalid entries by testing the date field
-allDataFiles = allDataFiles(~isemptycell({allDataFiles.date}));
+toKeep = ~isemptycell({dataFiles.date});
+dataFiles = dataFiles(toKeep);
+dataPaths = dataPaths(toKeep);
 
 % Exclude entries with an excluded string in the file name
 for iString = 1:numel(excludedStrings)
-    if ~isempty(allDataFiles)       % if allDataFiles not already empty
+    if ~isempty(dataFiles)       % if dataFiles not already empty
         % Get this excluded string
         string = excludedStrings{iString};
         
         % Get all the data file names as a cell array
-        allNames = {allDataFiles.name};
+        allNames = {dataFiles.name};
         
         % Determine for each file whether you cannot find the string in the name
         doesNotContainString = isemptycell(strfind(allNames, string));
         
         % Restrict to those files 
-        allDataFiles = allDataFiles(doesNotContainString);
+        dataFiles = dataFiles(doesNotContainString);
+        dataPaths = dataPaths(doesNotContainString);
     end
 end
 
