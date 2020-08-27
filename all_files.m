@@ -58,6 +58,9 @@ function varargout = all_files (varargin)
 %                   - 'RegExp': regular expression to limit to
 %                   must be a string scalar or a character vector
 %                   default == no limits
+%                   - 'SweepStr': string that precedes sweep numbers
+%                   must be a string scalar or a character vector
+%                   default == 'Swp'
 %                   - 'SortBy': how to sort the files
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'name'  - by file name
@@ -130,10 +133,11 @@ function varargout = all_files (varargin)
 % 2019-01-30 Fixed 'SubDirInstead'
 % 2019-01-30 Now sorts by 'datenum' if the user wants to sort by 'date'
 % 2019-01-30 Now allows a '.' to be in the prefix, keyword, suffix or extension
+% 2020-08-27 Added 'SweepStr' as an optional argument
 % TODO: Fix bug when a dot is in the folder name
 
 %% Hard-coded parameters
-validSortBys = {'name', 'date', 'bytes', 'datenum'};
+validSortBys = {'name', 'date', 'bytes', 'datenum', 'sweep'};
 
 %% Default values for optional arguments
 verboseDefault = false;         % don't print to standard output by default
@@ -147,6 +151,7 @@ keywordDefault = '';            % set later
 suffixDefault = '';             % set later
 extensionDefault = '';          % set later
 regExpDefault = '';             % set later
+sweepStrDefault = 'Swp';        % string preceding sweep numbers
 sortByDefault = 'name';         % sort by name by default
 maxNumDefault = [];             % no restriction by default
 
@@ -182,6 +187,8 @@ addParameter(iP, 'Extension', extensionDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'RegExp', regExpDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SweepStr', sweepStrDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SortBy', sortByDefault, ...
     @(x) any(validatestring(x, validSortBys)));
 addParameter(iP, 'MaxNum', maxNumDefault, ...       % maximum number of indices
@@ -201,6 +208,7 @@ keyword = iP.Results.Keyword;
 suffix = iP.Results.Suffix;
 extension = iP.Results.Extension;
 regExp = iP.Results.RegExp;
+sweepStr = iP.Results.SweepStr;
 sortBy = validatestring(iP.Results.SortBy, validSortBys);
 maxNum = iP.Results.MaxNum;
 
@@ -278,6 +286,11 @@ end
 % Get a logical vector that tells which entries are irrelevant ('.' or '..')
 isIrrelevant = cellfun(@(x) any(strcmp(x, {'.', '..'})), names);
 
+% Modify for specific sorts
+if strcmpi(sortBy, 'sweep')
+    isIrrelevant = isIrrelevant & ~contains(names, sweepStr);
+end
+
 % Keep only those that are not directories and 
 %   are matches to the regular expression
 if subDirInstead
@@ -287,20 +300,40 @@ else
 end
 
 % Sort by date or bytes if requested
-if ~strcmpi(sortBy, 'name')
-    % If the user wants to sort by date, actually sort by datenum
-    if strcmpi(sortBy, 'date')
-        sortBy = 'datenum';
-    end
+switch sortBy
+    case 'name'
+        % Files already sorted as it is the default behavior of dir()
+    case {'date', 'bytes', 'datenum'}
+        % If the user wants to sort by date, actually sort by datenum
+        if strcmpi(sortBy, 'date')
+            sortBy = 'datenum';
+        end
 
-    % Convert the struct array to a table
-    filesTable = struct2table(files);
+        % Convert the struct array to a table
+        filesTable = struct2table(files);
 
-    % Sort the table by the requested field
-    filesTableSorted = sortrows(filesTable, sortBy); 
+        % Sort the table by the requested field
+        filesTableSorted = sortrows(filesTable, sortBy); 
 
-    % Change it back to a struct array
-    files = table2struct(filesTableSorted);
+        % Change it back to a struct array
+        files = table2struct(filesTableSorted);
+    case 'sweep'
+        % Get all file names
+        names = transpose({files.name});
+
+        % Extract sweep labels
+        sweepLabels = extract_substrings(names, 'RegExp', [sweepStr, '[\d]*']);
+
+        % Extract the sweep numbers
+        sweepNumbers = str2double(extractAfter(sweepLabels, sweepStr));
+
+        % Sort the sweep numbers
+        [~, origInd] = sort(sweepNumbers);
+
+        % Reorder files
+        files = files(origInd);
+    otherwise
+        error('sortBy unrecognized!');
 end
 
 % Restrict to maximum number of files

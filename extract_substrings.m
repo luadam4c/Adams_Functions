@@ -8,6 +8,7 @@ function subStrs = extract_substrings (strs, varargin)
 %       extract_substrings('test')
 %       extract_substrings('test01234', 'RegExp', '[\d]*')
 %       extract_substrings('98765test01234', 'RegExp', '[\d]*')
+%       extract_substrings({'98test012test83', '03test19test29'}, 'RegExp', 'test[\d]*')
 %       strs = {'Many_A105034_later', 'Mary_B203491_now'};
 %       extract_substrings(strs, 'RegExp', '[A-Z][0-9]{6}')
 %       extract_substrings({'test', 'test23', '45test'}, 'RegExp', '[\d]*')
