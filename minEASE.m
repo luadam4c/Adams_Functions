@@ -104,6 +104,8 @@ function minEASE (varargin)
 %       cd/convert_units.m
 %       cd/construct_fullpath.m
 %       cd/dlmwrite_with_header.m
+%       cd/extract_common_prefix.m
+%       cd/extract_distinct_fileparts.m
 %       cd/extract_fields.m
 %       cd/extract_fileparts.m
 %       cd/find_in_strings.m
@@ -262,6 +264,8 @@ function minEASE (varargin)
 % 2018-09-19 AL - Now uses the first channel that is identified to be current
 % 2020-08-24 AL - Now makes sure input Excel file is a full path
 % 2020-08-26 AL - Added 'combine' to possible run modes
+% 2020-08-27 AL - Now makes sure the combined events are consistent with the
+%                   combined sweeps
 % TODO: Implement ATF Text file output (writeAtfFlag)
 % TODO: Implement autoExcelFile
 % TODO: Change warn messages to 'show' and error messages to 'wait'?
@@ -1167,14 +1171,14 @@ if strcmp(extensionUser, 'mat') || strcmp(extensionUser, 'auto')
 else
     excludedStrings = {};
 end
-[allDataFiles, ~, extension, message] = ...
+[~, allDataPaths, extension, message] = ...
     all_data_files('Directory', dataDirectory, ...
                     'ExtensionUser', extensionUser, ...
                     'PossibleExtensions', possibleExtensions, ...
                     'ExcludedStrings', excludedStrings, 'ShowFlag', false);
 
 % Count the number of data files
-nDataFiles = numel(allDataFiles);
+nDataFiles = numel(allDataPaths);
 
 % Display message
 if nDataFiles == 0
@@ -1216,29 +1220,29 @@ if isnumeric(filesToAnalyze) && ...
 end
 
 % Work through each file
-for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
+for iFile = filesToAnalyze % for each file in allDataPaths(filesToAnalyze)
     % Timer start
     % tic;
 
     % Load data
-    dataFileName = fullfile(dataDirectory, allDataFiles(iFile).name);
+    dataFilePath = allDataPaths{iFile};
     switch extension
     case 'abf'
         % Use abf2load.m to import data
-        [allData, siUs] = abf2load(dataFileName);
+        [allData, siUs] = abf2load(dataFilePath);
         siMs = siUs/US_PER_MS;              % sampling interval in ms
     case {'mat', 'txt'}
         % Import data (the current vector must be one of the columns)
         %   Only one cell per file!
-        allData = importdata(dataFileName);
+        allData = importdata(dataFilePath);
         siMs = 1/srkHz;                     % sampling interval in ms
     otherwise
         try
             % Still try to import data anyway
-            allData = importdata(dataFileName);
+            allData = importdata(dataFilePath);
         catch
             message = sprintf('Data from %s cannot be imported!', ...
-                                dataFileName);
+                                dataFilePath);
             errormsg = display_error_to_exit(message, icondata, iconcmap);
             exitFlag = true;
             return
@@ -1248,13 +1252,13 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
     % Check data
     if ~isnumeric(allData)
         message = sprintf('Data from %s is not a numeric array!', ...
-                            dataFileName);
+                            dataFilePath);
         errormsg = display_error_to_exit(message, icondata, iconcmap);
         exitFlag = true;
         return
     elseif length(size(allData)) > 3
         message = sprintf('Data from %s has more than 3 dimensions!', ...
-                            dataFileName);
+                            dataFilePath);
         errormsg = display_error_to_exit(message, icondata, iconcmap);
         exitFlag = true;
         return
@@ -1280,7 +1284,7 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
     end
 
     % Create file identifier
-    [~, fileBase, ~] = fileparts(dataFileName); % get filebase
+    [~, fileBase, ~] = fileparts(dataFilePath); % get filebase
     fileIdentifier = fileBase;
 
     % Create experiment label
@@ -1327,7 +1331,7 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
             else
                 message = sprintf(['There are no sweeps in ', ...
                                     'the file %s to analyze!'], ...
-                                    dataFileName);
+                                    dataFilePath);
                 mTitle = 'File skipped';
                 icon = 'warn';
                 print_or_show_message(message, 'MessageMode', messageMode, ...
@@ -1657,7 +1661,7 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
                             outputDirectory, '?']};
                 answer = combine_outputs_if_needed(combineOutputs, toPrompt, ...
                             messageMode, qString, outputDirectory, ...
-                            expLabel, dataDirectory, dataMode, ...
+                            expLabel, directionLabel, dataDirectory, dataMode, ...
                             plotAverageTraceFlag, traceLengthMs, ...
                             beforePeakMs, figTypes);
                 if isempty(answer)
@@ -1785,13 +1789,13 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
     if strcmp(dataMode, '3d')    % if there are multiple sweeps per file
         % Ask user whether to combine outputs from all sweeps 
         %   that are finished
-        qString = {sprintf('Done with the data file %s!', dataFileName), ...
+        qString = {sprintf('Done with the data file %s!', dataFilePath), ...
                     sprintf(['Would you like to combine outputs from ', ...
                     'all the sweeps in the output directory %s?'], ...
                     outputDirectory)};
         answer = combine_outputs_if_needed(combineOutputs, toPrompt, ...
                     messageMode, qString, outputDirectory, ...
-                    expLabel, dataDirectory, dataMode, ...
+                    expLabel, directionLabel, dataDirectory, dataMode, ...
                     plotAverageTraceFlag, traceLengthMs, ...
                     beforePeakMs, figTypes);
         if isempty(answer)
@@ -1804,16 +1808,20 @@ for iFile = filesToAnalyze % for each file in allDataFiles(filesToAnalyze)
 end
 
 if strcmp(dataMode, '2d')    % if there is one sweep per file
+    % Extract a common prefix
+    allFileBases = extract_fileparts(allDataPaths, 'base');
+    commonPrefix = extract_common_prefix(allFileBases);
+
     % Ask user whether to combine outputs from all sweeps 
     %   that are finished
     qString = {sprintf('Done with the data directory %s!', ...
                 dataDirectory), ...
-                sprintf(['Would you like to combine outputs from ', ...
+                sprintf(['Would you like to combine outputs for %s from ', ...
                 'all the sweeps in the output directory %s?'], ...
-                outputDirectory)};
+                commonPrefix, outputDirectory)};
     answer = combine_outputs_if_needed(combineOutputs, toPrompt, ...
                 messageMode, qString, outputDirectory, ...
-                expLabel, dataDirectory, dataMode, ...
+                commonPrefix, directionLabel, dataDirectory, dataMode, ...
                 plotAverageTraceFlag, traceLengthMs, ...
                 beforePeakMs, figTypes);
     if isempty(answer)
@@ -1827,9 +1835,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function answer = combine_outputs_if_needed (combineOutputs, toPrompt, ...
-                messageMode, qString, outputDirectory, ...
-                expLabel, dataDirectory, dataMode, plotAverageTraceFlag, ...
-                traceLengthMs, beforePeakMs, figTypes)
+                                    messageMode, qString, outputDirectory, ...
+                                    expLabel, directionLabel, dataDirectory, ...
+                                    dataMode, plotAverageTraceFlag, ...
+                                    traceLengthMs, beforePeakMs, figTypes)
 % Prompt to combine outputs
 
 % Set up choices
@@ -1861,7 +1870,7 @@ switch answer
 case choice1
     % Combine outputs from all sweeps that are finished
     combine_outputs(messageMode, outputDirectory, ...
-                    expLabel, dataDirectory, dataMode, ...
+                    expLabel, directionLabel, dataDirectory, dataMode, ...
                     plotAverageTraceFlag, ...
                     traceLengthMs, beforePeakMs, ...
                     figTypes);
@@ -1874,8 +1883,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function combine_outputs (messageMode, outputDirectory, expLabel, ...
-                        dataDirectory, dataMode, plotAverageTraceFlag, ...
-                        traceLengthMs, beforePeakMs, figTypes)
+                            directionLabel, dataDirectory, dataMode, ...
+                            plotAverageTraceFlag, traceLengthMs, ...
+                            beforePeakMs, figTypes)
 % TODO: combine params files into ALL_params.mat
 % TODO: Create ATF Text files
 
@@ -1886,17 +1896,19 @@ writeAtfFlag = true;
 outDirBase = extract_fileparts(outputDirectory, 'base');
 
 % Find the output matfiles in this outputDirectory
-[~, matPaths] = all_files('Directory', outputDirectory, 'SortBy', 'sweep', ...
+[~, outPaths] = all_files('Directory', outputDirectory, 'SortBy', 'sweep', ...
                         'SweepStr', 'Swp', 'Keyword', expLabel, ...
                         'Suffix', 'output', 'Extension', 'mat');
 
 % Combine all eventInfo of sweeps from the current experiment in ms
-minEASE_combine_events('FilePaths', matPaths, 'ExpLabel', expLabel, ...
+minEASE_combine_events('Directory', outputDirectory, ...
+                        'FilePaths', outPaths, 'ExpLabel', expLabel, ...
                         'TimeUnits', 'ms', 'MessageMode', messageMode);
 
 % Combine all eventInfo of sweeps from the current experiment in samples
 [allEventInfo, allEventClass, ~, siMs] = ...
-    minEASE_combine_events('FilePaths', matPaths, 'ExpLabel', expLabel, ...
+    minEASE_combine_events('Directory', outputDirectory, ...
+                        'FilePaths', outPaths, 'ExpLabel', expLabel, ...
                         'TimeUnits', 'samples', 'MessageMode', messageMode);
 
 % Return if nothing combined
@@ -1905,16 +1917,25 @@ if isempty(allEventInfo)
 end
 
 % Read the .mat files
-matStructs = cellfun(@(x) matfile(x), matPaths);
+matStructs = cellfun(@(x) matfile(x), outPaths, 'UniformOutput', false);
 
 % Extract file identifiers
 fileIdentifiers = extract_fields(matStructs, 'fileIdentifier');
 
+% If file identifiers not all saved (back compatible), 
+%   extract from file bases
+if ~iscellstr(fileIdentifiers) || any(isemptycell(fileIdentifiers))
+    outBases = extract_fileparts(outPaths, 'base');
+    fileIdentifiers = extractBefore(outBases, ['_', directionLabel]);
+end
+
 % Find the data file paths corresponding to the output files
-filePaths = find_matching_files(fileIdentifiers, 'Directory', dataDirectory);  
+[~, filePaths] = ...
+    find_matching_files(fileIdentifiers, 'Directory', dataDirectory);  
 
 % Combine the corresponding sweep data
-allData = combine_sweeps('FilePaths', filePaths, 'DataMode', dataMode, ...
+allData = combine_sweeps('DataDirectory', dataDirectory, ...
+                            'FilePaths', filePaths, 'DataMode', dataMode, ...
                             'MessageMode', messageMode);
 
 % TODO: Write data to ATF Text files

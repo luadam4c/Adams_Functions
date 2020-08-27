@@ -32,6 +32,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % Used by:
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
+%       cd/minEASE.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_relative_events.m
 

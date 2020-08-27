@@ -41,6 +41,7 @@ function subStrs = extract_substrings (strs, varargin)
 %       cd/extract_common_prefix.m
 %
 % Used by:
+%       cd/all_files.m
 %       cd/compute_activation_profile.m
 %       cd/extract_common_prefix.m
 %       cd/m3ha_extract_candidate_label.m

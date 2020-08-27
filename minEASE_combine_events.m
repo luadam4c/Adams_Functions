@@ -199,7 +199,16 @@ messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 verbose = iP.Results.Verbose;
 
 %% Preparation
-tic;
+% Initialize outputs
+eventInfo = [];
+eventClass = [];
+isChecked = [];
+siMs = [];
+prevSweepsSamples = 0;          % previous sweep durations 
+                                %   for this experiment (samples)
+prevSweepsDuration = 0;         % previous sweep durations 
+                                %   for this experiment (ms)
+prevSweepsDurationInitial = 0;
 
 % Decide on output cell array header
 switch timeUnits
@@ -269,22 +278,7 @@ csvFileNameWHeader = ...
     fullfile(directory, sprintf('%s_ALL_output_%s_w_header.csv', ...
                             outputLabel, timeUnits));
 
-% Initialize outputs
-eventInfo = [];
-eventClass = [];
-isChecked = [];
-siMs = [];
-prevSweepsSamples = 0;          % previous sweep durations 
-                                %   for this experiment (samples)
-prevSweepsDuration = 0;         % previous sweep durations 
-                                %   for this experiment (ms)
-prevSweepsDurationInitial = 0;
-
-toc;
-
 %% Combine eventInfo etc.
-tic;
-
 % Assume the number of sweeps available equals the number of files
 %   TODO: Check this first
 nSweeps = nFiles;
@@ -398,11 +392,7 @@ prevSweepsDuration = prevSweepsDurationInitial;
 % Record the total number of samples
 nSamples = prevSweepsSamples;
 
-toc;
-
 %% Save outputs
-tic;
-
 % Save eventInfo, eventClass, isChecked as a matfile
 save(matFileName, 'eventInfo', 'eventClass', 'isChecked', 'timeUnits', ...
                     'nSamples', 'siMs', 'prevSweepsDuration', ...
@@ -427,8 +417,6 @@ icon = 'none';
 % TODO: implement icon
 print_or_show_message(message, 'MessageMode', messageMode, ...
                         'MTitle', mTitle, 'Icon', icon, 'Verbose', verbose);
-
-toc;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -74,6 +74,7 @@ function varargout = all_files (varargin)
 % Requires:
 %       cd/construct_and_check_fullpath.m
 %       cd/extract_fullpaths.m
+%       cd/extract_substrings.m
 %       cd/print_cellstr.m
 %       cd/print_or_show_message.m
 %
@@ -300,40 +301,42 @@ else
 end
 
 % Sort by date or bytes if requested
-switch sortBy
-    case 'name'
-        % Files already sorted as it is the default behavior of dir()
-    case {'date', 'bytes', 'datenum'}
-        % If the user wants to sort by date, actually sort by datenum
-        if strcmpi(sortBy, 'date')
-            sortBy = 'datenum';
-        end
+if ~isempty(files)
+    switch sortBy
+        case 'name'
+            % Files already sorted as it is the default behavior of dir()
+        case {'date', 'bytes', 'datenum'}
+            % If the user wants to sort by date, actually sort by datenum
+            if strcmpi(sortBy, 'date')
+                sortBy = 'datenum';
+            end
 
-        % Convert the struct array to a table
-        filesTable = struct2table(files);
+            % Convert the struct array to a table
+            filesTable = struct2table(files);
 
-        % Sort the table by the requested field
-        filesTableSorted = sortrows(filesTable, sortBy); 
+            % Sort the table by the requested field
+            filesTableSorted = sortrows(filesTable, sortBy); 
 
-        % Change it back to a struct array
-        files = table2struct(filesTableSorted);
-    case 'sweep'
-        % Get all file names
-        names = transpose({files.name});
+            % Change it back to a struct array
+            files = table2struct(filesTableSorted);
+        case 'sweep'
+            % Get all file names
+            names = transpose({files.name});
 
-        % Extract sweep labels
-        sweepLabels = extract_substrings(names, 'RegExp', [sweepStr, '[\d]*']);
+            % Extract sweep labels
+            sweepLabels = extract_substrings(names, 'RegExp', [sweepStr, '[\d]*']);
 
-        % Extract the sweep numbers
-        sweepNumbers = str2double(extractAfter(sweepLabels, sweepStr));
+            % Extract the sweep numbers
+            sweepNumbers = str2double(extractAfter(sweepLabels, sweepStr));
 
-        % Sort the sweep numbers
-        [~, origInd] = sort(sweepNumbers);
+            % Sort the sweep numbers
+            [~, origInd] = sort(sweepNumbers);
 
-        % Reorder files
-        files = files(origInd);
-    otherwise
-        error('sortBy unrecognized!');
+            % Reorder files
+            files = files(origInd);
+        otherwise
+            error('sortBy unrecognized!');
+    end
 end
 
 % Restrict to maximum number of files

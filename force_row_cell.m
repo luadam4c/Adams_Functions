@@ -30,6 +30,7 @@ function vectorsCell = force_row_cell (vectorsOrig, varargin)
 %       cd/force_column_cell.m
 %
 % Used by:
+%       cd/combine_sweeps.m
 %       cd/compute_weighted_average.m
 
 % File History:

@@ -62,6 +62,7 @@ function [allData, timeVec] = combine_sweeps (varargin)
 %       cd/construct_fullpath.m
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
+%       cd/force_row_cell.m
 %       cd/identify_channels.m
 %       cd/locate_functionsdir.m
 %       cd/print_or_show_message.m
@@ -189,9 +190,9 @@ if isempty(filePaths)
 else
     filePaths = construct_fullpath(filePaths, 'Directory', dataDirectory);
     dataDirectory = extract_common_directory(filePaths);
-    extension = extract_fileparts(filePaths, 'Extension');
-    extension = unique(extension);
-    message = {'Sweeps from: ', filePaths{:}};
+    extensions = extract_fileparts(filePaths, 'Extension');
+    extension = extractAfter(extensions{1}, '.');    
+    message = [{'Sweeps from: '}, force_row_cell(filePaths)];
 end
 
 % Count the number of data files
