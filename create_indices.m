@@ -116,6 +116,7 @@ function indices = create_indices (varargin)
 %       cd/fit_2exp.m
 %       cd/compute_combined_data.m
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/minEASE.m
 %       cd/parse_pulse_response.m
 %       cd/plot_measures.m
 %       cd/plot_spike_density_multiunit.m

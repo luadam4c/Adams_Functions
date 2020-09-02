@@ -37,6 +37,8 @@ function [combTrace, paramsUsed] = ...
 %                           'upper95'   - upper bound of the 95% conf interval
 %                           'maximum'   - take the maximum
 %                           'minimum'   - take the minimum
+%                           'sum'       - take the sum
+%                           'prod'      - take the product
 %                           'all'       - take the logical AND
 %                           'any'       - take the logical OR
 %                           'first'     - take the first trace
@@ -94,6 +96,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/extract_vars.m
 %       cd/find_in_strings.m
 %       cd/m3ha_plot_figure08.m
+%       cd/minEASE.m
 %       cd/parse_ipsc.m
 
 % File History:
@@ -113,6 +116,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-09-19 Added 'std', 'stderr', 'lower95', 'upper95'
 % 2019-09-19 Now uses compute_stats.m
 % 2019-09-25 Fixed bug for the 'unique' combine method
+% 2020-09-02 Added 'sum', 'prod' as valid combine methods
 % TODO: Move more functionality to compute_stats.m
 
 % TODO: Make 'Seeds' an optional argument
@@ -124,7 +128,7 @@ validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
 validCombineMethods = {'unique', 'average', 'mean', ...
                         'std', 'stderr', 'lower95', 'upper95', ...
-                        'maximum', 'minimum', ...
+                        'maximum', 'minimum', 'sum', 'prod', ...
                         'all', 'any', 'first', 'last', ...
                         'bootmean', 'bootmax', 'bootmin'};
 seeds = [];
@@ -342,7 +346,8 @@ end
 % Concatenate into a single matrix
 switch combineMethod
     case {'average', 'mean', 'std', 'stderr', 'lower95', 'upper95', ...
-            'maximum', 'minimum', 'all', 'any', 'first', 'last'}
+            'maximum', 'minimum', 'sum', 'prod', 'all', 'any', ...
+            'first', 'last'}
         % Concatenate directly
         combTraces = horzcat(combTraceEachGroup{:});
     case {'bootmean', 'bootmax', 'bootmin'}
@@ -408,6 +413,12 @@ switch combineMethod
                 % Take the minimum of all columns
                 combTrace = min(traces, [], 2, nanFlag);
         end
+    case 'sum'
+        % Add all columns
+        combTrace = sum(traces, 2);
+    case 'prod'
+        % Multiply all columns
+        combTrace = prod(traces, 2);
     case 'all'
         % Take the logical AND of all columns
         combTrace = all(traces, 2);

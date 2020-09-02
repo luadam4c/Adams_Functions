@@ -41,6 +41,7 @@ function filePaths = write_data_atf (dataMatrix, varargin)
 %                   default == sprintf('Data from %s', inputname(1))
 %
 % Requires:
+%       cd/argfun.m
 %       cd/construct_fullpath.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
@@ -52,6 +53,7 @@ function filePaths = write_data_atf (dataMatrix, varargin)
 %       cd/compute_sigfig.m
 %
 % Used by:
+%       cd/minEASE.m
 %       cd/spike2Mat2Text.m
 
 % File History:
@@ -304,8 +306,9 @@ commentLine = sprintf('"Comment=%s"\n', comment);
 % Sweep Start Time
 sweepStartTimesLine = sprintf('"SweepStartTimesMS=%.3f"\n', timeStartMs);
 
-% Force signal names as a column cell array
-signalNames = force_column_cell(signalNames);
+% Force signal names and units as a column cell array
+[signalNames, signalUnits] = ...
+    argfun(@force_column_cell, signalNames, signalUnits);
 
 % Create a string of signal names separated by commas
 signalNamesStr = print_cellstr(signalNames, 'Delimiter', ',', ...

@@ -83,6 +83,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
+%       cd/minEASE.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
 %       cd/metabolismR01_extrapolate_burst_probability.m
@@ -118,6 +119,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/test_difference.m
 %       cd/transform_vectors.m
 %       cd/update_figure_for_corel.m
+%       cd/write_data_atf.m
 %       cd/xolotl_add_current_injection.m
 
 % File History:

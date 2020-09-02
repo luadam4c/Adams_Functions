@@ -24,6 +24,7 @@ function logicalArray = create_logical_array (indices, varargin)
 %
 % Used by:
 %       cd/detect_spikes_multiunit.m
+%       cd/minEASE.m
 
 % File History:
 % 2019-02-20 Created by Adam Lu

@@ -52,6 +52,7 @@ function [toBeAnalyzedAll, paramsAll, errormsg] = ...
 % 2018-04-02 AL - Finished checks
 % 2018-07-27 AL - Changed all instances of isdir() to isfolder()
 % 2018-07-27 AL - Now Sweeps To Analyze does not have to exist
+% 2020-09-02 AL - Added ATF Text file output (writeAtfFlag)
 % TODO: Add progress bars for parallel pool
 
 %% TODO: Put a list of parameters here
@@ -382,6 +383,17 @@ if isempty(idxPlotEventDetectionFlag)
     return;
 end
 
+% Find the index of "Write ATF Flag" in the Excel header
+idxWriteAtfFlag = ...   % whether to write ATF text file
+    find_in_strings({'Write', 'ATF'}, xlHeader, ...
+                        'SearchMode', 'substrings', 'IgnoreCase', true);
+                    
+% Return with error message if "Write ATF Flag" doesn't exist
+if isempty(idxWriteAtfFlag)
+    errormsg = 'A ''Write ATF Flag'' column must exist!!';
+    return;
+end
+
 % Find the index of "Plot Average Trace Flag" in the Excel header
 idxPlotAverageTraceFlag = ...   % whether to plot average trace
     find_in_strings({'Plot', 'Average', 'Trace'}, xlHeader, ...
@@ -415,7 +427,8 @@ if maxNumWorkers == 0
                             idxMaxPscRiseMs, idxMinPscDecayMs, ...
                             idxMaxPscDecayMs, idxSealTestWindowMs, ...
                             idxTraceLengthMs, idxBeforePeakMs, ...
-                            idxPlotEventDetectionFlag, idxPlotAverageTraceFlag);
+                            idxPlotEventDetectionFlag, idxWriteAtfFlag, ...
+                            idxPlotAverageTraceFlag);
             
         % If errormsg is not empty, return
         if ~isempty(errormsg)
@@ -448,7 +461,8 @@ else
                             idxMaxPscRiseMs, idxMinPscDecayMs, ...
                             idxMaxPscDecayMs, idxSealTestWindowMs, ...
                             idxTraceLengthMs, idxBeforePeakMs, ...
-                            idxPlotEventDetectionFlag, idxPlotAverageTraceFlag);
+                            idxPlotEventDetectionFlag, idxWriteAtfFlag, ...
+                            idxPlotAverageTraceFlag);
     end
 
     % If any of the errormsgs is not empty, return with that error
@@ -480,7 +494,8 @@ function [errormsg, toBeAnalyzed, params] = read_to_params(row, rowInfo, ...
                             idxMaxPscRiseMs, idxMinPscDecayMs, ...
                             idxMaxPscDecayMs, idxSealTestWindowMs, ...
                             idxTraceLengthMs, idxBeforePeakMs, ...
-                            idxPlotEventDetectionFlag, idxPlotAverageTraceFlag)
+                            idxPlotEventDetectionFlag, idxWriteAtfFlag, ...
+                            idxPlotAverageTraceFlag)
 
 % Initialize error message as empty
 errormsg = '';
@@ -777,6 +792,14 @@ params.plotEventDetectionFlag =  rowInfo{idxPlotEventDetectionFlag};
  if isempty(params.plotEventDetectionFlag) || ...
     ~islogical(params.plotEventDetectionFlag)
     errormsg = sprintf(['Plot event detection flag not defined ', ...
+                        'or is not a logical input!']);
+    return;
+end
+
+params.writeAtfFlag = rowInfo{idxWriteAtfFlag};
+if isempty(params.writeAtfFlag) || ...
+    ~islogical(params.writeAtfFlag)
+    errormsg = sprintf(['Write ATF flag not defined ', ...
                         'or is not a logical input!']);
     return;
 end

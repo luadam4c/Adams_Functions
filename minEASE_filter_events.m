@@ -16,6 +16,7 @@ function [eventInfoFiltered, eventClassFiltered, ...
 %                   specified as a numeric vector
 %       interEventIntervals - inter-event intervals
 %                   specified as a numeric vector
+%
 % Arguments:
 %       eventInfo   - information about events (cf. find_directional_events.m)
 %                   must be a numeric 2d array
