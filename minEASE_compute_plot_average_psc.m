@@ -35,6 +35,7 @@ function minEASE_compute_plot_average_psc (eventInfo, eventClass, ...
 %       cd/print_or_show_message.m
 %
 % Used by:
+%       cd/minEASE.m
 %       cd/minEASE_detect_gapfree_events.m
 
 % File History:
@@ -88,7 +89,6 @@ if ~isempty(typeOneInfo)
                                     'DealWithTooShort', dealWithTooShort, ...
                                     'MessageMode', messageMode);
 end
-
 
 % Prepare for plotting
 message = '';                                   % no warning message at start
@@ -216,6 +216,16 @@ if ~isempty(message)
     icon = 'warn';
     print_or_show_message(message, 'MessageMode', messageMode, ...
                             'MTitle', mTitle, 'Icon', icon, 'Verbose', verbose);
+end
+
+%% Save psc traces
+if strcmp(dealWithTooShort, 'none') || strcmp(dealWithTooShort, 'omit')
+    textPath = fullfile(outputDirectory, ...
+                    ['All_Type_I_PSC_Traces_', outputLabel, ...
+                     '_mode_', dealWithTooShort, '.txt']);
+
+    % Save as an AXON Plain Text File without adding a time column
+    dlmwrite(textPath, allTypeOneTraces, 'delimiter', '\t');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

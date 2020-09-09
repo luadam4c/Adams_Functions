@@ -114,6 +114,7 @@ function minEASE (varargin)
 %       cd/locate_functionsdir.m
 %       cd/local.settings
 %       cd/minEASE_combine_events.m
+%       cd/minEASE_compute_plot_average_psc.m
 %       cd/minEASE_detect_gapfree_events.m
 %       cd/minEASE_examine_gapfree_events.m
 %       cd/minEASE_read_params.m
@@ -278,7 +279,6 @@ function minEASE (varargin)
 % TODO: How to deal with EPSCs mixed in IPSCs
 % TODO: Online detection
 % TODO: Only update parts of an existing CSV file? In Linux only?
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1895,6 +1895,10 @@ function combine_outputs (messageMode, outputDirectory, expLabel, ...
 % TODO: combine params files into ALL_params.mat
 % TODO: Create ATF Text files
 
+%% Hard-coded parameters
+% Note: Must be consistent with compute_average_psc_trace.m
+possibleDealWithTooShort = {'none', 'padboth', 'padright', 'omit'};
+
 % Extract the output directory base name
 outDirBase = extract_fileparts(outputDirectory, 'base');
 
@@ -1975,9 +1979,7 @@ end
 
 % Find average PSC trace for the experiment
 if plotAverageTraceFlag
-    possibleDealWithTooShort = {'none', 'padboth', 'padright', 'omit'};
-    nMethods = numel(possibleDealWithTooShort);
-    for iMethod = 1:nMethods
+    for iMethod = 1:numel(possibleDealWithTooShort)
         minEASE_compute_plot_average_psc(allEventInfo, allEventClass, ...
                             allData, siMs, traceLengthMs, beforePeakMs, ...
                             possibleDealWithTooShort{iMethod}, ...
