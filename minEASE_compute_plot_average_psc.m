@@ -226,6 +226,20 @@ if strcmp(dealWithTooShort, 'none') || strcmp(dealWithTooShort, 'omit')
 
     % Save as an AXON Plain Text File without adding a time column
     dlmwrite(textPath, allTypeOneTraces, 'delimiter', '\t');
+
+    textPath = fullfile(outputDirectory, ...
+                    ['All_Type_II_PSC_Traces_', outputLabel, ...
+                     '_mode_', dealWithTooShort, '.txt']);
+
+    % Save as an AXON Plain Text File without adding a time column
+    dlmwrite(textPath, allTypeTwoTraces, 'delimiter', '\t');
+
+    textPath = fullfile(outputDirectory, ...
+                    ['All_Type_III_PSC_Traces_', outputLabel, ...
+                     '_mode_', dealWithTooShort, '.txt']);
+
+    % Save as an AXON Plain Text File without adding a time column
+    dlmwrite(textPath, allTypeThreeTraces, 'delimiter', '\t');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
