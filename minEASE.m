@@ -274,6 +274,7 @@ function minEASE (varargin)
 % 2020-08-27 AL - Now makes sure the combined events are consistent with the
 %                   combined sweeps
 % 2020-09-02 AL - Added ATF Text file output (writeAtfFlag)
+% 2020-10-09 AL - Now uses readtable instead of xlsread
 % TODO: Implement autoExcelFile
 % TODO: Change warn messages to 'show' and error messages to 'wait'?
 % TODO: How to deal with EPSCs mixed in IPSCs
