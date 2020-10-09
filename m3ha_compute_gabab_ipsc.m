@@ -62,19 +62,19 @@ ipscStart = ipscTimeOrig;                                       % (ms)
 figTypes = {'png', 'epsc2'};
 colorMap = [];
 
-plotOriginal = true;
-plotAmpScales = false;
+plotOriginal = false; %true;
+plotAmpScales = true;
 plotDualVaryWeight = false;
 plotDualVaryShapeOld = false;
 plotVaryDualtoGAT3 = false;
-plotVaryDualtoGAT3toGAT1 = true;
+plotVaryDualtoGAT3toGAT1 = false; %true;
 plotVaryGAT3toGAT1toDual = false;
 plotDualVaryTauFall = false;
-plotDualVaryTau = true;
-plotGat3VaryTau = true;
-plotDualVaryAmp = true;
-plotGat3VaryAmp = true;
-plotGat3VaryAmp2 = true;
+plotDualVaryTau = false; %true;
+plotGat3VaryTau = false; %true;
+plotDualVaryAmp = false; %true;
+plotGat3VaryAmp = false; %true;
+plotGat3VaryAmp2 = false; %true;
 plotOldFigures = false;
 
 %% Default values for optional arguments
@@ -255,8 +255,10 @@ end
 %% Plot original GABAB IPSC conductances under different amplitude scales
 if plotAmpScales
     figPathBase = fullfile(outFolder, 'gababipsc_control_vary_amp_scale');
-    ampScales = [0.25, 0.5, 1, 2, 4, 8];
-    gVecs = compute_gabab_conductance(tVec, ipscStart, ampScales, ...
+%    ampScales = [0.25, 0.5, 1, 2, 4, 8];
+%    ampScales = [0.125, 0.25, 0.5, 1, 2, 4];
+    ampScales = [0.5, 1, 2];
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampScales * ampCon, ...
                             tauRiseCon, tauFallFastCon, tauFallSlowCon, ...
                             weightCon, 'SheetName', [figPathBase, '.csv']);
 
@@ -265,10 +267,17 @@ if plotAmpScales
     legend(create_labels_from_numbers(ampScales, 'Prefix', 'scale = '));
     title('Control GABA_B IPSC, amplitude scaled');
     save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
-    xlim([0, 4000]);
+%     xlim([0, 4000]);
+%     update_figure_for_corel(fig, 'RemoveLegends', true, ...
+%                             'LabelsFontSize', 16, 'AxisFontSize', 14, ...
+%                             'TextFontSize', 14);
+    xlim([800, 2200]);
+    ylim([0, 10]);
+    plot_scale_bar('x', 'BarLength', 100, 'BarUnits', 'ms');
     update_figure_for_corel(fig, 'RemoveLegends', true, ...
-                            'LabelsFontSize', 16, 'AxisFontSize', 14, ...
-                            'TextFontSize', 14);
+                            'RemoveXRulers', true, 'RemoveTitle', true, ...
+                            'Units', 'centimeters', ...
+                            'Height', 9/4, 'Width', 8.5);
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 

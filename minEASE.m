@@ -926,7 +926,12 @@ tic;
 [status, ~, ~] = xlsfinfo(excelFile);
 if ~isempty(status)       % if can be read
     % Place input data in a mixed cell array
-    [~, ~, xlInfo] = xlsread(excelFile);    % cell array containing input data
+    % 2020-10-09 xlsread reads in blank rows as NaNs
+    % [~, ~, xlInfo] = xlsread(excelFile);    % cell array containing input data
+    % 2020-10-09 Temporary fix until minEASE_read_params is changed to read tables. 
+    %            Note that 'PreserveVariableNames' is only valid in R2019b
+    xlTable = readtable(excelFile, 'PreserveVariableNames', true); % table containing input data
+    xlInfo = [xlTable.Properties.VariableNames; table2cell(xlTable)];
 
     % Count the total number of rows (# of data subdirectories to analyze)
     nRows = size(xlInfo, 1);                % number of rows in the Excel file

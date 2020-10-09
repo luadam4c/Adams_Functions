@@ -414,7 +414,7 @@ set(0, 'DefaultUicontrolFontUnits', textFontUnitsDefault, ...
 
 %% Create main GUI figure
 gui = figure('Visible', 'off', 'Tag', 'MainGUI', ...
-             'Name', sprintf('minEASE (c) 2017 for %s', outputLabel), ...
+             'Name', sprintf('minEASE (c) 2020 for %s', outputLabel), ...
              'OuterPosition', outPosGui, ...
              'WindowScrollWheelFcn', @MainGUI_WindowScrollWheelFcn);
 
@@ -827,7 +827,7 @@ byForce = false;
 
 % Make GUI visible and print message in standard output
 set(gui, 'Visible', 'on');
-fprintf('minEASE (c) 2017 for %s is ready!\n\n', outputLabel);
+fprintf('minEASE (c) 2020 for %s is ready!\n\n', outputLabel);
 drawnow;                                            % Update GUI
 
 %% Restore default uicontrol properties
