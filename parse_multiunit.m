@@ -212,7 +212,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   default == 5 ms
 %                   - 'FiltFreq': cutoff frequency(ies) (Hz or normalized) 
 %                                   for a bandpass filter
-%                   must be a numeric a two-element vector
+%                   must be NaN or a numeric two-element vector
 %                   default == [100, 1000]
 %                   - 'MinDelayMs': minimum delay after stim start (ms)
 %                   must be a positive scalar
@@ -425,7 +425,7 @@ resolutionMsDefault = 5;                % 5 ms resolution by default
 % Note: Must be consistent with compute_oscillation_duration.m
 filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
-binWidthMsDefault = 10;                 % use a bin width of 10 ms by default
+binWidthMsDefault = 10;          	% use a bin width of 10 ms by default
 minBurstLengthMsDefault = 60;       % bursts must be at least 60 ms by default
 maxFirstInterBurstIntervalMsDefault = 2000;
                                     % first burst is not more than 2 seconds 
@@ -1614,16 +1614,21 @@ nVectors = height(parsedParams);
 % Retrieve data for plotting
 spikeCounts = parsedData.spikeCounts;
 
+nBins = parsedParams.nBins;
 binWidthSec = parsedParams.binWidthSec;
 histLeftSec = parsedParams.histLeftSec;
 timeOscEndSec = parsedParams.timeOscEndSec;
 maxInterBurstIntervalSec = parsedParams.maxInterBurstIntervalSec;
 figPathBase = parsedParams.figPathBase;
 
+% Compute the maximum right end of histogram in seconds
+maxHistRight = min(histLeftSec + binWidthSec .* (nBins - 1));
+
 % Find appropriate x limits
 histLeft = min(histLeftSec);
-histRight = nanmean(timeOscEndSec) + 1.96 * stderr(timeOscEndSec) + ...
-                1.5 * max(maxInterBurstIntervalSec);
+histRight = min([maxHistRight, ...
+                nanmean(timeOscEndSec) + 1.96 * stderr(timeOscEndSec) + ...
+                1.5 * max(maxInterBurstIntervalSec)]);
 % histRight = 10;
 xLimitsHist = [histLeft, histRight];
 
@@ -1670,6 +1675,7 @@ function plot_all_autocorrelograms(parsedData, parsedParams, ...
 acf = parsedData.acf;
 indPeaks = parsedData.indPeaks;
 
+nBins = parsedParams.nBins;
 binWidthSec = parsedParams.binWidthSec;
 oscDurationSec = parsedParams.oscDurationSec;
 figPathBase = parsedParams.figPathBase;
@@ -1681,13 +1687,15 @@ nVectors = height(parsedParams);
 allLastPeaksBins = extract_elements(indPeaks, 'last');
 allLastPeaksSec = allLastPeaksBins .* binWidthSec;
 allOscDur = oscDurationSec;
+maxAcfFilteredRight = min(nBins .* binWidthSec / 2);
 bestRightForAll = max([allOscDur, allLastPeaksSec], [], 2) + 1;
-acfFilteredRight = compute_stats(bestRightForAll, 'upper95', ...
-                                'RemoveOutliers', true);
-% xLimitsAutoCorr = [-acfFilteredRight, acfFilteredRight];
-xLimitsAutoCorr = [-10, 10];
-% xLimitsAcfFiltered = [0, acfFilteredRight];
-xLimitsAcfFiltered = [0, 10];
+acfFilteredRight = min([maxAcfFilteredRight, ...
+                    compute_stats(bestRightForAll, 'upper95', ...
+                                'RemoveOutliers', true)]);
+xLimitsAutoCorr = [-acfFilteredRight, acfFilteredRight];
+% xLimitsAutoCorr = [-10, 10];
+xLimitsAcfFiltered = [0, acfFilteredRight];
+% xLimitsAcfFiltered = [0, 10];
 
 % Find the last index to show
 lastIndexToShow = floor(acfFilteredRight ./ binWidthSec) + 1;

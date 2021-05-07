@@ -37,6 +37,7 @@ function [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 %       cd/struct2arglist.m
 %       cd/extract_elements.m
 %       cd/find_closest.m
+%       cd/match_format_vectors.m
 %       cd/merge_structs.m
 %       cd/parse_pulse.m
 %
@@ -48,6 +49,7 @@ function [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 % File History:
 % 2019-05-14 Pulled from parse_multiunit.m
 % 2019-11-14 Now uses find_closest.m
+% 2021-05-07 Now makes sure output formats are the same
 % 
 
 %% Hard-coded parameters
@@ -108,6 +110,9 @@ if ~isempty(stimStartMs)
         % Assume tVecs start from 0 and use siMs
         idxStimStart = round(stimStartMs ./ siMs);
     end
+    
+    % Make sure vector formats are the same
+    [stimStartMs, idxStimStart] = match_format_vectors(stimStartMs, idxStimStart);
 
     stimParams.idxStimStart = idxStimStart;
     stimParams.stimStartMs = stimStartMs;
@@ -136,6 +141,9 @@ if ~isempty(pulseVecs)
 else
     error('One of stimStartMs and pulseVecs must be provided!');
 end
+
+% Make sure vector formats are the same 
+[stimStartMs, idxStimStart] = match_format_vectors(stimStartMs, idxStimStart);
 
 %% Output results
 stimParams.idxStimStart = idxStimStart;

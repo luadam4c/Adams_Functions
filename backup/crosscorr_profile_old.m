@@ -1,59 +1,20 @@
-function corrProf = crosscorr_profile (dataFilt, dataRaw, samplingRateHz, outFolder, fileBase)
-%% Creates cross correlation profiles between signals
-% Explanation:
-%       TODO
-%
-% Side Effects:
-%       TODO
-%
-% Outputs:
-%       TODO
-%
-% Arguments:    
-%       TODO
-%       dataFilt: each channel is a column
-%
-% Requires:
-%       cd/sscanf_full.m
-%
+function corrProf = crosscorr_profile(data, dataRaw, samplingRate, outFolder, fileBase)
+%% data: each channel is a column
 % Used by:
-%       cd/analyze_cobalt.m
-
+%   pwd/analyze_cobalt.m
+% Requires:
+%   pwd/sscanf_full.m
 % File History: 
-% 2018-08-25 Added dataRaw and lag profile
-% 2018-09-11 Fixed the order of i and j (now i must be less than j)
-%             so that the upper triangle is computed and used
-%             for the correlation profiles and lag profiles over time
-% 2018-09-11 Now only use windows that have complete size
+%   2018-08-25 Added dataRaw and lag profile
+%   2018-09-11 Fixed the order of i and j (now i must be less than j)
+%               so that the upper triangle is computed and used
+%               for the correlation profiles and lag profiles over time
+%   2018-09-11 Now only use windows that have complete size
 
 %% Hard-coded parameters
 windowSizeSeconds = 4;              % window size in seconds
 windowIntervalSeconds = 0.5;        % window interval in seconds
 iChannelToPlot = 2;                 % the channel number to plot
-
-samplingRateDefault = 20000;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Deal with arguments
-% Check number of required arguments
-if nargin < 1
-    error(create_error_for_nargin(mfilename));
-end
-
-% Set default arguments
-if nargin < 2
-    dataRaw = dataFilt;
-end
-if nargin < 3
-    samplingRateHz = samplingRateDefault;
-end
-if nargin < 4
-    outFolder = pwd;
-end
-if nargin < 5
-    fileBase = 'sample';
-end
 
 %% Create an output folder for cross correlation figures
 figFolder = fullfile(outFolder, 'crosscorr');
@@ -64,16 +25,16 @@ end
 %% Preparation
 
 % Count the number of samples
-nSamples = size(dataFilt, 1);
+nSamples = size(data, 1);
 
 % Count the number of channels
-nChannels = size(dataFilt, 2);
+nChannels = size(data, 2);
 
 % Determine the window size (samples) for the correlation profile
-windowSize = windowSizeSeconds * samplingRateHz;
+windowSize = windowSizeSeconds * samplingRate;
 
 % Determine the window interval (samples) for the correlation profile
-windowInterval = windowIntervalSeconds * samplingRateHz;
+windowInterval = windowIntervalSeconds * samplingRate;
 
 % Determine the number of windows for the correlation profile
 nWindows = floor(nSamples / windowInterval);
@@ -85,7 +46,7 @@ nPairs = nChannels * (nChannels - 1) / 2;
 timeWindows = (0.5:(nWindows - 0.5))' * windowIntervalSeconds;
 
 % Create a time vector in seconds for the entire channel
-timeVector = (1:nSamples)' * 1/samplingRateHz;
+timeVector = (1:nSamples)' * 1/samplingRate;
 
 % Get the maximum time
 maxTime = timeVector(end);
@@ -119,7 +80,7 @@ else
     highFreq = [];    
 end
     
-%% Filtered dataFilt cross correlation with corr2
+%% Filtered data cross correlation with corr2
 % Iterate over each channel
 indPairs = zeros(nPairs, 2);
 ct = 0;
@@ -159,8 +120,8 @@ parfor iPair = 1:nPairs
 
         % Calculate the cross-correlation coefficient for the
         % two channels in this time window
-        corrThis(k) = corr2(dataFilt(idxStart:idxEnd, i), ...
-                            dataFilt(idxStart:idxEnd, j));
+        corrThis(k) = corr2(data(idxStart:idxEnd, i), ...
+                            data(idxStart:idxEnd, j));
 
     end
 
@@ -188,15 +149,15 @@ parfor iPair = 1:nPairs
 
         % Calculate the lags for the
         % two channels in this time window
-        [acorAll, lagAll] = xcorr(dataFilt(idxStart:idxEnd, i), ...
-                                  dataFilt(idxStart:idxEnd, j));
+        [acorAll, lagAll] = xcorr(data(idxStart:idxEnd, i), ...
+                                  data(idxStart:idxEnd, j));
 
         % Find the lag difference with the largest correlation
         [~, I] = max(abs(acorAll));
         lagDiff = lagAll(I);
 
         % Compute the lag in seconds
-        lagThis(k) = lagDiff/samplingRateHz;
+        lagThis(k) = lagDiff/samplingRate;
     end
 
     % Store the correlation profile in the cell array
@@ -219,7 +180,7 @@ title(['EEG for channel ', num2str(iChannelToPlot)]);
 % iChannnel filtered EEG plot
 ax2 = subplot(4, 5, [6:9]);
 hold on
-plot(timeVector, dataFilt(:, iChannelToPlot));
+plot(timeVector, data(:, iChannelToPlot));
 ylabel('Voltage (mV)')
 if ~isempty(lowFreq) && ~isempty(highFreq)
     title(['Filtered EEG (', num2str(lowFreq), ' ~ ', ...
@@ -289,18 +250,18 @@ end
 figname = fullfile(figFolder, [fileBase, '_corrprofile']);
 saveas(h, figname, 'jpg');
 
-%% Filtered dataFilt cross correlation with xcorr
+%% Filtered data cross correlation with xcorr
 for i = 1:(nChannels-1)
     % Only iterate up to current channel number because lower triangle of
     % matrix is same as upper
-    [acorAll, lagAll] = xcorr(dataFilt(:, i), dataFilt(:, i+1));
+    [acorAll, lagAll] = xcorr(data(:, i), data(:, i+1));
 
     % Find the lag difference with the largest correlation
     [~, I] = max(abs(acorAll));
     lagDiff = lagAll(I);
     
     % Compute the lag in seconds
-    timeDiff = lagDiff/samplingRateHz;
+    timeDiff = lagDiff/samplingRate;
 
     % Create a figure
     h = figure;
@@ -350,11 +311,81 @@ for i = 1:(nChannels-1)
     %ylabel('xcorr Correlation Coefficients')
     
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end
 
 %{
 OLD CODE:
+
+channelCompar = {};
+    channelCompar = [channelCompar, strcat('ch', num2str(i), ...
+                                            '-ch', num2str(i+1))];
+
+legend(channelCompar);
+
+   a3.XTick = sort([-30000000:500000:30000000, lagDiff]);
+
+channelNames = {};
+            channelNames = [channelNames, ['ch', num2str(i), ...
+                                                '-ch', num2str(j)]];
+legend(channelNames)
+
+for i = 1:nChannels
+    for j = 1:i
+        if i ~= j
+            % Correlation profile plot
+            corrLabel = ['ch', num2str(i), '-ch', num2str(j)];
+            plot(corrProf{i,j}, 'DisplayName', corrLabel);
+            xlabel('Time(second)')
+            ylabel('Correlation Coefficients')
+        end
+    end
+end
+
+% Creating an empty cell with dimensions nChannels x nChannels
+corrProf = cell(nChannels, nChannels);
+    % Store the correlation profile in the cell array
+    corrProf{i, j} = corrThis;
+    plot(corrProf{i, i+1}, 'DisplayName', corrLabel);
+
+%% Bandpass filter the signal (300-4000Hz) and cross correlation with cross2
+
+%% Bandpass filter the signal (0.5-300Hz) and cross correlation with cross2
+
+%% Bandpass filter the signal (300-4000Hz) and cross correlation with xcorr
+
+
+%% Bandpass filter the signal (0.5-300Hz) and cross correlation with xcorr
+
+hold off
+
+% Determine the number of windows for the correlation profile
+nWindows = ceil(nSamples / windowSize);
+
+% Create a time vector in seconds for the windows
+timeWindows = (0.5:(nWindows - 0.5))' * windowSizeSeconds;
+
+% Get the starting index of the time window
+idxStart = (k - 1) * windowSize + 1;
+
+% Get the ending index of the time window
+if k * windowSize <= nSamples
+    idxEnd = k * windowSize;
+else
+    idxEnd = nSamples;
+end
+
+idxPair = find(firstOfPairs == i + 1 & secondOfPairs == i);
+idxPair = find(firstOfPairs == i + 1 & secondOfPairs == i);
+
+% Only iterate up to current channel number because lower triangle of
+% matrix is same as upper
+for j = 1:i
+
+nWindows = ceil(nSamples / windowInterval);
+
+legend('location', 'best');
+legend('location', 'best');
+legend('location', 'eastoutside');
 
 %}
 

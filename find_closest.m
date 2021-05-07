@@ -46,6 +46,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
+%       cd/isemptycell.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
@@ -61,6 +62,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 % 2019-11-25 Added 'none' as a direction
 % 2020-01-03 Improved performance
 % 2020-06-29 Now does not require imput to be monotonic
+% 2021-05-07 Fixed bug
 
 %% Hard-coded parameters
 validDirections = {'nearest', 'down', 'up', 'none'};
@@ -123,7 +125,7 @@ end
 indClosest = find_window_endpoints(windows, vecs, 'BoundaryMode', 'inclusive');
 
 % If not found, the candidates are the endpoints of the vecs
-if isempty(indClosest)
+if isemptycell(indClosest)
     indClosest = find_window_endpoints([], vecs);
 end
 

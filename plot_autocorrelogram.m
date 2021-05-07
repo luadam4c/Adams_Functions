@@ -221,7 +221,8 @@ end
 % Compute default y limits
 if isempty(yLimits)
     % Find the best upper limits
-    lastIndexToShow = floor(xLimits(2) ./ binWidthSec) + 1;
+    lastIndexToShow = min([floor(xLimits(2) ./ binWidthSec) + 1, ...
+                            numel(acf)]);
     acfOfInterest = extract_subvectors(acf, 'IndexEnd', lastIndexToShow);
     largestAcfValues = extract_elements(acfOfInterest, 'max');
     bestUpperLimit = compute_stats(largestAcfValues, 'upper95', ...

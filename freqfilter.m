@@ -53,6 +53,7 @@ function filteredData = freqfilter (data, fc, varargin)
 % 2018-08-03 Made si an optional parameter
 % 2020-08-13 Improved bandpass filter design based on 
 %               https://dsp.stackexchange.com/questions/42797/why-butterworth-bandpass-filter-changes-signal-in-the-passband
+% 2021-05-07 Added maxNPoles and set it at 20
 % TODO: Check lower and upper bounds for fc (0, Nyquist frequency)
 % TODO: Allow data to be a cell array but attempt to concatenate
 %           into array 
@@ -62,6 +63,7 @@ validFilterTypes = {'low', 'high', 'bandpass', 'stop', 'auto'};
 passBandRipple = 3;
 stopBandAttenuation = 40;
 passStopBandDiffHz = 0.5;
+maxNPoles = 20;
 
 %% Default values for optional arguments
 defaultSamplingInterval = [];       % to be set later
@@ -183,6 +185,11 @@ if isempty(nPoles)
     % Compute an appropriate filter order if not provided
     [nPoles, Wn] = buttord(passBandFrequency, stopBandFrequency, ...
                             passBandRipple, stopBandAttenuation);
+                        
+    % Prevent the filter order from exceeding maxNPoles
+    if nPoles > maxNPoles
+        nPoles = maxNPoles;
+    end
 else
     % Find the normalized cutoff frequency(ies) Wn = fc/(fs/2), 
     %   where fs = sampling frequency (Hz) = 1/si

@@ -39,6 +39,7 @@ function varargout = match_format_vectors (varargin)
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/parse_ipsc.m
 %       cd/parse_repetitive_pulses.m
+%       cd/parse_stim.m
 
 % File History:
 % 2018-12-16 Created by Adam Lu
