@@ -9,6 +9,7 @@ function timeVecs = create_time_vectors (varargin)
 %       timeVecs2 = create_time_vectors(10, 'SamplingIntervalUs', 100)
 %       timeVecs3 = create_time_vectors(6, 'BoundaryMode', 'leftadjust')
 %       timeVecs4 = create_time_vectors([5, 10], 'BoundaryMode', 'span')
+%       timeVecs5 = create_time_vectors('Vectors', magic(5))
 %       create_time_vectors(3, 'TimeUnits', 'ms', 'SamplingIntervalUs', 100)
 %
 % Outputs:
@@ -93,6 +94,7 @@ function timeVecs = create_time_vectors (varargin)
 % 2019-03-14 Added 'SamplingIntervalSeconds' as an optional argument
 % 2019-09-11 Added 'min' as a valid time unit
 % 2020-08-12 Added 'Vectors' as an optional argument
+% 2021-05-07 Added allTheSame to streamline case when vectors is a matrix
 
 %% Hard-coded constants
 S_PER_MIN = 60;
@@ -165,6 +167,15 @@ forceCellOutput = iP.Results.ForceCellOutput;
 % TODO: Display warning if more than one sampling rate/interval is provided
 %   esp. that samplingIntervalUs overrides samplingIntervalMs, etc.
 
+% Detect if all time vectors will be the same
+if numel(nSamples) <= 1 && numel(samplingIntervalUs) <= 1 && ...
+        numel(samplingIntervalMs) <= 1 && numel(samplingIntervalSec) <= 1 && ...
+        numel(tStart) <= 1
+    allTheSame = true;
+else
+    allTheSame = false;
+end
+
 % Decide on the number of samples
 if isempty(nSamples)
     if ~isempty(vectors)
@@ -215,7 +226,11 @@ end
 nVectors = numel(nSamples);
 
 %% Create the time vector(s)
-if nVectors == 1
+if ~isempty(vectors) && ~iscell(vectors) && allTheSame
+    timeVec1 = create_time_vector(nSamples(1), siUnits(1), tStart(1), ...
+                                        boundaryMode, mfilename);
+    timeVecs = repmat(timeVec1, 1, nVectors);
+elseif nVectors == 1
     timeVecs = create_time_vector(nSamples, siUnits, tStart, ...
                                         boundaryMode, mfilename);
 else
