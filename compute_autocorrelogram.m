@@ -130,7 +130,6 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addRequired(iP, 'spikeTimesMs', ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
-
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));

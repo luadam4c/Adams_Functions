@@ -29,6 +29,7 @@ function check_dir (directories, varargin)
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/create_input_file.m
 %       cd/create_new_mscript.m
+%       cd/crosscorr_profile.m
 %       cd/log_arraytext.m
 %       cd/m3ha_compute_and_plot_statistics.m
 %       cd/m3ha_initial_slopes.m

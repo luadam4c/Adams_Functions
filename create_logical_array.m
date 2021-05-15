@@ -3,12 +3,15 @@ function logicalArray = create_logical_array (indices, varargin)
 % Usage: logicalArray = create_logical_array (indices, dimensions, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       create_logical_array([2, 4])
 %       create_logical_array([2, 4], [5, 1])
+%
 % Outputs:
 %       logicalArray- logical array created
 %                   specified as a logical array
+%
 % Arguments:
 %       indices     - indices for true
 %                   must be a positive integer array

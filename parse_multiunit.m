@@ -1453,10 +1453,10 @@ function handles = plot_spike_detection(tVec, vVec, vVecFilt, ...
 vertBarWidth2Range = 1/10;
 
 % Compute the midpoint and bar width for the raster
-% vertBarWidth = vRange * vertBarWidth2Range;
-vertBarWidth = 1;
-% yMid = vMax + vertBarWidth;
-yMid = 9;
+vertBarWidth = vRange * vertBarWidth2Range;
+% vertBarWidth = 1;
+yMid = vMax + vertBarWidth;
+% yMid = 9;
 
 % Compute y axis limits
 yLimits1 = compute_axis_limits([slopeMin, slopeMax], 'y', 'Coverage', 100);

@@ -51,6 +51,7 @@ function h = plot_vertical_line (xValue, varargin)
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/crosscorr_profile.m
 %       cd/m3ha_plot_example_jitter.m.m
 %       cd/plot_bar.m
 %       cd/plot_error_bar.m

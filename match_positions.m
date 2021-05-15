@@ -5,6 +5,7 @@ function elements1 = match_positions (array1, array2, elements2, varargin)
 %       TODO
 %
 % Example(s):
+%       match_positions([45, 15, 2], {'cars', 'dogs', 'bat'}, {'o', 'a', 's'})
 %       match_positions({45, 15, 2}, {'cars', 'dogs', 'bat'}, {'o', 'a', 's'})
 %       label = match_positions(labels, types, type);
 %       tau1 = match_positions(coeffValues, coeffNames, 'b');
@@ -79,7 +80,9 @@ maxNum = iP.Results.MaxNum;
 idxMatch = find_first_match(elements2, array2);
 
 % Get all the elements of array1 in this position
-elements1 = extract_subvectors(array1, 'Indices', idxMatch);
+elements1 = extract_subvectors(array1, 'Indices', idxMatch, ...
+                                'TreatCellAsArray', true, ...
+                                'TreatCellNumAsArray', true);
 
 % Restrict to the maximum number of elements
 if numel(array1) > maxNum
