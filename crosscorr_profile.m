@@ -21,6 +21,7 @@ function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
 %       cd/check_dir.m
 %       cd/create_index_pairs.m
 %       cd/create_subplots.m
+%       cd/find_subscript.m
 %       cd/freqfilter.m
 %       cd/plot_vertical_line.m
 %       cd/reorganize_as_matrix.m
@@ -47,6 +48,10 @@ function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
 % 2021-05-15 Made SelectMethod an optional argument
 % 2021-05-15 Now uses create_index_pairs.m
 % 2021-05-15 Now computes all correlation coefficients and plots a matrix
+% 2021-05-15 Now plots corr coeff and lag matrices
+% 2021-05-15 Added corrThreshold
+% 2021-05-15 Made CorrThreshold an optional argument
+% 2021-05-15 Now plots lags for only pairs with significant correlations
 
 %% Hard-coded parameters
 validSelectMethods = {'consecutive', 'significant'};
@@ -55,11 +60,12 @@ validSelectMethods = {'consecutive', 'significant'};
 samplingRateHzDefault = 1;
 windowSizeSecondsDefault = 1;
 windowIntervalSecondsDefault = [];
+corrThresholdDefault = 0;
 maxLagSecondsDefault = Inf;
 normalizationDefault = 'normalized';
 channelToPlot1Default = [];
 channelToPlot2Default = [];
-selectMethodDefault = 'consecutive';
+selectMethodDefault = 'significant';
 signalLabelDefault = 'Signal Units';
 lowFreqDefault = [];
 highFreqDefault = [];
@@ -92,6 +98,8 @@ addParameter(iP, 'WindowSizeSeconds', windowSizeSecondsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'WindowIntervalSeconds', windowIntervalSecondsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'CorrThreshold', corrThresholdDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'MaxLagSeconds', maxLagSecondsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'Normalization', normalizationDefault, ...
@@ -122,6 +130,7 @@ parse(iP, dataRaw, varargin{:});
 samplingRateHz = iP.Results.SamplingRateHz;
 windowSizeSeconds = iP.Results.WindowSizeSeconds;
 windowIntervalSeconds = iP.Results.WindowIntervalSeconds;
+corrThreshold = iP.Results.CorrThreshold;
 maxLagSeconds = iP.Results.MaxLagSeconds;
 normalization = iP.Results.Normalization;
 channelToPlot1 = iP.Results.ChannelToPlot1;
@@ -171,7 +180,7 @@ maxLagSamples = maxLagSeconds * samplingRateHz;
 nWindows = floor(nSamples / windowIntervalSamples);
 
 % Determine the number of pairs
-nPairsToCompute = nChannels * (nChannels - 1) / 2;
+nPairsToCompute = nchoosek(nChannels, 2);
 
 % Create a time vector in seconds centered at the windows
 windowCenters = (transpose(1:nWindows) - 1) * windowIntervalSeconds + ...
@@ -321,6 +330,12 @@ parfor iPair = 1:nPairsToCompute
 end
 lagProfMatrix = reorganize_as_matrix(lagProfList, indPairsToCompute, dimMatrix);
 
+% Determine the pairs that are significante
+isSignificant = corrList > corrThreshold;
+lagListSig = lagList(isSignificant);
+indPairsSignificant = indPairsToCompute(isSignificant, :);
+lagMatrixSig = reorganize_as_matrix(lagListSig, indPairsSignificant, dimMatrix);
+
 %% Plot overall correlation and lag matrices
 % Create a new figure
 [fig, ax] = create_subplots(2, 1, 'AlwaysNew', true);
@@ -334,14 +349,14 @@ subplot(ax(1));
 map1 = heatmap(xValues, yValues, corrMatrix);
 xlabel('Channel #');
 ylabel('Channel #');
-title('Correlation Coefficient');
+title('Correlation Coefficients for all pairs');
 
-% Plot lag matrix as a heat map
+% Plot lag matrix (pairs with significant correlation only) as a heat map
 subplot(ax(2));
-map2 = heatmap(xValues, yValues, lagMatrix);
+map2 = heatmap(xValues, yValues, lagMatrixSig);
 xlabel('Channel #');
 ylabel('Channel #');
-title('Lag (seconds)');
+title('Lag (seconds) for pairs with significant correlation');
 
 % Save the figure
 figname = fullfile(outFolder, [fileBase, '_corrmatrix']);
@@ -353,22 +368,29 @@ switch selectMethod
     case 'consecutive'
         indPairsToPlot = [transpose(1:nChannels-1), transpose(2:nChannels)];
     case 'significant'
-        % TODO
+        indPairsToPlot = indPairsSignificant;
     otherwise
         error('selectMethod unrecognized!');
 end
 nPairsToPlot = size(indPairsToPlot, 1);
 
-% Determine the channel indices to plot
-if ~isempty(channelToPlot1)
-    iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
-else
-    iChannelToPlot1 = indPairsToPlot(1, 1);
+% Return if no pairs are to be plotted
+if nPairsToPlot < 1
+    return
 end
-if ~isempty(channelToPlot2)
+
+% Determine the channel indices to plot
+if ~isempty(channelToPlot1) && ~isempty(channelToPlot2)
+    iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
     iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
+elseif isempty(channelToPlot1) && ~isempty(channelToPlot2)
+    iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
+    iChannelToPlot1 = find_channel_best_corr(corrMatrix, iChannelToPlot2);
+elseif ~isempty(channelToPlot1) && isempty(channelToPlot2)
+    iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
+    iChannelToPlot2 = find_channel_best_corr(corrMatrix, iChannelToPlot1);
 else
-    iChannelToPlot2 = indPairsToPlot(1, 2);
+    [iChannelToPlot1, iChannelToPlot2] = find_subscript(corrMatrix, @max);
 end
 
 % Decide on the colormap
@@ -549,6 +571,23 @@ end
 % Find the lag with highest correlation with the largest correlation
 [~, I] = max(abs(acorAll));
 lagBest = lagAll(I);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function iChannel2 = find_channel_best_corr (corrMatrix, iChannel1)
+
+% Find the first linear index with maximum correlation with iChannel1
+maxCorrWith2 = max([corrMatrix(iChannel1, :), ...
+                    transpose(corrMatrix(:, iChannel1))]);
+idxLinear = find(corrMatrix == maxCorrWith2, 1, 'first');
+
+% Find the corresponding iChannel2
+[row, col] = ind2sub(size(corrMatrix), idxLinear);
+if row == iChannel1
+    iChannel2 = col;
+else
+    iChannel2 = row;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
