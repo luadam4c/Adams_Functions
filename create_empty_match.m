@@ -28,6 +28,7 @@ function empty = create_empty_match (array, varargin)
 %       cd/extract_subvectors.m
 %       cd/force_matrix.m
 %       cd/nan_except.m
+%       cd/reorganize_as_matrix.m
 
 % File History:
 % 2019-01-03 Moved from extract_subvectors.m
