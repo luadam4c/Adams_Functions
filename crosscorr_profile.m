@@ -1,6 +1,6 @@
-function [corrProf, lagProf] = crosscorr_profile (dataRaw, varargin)
+function [corrProfList, lagProfList] = crosscorr_profile (dataRaw, varargin)
 %% Computes and plots cross correlation profiles between signals
-% Usage: [corrProf, lagProf] = crosscorr_profile (dataRaw, varargin)
+% Usage: [corrProfList, lagProfList] = crosscorr_profile (dataRaw, varargin)
 % Explanation:
 %       TODO
 %
@@ -17,6 +17,7 @@ function [corrProf, lagProf] = crosscorr_profile (dataRaw, varargin)
 %
 % Requires:
 %       cd/check_dir.m
+%       cd/create_index_pairs.m
 %       cd/freqfilter.m
 %       cd/plot_vertical_line.m
 %       cd/sscanf_full.m
@@ -40,6 +41,8 @@ function [corrProf, lagProf] = crosscorr_profile (dataRaw, varargin)
 %               SignalLabel optional arguments
 % 2021-05-15 Now links y axes of EEG plots
 % 2021-05-15 Made SelectMethod an optional argument
+% 2021-05-15 Now uses create_index_pairs.m
+% 2021-05-15 Now computes all correlation coefficients and plots a matrix
 
 %% Hard-coded parameters
 validSelectMethods = {'consecutive', 'significant'};
@@ -52,6 +55,7 @@ maxLagSecondsDefault = Inf;
 normalizationDefault = 'normalized';
 channelToPlot1Default = [];
 channelToPlot2Default = [];
+selectMethodDefault = 'consecutive';
 signalLabelDefault = 'Signal Units';
 lowFreqDefault = [];
 highFreqDefault = [];
@@ -216,82 +220,72 @@ if isempty(dataFilt)
     end
 end
 
-%% Compute cross correlations between channels
+%% Decide on pairs of channels to compute
 % Iterate over all pairs of channels
-indPairs = zeros(nPairsToCompute, 2);
-ct = 0;
-for i = 1:nChannels
-    % Only store index pairs from the upper right triangle
-    for j = i:nChannels
-        if i ~= j
-            % Increment the count
-            ct = ct + 1;
-            
-            % Store the index
-            indPairs(ct, 1) = i;
-            indPairs(ct, 2) = j;            
-        end
-    end
-end
+indPairs = create_index_pairs(nChannels);
 firstOfPairsToCompute = indPairs(:, 1);
 secondOfPairsToCompute = indPairs(:, 2);
 
-% Compute all correlation profiles over time with corr2 
-%   (treat all samples within a time window as independent)
-corrProf = cell(nPairsToCompute, 1);
+%% Compute summary correlation coefficients and lag between channels
+corrAllList = zeros(nPairsToCompute, 1);
+lagAllList = zeros(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
-    % Get the indices in corrProf for this pair
+    % Get the indices in corrProfList for this pair
     i = firstOfPairsToCompute(iPair);
     j = secondOfPairsToCompute(iPair);
     
-    % Initialize a cross correlation vector over time
+    % Calculate the cross-correlation coefficient between the two channels
+    %   (treat all samples as independent)
+    corrAllList(iPair) = corr2(dataFilt(:, i), dataFilt(:, j));
+end
+
+%% Compute correlation and lag profiles between channels over time
+% Compute all correlation profiles over time using corr2 
+%   (treat all samples within a time window as independent)
+corrProfList = cell(nPairsToCompute, 1);
+parfor iPair = 1:nPairsToCompute
+    % Get the channel indices for this pair
+    i = firstOfPairsToCompute(iPair);
+    j = secondOfPairsToCompute(iPair);
+    
+    % Compute a cross-correlation coefficient vector over time
     corrThis = zeros(nWindows, 1);
-
-    for k = 1:nWindows
-        % Get the starting index of the time window
-        idxStart = (k - 1) * windowIntervalSamples + 1;
-
-        % Get the ending index of the time window
-        idxEnd = min(idxStart + windowSizeSamples - 1, nSamples);
+    for iWindow = 1:nWindows
+        % Compute indices for this time window
+        ind = get_window_ind(iWindow, windowSizeSamples, ...
+                            windowIntervalSamples, nSamples);
 
         % Calculate the cross-correlation coefficient for the
         % two channels in this time window
-        corrThis(k) = corr2(dataFilt(idxStart:idxEnd, i), ...
-                            dataFilt(idxStart:idxEnd, j));
-
+        corrThis(iWindow) = corr2(dataFilt(ind, i), dataFilt(ind, j));
     end
 
     % Store the correlation profile in the cell array
-    corrProf{iPair} = corrThis;
-    
+    corrProfList{iPair} = corrThis;
 end
 
-% Compute all time lags over time with xcorr
-lagProf = cell(nPairsToCompute, 1);
+% Compute time lags over time using xcorr
+lagProfList = cell(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
-    % Get the indices in lagProf for this pair
+    % Get the channel indices for this pair
     i = firstOfPairsToCompute(iPair);
     j = secondOfPairsToCompute(iPair);
     
     % Initialize a time lag vector over time
     lagThis = zeros(nWindows, 1);
 
-    for k = 1:nWindows
-        % Get the starting index of the time window
-        idxStart = (k - 1) * windowIntervalSamples + 1;
-
-        % Get the ending index of the time window
-        idxEnd = min(idxStart + windowSizeSamples - 1, nSamples);
+    for iWindow = 1:nWindows
+        % Compute indices for this time window
+        ind = get_window_ind(iWindow, windowSizeSamples, ...
+                            windowIntervalSamples, nSamples);
 
         % Calculate the lags for the
         % two channels in this time window
         if ~isinf(maxLagSamples) && ~isnan(maxLagSamples)
-            [acorAll, lagAll] = xcorr(dataFilt(idxStart:idxEnd, i), ...
-                                      dataFilt(idxStart:idxEnd, j), ...
+            [acorAll, lagAll] = xcorr(dataFilt(ind, i), dataFilt(ind, j), ...
                                       maxLagSamples, normalization);
         else
-            [acorAll, lagAll] = xcorr(dataFilt(idxStart:idxEnd, i), ...
-                                      dataFilt(idxStart:idxEnd, j), ...
+            [acorAll, lagAll] = xcorr(dataFilt(ind, i), dataFilt(ind, j), ...
                                       normalization);
         end
 
@@ -300,11 +294,11 @@ parfor iPair = 1:nPairsToCompute
         lagDiff = lagAll(I);
 
         % Convert the lag to seconds
-        lagThis(k) = lagDiff / samplingRateHz;
+        lagThis(iWindow) = lagDiff / samplingRateHz;
     end
 
     % Store the correlation profile in the cell array
-    lagProf{iPair} = lagThis;
+    lagProfList{iPair} = lagThis;
 end
 
 %% Plot stuff
@@ -377,7 +371,7 @@ for iPair = 1:nPairsToPlot
     % Correlation profile plot
     corrLabel = create_corr_label(channelNumbers, i, j);
     legendTexts{iPair} = corrLabel;
-    forLegend(iPair) = plot(windowCenters, corrProf{idxPair}, ...
+    forLegend(iPair) = plot(windowCenters, corrProfList{idxPair}, ...
                          'Color', cm(iPair, :), 'DisplayName', corrLabel);
 end
 ylabel('Corr Coeff')
@@ -396,7 +390,7 @@ for iPair = 1:nPairsToPlot
     
     % Correlation profile plot
     lagLabel = create_corr_label(channelNumbers, i, j);
-    plot(windowCenters, lagProf{idxPair}, ...
+    plot(windowCenters, lagProfList{idxPair}, ...
          'Color', cm(iPair, :), 'DisplayName', lagLabel);
 end
 xlabel('Time (seconds)')
@@ -503,6 +497,20 @@ function corrLabel = create_corr_label (channelNumbers, i1, i2)
 
 corrLabel = ['Ch', num2str(channelNumbers(i1)), ...
             '-Ch', num2str(channelNumbers(i2))];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function ind = get_window_ind (iWin, windowSizeSamples, ...
+                                windowIntervalSamples, nSamples)
+
+% Get the starting index of the time window
+iStart = (iWin - 1) * windowIntervalSamples + 1;
+
+% Get the ending index of the time window
+iEnd = min(iStart + windowSizeSamples - 1, nSamples);
+
+% Return the vector of indices in between endpoints
+ind = iStart:iEnd;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
