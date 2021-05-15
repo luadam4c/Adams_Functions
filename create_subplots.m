@@ -77,6 +77,7 @@ function [fig, ax] = create_subplots (varargin)
 %
 % Used by:
 %       cd/align_subplots.m
+%       cd/crosscorr_profile.m
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_raster_plot.m

@@ -20,6 +20,7 @@ function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
 % Requires:
 %       cd/check_dir.m
 %       cd/create_index_pairs.m
+%       cd/create_subplots.m
 %       cd/freqfilter.m
 %       cd/plot_vertical_line.m
 %       cd/reorganize_as_matrix.m
@@ -144,6 +145,9 @@ nSamples = size(dataRaw, 1);
 % Count the number of channels
 nChannels = size(dataRaw, 2);
 
+% Dimension of output matrices
+dimMatrix = [nChannels, nChannels];
+
 % Create channel numbers if not provided
 if isempty(channelNumbers)
     channelNumbers = transpose(1:nChannels);
@@ -234,6 +238,8 @@ secondOfPairsToCompute = indPairsToCompute(:, 2);
 % Return as a list for speed
 corrList = nan(nPairsToCompute, 1);
 lagList = nan(nPairsToCompute, 1);
+acorAllList = cell(nPairsToCompute, 1);
+lagAllList = cell(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
     % Get the indices in corrProfList for this pair
     i = firstOfPairsToCompute(iPair);
@@ -243,18 +249,23 @@ parfor iPair = 1:nPairsToCompute
     %   (treat all samples as independent)
     corrList(iPair) = corr2(dataFilt(:, i), dataFilt(:, j));
 
-    % Compute the lag difference between the two channels
-    [lagDiff, acorAll, lagAll] = ...
+    % Compute the lag with highest correlation between the two channels
+    [lagBest, acorAll, lagAll] = ...
         compute_lagdiff(dataFilt(:, i), dataFilt(:, j), ...
                         maxLagSamples, normalization);
 
     % Convert the lag to seconds
-    lagList(iWindow) = lagDiff / samplingRateHz;
+    % Store acorAll and lagAll for plotting
+    lagList(iPair) = lagBest / samplingRateHz;
+    lagAllList{iPair} = lagAll / samplingRateHz;
+    acorAllList{iPair} = acorAll;
 end
 
 % Reorganize as a matrix
-corrMatrix = reorganize_as_matrix(corrList, indPairsToCompute);
-lagMatrix = reorganize_as_matrix(lagList, indPairsToCompute);
+corrMatrix = reorganize_as_matrix(corrList, indPairsToCompute, dimMatrix);
+lagMatrix = reorganize_as_matrix(lagList, indPairsToCompute, dimMatrix);
+acorAllMatrix = reorganize_as_matrix(acorAllList, indPairsToCompute, dimMatrix);
+lagAllMatrix = reorganize_as_matrix(lagAllList, indPairsToCompute, dimMatrix);
 
 %% Compute correlation and lag profiles between channels over time
 % Compute all correlation profiles over time using corr2 
@@ -280,7 +291,7 @@ parfor iPair = 1:nPairsToCompute
     % Store the correlation profile in the cell array
     corrProfList{iPair} = corrThis;
 end
-corrProfMatrix = reorganize_as_matrix(corrProfList, indPairsToCompute);
+corrProfMatrix = reorganize_as_matrix(corrProfList, indPairsToCompute, dimMatrix);
 
 % Compute all lag profiles over time using xcorr
 lagProfList = cell(nPairsToCompute, 1);
@@ -296,61 +307,85 @@ parfor iPair = 1:nPairsToCompute
         ind = get_window_ind(iWindow, windowSizeSamples, ...
                             windowIntervalSamples, nSamples);
 
-        % Compute the lag difference between 
+        % Compute the lag with highest correlation between 
         %   the two channels within this time window
-        [lagDiff, acorAll, lagAll] = ...
-            compute_lagdiff(dataFilt(ind, i), dataFilt(ind, j), ...
-                            maxLagSamples, normalization);
+        lagBest = compute_lagdiff(dataFilt(ind, i), dataFilt(ind, j), ...
+                                    maxLagSamples, normalization);
 
         % Convert the lag to seconds
-        lagThis(iWindow) = lagDiff / samplingRateHz;
+        lagThis(iWindow) = lagBest / samplingRateHz;
     end
 
     % Store the correlation profile in the cell array
     lagProfList{iPair} = lagThis;
 end
-lagProfMatrix = reorganize_as_matrix(lagProfList, indPairsToCompute);
+lagProfMatrix = reorganize_as_matrix(lagProfList, indPairsToCompute, dimMatrix);
 
-%% Plot stuff
+%% Plot overall correlation and lag matrices
+% Create a new figure
+[fig, ax] = create_subplots(2, 1, 'AlwaysNew', true);
+
+% Set x and y values
+xValues = channelNumbers;
+yValues = channelNumbers;
+
+% Plot correlation matrix as a heat map
+subplot(ax(1));
+map1 = heatmap(xValues, yValues, corrMatrix);
+xlabel('Channel #');
+ylabel('Channel #');
+title('Correlation Coefficient');
+
+% Plot lag matrix as a heat map
+subplot(ax(2));
+map2 = heatmap(xValues, yValues, lagMatrix);
+xlabel('Channel #');
+ylabel('Channel #');
+title('Lag (seconds)');
+
+% Save the figure
+figname = fullfile(outFolder, [fileBase, '_corrmatrix']);
+saveas(fig, figname, 'jpg');
+
+%% Plot correlation profiles for selected pairs
 % Decide on pairs to plot
 switch selectMethod
     case 'consecutive'
-        firstOfPairsToPlot = transpose(1:nChannels-1);
-        secondOfPairsToPlot = firstOfPairsToPlot + 1;
+        indPairsToPlot = [transpose(1:nChannels-1), transpose(2:nChannels)];
     case 'significant'
         % TODO
     otherwise
         error('selectMethod unrecognized!');
 end
-nPairsToPlot = numel(firstOfPairsToPlot);
+nPairsToPlot = size(indPairsToPlot, 1);
 
 % Determine the channel indices to plot
 if ~isempty(channelToPlot1)
     iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
 else
-    iChannelToPlot1 = firstOfPairsToPlot(1);
+    iChannelToPlot1 = indPairsToPlot(1, 1);
 end
 if ~isempty(channelToPlot2)
     iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
 else
-    iChannelToPlot2 = secondOfPairsToPlot(1);
+    iChannelToPlot2 = indPairsToPlot(1, 2);
 end
 
 % Decide on the colormap
 cm = colormap(jet(nPairsToPlot));
 
-% Plot EEG and correlation coefficient
-h = figure;
+% Create a new figure
+fig = set_figure_properties('AlwaysNew', true);
 
 % Plot raw EEG
-ax1 = subplot(4, 5, [1:4]);
+ax1 = subplot(4, 5, 1:4);
 hold on
 plot(tVec, dataRaw(:, iChannelToPlot1));
 ylabel(signalLabel);
 title(['Signal for Channel ', num2str(channelNumbers(iChannelToPlot1))]);
 
 % Plot filtered EEG or second raw EEG
-ax2 = subplot(4, 5, [6:9]);
+ax2 = subplot(4, 5, 6:9);
 hold on
 ylabel(signalLabel);
 if ~isempty(lowFreq) || ~isempty(highFreq)
@@ -365,47 +400,40 @@ end
 
 % Plot the correlation profiles of each pair of channels to plot
 legendTexts = cell(1, nPairsToPlot);
-ax3 = subplot(4, 5, [11:14]);
+ax3 = subplot(4, 5, 11:14);
 hold on
+forLegend = gobjects(nPairsToPlot, 1);
 for iPair = 1:nPairsToPlot
     % Extract channel indices
-    i = firstOfPairsToPlot(iPair);
-    j = secondOfPairsToPlot(iPair);
-
-    % Find the corresponding index in indPairsToCompute for the pair [i, j]
-    idxPair = find(firstOfPairsToCompute == i & secondOfPairsToCompute == j);
-
-    % Set y axis limit
-    ylim([0, 1]);
+    i = indPairsToPlot(iPair, 1);
+    j = indPairsToPlot(iPair, 2);
     
-    % Correlation profile plot
+    % Plot correlation profile for this pair
     corrLabel = create_corr_label(channelNumbers, i, j);
     legendTexts{iPair} = corrLabel;
-    forLegend(iPair) = plot(windowCenters, corrProfList{idxPair}, ...
+    forLegend(iPair) = plot(windowCenters, corrProfMatrix{i, j}, ...
                          'Color', cm(iPair, :), 'DisplayName', corrLabel);
 end
+ylim([0, 1]);
 ylabel('Corr Coeff')
-title('Cross correlation profile');
+title('Cross Correlation Profile');
 
 % Plot the time lag profiles of each pair of consecutive channels
-ax4 = subplot(4, 5, [16:19]);
+ax4 = subplot(4, 5, 16:19);
 hold on
 for iPair = 1:nPairsToPlot
     % Extract channel indices
-    i = firstOfPairsToPlot(iPair);
-    j = secondOfPairsToPlot(iPair);
-
-    % Find the corresponding index in indPairsToCompute for the pair [i, j]
-    idxPair = find(firstOfPairsToCompute == i & secondOfPairsToCompute == j);
+    i = indPairsToPlot(iPair, 1);
+    j = indPairsToPlot(iPair, 2);
     
-    % Correlation profile plot
+    % Plot lag profile for this pair 
     lagLabel = create_corr_label(channelNumbers, i, j);
-    plot(windowCenters, lagProfList{idxPair}, ...
+    plot(windowCenters, lagProfMatrix{i, j}, ...
          'Color', cm(iPair, :), 'DisplayName', lagLabel);
 end
 xlabel('Time (seconds)')
 ylabel('Lag (sec)')
-title('Time lag profile');
+title('Time Lag Profile');
 
 % Align the x axes of all plots
 linkaxes([ax1, ax2, ax3, ax4], 'x');
@@ -430,46 +458,28 @@ xlim([0, maxTime]);
 if ~isempty(mouseNumber)
     suplabel(['Mouse #', num2str(mouseNumber)], 't');
 end
-   
+
 % Save the figure
 figname = fullfile(outFolder, [fileBase, '_corrprofile']);
-saveas(h, figname, 'jpg');
+saveas(fig, figname, 'jpg');
 
-%% Plot crosscorrelograms over entire length of signal 
-%   for specific pairs of channels
+%% Plot cross-correlograms for selected pairs
 for iPair = 1:nPairsToPlot
     % Extract channel indices
-    i = firstOfPairsToPlot(iPair);
-    j = secondOfPairsToPlot(iPair);
+    i = indPairsToPlot(iPair, 1);
+    j = indPairsToPlot(iPair, 2);
+    lagBestSec = lagMatrix(i, j);
 
-    % Perform correlation over entire length of signal
-    if ~isinf(maxLagSamples) && ~isnan(maxLagSamples)
-        [acorAll, lagAll] = ...
-            xcorr(dataFilt(:, i), dataFilt(:, j), ...
-                    maxLagSamples, normalization);
-    else
-        [acorAll, lagAll] = ...
-            xcorr(dataFilt(:, i), dataFilt(:, j), normalization);
-    end
-
-    % Find the lag difference with the largest correlation
-    [~, I] = max(abs(acorAll));
-    lagDiff = lagAll(I);
-
-    % Compute the lag in seconds
-    lagAllSec = lagAll / samplingRateHz;
-    lagDiffSec = lagDiff / samplingRateHz;
-
-    % Create a figure
-    h = figure;
+    % Create a new figure
+    fig = set_figure_properties('AlwaysNew', true);
 
     % Plot the the cross correlation
     corrLabel = create_corr_label(channelNumbers, i, j);
-    hPlot = plot(lagAllSec, acorAll, 'Color', cm(iPair, :), ...
-                'DisplayName', corrLabel);
+    hPlot = plot(lagAllMatrix{i, j}, acorAllMatrix{i, j}, ...
+                'Color', cm(iPair, :), 'DisplayName', corrLabel);
 
-    % Create a text for the lagDiff
-    diffSampl = ['lagDiff = ', num2str(lagDiffSec), ' seconds'];
+    % Create a text for the lagBest
+    diffSampl = ['lagBest = ', num2str(lagBestSec), ' seconds'];
     hText = text(0.05, 0.95, diffSampl, 'Units', 'normalized');
 
     % Set a y axis limit if normalized
@@ -480,8 +490,8 @@ for iPair = 1:nPairsToPlot
     % Create a legend
     % legend('location', 'northeast', 'AutoUpdate', 'off');
 
-    % Mark the lagDiff with a vertical dotted line
-    hLine = plot_vertical_line(lagDiffSec, 'Color', 'k', 'LineStyle', ':');
+    % Mark the lagBest with a vertical dotted line
+    hLine = plot_vertical_line(lagBestSec, 'Color', 'k', 'LineStyle', ':');
     
     % Reorder things
     set(gca, 'Children', [hLine, hPlot, hText]);
@@ -498,7 +508,7 @@ for iPair = 1:nPairsToPlot
 
     % Save the figure
     figname = fullfile(outFolder, [fileBase, '_', corrLabel]);
-    saveas(h, figname, 'jpg');
+    saveas(fig, figname, 'jpg');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -524,9 +534,9 @@ ind = iStart:iEnd;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [lagDiff, acorAll, lagAll] = compute_lagdiff (signal1, signal2, ...
+function [lagBest, acorAll, lagAll] = compute_lagdiff (signal1, signal2, ...
                                                 maxLagSamples, normalization)
-%% Computes the lag difference between two signals
+%% Computes the lag with highest correlation between two signals
 % TODO: Pull out as its own function
 
 % Compute the cross-correlogram between two signals
@@ -536,14 +546,17 @@ else
     [acorAll, lagAll] = xcorr(signal1, signal2, normalization);
 end
 
-% Find the lag difference with the largest correlation
+% Find the lag with highest correlation with the largest correlation
 [~, I] = max(abs(acorAll));
-lagDiff = lagAll(I);
+lagBest = lagAll(I);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Find the corresponding index in indPairsToCompute for the pair [i, j]
+idxPair = find(firstOfPairsToCompute == i & secondOfPairsToCompute == j);
 
 %}
 

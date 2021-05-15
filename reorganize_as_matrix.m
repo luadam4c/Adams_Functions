@@ -1,11 +1,12 @@
 function matrix = reorganize_as_matrix (list, indPairs, varargin)
 %% Reorganizes a list into a matrix using index pairs
-% Usage: matrix = reorganize_as_matrix (list, indPairs, varargin)
+% Usage: matrix = reorganize_as_matrix (list, indPairs, dim (opt), varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       reorganize_as_matrix([7, 8], [2, 3; 1, 2])
+%       reorganize_as_matrix([7, 8], [2, 3; 1, 2], [5, 5])
 %       reorganize_as_matrix({'cat', 'funny'}, [2, 3; 1, 2])
 %
 % Outputs:
@@ -17,6 +18,8 @@ function matrix = reorganize_as_matrix (list, indPairs, varargin)
 %                   must be a 1D array
 %       indPairs    - index pairs for each item on the list
 %                   must be a 2D array with at least 2 columns
+%       dim         - (opt) dimension of output matrix
+%                   must be a 2-element integer vector
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -35,6 +38,7 @@ function matrix = reorganize_as_matrix (list, indPairs, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+dimDefault = [];
 param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,11 +58,15 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addRequired(iP, 'list');
 addRequired(iP, 'indPairs');
 
+% Add optional inputs to the Input Parser
+addOptional(iP, 'dim', dimDefault);
+
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'param1', param1Default);
 
 % Read from the Input Parser
 parse(iP, list, indPairs, varargin{:});
+dim = iP.Results.dim;
 param1 = iP.Results.param1;
 
 % Check relationships between arguments
@@ -70,11 +78,16 @@ if size(indPairs, 2) < 2
 end
 
 %% Preparation
-% Determine the maximum first index
-nRows = max(indPairs(:, 1));
+if isempty(dim)
+    % Determine the maximum first index
+    nRows = max(indPairs(:, 1));
 
-% Determine the maximum second index
-nColumns = max(indPairs(:, 2));
+    % Determine the maximum second index
+    nColumns = max(indPairs(:, 2));
+else
+    nRows = dim(1);
+    nColumns = dim(2);
+end
 
 %% Do the job
 % Initialize matrix
