@@ -1,6 +1,6 @@
 function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
                 crosscorr_profile (dataRaw, varargin)
-%% Computes and plots cross correlation profiles between signals accounting for possible lag
+%% Computes and plots cross correlation profiles between signals
 % Usage: [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
 %               crosscorr_profile (dataRaw, varargin)
 % Explanation:
@@ -18,10 +18,9 @@ function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
 %       varargin    TODO
 %
 % Requires:
-%       cd/all_index_pairs.m
-%       cd/argfun.m
 %       cd/check_dir.m
 %       cd/compute_best_lag.m
+%       cd/all_index_pairs.m
 %       cd/create_subplots.m
 %       cd/find_subscript.m
 %       cd/freqfilter.m
@@ -54,7 +53,6 @@ function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
 % 2021-05-15 Added corrThreshold
 % 2021-05-15 Made CorrThreshold an optional argument
 % 2021-05-15 Now plots lags for only pairs with significant correlations
-% 2021-05-16 Now computes maximum correlation coefficients across all possible lags
 
 %% Hard-coded parameters
 validSelectMethods = {'consecutive', 'significant'};
@@ -182,6 +180,9 @@ maxLagSamples = maxLagSeconds * samplingRateHz;
 % Determine the number of windows for the correlation profile
 nWindows = floor(nSamples / windowIntervalSamples);
 
+% Determine the number of pairs
+nPairsToCompute = nchoosek(nChannels, 2);
+
 % Create a time vector in seconds centered at the windows
 windowCenters = (transpose(1:nWindows) - 1) * windowIntervalSeconds + ...
                 windowIntervalSeconds / 2;
@@ -239,8 +240,7 @@ end
 
 %% Decide on pairs of channels to compute
 % Iterate over all pairs of channels
-[indPairsToCompute, nPairsToCompute] = ...
-    all_index_pairs(nChannels, 'CreateMode', 'permutation');
+indPairsToCompute = all_index_pairs(nChannels);
 firstOfPairsToCompute = indPairsToCompute(:, 1);
 secondOfPairsToCompute = indPairsToCompute(:, 2);
 
@@ -248,35 +248,62 @@ secondOfPairsToCompute = indPairsToCompute(:, 2);
 % Return as a list for speed
 corrList = nan(nPairsToCompute, 1);
 lagList = nan(nPairsToCompute, 1);
-corrAllList = cell(nPairsToCompute, 1);
+acorAllList = cell(nPairsToCompute, 1);
 lagAllList = cell(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
     % Get the indices in corrProfList for this pair
     i = firstOfPairsToCompute(iPair);
     j = secondOfPairsToCompute(iPair);
     
+    % Compute the cross-correlation coefficient between the two channels
+    %   (treat all samples as independent)
+    corrList(iPair) = corr2(dataFilt(:, i), dataFilt(:, j));
+
     % Compute the lag with highest correlation between the two channels
-    [lagBest, corrBest, lagAll, corrAll] = ...
+    [lagBest, acorAll, lagAll] = ...
         compute_best_lag(dataFilt(:, i), dataFilt(:, j), ...
                         'MaxLag', maxLagSamples, 'ScaleOption', normalization);
 
     % Convert the lag to seconds
-    % Store corrAll and lagAll for plotting
+    % Store acorAll and lagAll for plotting
     lagList(iPair) = lagBest / samplingRateHz;
-    corrList(iPair) = corrBest;
     lagAllList{iPair} = lagAll / samplingRateHz;
-    corrAllList{iPair} = corrAll;
+    acorAllList{iPair} = acorAll;
 end
 
-% Reorganize as a matrices
-[corrMatrix, lagMatrix, corrAllMatrix, lagAllMatrix] = ...
-    argfun(@(x) reorganize_as_matrix(x, indPairsToCompute, dimMatrix), ...
-            corrList, lagList, corrAllList, lagAllList);
+% Reorganize as a matrix
+corrMatrix = reorganize_as_matrix(corrList, indPairsToCompute, dimMatrix);
+lagMatrix = reorganize_as_matrix(lagList, indPairsToCompute, dimMatrix);
+acorAllMatrix = reorganize_as_matrix(acorAllList, indPairsToCompute, dimMatrix);
+lagAllMatrix = reorganize_as_matrix(lagAllList, indPairsToCompute, dimMatrix);
 
 %% Compute correlation and lag profiles between channels over time
-% Compute best lag and corresponding correlation over time using xcorr
+% Compute all correlation profiles over time using corr2 
 %   (treat all samples within a time window as independent)
 corrProfList = cell(nPairsToCompute, 1);
+parfor iPair = 1:nPairsToCompute
+    % Get the channel indices for this pair
+    i = firstOfPairsToCompute(iPair);
+    j = secondOfPairsToCompute(iPair);
+    
+    % Compute a cross-correlation coefficient vector over time
+    corrThis = nan(nWindows, 1);
+    for iWindow = 1:nWindows
+        % Compute indices for this time window
+        ind = get_window_ind(iWindow, windowSizeSamples, ...
+                            windowIntervalSamples, nSamples);
+
+        % Calculate the cross-correlation coefficient for the
+        % two channels in this time window
+        corrThis(iWindow) = corr2(dataFilt(ind, i), dataFilt(ind, j));
+    end
+
+    % Store the correlation profile in the cell array
+    corrProfList{iPair} = corrThis;
+end
+corrProfMatrix = reorganize_as_matrix(corrProfList, indPairsToCompute, dimMatrix);
+
+% Compute all lag profiles over time using xcorr
 lagProfList = cell(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
     % Get the channel indices for this pair
@@ -284,7 +311,6 @@ parfor iPair = 1:nPairsToCompute
     j = secondOfPairsToCompute(iPair);
     
     % Compute a time lag vector between the two channels over time
-    corrThis = nan(nWindows, 1);
     lagThis = nan(nWindows, 1);
     for iWindow = 1:nWindows
         % Compute indices for this time window
@@ -293,20 +319,16 @@ parfor iPair = 1:nPairsToCompute
 
         % Compute the lag with highest correlation between 
         %   the two channels within this time window
-        [lagBest, corrBest] = ...
-            compute_best_lag(dataFilt(ind, i), dataFilt(ind, j), ...
+        lagBest = compute_best_lag(dataFilt(ind, i), dataFilt(ind, j), ...
                         'MaxLag', maxLagSamples, 'ScaleOption', normalization);
 
         % Convert the lag to seconds
-        corrThis(iWindow) = corrBest;
         lagThis(iWindow) = lagBest / samplingRateHz;
     end
 
     % Store the correlation profile in the cell array
-    corrProfList{iPair} = corrThis;
     lagProfList{iPair} = lagThis;
 end
-corrProfMatrix = reorganize_as_matrix(corrProfList, indPairsToCompute, dimMatrix);
 lagProfMatrix = reorganize_as_matrix(lagProfList, indPairsToCompute, dimMatrix);
 
 % Determine the pairs that are significante
@@ -487,7 +509,7 @@ for iPair = 1:nPairsToPlot
 
     % Plot the the cross correlation
     corrLabel = create_corr_label(channelNumbers, i, j);
-    hPlot = plot(lagAllMatrix{i, j}, corrAllMatrix{i, j}, ...
+    hPlot = plot(lagAllMatrix{i, j}, acorAllMatrix{i, j}, ...
                 'Color', cm(iPair, :), 'DisplayName', corrLabel);
 
     % Create a text for the lagBest
@@ -568,14 +590,6 @@ OLD CODE:
 
 % Find the corresponding index in indPairsToCompute for the pair [i, j]
 idxPair = find(firstOfPairsToCompute == i & secondOfPairsToCompute == j);
-
-% Compute the cross-correlation coefficient between the two channels
-%   (treat all samples as independent)
-corrList(iPair) = corr2(dataFilt(:, i), dataFilt(:, j));
-
-% Calculate the cross-correlation coefficient for the
-% two channels in this time window
-corrThis(iWindow) = corr2(dataFilt(ind, i), dataFilt(ind, j));
 
 %}
 
