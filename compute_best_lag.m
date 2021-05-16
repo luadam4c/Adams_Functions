@@ -9,6 +9,7 @@ function [lagBest, corrBest, lagAll, corrAll] = ...
 % Example(s):
 %       [lagBest, corrBest, lagAll, corrAll] = compute_best_lag([0, 0, 1], [1, 0, 0])
 %       [lagBest, corrBest, lagAll, corrAll] = compute_best_lag([1, 0, 0], [0, 0, 1])
+%       [lagBest, corrBest, lagAll, corrAll] = compute_best_lag([1, NaN, 0], [NaN, 0, 1])
 %
 % Outputs:
 %       output1     - TODO: Description of output1
@@ -35,6 +36,8 @@ function [lagBest, corrBest, lagAll, corrAll] = ...
 
 % File History:
 % 2021-05-15 Created by Adam Lu
+% 2021-05-16 Now makes sure the best lag is 
+%               at the center of all possible best lags
 % 
 
 %% Hard-coded parameters
@@ -79,9 +82,27 @@ else
     [corrAll, lagAll] = xcorr(signal1, signal2, scaleOption);
 end
 
-% Find the lag with highest correlation with the largest correlation
-[corrBest, I] = max(abs(corrAll));
-lagBest = lagAll(I);
+% Compute the largest correlation coefficient
+[corrBest, idxBestAuto] = max(abs(corrAll));
+
+% Return if NaN
+if isnan(corrBest)
+    lagBest = NaN;
+    return
+end
+
+% Find all indices with the largest correlation coefficient
+indMaxCorr = find(corrAll == corrBest);
+
+% Use the middle index
+if isempty(indMaxCorr)
+    idxBest = idxBestAuto;
+else
+    idxBest = indMaxCorr(ceil(numel(indMaxCorr)/2));
+end
+
+% Find the best lag with the largest correlation coefficient
+lagBest = lagAll(idxBest);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

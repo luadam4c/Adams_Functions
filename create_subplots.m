@@ -66,6 +66,10 @@ function [fig, ax] = create_subplots (varargin)
 %                   - 'CenterPosition': position for the center subplot
 %                   must be a 4-element positive integer vector
 %                   default == get(0, 'defaultfigureposition')
+%                   - 'AdjustPosition': whether to adjust figure position 
+%                                           so that it fits
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - Any other parameter-value pair for the subplot() function
 %
 % Requires:
@@ -103,6 +107,7 @@ function [fig, ax] = create_subplots (varargin)
 % 2020-02-06 Added 'ExpandFromDefault' as an optional argument
 % 2020-04-19 Made the first argument nPlotsOrNRows 
 % 2020-04-19 Made all arguments optional
+% 2021-05-16 Added 'AdjustPosition' as an optional argument
 % TODO: Added 'TransposeOrder' as an optional argument
 
 %% Hard-coded parameters
@@ -123,6 +128,7 @@ figHeightDefault = [];          % set later
 clearFigureDefault = true;      % clear figure by default
 alwaysNewDefault = false;       % don't always create new figure by default
 centerPositionDefault = [];     % set later
+adjustPositionDefault = true;   % adjust position to fit window by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -170,6 +176,8 @@ addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
 addParameter(iP, 'CenterPosition', centerPositionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'Position must be a empty or a numeric vector!'));
+addParameter(iP, 'AdjustPosition', adjustPositionDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -186,6 +194,7 @@ figHeight = iP.Results.FigHeight;
 clearFigure = iP.Results.ClearFigure;
 alwaysNew = iP.Results.AlwaysNew;
 centerPosition = iP.Results.CenterPosition;
+adjustPosition = iP.Results.AdjustPosition;
 
 % Keep unmatched arguments for the subplot() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -249,7 +258,7 @@ fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                     'Position', figPosition, ...
                     'Width', figWidth, 'Height', figHeight, ...
                     'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
-                    'AdjustPosition', true);
+                    'AdjustPosition', adjustPosition);
 
 %% Create subplots
 % Count the number of subplots

@@ -1,7 +1,7 @@
-function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
+function [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrix] = ...
                 crosscorr_profile (dataRaw, varargin)
 %% Computes and plots cross correlation profiles between signals accounting for possible lag
-% Usage: [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
+% Usage: [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrix] = ...
 %               crosscorr_profile (dataRaw, varargin)
 % Explanation:
 %       TODO
@@ -55,20 +55,26 @@ function [corrProfMatrix, lagProfMatrix, corrMatrix, lagMatrix] = ...
 % 2021-05-15 Made CorrThreshold an optional argument
 % 2021-05-15 Now plots lags for only pairs with significant correlations
 % 2021-05-16 Now computes maximum correlation coefficients across all possible lags
+% 2021-05-16 Now computes all permutations of channels
+% 2021-05-16 Added 'referenced', 'refAndSig' as a select method
+% 2021-05-16 Added 'SigMethod' as an optional argument and
+%               uses the correlation ratio threshold by default
 
 %% Hard-coded parameters
-validSelectMethods = {'consecutive', 'significant'};
+validSigMethods = {'value', 'diffToAverage'};
+validSelectMethods = {'consecutive', 'significant', 'referenced', 'refAndSig'};
 
 %% Default values for optional arguments
 samplingRateHzDefault = 1;
 windowSizeSecondsDefault = 1;
 windowIntervalSecondsDefault = [];
+sigMethodDefault = 'diffToAverage';
 corrThresholdDefault = 0;
 maxLagSecondsDefault = Inf;
 normalizationDefault = 'normalized';
 channelToPlot1Default = [];
 channelToPlot2Default = [];
-selectMethodDefault = 'significant';
+selectMethodDefault = 'refAndSig';
 signalLabelDefault = 'Signal Units';
 lowFreqDefault = [];
 highFreqDefault = [];
@@ -101,6 +107,8 @@ addParameter(iP, 'WindowSizeSeconds', windowSizeSecondsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'WindowIntervalSeconds', windowIntervalSecondsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'SigMethod', sigMethodDefault, ...
+    @(x) any(validatestring(x, validSigMethods)));
 addParameter(iP, 'CorrThreshold', corrThresholdDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'MaxLagSeconds', maxLagSecondsDefault, ...
@@ -133,6 +141,7 @@ parse(iP, dataRaw, varargin{:});
 samplingRateHz = iP.Results.SamplingRateHz;
 windowSizeSeconds = iP.Results.WindowSizeSeconds;
 windowIntervalSeconds = iP.Results.WindowIntervalSeconds;
+sigMethod = validatestring(iP.Results.SigMethod, validSigMethods);
 corrThreshold = iP.Results.CorrThreshold;
 maxLagSeconds = iP.Results.MaxLagSeconds;
 normalization = iP.Results.Normalization;
@@ -246,12 +255,13 @@ secondOfPairsToCompute = indPairsToCompute(:, 2);
 
 %% Compute summary correlation coefficients and lag between channels
 % Return as a list for speed
-corrList = nan(nPairsToCompute, 1);
-lagList = nan(nPairsToCompute, 1);
+corrBestList = nan(nPairsToCompute, 1);
+lagBestList = nan(nPairsToCompute, 1);
 corrAllList = cell(nPairsToCompute, 1);
 lagAllList = cell(nPairsToCompute, 1);
+avgCorrList = nan(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
-    % Get the indices in corrProfList for this pair
+    % Get the indices in corrBestProfList for this pair
     i = firstOfPairsToCompute(iPair);
     j = secondOfPairsToCompute(iPair);
     
@@ -260,24 +270,26 @@ parfor iPair = 1:nPairsToCompute
         compute_best_lag(dataFilt(:, i), dataFilt(:, j), ...
                         'MaxLag', maxLagSamples, 'ScaleOption', normalization);
 
+    % Compute the average correlation over all lags
+    avgCorr = mean(corrAll);
+
     % Convert the lag to seconds
     % Store corrAll and lagAll for plotting
-    lagList(iPair) = lagBest / samplingRateHz;
-    corrList(iPair) = corrBest;
+    lagBestList(iPair) = lagBest / samplingRateHz;
+    corrBestList(iPair) = corrBest;
     lagAllList{iPair} = lagAll / samplingRateHz;
     corrAllList{iPair} = corrAll;
+    avgCorrList(iPair) = avgCorr;
 end
 
-% Reorganize as a matrices
-[corrMatrix, lagMatrix, corrAllMatrix, lagAllMatrix] = ...
-    argfun(@(x) reorganize_as_matrix(x, indPairsToCompute, dimMatrix), ...
-            corrList, lagList, corrAllList, lagAllList);
+% Compute the difference in correlation over average
+diffCorrList = corrBestList - avgCorrList;
 
 %% Compute correlation and lag profiles between channels over time
 % Compute best lag and corresponding correlation over time using xcorr
 %   (treat all samples within a time window as independent)
-corrProfList = cell(nPairsToCompute, 1);
-lagProfList = cell(nPairsToCompute, 1);
+corrBestProfList = cell(nPairsToCompute, 1);
+lagBestProfList = cell(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
     % Get the channel indices for this pair
     i = firstOfPairsToCompute(iPair);
@@ -303,47 +315,93 @@ parfor iPair = 1:nPairsToCompute
     end
 
     % Store the correlation profile in the cell array
-    corrProfList{iPair} = corrThis;
-    lagProfList{iPair} = lagThis;
+    corrBestProfList{iPair} = corrThis;
+    lagBestProfList{iPair} = lagThis;
 end
-corrProfMatrix = reorganize_as_matrix(corrProfList, indPairsToCompute, dimMatrix);
-lagProfMatrix = reorganize_as_matrix(lagProfList, indPairsToCompute, dimMatrix);
 
-% Determine the pairs that are significante
-isSignificant = corrList > corrThreshold;
-lagListSig = lagList(isSignificant);
+%% Reorganize as matrices
+[corrBestMatrix, lagBestMatrix, corrAllMatrix, ...
+        lagAllMatrix, avgCorrMatrix, diffCorrMatrix, ...
+        corrBestProfMatrix, lagBestProfMatrix] = ...
+    argfun(@(x) reorganize_as_matrix(x, indPairsToCompute, dimMatrix), ...
+            corrBestList, lagBestList, corrAllList, ...
+            lagAllList, avgCorrList, diffCorrList, ...
+            corrBestProfList, lagBestProfList);
+
+%% Find interesting pairs
+% Determine the pairs that are significant
+switch sigMethod
+    case 'value'
+        isSignificant = corrBestList >= corrThreshold;
+    case 'diffToAverage'
+        isSignificant = corrBestList - avgCorrList >= corrThreshold;
+    otherwise
+        error('sigMethod unrecognized!');
+end
+lagBestListSig = lagBestList(isSignificant);
 indPairsSignificant = indPairsToCompute(isSignificant, :);
-lagMatrixSig = reorganize_as_matrix(lagListSig, indPairsSignificant, dimMatrix);
+lagBestMatrixSig = ...
+    reorganize_as_matrix(lagBestListSig, indPairsSignificant, dimMatrix);
+
+% Determine the pairs including best channel to be referenced
+meanDiffCorrEachRef = nanmean(diffCorrMatrix, 2);
+[~, iBestRef] = max(meanDiffCorrEachRef);
+allChannels = transpose(1:nChannels);
+allExceptRef = allChannels(allChannels ~= iBestRef);
+indPairsReferenced = [iBestRef * ones(nChannels-1, 1), allExceptRef];
+indPairsReferencedAndSignificant = ...
+    indPairsSignificant(indPairsSignificant(:, 1) == iBestRef, :);
 
 %% Plot overall correlation and lag matrices
 % Decide on figure expansion
 if nChannels < 20
-    figExpansion = [1, 2];
+    figExpansion = [2, 2];
 else
-    figExpansion = [2, 4];
+    figExpansion = [4, 4];
 end
 
 % Create a new figure
-[fig, ax] = create_subplots(2, 1, 'AlwaysNew', true, ...
-                            'FigExpansion', figExpansion);
+[fig, ax] = create_subplots(2, 2, 'AlwaysNew', true, ...
+                        'FigExpansion', figExpansion, 'AdjustPosition', false);
 
 % Set x and y values
 xValues = channelNumbers;
 yValues = channelNumbers;
 
-% Plot correlation matrix as a heat map
+% Set upper limit of color axis
+maxCorrPlotted = ...
+    apply_iteratively(@max, {corrBestMatrix, avgCorrMatrix, diffCorrMatrix});
+
+% Plot best correlation coefficients as a heat map
 subplot(ax(1));
-map1 = heatmap(xValues, yValues, corrMatrix);
+map1 = heatmap(xValues, yValues, corrBestMatrix);
 xlabel('Channel #');
 ylabel('Channel #');
-title('Correlation Coefficients for all pairs');
+title('Best Correlation Coefficient Over All Lags');
+map1.ColorLimits = [0, maxCorrPlotted];
+
+% Plot average correlation coefficients as a heat map
+subplot(ax(2));
+map2 = heatmap(xValues, yValues, avgCorrMatrix);
+xlabel('Channel #');
+ylabel('Channel #');
+title('Average Correlation Coefficient Over All Lags');
+map2.ColorLimits = [0, maxCorrPlotted];
+
+% Plot difference in correlation coefficients as a heat map
+subplot(ax(3));
+map3 = heatmap(xValues, yValues, diffCorrMatrix);
+xlabel('Channel #');
+ylabel('Channel #');
+title('Significance of Correlation for Best Lag');
+map3.ColorLimits = [0, maxCorrPlotted];
 
 % Plot lag matrix (pairs with significant correlation only) as a heat map
-subplot(ax(2));
-map2 = heatmap(xValues, yValues, lagMatrixSig);
+subplot(ax(4));
+map4 = heatmap(xValues, yValues, lagBestMatrixSig);
 xlabel('Channel #');
 ylabel('Channel #');
-title('Lag (seconds) for pairs with significant correlation');
+title('Best Lag (seconds) for pairs with significant correlation');
 
 % Change the colormap
 colormap(jet);
@@ -356,9 +414,17 @@ saveas(fig, figname, 'jpg');
 % Decide on pairs to plot
 switch selectMethod
     case 'consecutive'
+        isReferenced = false;
         indPairsToPlot = [transpose(1:nChannels-1), transpose(2:nChannels)];
     case 'significant'
+        isReferenced = false;
         indPairsToPlot = indPairsSignificant;
+    case 'referenced'
+        isReferenced = true;
+        indPairsToPlot = indPairsReferenced;
+    case 'refAndSig'
+        isReferenced = true;
+        indPairsToPlot = indPairsReferencedAndSignificant;
     otherwise
         error('selectMethod unrecognized!');
 end
@@ -375,12 +441,25 @@ if ~isempty(channelToPlot1) && ~isempty(channelToPlot2)
     iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
 elseif isempty(channelToPlot1) && ~isempty(channelToPlot2)
     iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
-    iChannelToPlot1 = find_channel_best_corr(corrMatrix, iChannelToPlot2);
+    if isReferenced && iChannelToPlot2 ~= iBestRef
+        iChannelToPlot1 = iBestRef;
+    else
+        iChannelToPlot1 = find_channel_best_corr(corrBestMatrix, iChannelToPlot2);
+    end
 elseif ~isempty(channelToPlot1) && isempty(channelToPlot2)
     iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
-    iChannelToPlot2 = find_channel_best_corr(corrMatrix, iChannelToPlot1);
+    if isReferenced && iChannelToPlot1 ~= iBestRef
+        iChannelToPlot2 = iBestRef;
+    else
+        iChannelToPlot2 = find_channel_best_corr(corrBestMatrix, iChannelToPlot1);
+    end
 else
-    [iChannelToPlot1, iChannelToPlot2] = find_subscript(corrMatrix, @max);
+    if isReferenced
+        iChannelToPlot1 = iBestRef;
+        iChannelToPlot2 = find_channel_best_corr(corrBestMatrix, iChannelToPlot1);        
+    else
+        [iChannelToPlot1, iChannelToPlot2] = find_subscript(corrBestMatrix, @max);
+    end
 end
 
 % Decide on the colormap
@@ -423,12 +502,12 @@ for iPair = 1:nPairsToPlot
     % Plot correlation profile for this pair
     corrLabel = create_corr_label(channelNumbers, i, j);
     legendTexts{iPair} = corrLabel;
-    forLegend(iPair) = plot(windowCenters, corrProfMatrix{i, j}, ...
+    forLegend(iPair) = plot(windowCenters, corrBestProfMatrix{i, j}, ...
                          'Color', cm(iPair, :), 'DisplayName', corrLabel);
 end
 ylim([0, 1]);
 ylabel('Corr Coeff')
-title('Cross Correlation Profile');
+title('Cross Correlation At Best Lag Over Time');
 
 % Plot the time lag profiles of each pair of consecutive channels
 ax4 = subplot(4, 5, 16:19);
@@ -440,12 +519,12 @@ for iPair = 1:nPairsToPlot
     
     % Plot lag profile for this pair 
     lagLabel = create_corr_label(channelNumbers, i, j);
-    plot(windowCenters, lagProfMatrix{i, j}, ...
+    plot(windowCenters, lagBestProfMatrix{i, j}, ...
          'Color', cm(iPair, :), 'DisplayName', lagLabel);
 end
 xlabel('Time (seconds)')
 ylabel('Lag (sec)')
-title('Time Lag Profile');
+title('Best Lag Over Time');
 
 % Align the x axes of all plots
 linkaxes([ax1, ax2, ax3, ax4], 'x');
@@ -480,7 +559,7 @@ for iPair = 1:nPairsToPlot
     % Extract channel indices
     i = indPairsToPlot(iPair, 1);
     j = indPairsToPlot(iPair, 2);
-    lagBestSec = lagMatrix(i, j);
+    lagBestSec = lagBestMatrix(i, j);
 
     % Create a new figure
     fig = set_figure_properties('AlwaysNew', true);
@@ -546,15 +625,15 @@ ind = iStart:iEnd;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function iChannel2 = find_channel_best_corr (corrMatrix, iChannel1)
+function iChannel2 = find_channel_best_corr (corrBestMatrix, iChannel1)
 
 % Find the first linear index with maximum correlation with iChannel1
-maxCorrWith2 = max([corrMatrix(iChannel1, :), ...
-                    transpose(corrMatrix(:, iChannel1))]);
-idxLinear = find(corrMatrix == maxCorrWith2, 1, 'first');
+maxCorrWith2 = max([corrBestMatrix(iChannel1, :), ...
+                    transpose(corrBestMatrix(:, iChannel1))]);
+idxLinear = find(corrBestMatrix == maxCorrWith2, 1, 'first');
 
 % Find the corresponding iChannel2
-[row, col] = ind2sub(size(corrMatrix), idxLinear);
+[row, col] = ind2sub(size(corrBestMatrix), idxLinear);
 if row == iChannel1
     iChannel2 = col;
 else
@@ -571,7 +650,7 @@ idxPair = find(firstOfPairsToCompute == i & secondOfPairsToCompute == j);
 
 % Compute the cross-correlation coefficient between the two channels
 %   (treat all samples as independent)
-corrList(iPair) = corr2(dataFilt(:, i), dataFilt(:, j));
+corrBestList(iPair) = corr2(dataFilt(:, i), dataFilt(:, j));
 
 % Calculate the cross-correlation coefficient for the
 % two channels in this time window
