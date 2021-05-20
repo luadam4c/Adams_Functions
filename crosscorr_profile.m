@@ -290,6 +290,7 @@ diffCorrList = corrBestList - avgCorrList;
 %   (treat all samples within a time window as independent)
 corrBestProfList = cell(nPairsToCompute, 1);
 lagBestProfList = cell(nPairsToCompute, 1);
+sigLagBestProfList = cell(nPairsToCompute, 1);
 parfor iPair = 1:nPairsToCompute
     % Get the channel indices for this pair
     i = firstOfPairsToCompute(iPair);
@@ -298,6 +299,7 @@ parfor iPair = 1:nPairsToCompute
     % Compute a time lag vector between the two channels over time
     corrThis = nan(nWindows, 1);
     lagThis = nan(nWindows, 1);
+    avgCorrThis = nan(nWindows, 1);
     for iWindow = 1:nWindows
         % Compute indices for this time window
         ind = get_window_ind(iWindow, windowSizeSamples, ...
@@ -305,28 +307,44 @@ parfor iPair = 1:nPairsToCompute
 
         % Compute the lag with highest correlation between 
         %   the two channels within this time window
-        [lagBest, corrBest] = ...
+        [lagBest, corrBest, ~, corrAll] = ...
             compute_best_lag(dataFilt(ind, i), dataFilt(ind, j), ...
                         'MaxLag', maxLagSamples, 'ScaleOption', normalization);
 
         % Convert the lag to seconds
         corrThis(iWindow) = corrBest;
         lagThis(iWindow) = lagBest / samplingRateHz;
+        avgCorrThis(iWindow) = mean(corrAll);
     end
+
+    % Determine if the lag is significant
+    switch sigMethod
+        case 'value'
+            isSignificant = corrBest >= corrThreshold;
+        case 'diffToAverage'
+            isSignificant = corrBest - avgCorrThis >= corrThreshold;
+        otherwise
+            error('sigMethod unrecognized!');
+    end
+
+    % Store significant lags
+    sigLagThis = lagThis;
+    sigLagThis(~isSignificant) = NaN;
 
     % Store the correlation profile in the cell array
     corrBestProfList{iPair} = corrThis;
     lagBestProfList{iPair} = lagThis;
+    sigLagBestProfList{iPair} = sigLagThis;
 end
 
 %% Reorganize as matrices
 [corrBestMatrix, lagBestMatrix, corrAllMatrix, ...
         lagAllMatrix, avgCorrMatrix, diffCorrMatrix, ...
-        corrBestProfMatrix, lagBestProfMatrix] = ...
+        corrBestProfMatrix, lagBestProfMatrix, sigLagBestProfMatrix] = ...
     argfun(@(x) reorganize_as_matrix(x, indPairsToCompute, dimMatrix), ...
             corrBestList, lagBestList, corrAllList, ...
             lagAllList, avgCorrList, diffCorrList, ...
-            corrBestProfList, lagBestProfList);
+            corrBestProfList, lagBestProfList, sigLagBestProfList);
 
 %% Find interesting pairs
 % Determine the pairs that are significant
@@ -345,7 +363,11 @@ lagBestMatrixSig = ...
 
 % Determine the pairs including best channel to be referenced
 meanDiffCorrEachRef = nanmean(diffCorrMatrix, 2);
-[~, iBestRef] = max(meanDiffCorrEachRef);
+if ~isempty(channelToPlot1)
+    iBestRef = find(channelNumbers == channelToPlot1, 1, 'first');
+else
+    [~, iBestRef] = max(meanDiffCorrEachRef);
+end
 allChannels = transpose(1:nChannels);
 allExceptRef = allChannels(allChannels ~= iBestRef);
 indPairsReferenced = [iBestRef * ones(nChannels-1, 1), allExceptRef];
@@ -519,12 +541,12 @@ for iPair = 1:nPairsToPlot
     
     % Plot lag profile for this pair 
     lagLabel = create_corr_label(channelNumbers, i, j);
-    plot(windowCenters, lagBestProfMatrix{i, j}, ...
+    plot(windowCenters, sigLagBestProfMatrix{i, j}, ...
          'Color', cm(iPair, :), 'DisplayName', lagLabel);
 end
 xlabel('Time (seconds)')
-ylabel('Lag (sec)')
-title('Best Lag Over Time');
+ylabel('Best Lag (sec)')
+title('Significant Best Lags Over Time');
 
 % Align the x axes of all plots
 linkaxes([ax1, ax2, ax3, ax4], 'x');
