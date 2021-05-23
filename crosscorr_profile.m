@@ -1,7 +1,7 @@
-function [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrix] = ...
+function [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrixSig] = ...
                 crosscorr_profile (dataRaw, varargin)
 %% Computes and plots cross correlation profiles between signals accounting for possible lag
-% Usage: [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrix] = ...
+% Usage: [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrixSig] = ...
 %               crosscorr_profile (dataRaw, varargin)
 % Explanation:
 %       TODO
@@ -430,7 +430,7 @@ colormap(jet);
 
 % Save the figure
 figname = fullfile(outFolder, [fileBase, '_corrmatrix']);
-saveas(fig, figname, 'jpg');
+saveas(fig, figname, 'png');
 
 %% Plot correlation profiles for selected pairs
 % Decide on pairs to plot
@@ -575,7 +575,7 @@ end
 
 % Save the figure
 figname = fullfile(outFolder, [fileBase, '_corrprofile']);
-saveas(fig, figname, 'jpg');
+saveas(fig, figname, 'png');
 
 %% Plot cross-correlograms for selected pairs
 for iPair = 1:nPairsToPlot
@@ -622,7 +622,7 @@ for iPair = 1:nPairsToPlot
 
     % Save the figure
     figname = fullfile(outFolder, [fileBase, '_', corrLabel]);
-    saveas(fig, figname, 'jpg');
+    saveas(fig, figname, 'png');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
