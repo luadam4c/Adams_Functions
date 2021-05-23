@@ -3,10 +3,13 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 % Usage: [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       avgTrace    - the average trace
+%
 % Arguments:    
 %       traces      - traces to average
 %                   Note: If a non-vector array, each column is a vector

@@ -75,6 +75,9 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
 %                   default == []
+%                   - 'ForceInRange': whether to force indices in range
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'AlignMethod': method for truncation or padding
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'leftAdjust'  - align to the left and truncate
@@ -206,6 +209,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 % 2020-05-15 Fixed redundancy
 % 2020-06-26 Added 'indices' as the second output
 % 2020-07-24 Fixed 'ForceCellOutput' for 'indices'
+% 2021-05-23 Added 'ForceInRange' as an optional argument
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -222,6 +226,7 @@ indexStartDefault = [];         % set later
 indexEndDefault = [];           % set later
 maxNumDefault = Inf;            % no limit by default
 windowsDefault = [];            % extract entire trace(s) by default
+forceInRangeDefault = false;    % whether to force indices within range
 alignMethodDefault  = 'none';   % no alignment/truncation by default
 padRemainingDefault = false;    % don't pad remaining with NaN by default
 acceptEmptyIndicesDefault = false;  % find default indices by default 
@@ -271,6 +276,8 @@ addParameter(iP, 'Windows', windowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Windows must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'ForceInRange', forceInRangeDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
 addParameter(iP, 'PadRemaining', padRemainingDefault, ...
@@ -295,6 +302,7 @@ indexStart = iP.Results.IndexStart;
 indexEnd = iP.Results.IndexEnd;
 maxNum = iP.Results.MaxNum;
 windows = iP.Results.Windows;
+forceInRange = iP.Results.ForceInRange;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 padRemaining = iP.Results.PadRemaining;
 acceptEmptyIndices = iP.Results.AcceptEmptyIndices;
@@ -361,7 +369,7 @@ if isempty(indices) && ~acceptEmptyIndices
     % Create indices
     if isnumeric(endPoints) || iscellnumericvector(endPoints)
         indices = create_indices(endPoints, 'Vectors', vecs, ...
-                            'ForceInRange', false, ...
+                            'ForceInRange', forceInRange, ...
                             'IndexStart', indexStart, ...
                             'IndexEnd', indexEnd, 'MaxNum', maxNum, ...
                             'TreatCellAsArray', treatCellAsArray, ...
@@ -369,7 +377,7 @@ if isempty(indices) && ~acceptEmptyIndices
                             'TreatCellStrAsArray', treatCellStrAsArray);
     else
         indices = cellfun(@(x, y) create_indices(x, 'Vectors', y, ...
-                            'ForceInRange', false, ...
+                            'ForceInRange', forceInRange, ...
                             'IndexStart', indexStart, ...
                             'IndexEnd', indexEnd, 'MaxNum', maxNum, ...
                             'TreatCellAsArray', treatCellAsArray, ...

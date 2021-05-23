@@ -1,6 +1,6 @@
 function filteredData = freqfilter (data, fc, varargin)
 %% Uses a Butterworth filter twice to filter data by a frequency band (each column is a vector of samples)
-% Usage: filteredData = freqfilter (data, fc, varargin)
+% Usage: filteredData = freqfilter (data, fc, si (opt), varargin)
 % Explanation: 
 %       A Butterworth filter is applied twice (once forward, once backward)
 %       to remove lag effect of filter.

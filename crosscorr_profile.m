@@ -544,6 +544,7 @@ for iPair = 1:nPairsToPlot
     plot(windowCenters, sigLagBestProfMatrix{i, j}, ...
          'Color', cm(iPair, :), 'DisplayName', lagLabel);
 end
+% ylim([-1, 1] * 0.01);
 xlabel('Time (seconds)')
 ylabel('Best Lag (sec)')
 title('Significant Best Lags Over Time');

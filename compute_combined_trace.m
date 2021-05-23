@@ -23,6 +23,7 @@ function [combTrace, paramsUsed] = ...
 %                           If grouped, a cell array is returned
 %                               with the result from each group in each cell
 %                       specified as a numeric column vector
+%
 % Arguments:    
 %       traces          - traces to average
 %                       Note: If a non-vector array, each column is a vector

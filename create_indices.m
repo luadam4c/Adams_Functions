@@ -47,7 +47,10 @@ function indices = create_indices (varargin)
 %                       or a cell array of numeric vectors with 2 elements
 %       varargin    - 'ForcePositive': whether to force indices as positive
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == true
+%                   - 'ForceInRange': whether to force indices in range
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'ForceRowOutput': whether to force indices within
 %                                       vector range
 %                   must be numeric/logical 1 (true) or 0 (false)

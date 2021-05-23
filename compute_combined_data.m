@@ -11,15 +11,18 @@ function [dataAvg, groups] = ...
 %       For the columns that are not averaged, the first sweep
 %           out of each group is extracted
 %       By default, a single set of vectors is considered as one sweep
+%
 % Example(s):
 %       compute_combined_data({randi(10, 10, 1) + 10, randi(10, 10, 1), randi(10, 10, 1) + 30}, 'mean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 1)
 %       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 30}, 'mean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
 %       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 30}, 'bootmean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
+%
 % Outputs:
 %       dataAvg     - data averaged
 %                   specified as a numeric array
 %       groups      - unique grouping values in 'stable' order
 %                   specified as a numeric vector
+%
 % Arguments:
 %       dataOrig        - original data
 %                       must be a numeric array or a cell array of numeric arrays
