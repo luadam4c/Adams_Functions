@@ -16,6 +16,9 @@ function [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrixSi
 %       dataRaw     - raw signal with each column being a channel
 %                   must be a 2D numeric array
 %       varargin    TODO
+%                   - 'PlotFlag': whether to plot stuff
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/all_index_pairs.m
@@ -59,6 +62,7 @@ function [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrixSi
 % 2021-05-16 Added 'referenced', 'refAndSig' as a select method
 % 2021-05-16 Added 'SigMethod' as an optional argument and
 %               uses the correlation ratio threshold by default
+% 2021-05-23 Added 'PlotFlag' as an optional argument
 
 %% Hard-coded parameters
 validSigMethods = {'value', 'diffToAverage'};
@@ -82,6 +86,7 @@ channelNumbersDefault = [];
 dataFiltDefault = [];
 outFolderDefault = 'crosscorr';
 fileBaseDefault = 'sample';
+plotFlagDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -135,6 +140,8 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PlotFlag', plotFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, dataRaw, varargin{:});
@@ -155,6 +162,7 @@ channelNumbers = iP.Results.ChannelNumbers;
 dataFilt = iP.Results.DataFilt;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
+plotFlag = iP.Results.PlotFlag;
 
 %% Preparation
 % Check if output directory exists
@@ -374,255 +382,257 @@ indPairsReferenced = [iBestRef * ones(nChannels-1, 1), allExceptRef];
 indPairsReferencedAndSignificant = ...
     indPairsSignificant(indPairsSignificant(:, 1) == iBestRef, :);
 
-%% Plot overall correlation and lag matrices
-% Decide on figure expansion
-if nChannels < 20
-    figExpansion = [2, 2];
-else
-    figExpansion = [4, 4];
-end
-
-% Create a new figure
-[fig, ax] = create_subplots(2, 2, 'AlwaysNew', true, ...
-                        'FigExpansion', figExpansion, 'AdjustPosition', false);
-
-% Set x and y values
-xValues = channelNumbers;
-yValues = channelNumbers;
-
-% Set upper limit of color axis
-maxCorrPlotted = ...
-    apply_iteratively(@max, {corrBestMatrix, avgCorrMatrix, diffCorrMatrix});
-
-% Plot best correlation coefficients as a heat map
-subplot(ax(1));
-map1 = heatmap(xValues, yValues, corrBestMatrix);
-xlabel('Channel #');
-ylabel('Channel #');
-title('Best Correlation Coefficient Over All Lags');
-map1.ColorLimits = [0, maxCorrPlotted];
-
-% Plot average correlation coefficients as a heat map
-subplot(ax(2));
-map2 = heatmap(xValues, yValues, avgCorrMatrix);
-xlabel('Channel #');
-ylabel('Channel #');
-title('Average Correlation Coefficient Over All Lags');
-map2.ColorLimits = [0, maxCorrPlotted];
-
-% Plot difference in correlation coefficients as a heat map
-subplot(ax(3));
-map3 = heatmap(xValues, yValues, diffCorrMatrix);
-xlabel('Channel #');
-ylabel('Channel #');
-title('Significance of Correlation for Best Lag');
-map3.ColorLimits = [0, maxCorrPlotted];
-
-% Plot lag matrix (pairs with significant correlation only) as a heat map
-subplot(ax(4));
-map4 = heatmap(xValues, yValues, lagBestMatrixSig);
-xlabel('Channel #');
-ylabel('Channel #');
-title('Best Lag (seconds) for pairs with significant correlation');
-
-% Change the colormap
-colormap(jet);
-
-% Save the figure
-figname = fullfile(outFolder, [fileBase, '_corrmatrix']);
-saveas(fig, figname, 'png');
-
-%% Plot correlation profiles for selected pairs
-% Decide on pairs to plot
-switch selectMethod
-    case 'consecutive'
-        isReferenced = false;
-        indPairsToPlot = [transpose(1:nChannels-1), transpose(2:nChannels)];
-    case 'significant'
-        isReferenced = false;
-        indPairsToPlot = indPairsSignificant;
-    case 'referenced'
-        isReferenced = true;
-        indPairsToPlot = indPairsReferenced;
-    case 'refAndSig'
-        isReferenced = true;
-        indPairsToPlot = indPairsReferencedAndSignificant;
-    otherwise
-        error('selectMethod unrecognized!');
-end
-nPairsToPlot = size(indPairsToPlot, 1);
-
-% Return if no pairs are to be plotted
-if nPairsToPlot < 1
-    return
-end
-
-% Determine the channel indices to plot
-if ~isempty(channelToPlot1) && ~isempty(channelToPlot2)
-    iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
-    iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
-elseif isempty(channelToPlot1) && ~isempty(channelToPlot2)
-    iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
-    if isReferenced && iChannelToPlot2 ~= iBestRef
-        iChannelToPlot1 = iBestRef;
+if plotFlag
+    %% Plot overall correlation and lag matrices
+    % Decide on figure expansion
+    if nChannels < 20
+        figExpansion = [2, 2];
     else
-        iChannelToPlot1 = find_channel_best_corr(corrBestMatrix, iChannelToPlot2);
+        figExpansion = [4, 4];
     end
-elseif ~isempty(channelToPlot1) && isempty(channelToPlot2)
-    iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
-    if isReferenced && iChannelToPlot1 ~= iBestRef
-        iChannelToPlot2 = iBestRef;
+
+    % Create a new figure
+    [fig, ax] = create_subplots(2, 2, 'AlwaysNew', true, ...
+                            'FigExpansion', figExpansion, 'AdjustPosition', false);
+
+    % Set x and y values
+    xValues = channelNumbers;
+    yValues = channelNumbers;
+
+    % Set upper limit of color axis
+    maxCorrPlotted = ...
+        apply_iteratively(@max, {corrBestMatrix, avgCorrMatrix, diffCorrMatrix});
+
+    % Plot best correlation coefficients as a heat map
+    subplot(ax(1));
+    map1 = heatmap(xValues, yValues, corrBestMatrix);
+    xlabel('Channel #');
+    ylabel('Channel #');
+    title('Best Correlation Coefficient Over All Lags');
+    map1.ColorLimits = [0, maxCorrPlotted];
+
+    % Plot average correlation coefficients as a heat map
+    subplot(ax(2));
+    map2 = heatmap(xValues, yValues, avgCorrMatrix);
+    xlabel('Channel #');
+    ylabel('Channel #');
+    title('Average Correlation Coefficient Over All Lags');
+    map2.ColorLimits = [0, maxCorrPlotted];
+
+    % Plot difference in correlation coefficients as a heat map
+    subplot(ax(3));
+    map3 = heatmap(xValues, yValues, diffCorrMatrix);
+    xlabel('Channel #');
+    ylabel('Channel #');
+    title('Significance of Correlation for Best Lag');
+    map3.ColorLimits = [0, maxCorrPlotted];
+
+    % Plot lag matrix (pairs with significant correlation only) as a heat map
+    subplot(ax(4));
+    map4 = heatmap(xValues, yValues, lagBestMatrixSig);
+    xlabel('Channel #');
+    ylabel('Channel #');
+    title('Best Lag (seconds) for pairs with significant correlation');
+
+    % Change the colormap
+    colormap(jet);
+
+    % Save the figure
+    figname = fullfile(outFolder, [fileBase, '_corrmatrix']);
+    saveas(fig, figname, 'png');
+
+    %% Plot correlation profiles for selected pairs
+    % Decide on pairs to plot
+    switch selectMethod
+        case 'consecutive'
+            isReferenced = false;
+            indPairsToPlot = [transpose(1:nChannels-1), transpose(2:nChannels)];
+        case 'significant'
+            isReferenced = false;
+            indPairsToPlot = indPairsSignificant;
+        case 'referenced'
+            isReferenced = true;
+            indPairsToPlot = indPairsReferenced;
+        case 'refAndSig'
+            isReferenced = true;
+            indPairsToPlot = indPairsReferencedAndSignificant;
+        otherwise
+            error('selectMethod unrecognized!');
+    end
+    nPairsToPlot = size(indPairsToPlot, 1);
+
+    % Return if no pairs are to be plotted
+    if nPairsToPlot < 1
+        return
+    end
+
+    % Determine the channel indices to plot
+    if ~isempty(channelToPlot1) && ~isempty(channelToPlot2)
+        iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
+        iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
+    elseif isempty(channelToPlot1) && ~isempty(channelToPlot2)
+        iChannelToPlot2 = find(channelNumbers == channelToPlot2, 1, 'first');
+        if isReferenced && iChannelToPlot2 ~= iBestRef
+            iChannelToPlot1 = iBestRef;
+        else
+            iChannelToPlot1 = find_channel_best_corr(corrBestMatrix, iChannelToPlot2);
+        end
+    elseif ~isempty(channelToPlot1) && isempty(channelToPlot2)
+        iChannelToPlot1 = find(channelNumbers == channelToPlot1, 1, 'first');
+        if isReferenced && iChannelToPlot1 ~= iBestRef
+            iChannelToPlot2 = iBestRef;
+        else
+            iChannelToPlot2 = find_channel_best_corr(corrBestMatrix, iChannelToPlot1);
+        end
     else
-        iChannelToPlot2 = find_channel_best_corr(corrBestMatrix, iChannelToPlot1);
+        if isReferenced
+            iChannelToPlot1 = iBestRef;
+            iChannelToPlot2 = find_channel_best_corr(corrBestMatrix, iChannelToPlot1);        
+        else
+            [iChannelToPlot1, iChannelToPlot2] = find_subscript(corrBestMatrix, @max);
+        end
     end
-else
-    if isReferenced
-        iChannelToPlot1 = iBestRef;
-        iChannelToPlot2 = find_channel_best_corr(corrBestMatrix, iChannelToPlot1);        
-    else
-        [iChannelToPlot1, iChannelToPlot2] = find_subscript(corrBestMatrix, @max);
-    end
-end
 
-% Decide on the colormap
-cm = colormap(jet(nPairsToPlot));
-
-% Create a new figure
-fig = set_figure_properties('AlwaysNew', true);
-
-% Plot raw EEG
-ax1 = subplot(4, 5, 1:4);
-hold on
-plot(tVec, dataRaw(:, iChannelToPlot1));
-ylabel(signalLabel);
-title(['Signal for Channel ', num2str(channelNumbers(iChannelToPlot1))]);
-
-% Plot filtered EEG or second raw EEG
-ax2 = subplot(4, 5, 6:9);
-hold on
-ylabel(signalLabel);
-if ~isempty(lowFreq) || ~isempty(highFreq)
-    plot(tVec, dataFilt(:, iChannelToPlot1));
-    title(['Filtered Signal (', num2str(lowFreq), '-', ...
-            num2str(highFreq), ' Hz) for Channel ', ...
-            num2str(channelNumbers(iChannelToPlot1))]);
-else
-    plot(tVec, dataRaw(:, iChannelToPlot2));
-    title(['Signal for Channel ', num2str(channelNumbers(iChannelToPlot2))]);
-end
-
-% Plot the correlation profiles of each pair of channels to plot
-legendTexts = cell(1, nPairsToPlot);
-ax3 = subplot(4, 5, 11:14);
-hold on
-forLegend = gobjects(nPairsToPlot, 1);
-for iPair = 1:nPairsToPlot
-    % Extract channel indices
-    i = indPairsToPlot(iPair, 1);
-    j = indPairsToPlot(iPair, 2);
-    
-    % Plot correlation profile for this pair
-    corrLabel = create_corr_label(channelNumbers, i, j);
-    legendTexts{iPair} = corrLabel;
-    forLegend(iPair) = plot(windowCenters, corrBestProfMatrix{i, j}, ...
-                         'Color', cm(iPair, :), 'DisplayName', corrLabel);
-end
-ylim([0, 1]);
-ylabel('Corr Coeff')
-title('Cross Correlation At Best Lag Over Time');
-
-% Plot the time lag profiles of each pair of consecutive channels
-ax4 = subplot(4, 5, 16:19);
-hold on
-for iPair = 1:nPairsToPlot
-    % Extract channel indices
-    i = indPairsToPlot(iPair, 1);
-    j = indPairsToPlot(iPair, 2);
-    
-    % Plot lag profile for this pair 
-    lagLabel = create_corr_label(channelNumbers, i, j);
-    plot(windowCenters, sigLagBestProfMatrix{i, j}, ...
-         'Color', cm(iPair, :), 'DisplayName', lagLabel);
-end
-% ylim([-1, 1] * 0.01);
-xlabel('Time (seconds)')
-ylabel('Best Lag (sec)')
-title('Significant Best Lags Over Time');
-
-% Align the x axes of all plots
-linkaxes([ax1, ax2, ax3, ax4], 'x');
-
-% Align the y axes of first two plots
-linkaxes([ax1, ax2], 'y');
-
-% Create a legend
-ax5 = subplot(4, 5, [15, 20], 'Visible', 'off');
-legendPosition = get(ax5, 'OuterPosition');
-legendPosition(1) = legendPosition(1) + 0.02;
-legend(forLegend, legendTexts, 'Position', legendPosition);
-% ax5 = subplot(4, 5, 15);
-% legend(forLegend1);
-% ax6 = subplot(4, 5, 20);
-% legend(forLegend2);
-
-% Set the x axis limits
-xlim([0, maxTime]);
-
-% Create an overarching title
-if ~isempty(mouseNumber)
-    suplabel(['Mouse #', num2str(mouseNumber)], 't');
-end
-
-% Save the figure
-figname = fullfile(outFolder, [fileBase, '_corrprofile']);
-saveas(fig, figname, 'png');
-
-%% Plot cross-correlograms for selected pairs
-for iPair = 1:nPairsToPlot
-    % Extract channel indices
-    i = indPairsToPlot(iPair, 1);
-    j = indPairsToPlot(iPair, 2);
-    lagBestSec = lagBestMatrix(i, j);
+    % Decide on the colormap
+    cm = colormap(jet(nPairsToPlot));
 
     % Create a new figure
     fig = set_figure_properties('AlwaysNew', true);
 
-    % Plot the the cross correlation
-    corrLabel = create_corr_label(channelNumbers, i, j);
-    hPlot = plot(lagAllMatrix{i, j}, corrAllMatrix{i, j}, ...
-                'Color', cm(iPair, :), 'DisplayName', corrLabel);
+    % Plot raw EEG
+    ax1 = subplot(4, 5, 1:4);
+    hold on
+    plot(tVec, dataRaw(:, iChannelToPlot1));
+    ylabel(signalLabel);
+    title(['Signal for Channel ', num2str(channelNumbers(iChannelToPlot1))]);
 
-    % Create a text for the lagBest
-    diffSampl = ['lagBest = ', num2str(lagBestSec), ' seconds'];
-    hText = text(0.05, 0.95, diffSampl, 'Units', 'normalized');
-
-    % Set a y axis limit if normalized
-    if strcmp(normalization, 'normalized') || strcmp(normalization, 'coeff')
-        ylim([0, 1]);
+    % Plot filtered EEG or second raw EEG
+    ax2 = subplot(4, 5, 6:9);
+    hold on
+    ylabel(signalLabel);
+    if ~isempty(lowFreq) || ~isempty(highFreq)
+        plot(tVec, dataFilt(:, iChannelToPlot1));
+        title(['Filtered Signal (', num2str(lowFreq), '-', ...
+                num2str(highFreq), ' Hz) for Channel ', ...
+                num2str(channelNumbers(iChannelToPlot1))]);
+    else
+        plot(tVec, dataRaw(:, iChannelToPlot2));
+        title(['Signal for Channel ', num2str(channelNumbers(iChannelToPlot2))]);
     end
 
+    % Plot the correlation profiles of each pair of channels to plot
+    legendTexts = cell(1, nPairsToPlot);
+    ax3 = subplot(4, 5, 11:14);
+    hold on
+    forLegend = gobjects(nPairsToPlot, 1);
+    for iPair = 1:nPairsToPlot
+        % Extract channel indices
+        i = indPairsToPlot(iPair, 1);
+        j = indPairsToPlot(iPair, 2);
+        
+        % Plot correlation profile for this pair
+        corrLabel = create_corr_label(channelNumbers, i, j);
+        legendTexts{iPair} = corrLabel;
+        forLegend(iPair) = plot(windowCenters, corrBestProfMatrix{i, j}, ...
+                             'Color', cm(iPair, :), 'DisplayName', corrLabel);
+    end
+    ylim([0, 1]);
+    ylabel('Corr Coeff')
+    title('Cross Correlation At Best Lag Over Time');
+
+    % Plot the time lag profiles of each pair of consecutive channels
+    ax4 = subplot(4, 5, 16:19);
+    hold on
+    for iPair = 1:nPairsToPlot
+        % Extract channel indices
+        i = indPairsToPlot(iPair, 1);
+        j = indPairsToPlot(iPair, 2);
+        
+        % Plot lag profile for this pair 
+        lagLabel = create_corr_label(channelNumbers, i, j);
+        plot(windowCenters, sigLagBestProfMatrix{i, j}, ...
+             'Color', cm(iPair, :), 'DisplayName', lagLabel);
+    end
+    % ylim([-1, 1] * 0.01);
+    xlabel('Time (seconds)')
+    ylabel('Best Lag (sec)')
+    title('Significant Best Lags Over Time');
+
+    % Align the x axes of all plots
+    linkaxes([ax1, ax2, ax3, ax4], 'x');
+
+    % Align the y axes of first two plots
+    linkaxes([ax1, ax2], 'y');
+
     % Create a legend
-    % legend('location', 'northeast', 'AutoUpdate', 'off');
+    ax5 = subplot(4, 5, [15, 20], 'Visible', 'off');
+    legendPosition = get(ax5, 'OuterPosition');
+    legendPosition(1) = legendPosition(1) + 0.02;
+    legend(forLegend, legendTexts, 'Position', legendPosition);
+    % ax5 = subplot(4, 5, 15);
+    % legend(forLegend1);
+    % ax6 = subplot(4, 5, 20);
+    % legend(forLegend2);
 
-    % Mark the lagBest with a vertical dotted line
-    hLine = plot_vertical_line(lagBestSec, 'Color', 'k', 'LineStyle', ':');
-    
-    % Reorder things
-    set(gca, 'Children', [hLine, hPlot, hText]);
+    % Set the x axis limits
+    xlim([0, maxTime]);
 
-    % Create an x label
-    xlabel('Lag (seconds)')
-    
-    % Create a y label
-    ylabel('Correlation Coefficient')
-    
-    % Create a title
-    title(['Cross correlation between Channel ', num2str(channelNumbers(i)), ...
-            ' and Channel ', num2str(channelNumbers(j))]);
+    % Create an overarching title
+    if ~isempty(mouseNumber)
+        suplabel(['Mouse #', num2str(mouseNumber)], 't');
+    end
 
     % Save the figure
-    figname = fullfile(outFolder, [fileBase, '_', corrLabel]);
+    figname = fullfile(outFolder, [fileBase, '_corrprofile']);
     saveas(fig, figname, 'png');
+
+    %% Plot cross-correlograms for selected pairs
+    for iPair = 1:nPairsToPlot
+        % Extract channel indices
+        i = indPairsToPlot(iPair, 1);
+        j = indPairsToPlot(iPair, 2);
+        lagBestSec = lagBestMatrix(i, j);
+
+        % Create a new figure
+        fig = set_figure_properties('AlwaysNew', true);
+
+        % Plot the the cross correlation
+        corrLabel = create_corr_label(channelNumbers, i, j);
+        hPlot = plot(lagAllMatrix{i, j}, corrAllMatrix{i, j}, ...
+                    'Color', cm(iPair, :), 'DisplayName', corrLabel);
+
+        % Create a text for the lagBest
+        diffSampl = ['lagBest = ', num2str(lagBestSec), ' seconds'];
+        hText = text(0.05, 0.95, diffSampl, 'Units', 'normalized');
+
+        % Set a y axis limit if normalized
+        if strcmp(normalization, 'normalized') || strcmp(normalization, 'coeff')
+            ylim([0, 1]);
+        end
+
+        % Create a legend
+        % legend('location', 'northeast', 'AutoUpdate', 'off');
+
+        % Mark the lagBest with a vertical dotted line
+        hLine = plot_vertical_line(lagBestSec, 'Color', 'k', 'LineStyle', ':');
+        
+        % Reorder things
+        set(gca, 'Children', [hLine, hPlot, hText]);
+
+        % Create an x label
+        xlabel('Lag (seconds)')
+        
+        % Create a y label
+        ylabel('Correlation Coefficient')
+        
+        % Create a title
+        title(['Cross correlation between Channel ', num2str(channelNumbers(i)), ...
+                ' and Channel ', num2str(channelNumbers(j))]);
+
+        % Save the figure
+        figname = fullfile(outFolder, [fileBase, '_', corrLabel]);
+        saveas(fig, figname, 'png');
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
