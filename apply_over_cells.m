@@ -37,6 +37,7 @@ function output = apply_over_cells (myFunction, inputs, varargin)
 %       cd/combine_param_tables.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_activation_profile.m
+%       cd/compute_combined_array.m
 %       cd/m3ha_plot_figure08.m
 %       cd/m3ha_rank_neurons.m
 %       cd/minEASE.m

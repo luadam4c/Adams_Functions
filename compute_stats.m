@@ -74,6 +74,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/nanstderr.m
 %
 % Used by:
+%       cd/compute_combined_array.m
 %       cd/compute_combined_trace.m
 %       cd/compute_population_average.m
 %       cd/compute_sampsizepwr.m
