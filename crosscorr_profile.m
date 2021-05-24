@@ -22,6 +22,7 @@ function [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrixSi
 %
 % Requires:
 %       cd/all_index_pairs.m
+%       cd/apply_iteratively.m
 %       cd/argfun.m
 %       cd/check_dir.m
 %       cd/compute_best_lag.m
@@ -30,6 +31,7 @@ function [corrBestProfMatrix, lagBestProfMatrix, corrBestMatrix, lagBestMatrixSi
 %       cd/freqfilter.m
 %       cd/plot_vertical_line.m
 %       cd/reorganize_as_matrix.m
+%       cd/save_all_figtypes.m
 %       cd/sscanf_full.m
 %
 % Used by:
@@ -439,7 +441,10 @@ if plotFlag
 
     % Save the figure
     figname = fullfile(outFolder, [fileBase, '_corrmatrix']);
-    saveas(fig, figname, 'png');
+    save_all_figtypes(fig, [figname, '_orig'], 'png');
+    update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                            'Height', 40, 'Width', 50, 'AdjustPosition', false);
+    save_all_figtypes(fig, figname, {'png', 'epsc'});
 
     %% Plot correlation profiles for selected pairs
     % Decide on pairs to plot
@@ -584,7 +589,7 @@ if plotFlag
 
     % Save the figure
     figname = fullfile(outFolder, [fileBase, '_corrprofile']);
-    saveas(fig, figname, 'png');
+    save_all_figtypes(fig, figname, 'png');
 
     %% Plot cross-correlograms for selected pairs
     for iPair = 1:nPairsToPlot
@@ -631,7 +636,7 @@ if plotFlag
 
         % Save the figure
         figname = fullfile(outFolder, [fileBase, '_', corrLabel]);
-        saveas(fig, figname, 'png');
+        save_all_figtypes(fig, figname, 'png');
     end
 end
 

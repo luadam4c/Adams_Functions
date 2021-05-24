@@ -35,6 +35,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 %
 % Used by:
 %       cd/compute_axis_limits.m
+%       cd/crosscorr_profile.m
 %       cd/extract_subvectors.m
 %       cd/find_subscript.m
 %       cd/identify_channels.m
