@@ -217,8 +217,8 @@ h = plot_traces(tVecCombined, dataCombined, 'FigHandle', h, 'LinkAxesOption', 'x
                 otherArguments{:});
 
 % Save and close the figure
-print(h, figName, '-djpeg');
-close(h)
+saveas(gcf, figName, 'jpeg');
+close(gcf)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
