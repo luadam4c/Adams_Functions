@@ -1,4 +1,4 @@
-function colorMap = decide_on_colormap (colorMap, varargin)
+    function colorMap = decide_on_colormap (colorMap, varargin)
 %% Decides on the color map to use
 % Usage: colorMap = decide_on_colormap (colorMap, (opt) nColors, varargin)
 % Explanation:

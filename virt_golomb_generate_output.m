@@ -67,6 +67,9 @@
 % using a Julia REPL. This will execute the simulation and save the output 
 % files in the new folder.
 
+%% Reset environment
+clear; clc; close all;
+
 %% Hard-coded parameters
 packagesNeeded = ["Formatting", "SmoothingSplines", ...
                     "Polynomials", "DSP", ...
@@ -155,6 +158,9 @@ else
 end
 
 %% Create Figure 6A
+% Change directory back to parent directory
+cd(pathParent);
+
 % Create paths
 pathPBIntra = fullfile(pathSubData, dirIntra, filePBotC);
 
@@ -206,37 +212,35 @@ vVecFMN = voltIntra(:, 14);
 % Plot input conductance data
 axes(ax6A(1));
 plot(tPbIntra, gPbIntra);
-plot_vertical_shade(timesStim);
 xlim(timeLim);
 ylim(gLim);
+plot_vertical_shade(timesStim);
 ylabel('g_{rB} (mS/cm^2)');
 
 % Plot voltage of I1Cell1
 axes(ax6A(2));
 plot(tIntra, vIntraI1Cell1);
-plot_vertical_shade(timesStim);
 xlim(timeLim);
 ylim(vLim);
+plot_vertical_shade(timesStim);
 ylabel('vIRt_{ret} (mV)');
 
 % Plot voltage of I2Cell1
 axes(ax6A(3));
 plot(tIntra, vIntraI2Cell1);
-plot_vertical_shade(timesStim);
 xlim(timeLim);
 ylim(vLim);
+plot_vertical_shade(timesStim);
 ylabel('vIRt_{pro} (mV)');
 
 % Plot voltage of FmnCell1
 axes(ax6A(4));
 plot(tIntra, vIntraFmnCell1);
-plot_vertical_shade(timesStim);
 xlim(timeLim);
 ylim(vLim);
-ylabel('vFMN (mV)');
-
-figure(fig6A);
+plot_vertical_shade(timesStim);
 xlabel('Time (s)');
+ylabel('vFMN (mV)');
 
 % Save to file
 pathFig6A = fullfile(pathParent, dirFig, fileFig6A);

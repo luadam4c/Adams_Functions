@@ -11,9 +11,7 @@ function functionsDirectory = locate_functionsdir
 %       cd/locate_dir.m
 %
 % Used by:
-%       cd/char2rgb.m
 %       cd/combine_sweeps.m
-%       cd/create_colormap.m
 %       cd/find_passive_params.m
 %       cd/minEASE.m
 %       cd/parse_abf.m

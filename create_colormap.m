@@ -34,7 +34,6 @@ function colorMap = create_colormap (varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
-%       cd/locate_functionsdir.m
 %
 % Used by:
 %       cd/decide_on_colormap.m
@@ -49,6 +48,7 @@ function colorMap = create_colormap (varargin)
 % 2019-08-04 Added 'HighContrast' as an optional argument
 % 2019-10-07 Changed default colors
 % 2020-02-08 Fixed bug
+% 2025-07-31 Allows the use without rgb.m with scriptExists
 % 
 
 %% Hard-coded parameters
@@ -58,16 +58,15 @@ nColorsDefault = 64;
 colorMapFuncDefault = @jet;
 reverseOrderDefault = false;        % don't reverse order by default
 highContrastDefault = false;        % don't use high contrast by default
+scriptRequired = 'rgb.m';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% If not compiled, add directories to search path for required functions
-if exist('rgb.m', 'file') ~= 2 && ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for rgb.m, etc.
-    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions')); 
+%% Check if rgb.m exists
+scriptExists = exist(scriptRequired, 'file') == 2;
+if ~scriptExists && ~isdeployed
+    % Display message 
+    fprintf('WARNING: %s is not added to the path so will not be used!\n', scriptRequired);
 end
 
 %% Deal with arguments
@@ -97,35 +96,40 @@ highContrast = iP.Results.HighContrast;
 %% Do the job
 if numel(nColors) > 1
     colorMap = arrayfun(@(a) create_colormap_helper(a, colorMapFunc, ...
-                            reverseOrder, highContrast), ...
+                            reverseOrder, highContrast, scriptExists), ...
                         nColors, 'UniformOutput', false);
 else
     colorMap = create_colormap_helper(nColors, colorMapFunc, ...
-                                     reverseOrder, highContrast);
+                            reverseOrder, highContrast, scriptExists);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function colorMap = create_colormap_helper (nColors, colorMapFunc, ...
-                                            reverseOrder, highContrast)
+                                reverseOrder, highContrast, scriptExists)
 %% Create a single color map 
 %   Note: this is an N by 3 array, where N is the number of colors
 
-if nColors == 1
-    colorMap = rgb('Blue');
-elseif nColors == 2
-    colorMap = [rgb('Blue'); rgb('Red')];
-elseif nColors == 3
-    % Color groups correspond to 3 vHold conditions
-    colorMap = [rgb('Blue'); rgb('DarkGreen'); rgb('Red')];
-elseif nColors == 4
-    % Color groups correspond to 4 pharm conditions
-    colorMap = [rgb('Black'); rgb('Blue'); ...
-                rgb('Red'); rgb('Purple')];
-elseif nColors == 6
-    % Color groups correspond to 4 pharm conditions
-    colorMap = [rgb('Blue'); rgb('Cyan'); rgb('Purple'); ...
-                rgb('DarkGreen'); rgb('Red'); rgb('Orange');];
+if scriptExists
+    if nColors == 1
+        colorMap = rgb('Blue');
+    elseif nColors == 2
+        colorMap = [rgb('Blue'); rgb('Red')];
+    elseif nColors == 3
+        % Color groups correspond to 3 vHold conditions
+        colorMap = [rgb('Blue'); rgb('DarkGreen'); rgb('Red')];
+    elseif nColors == 4
+        % Color groups correspond to 4 pharm conditions
+        colorMap = [rgb('Black'); rgb('Blue'); ...
+                    rgb('Red'); rgb('Purple')];
+    elseif nColors == 6
+        % Color groups correspond to 4 pharm conditions
+        colorMap = [rgb('Blue'); rgb('Cyan'); rgb('Purple'); ...
+                    rgb('DarkGreen'); rgb('Red'); rgb('Orange');];
+    else
+        % Color groups corresponding to pharm-g incr pairs
+        colorMap = colorMapFunc(nColors);
+    end
 else
     % Color groups corresponding to pharm-g incr pairs
     colorMap = colorMapFunc(nColors);
@@ -168,6 +172,17 @@ end
 OLD CODE:
 
 colorMap = colormap(colorMapFunc(nColors));
+
+if ~scriptExists && ~isdeployed 
+try
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for rgb.m, etc.
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions')); 
+catch
+end
+end
 
 %}
 
