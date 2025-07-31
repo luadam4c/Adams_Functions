@@ -121,7 +121,7 @@ verboseDefault = false;         % default: Program does not print message
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add directories to search path for required functions
-if ~isdeployed
+if exist('abf2load.m', 'file') ~= 2 && ~isdeployed
     % Locate the functions directory
     functionsDirectory = locate_functionsdir;
 

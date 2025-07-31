@@ -1,4 +1,4 @@
-function colorMap = create_colormap (varargin);
+function colorMap = create_colormap (varargin)
 %% Returns colorMap based on the number of colors requested
 % Usage: colorMap = create_colormap (nColors (opt), varargin)
 % Explanation:
@@ -62,7 +62,7 @@ highContrastDefault = false;        % don't use high contrast by default
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% If not compiled, add directories to search path for required functions
-if ~isdeployed
+if exist('rgb.m', 'file') ~= 2 && ~isdeployed
     % Locate the functions directory
     functionsDirectory = locate_functionsdir;
 

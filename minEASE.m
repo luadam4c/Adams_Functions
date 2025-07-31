@@ -363,7 +363,7 @@ outputCellHeader = {'Breakpoint Index', ...
 
 %% Add directories to search path for required functions
 %   Note: Only needed if not a compiled program
-if ~isdeployed
+if exist('abf2load.m', 'file') ~= 2 && ~isdeployed
     % Locate the functions directory
     functionsDirectory = locate_functionsdir;
 

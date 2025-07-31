@@ -45,7 +45,7 @@ matlabColorStrings = {'k', 'r', 'g', 'y', 'b', 'm', 'c', 'w'};
 %   Note: If addpath is used, adding `if ~isdeployed` is important to 
 %          avoid errors if the function is used as part of a compiled program
 %   Note: addpath takes a long time, so use addpath_custom for checking
-if ~isdeployed
+if exist('rgb.m', 'file') ~= 2 && ~isdeployed
     % Locate the functions directory
     functionsDirectory = locate_functionsdir;
 

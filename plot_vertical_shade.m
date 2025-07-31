@@ -54,6 +54,7 @@ function h = plot_vertical_shade (varargin)
 %       cd/plot_psth.m
 %       cd/plot_relative_events.m
 %       cd/plot_window_boundaries.m
+%       cd/virt_golomb_generate_output.m
 
 % File History:
 % 2019-08-27 Created by Adam Lu
