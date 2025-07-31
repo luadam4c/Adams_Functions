@@ -176,7 +176,7 @@ end
 tIntra = voltIntra(:, 1)/1000;
 tPbIntra = pbIntra(:, 1)/1000;
 
-% Read input conductance data;
+% Read PB to I1 input conductance data;
 gPbIntra = gInput * pbIntra(:, 2);
 
 % Extract PreBotz On and Off times
@@ -186,13 +186,13 @@ isPrevOn = [0; isOn(1:end-1)];
 isNextOn = [isOn(2:end); 0];
 isStart = isOn & isNextOn;
 isEnd = isOn & isPrevOn;
-timesStart = tPbIntra(isStart);
-timesEnd = tPbIntra(isEnd);
-nStims = sum(isStart);
-timesStim = cell(nStims, 1);
-for iStim = 1:nStims
-    timesStim{iStim} = [timesStart(iStim), timesEnd(iStim)];
-end
+timesStim = [tPbIntra(isStart), tPbIntra(isEnd)]';
+% timesStim = array2cell(timesStimArray)
+% nStims = sum(isStart);
+% timesStim = cell(nStims, 1);
+% for iStim = 1:nStims
+%     timesStim{iStim} = [timesStart(iStim), timesEnd(iStim)];
+% end
 
 % Read individual neuron data
 vIntraI1Cell1 = voltIntra(:, 6);
@@ -209,7 +209,7 @@ vVecFMN = voltIntra(:, 14);
 % Create subplots
 [fig6A, ax6A] = create_subplots(4, 1, 'FigExpansion', [0.3, 1]);
 
-% Plot input conductance data
+% Plot PB to I1 input conductance data
 axes(ax6A(1));
 plot(tPbIntra, gPbIntra);
 xlim(timeLim);

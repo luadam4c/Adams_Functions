@@ -7,6 +7,8 @@ function h = plot_vertical_shade (varargin)
 % Example(s):
 %       plot_vertical_shade([10, 20])
 %       plot_vertical_shade(1:5, rand(5, 1), rand(5, 1) + 2)
+%       plot_vertical_shade([1, 3, 5; 2, 4, 6], 'Color', 'Blue')
+%       plot_vertical_shade([1, 2; 3, 4; 5, 6], 'Color', 'Blue')
 %       plot_vertical_shade([1, 2], 'Color', 'Blue')
 %       plot_vertical_shade({[10, 20], [30, 40]})
 %       plot_vertical_shade([1, 2], 'HorizontalInstead', true)
@@ -59,6 +61,7 @@ function h = plot_vertical_shade (varargin)
 % File History:
 % 2019-08-27 Created by Adam Lu
 % 2019-08-30 Now accepts cell arrays as inputs
+% 2019-08-30 Now accepts a 2 x n or n x 2 arrays as input
 % 
 
 %% Hard-coded parameters
@@ -108,7 +111,13 @@ otherArguments = struct2arglist(iP.Unmatched);
 h = gobjects(1);
 
 % Match the vectors if any input is a cell array
-if iscell(x) || iscell(yLow) || iscell(yHigh)
+if isnumeric(x) && min(size(x)) > 1 || ...
+        iscell(x) || iscell(yLow) || iscell(yHigh)
+    % If each set is presented as a row, transpose matrix
+    if isnumeric(x) && size(x, 1) > 2 && size(x, 2) == 2
+        x = x';
+    end
+
     % Force as column cell arrays
     x = force_column_cell(x);
 
