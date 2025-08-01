@@ -186,13 +186,7 @@ isPrevOn = [0; isOn(1:end-1)];
 isNextOn = [isOn(2:end); 0];
 isStart = isOn & isNextOn;
 isEnd = isOn & isPrevOn;
-timesStim = [tPbIntra(isStart), tPbIntra(isEnd)]';
-% timesStim = array2cell(timesStimArray)
-% nStims = sum(isStart);
-% timesStim = cell(nStims, 1);
-% for iStim = 1:nStims
-%     timesStim{iStim} = [timesStart(iStim), timesEnd(iStim)];
-% end
+timesPbInput = [tPbIntra(isStart), tPbIntra(isEnd)]';
 
 % Read individual neuron data
 vIntraI1Cell1 = voltIntra(:, 6);
@@ -214,7 +208,7 @@ axes(ax6A(1));
 plot(tPbIntra, gPbIntra);
 xlim(timeLim);
 ylim(gLim);
-plot_vertical_shade(timesStim);
+plot_vertical_shade(timesPbInput);
 ylabel('g_{rB} (mS/cm^2)');
 
 % Plot voltage of I1Cell1
@@ -222,7 +216,7 @@ axes(ax6A(2));
 plot(tIntra, vIntraI1Cell1);
 xlim(timeLim);
 ylim(vLim);
-plot_vertical_shade(timesStim);
+plot_vertical_shade(timesPbInput);
 ylabel('vIRt_{ret} (mV)');
 
 % Plot voltage of I2Cell1
@@ -230,7 +224,7 @@ axes(ax6A(3));
 plot(tIntra, vIntraI2Cell1);
 xlim(timeLim);
 ylim(vLim);
-plot_vertical_shade(timesStim);
+plot_vertical_shade(timesPbInput);
 ylabel('vIRt_{pro} (mV)');
 
 % Plot voltage of FmnCell1
@@ -238,7 +232,7 @@ axes(ax6A(4));
 plot(tIntra, vIntraFmnCell1);
 xlim(timeLim);
 ylim(vLim);
-plot_vertical_shade(timesStim);
+plot_vertical_shade(timesPbInput);
 xlabel('Time (s)');
 ylabel('vFMN (mV)');
 
