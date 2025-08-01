@@ -94,7 +94,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %                               'eastoutside' if nPlots is 10+
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
-%                   default == ['Traces for ', figName]
+%                   default == ['Event times for ', figName]
 %                               or [yLabel, ' over time']
 %                   - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle

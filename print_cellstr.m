@@ -9,6 +9,7 @@ function string = print_cellstr (cellStr, varargin)
 %       print_cellstr('a')
 %       print_cellstr('a\c');
 %       print_cellstr('a\\c');
+%       print_cellstr('a\n');
 %       print_cellstr({'a', 'b', 'c'}, 'ToPrint', false)
 %       print_cellstr({'a', 'b', 'c'}, 'OmitBraces', true, 'Delimiter', '\n')
 %       print_cellstr({'a', 'b', 'c'}, 'OmitQuotes', true)
@@ -242,6 +243,12 @@ end
 if toPrint
     % Replace '\' with '\\' for fprintf
     string = strrep(string, '\', '\\');  % Escape backslashes for fprintf
+
+    % If newline character at the end, replace back
+    if endsWith(string, '\\n')
+        nChars = strlength(string);
+        string = replaceBetween(string, nChars - 2, nChars, '\n');
+    end
 
     % Print output
     fprintf(fileId, string);

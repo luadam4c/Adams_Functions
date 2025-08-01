@@ -67,6 +67,12 @@ parse(iP, colorStr, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
+% If input is already an rgb value, return
+if isnumeric(colorStr) && numel(colorStr) == 3
+    rgbValue = colorStr;
+    return
+end
+
 % First test whether it's a MATLAB color string
 idxColor = find_in_strings(colorStr, matlabColorStrings, 'IgnoreCase', true);
 

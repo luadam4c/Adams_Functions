@@ -1,4 +1,4 @@
-    function colorMap = decide_on_colormap (colorMap, varargin)
+function colorMap = decide_on_colormap (colorMap, varargin)
 %% Decides on the color map to use
 % Usage: colorMap = decide_on_colormap (colorMap, (opt) nColors, varargin)
 % Explanation:
@@ -74,6 +74,7 @@
 %       cd/plot_traces.m
 %       cd/plot_vertical_shade.m
 %       cd/plot_violin.m
+%       vIRt\virt_moore.m
 
 % File History:
 % 2019-08-22 Created by Adam Lu
@@ -179,7 +180,7 @@ elseif isa(colorMap, 'function_handle')
 elseif ischar(colorMap)
     % Convert to a numeric array
     colorMap = char2rgb(colorMap);
-elseif isstring(colorMap) || iscellstr(colorMap)
+elseif isstring(colorMap) || iscell(colorMap)
     % Convert to a numeric vectors
     colorMap = array_fun(@char2rgb, colorMap, 'UniformOutput', false);
     
