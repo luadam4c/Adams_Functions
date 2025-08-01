@@ -56,7 +56,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %       cd/parse_ipsc.m
 %       cd/parse_phase_info.m
 %       cd/parse_stim.m
-%       vIRt/virt_moore.m
+%       vIRt\virt_moore.m
 
 % File History:
 % 2019-11-14 Created by Adam Lu

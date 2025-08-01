@@ -7,6 +7,8 @@ function string = print_cellstr (cellStr, varargin)
 % Example(s):
 %       print_cellstr({'a', 'b', 'c'})
 %       print_cellstr('a')
+%       print_cellstr('a\c');
+%       print_cellstr('a\\c');
 %       print_cellstr({'a', 'b', 'c'}, 'ToPrint', false)
 %       print_cellstr({'a', 'b', 'c'}, 'OmitBraces', true, 'Delimiter', '\n')
 %       print_cellstr({'a', 'b', 'c'}, 'OmitQuotes', true)
@@ -81,6 +83,8 @@ function string = print_cellstr (cellStr, varargin)
 % 2018-06-21 AL - Changed iP.KeepUnmatched to false
 % 2018-06-21 AL - Added 'ToPrint', 'FileID'
 % 2018-06-21 AL - Now also prints to standard output by default
+% 2025-08-01 Escape backslashes for fprintf
+%
 % TODO: Consider 3-D cell arrays of strings
 
 %% Hard-coded parameters
@@ -236,6 +240,10 @@ end
 
 % Print the single string to standard output or a file
 if toPrint
+    % Replace '\' with '\\' for fprintf
+    string = strrep(string, '\', '\\');  % Escape backslashes for fprintf
+
+    % Print output
     fprintf(fileId, string);
 end
 

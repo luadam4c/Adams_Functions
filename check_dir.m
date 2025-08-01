@@ -50,6 +50,7 @@ function check_dir (directories, varargin)
 %       cd/plot_traces_EEG.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting42.m
 %       /home/Matlab/function_template.m
+%       vIRt\virt_moore.m
 
 % File History:
 % 2018-06-21 Modified from check_subdir.m
