@@ -275,6 +275,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/plot_table_parallel.m
 %       cd/plot_measures.m
 %       cd/plot_struct.m
+%       cd/plot_traces.m
 %       cd/plot_table.m
 %       ~/Matts_Functions/contour_plot.m
 %       ~/Marks_Functions/Adam/CLC2/markCLC2figures.m

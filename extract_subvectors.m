@@ -602,7 +602,7 @@ case {'leftAdjust', 'rightAdjust', 'leftAdjustPad', 'rightAdjustPad'}
     nUniqueNSamples = numel(uniqueNSamples);
 
     % If nSamples are all equal, do nothing
-    if nUniqueNSamples == 1
+    if isscalar(nUniqueNSamples)
         return
     end
 case 'none'

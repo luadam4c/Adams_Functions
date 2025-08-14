@@ -7,6 +7,7 @@ function vecs = force_matrix (vecs, varargin)
 % Example(s):
 %       force_matrix({1:5, 1:3, 1:4})
 %       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftAdjust')
+%       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftAdjustPad')
 %       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'none')
 %       force_matrix({1:5, magic(3)})
 %       force_matrix({{1:3, 1:3}, {1:3, 1:3}})
@@ -95,6 +96,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/plot_measures.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_swd_histogram.m
+%       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 %       cd/spike2Mat2Text.m

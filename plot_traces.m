@@ -5,6 +5,8 @@ function handles = plot_traces (tVecs, data, varargin)
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'HorzBarWindow', [1.5, 2.5])
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
+%       plot_traces(1:3, magic(3), 'PlotMode', 'averaged')
+%       plot_traces(1:3, magic(3), 'PlotMode', 'averaged', 'ColorMap', 'r')
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered')
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered', 'HorzBarWindow', {[0 10], [0 20], [0 30]})
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered', 'YAmount', 1)
@@ -236,6 +238,8 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
+%       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/hold_off.m
 %       cd/hold_on.m
 %       cd/isemptycell.m
@@ -246,6 +250,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/ispositiveintegerscalar.m
 %       cd/ispositivescalar.m
 %       cd/match_format_vector_sets.m
+%       cd/plot_tuning_curve.m
 %       cd/save_all_figtypes.m
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
@@ -319,11 +324,12 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2020-02-06 Now allows yLimits to be a cell array in parallel mode
 % 2020-02-06 Added 'ColorMapToCompare' as an optional argument
 % 2020-04-09 Now allows yTickLocs to be updated in parallel mode
+% 2025-08-14 Added 'averaged' as a plot mode
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
 %% Hard-coded parameters
-validPlotModes = {'overlapped', 'parallel', 'staggered'};
+validPlotModes = {'overlapped', 'parallel', 'staggered', 'averaged'};
 validSubplotOrders = {'bycolor', 'square', 'list', 'auto'};
 validColorModes = {'byPlot', 'byRow', 'byTraceInPlot', 'auto'};
 validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
@@ -688,6 +694,8 @@ end
 if isempty(yLabel)
     yLabelProvided = false;
     switch plotMode
+    case 'averaged'
+        yLabel = 'Averaged Data';
     case 'overlapped'
         yLabel = 'Data';
     case 'staggered'
@@ -707,7 +715,7 @@ end
 
 % Make sure y-axis labels are consistent
 switch plotMode
-case {'overlapped', 'staggered'}
+case {'overlapped', 'staggered', 'averaged'}
     if iscell(yLabel)
         fprintf('Only the first yLabel will be used!\n');
         yLabel = yLabel{1};
@@ -904,7 +912,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     otherArguments)
 
 switch plotMode
-case {'overlapped', 'staggered'}
+case {'overlapped', 'staggered', 'averaged'}
     nRows = 1;
     nColumns = 1;
 case 'parallel'
@@ -920,7 +928,7 @@ end
 
 % Decide on figure and axes to plot on
 switch plotMode
-case {'overlapped', 'staggered'}
+case {'overlapped', 'staggered', 'averaged'}
     % Decide on the figure to plot on
     fig = set_figure_properties('FigHandle', figHandle, ...
                     'FigNumber', figNumber, 'FigExpansion', figExpansion);
@@ -947,8 +955,12 @@ if isempty(xLimits)
 end
 
 % Initialize graphics object arrays for plots
-if numel(nTracesPerPlot) > 1 || ...
-        strcmp(plotMode, 'parallel') && numel(nTracesPerPlot) == 1 && ...
+if strcmp(plotMode, 'averaged')
+    % Set as empty object
+    plotsData = gobjects;
+    plotsDataToCompare = gobjects;
+elseif numel(nTracesPerPlot) > 1 || ...
+        strcmp(plotMode, 'parallel') && isscalar(nTracesPerPlot) && ...
             nTracesPerPlot > 1
     plotsData = cell(nPlots, 1);
     plotsDataToCompare = cell(nPlots, 1);
@@ -965,7 +977,7 @@ else
 end
 
 switch plotMode
-case {'overlapped', 'staggered'}
+case {'overlapped', 'staggered', 'averaged'}
     % Store hold on status
     wasHold = hold_on;
 
@@ -1054,63 +1066,117 @@ case {'overlapped', 'staggered'}
         yTickLabels = {};
     end
 
-    % Plot all plots together
-    for iPlot = 1:nPlots
-        % Get the current tVecs and data
-        tVecsThis = tVecs{iPlot};
-        dataThis = data{iPlot};
-        dataToCompareThis = dataToCompare{iPlot};
+    % Plot traces
+    comparePlotted = false;
+    if strcmp(plotMode, 'averaged')
+        % Make sure all vectors are column vectors
+        tVecs = force_column_vector(tVecs);
+        data = force_column_vector(data);
+        dataToCompare = force_column_vector(dataToCompare);
 
-        % If nothing to plot, continue
-        if isempty(tVecsThis) && isempty(dataThis)
-            continue
-        end
+        % Convert to numeric matrix
+        tVecs = force_matrix(tVecs, 'AlignMethod', 'leftAdjustPad');
+        data = force_matrix(data, 'AlignMethod', 'leftAdjustPad');
+        dataToCompare = force_matrix(dataToCompare, 'AlignMethod', 'leftAdjustPad');
+
+        % Compute averages
+        tVecAvg = mean(tVecs, 2);
+        meanData = mean(data, 2);
+        meanDataToCompare = mean(dataToCompare, 2);
+
+        % Compute standard deviations
+        stdData = std(data, 0, 2); 
+        stdDataToCompare = std(dataToCompare, 0, 2);
+        nData = size(data, 2);
+        nDataToCompare = size(dataToCompare, 2);
+
+        % Compute 95% confidence intervals
+        lowCI = meanData + 1.96 * stdData/sqrt(nData);
+        highCI = meanData - 1.96 * stdData/sqrt(nData);
+        lowCIToCompare = meanDataToCompare + 1.96 * stdDataToCompare/sqrt(nDataToCompare);
+        highCIToCompare = meanDataToCompare - 1.96 * stdDataToCompare/sqrt(nDataToCompare);
 
         % Decide on the color for this plot
-        colorThis = decide_on_this_color(colorMode, colorMap, ...
-                                        iPlot, nColumns);
-        colorToCompareThis = decide_on_this_color(colorMode, colorMapToCompare, ...
-                                        iPlot, nColumns);
+        colorThis = decide_on_this_color(colorMode, colorMap, 1, nColumns);
+        colorToCompareThis = decide_on_this_color(colorMode, colorMapToCompare, 1, nColumns);
 
-        % Get the number of colors for this plot
-        nColorsThis = size(colorThis, 1);
-
-        % Plot data to compare against as a black trace
-        if ~isempty(dataToCompareThis)
-            p2 = plot(tVecsThis, dataToCompareThis, 'Color', colorToCompareThis, ...
-                        'LineStyle', lineStyleToCompare, otherArguments{:});
-        end
-        
-        % Plot the data using the color map
-        if size(colorThis, 1) == 1
-            p1 = plot(tVecsThis, dataThis, 'LineStyle', lineStyle, ...
-                        'Color', colorThis, otherArguments{:});
-        else
-            p1 = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
-                                    'LineStyle', lineStyle, ...
-                                    'Color', colorThis(x, :), ...
-                                    otherArguments{:}), ...
-                            transpose(1:nColorsThis));
+        % Plot mean data to compare against
+        if ~isempty(meanDataToCompare)
+            comparePlotted = true;
+            handlesToCompare = ...
+                plot_tuning_curve(tVecAvg, meanDataToCompare, ...
+                            'UpperCI', highCIToCompare, 'LowerCI', lowCIToCompare, ...
+                            'ColorMap', colorToCompareThis, 'PlotOnly', true, ...
+                            'LineStyle', lineStyleToCompare, otherArguments{:});
+            plotsDataToCompare = handlesToCompare.curves;
         end
 
-        % Set the legend label as the trace label if provided
-        if ~strcmpi(traceLabels, 'suppress')
-            set(p1, 'DisplayName', traceLabels{iPlot});
-        end
-
-        % Store handles in array
-        if ~isempty(p1)
-            if iscell(plotsData)
-                plotsData{iPlot} = p1;
-            else
-                plotsData(iPlot) = p1;
+        % Plot mean data
+        handles = plot_tuning_curve(tVecAvg, meanData, ...
+                            'UpperCI', highCI, 'LowerCI', lowCI, ...
+                            'ColorMap', colorThis, 'PlotOnly', true, ...
+                            'LineStyle', lineStyle, otherArguments{:});
+        plotsData = handles.curves;
+    else
+        % Plot all plots together
+        for iPlot = 1:nPlots
+            % Get the current tVecs and data
+            tVecsThis = tVecs{iPlot};
+            dataThis = data{iPlot};
+            dataToCompareThis = dataToCompare{iPlot};
+    
+            % If nothing to plot, continue
+            if isempty(tVecsThis) && isempty(dataThis)
+                continue
             end
-        end
-        if ~isempty(dataToCompareThis) && ~isempty(p2)
-            if iscell(plotsDataToCompare)
-                plotsDataToCompare{iPlot} = p2;
+    
+            % Decide on the color for this plot
+            colorThis = decide_on_this_color(colorMode, colorMap, ...
+                                            iPlot, nColumns);
+            colorToCompareThis = decide_on_this_color(colorMode, colorMapToCompare, ...
+                                            iPlot, nColumns);
+    
+            % Get the number of colors for this plot
+            nColorsThis = size(colorThis, 1);
+    
+            % Plot data to compare against
+            if ~isempty(dataToCompareThis)
+                comparePlotted = true;
+                p2 = plot(tVecsThis, dataToCompareThis, 'Color', colorToCompareThis, ...
+                            'LineStyle', lineStyleToCompare, otherArguments{:});
+            end
+            
+            % Plot the data using the color map
+            if size(colorThis, 1) == 1
+                p1 = plot(tVecsThis, dataThis, 'LineStyle', lineStyle, ...
+                            'Color', colorThis, otherArguments{:});
             else
-                plotsDataToCompare(iPlot) = p2;
+                p1 = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
+                                        'LineStyle', lineStyle, ...
+                                        'Color', colorThis(x, :), ...
+                                        otherArguments{:}), ...
+                                transpose(1:nColorsThis));
+            end
+    
+            % Set the legend label as the trace label if provided
+            if ~strcmpi(traceLabels, 'suppress')
+                set(p1, 'DisplayName', traceLabels{iPlot});
+            end
+    
+            % Store handles in array
+            if ~isempty(p1)
+                if iscell(plotsData)
+                    plotsData{iPlot} = p1;
+                else
+                    plotsData(iPlot) = p1;
+                end
+            end
+            if ~isempty(dataToCompareThis) && ~isempty(p2)
+                if iscell(plotsDataToCompare)
+                    plotsDataToCompare{iPlot} = p2;
+                else
+                    plotsDataToCompare(iPlot) = p2;
+                end
             end
         end
     end
@@ -1182,7 +1248,7 @@ case {'overlapped', 'staggered'}
     % Generate a legend if there is more than one trace
     if ~strcmpi(legendLocation, 'suppress')
         % Decide on the plot handles for the legend
-        if ~isempty(dataToCompareThis)
+        if comparePlotted
             plotsForLegend = [plotsData, plotsDataToCompare];
         else
             plotsForLegend = plotsData;
@@ -1199,9 +1265,6 @@ case 'parallel'
         % Set a legend location differently    
         legendLocation = 'northeast';
     end
-
-    % Initialize graphics object arrays for subplots
-    subPlots = gobjects(nPlots, 1);
 
     % Find the rows that will have y labels
     if nRows > maxNYLabels && ~yLabelProvided
@@ -1433,7 +1496,7 @@ case 'parallel'
         else
             title(figTitle);
         end
-    end
+    end  
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end

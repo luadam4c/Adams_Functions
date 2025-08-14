@@ -20,7 +20,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'CombineAcrossCells', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true, 'CombineAcrossCells', true)
-%       force_column_vector({{ones(2, 1), ones(2, 1)}, {[], []}}, 'CombineAcrossCells', true)
+%       force_column_vector({{ones(1, 2), ones(1, 2)}, {[], []}}, 'CombineAcrossCells', true)
 %       force_column_vector({{ones(2, 1), ones(2, 1)}, {[], []}}, 'ToLinearize', true, 'CombineAcrossCells', true)
 %
 % Outputs:
@@ -135,6 +135,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/plot_histogram.m
 %       cd/plot_table_parallel.m
 %       cd/plot_raster.m
+%       cd/plot_traces.m
 %       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
 %       cd/select_similar_values.m
@@ -160,6 +161,7 @@ function vectors = force_column_vector (vectors, varargin)
 %               both true
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % 
+% TODO: Need to debug 'CombineAcrossCells' and 'ToLinearize'
 % TODO: Deal with 3D arrays
 % 
 
