@@ -107,9 +107,6 @@ colorMap = iP.Results.ColorMap;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Initialize handle
-h = gobjects(1);
-
 % Match the vectors if any input is a cell array
 if isnumeric(x) && min(size(x)) > 1 || ...
         iscell(x) || iscell(yLow) || iscell(yHigh)

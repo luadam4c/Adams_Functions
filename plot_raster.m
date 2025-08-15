@@ -1,6 +1,6 @@
-function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
+function [hRaster, eventTimes, yEnds, yTicksTable, hBars] = plot_raster (data, varargin)
 %% Make a raster plot from a cell array of event time arrays
-% Usage: [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
+% Usage: [hRaster, eventTimes, yEnds, yTicksTable, hBars] = plot_raster (data, varargin)
 % Explanation:
 %       Plots a raster plot colored by groups.
 %       Each group has a different set of line handles
@@ -112,6 +112,9 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %                                   figNumber is not passed in
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'AxesHandle': axes handle to plot
+%                   must be a empty or a axes object handle
+%                   default == set in set_axes_properties.m
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
@@ -124,6 +127,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
 %       cd/isnum.m
+%       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
 %
 % Used by:    
@@ -146,6 +150,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 % 2019-10-07 Added 'XTickLocs' as an optional argument
 % 2019-10-07 Updated default y limits
 % 2019-12-02 Added 'PlotOnly' as an optional argument
+% 2025-08-14 Added 'AxesHandle' as an optional argument
 % TODO: Distinguish plot_raster.m vs plot_raster_plot.m?
 % 
 
@@ -176,6 +181,7 @@ figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
 clearFigureDefault = false;     % don't clear figure by default
 alwaysNewDefault = false;       % don't always create new figure
+axHandleDefault = [];           % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -247,6 +253,7 @@ addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
@@ -272,6 +279,7 @@ figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
 clearFigure = iP.Results.ClearFigure;
 alwaysNew = iP.Results.AlwaysNew;
+axHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
@@ -365,7 +373,7 @@ else
 end
 
 % Compute y increment
-if numel(yMidsAll) == 1
+if isscalar(yMidsAll)
     yIncr = 1;
 else
     yIncr = abs(yMidsAll(2) - yMidsAll(1));
@@ -478,9 +486,12 @@ end
 
 %% Plot the event time arrays
 % Decide on the figure to plot on
-fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
+set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                 'FigExpansion', figExpansion, 'ClearFigure', clearFigure, ...
                 'AlwaysNew', alwaysNew);
+
+% Decide on the axes to plot on
+set_axes_properties('AxesHandle', axHandle);
 
 % Plot the event time arrays
 hRaster = cell(size(data));
@@ -510,6 +521,8 @@ if ~isempty(horzBarWindows)
                         'Color', 'r', 'LineStyle', '-', 'LineWidth', 0.5), ...
                         num2cell(yHorzBars), horzBarWindows, ...
                         'UniformOutput', false);
+else
+    hBars = [];
 end
 
 % Change the x tick values
@@ -558,7 +571,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [eventTimes, yEnds] = ...
-                compute_y_endpoints (timesArray, yMids, halfBarWidth);
+                compute_y_endpoints (timesArray, yMids, halfBarWidth)
 
 % Reshape the time values as a single column 
 timesVector = timesArray(:);

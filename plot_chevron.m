@@ -86,7 +86,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   - 'FigExpansion': expansion factor for figure position
 %                   must be a must be a positive scalar or 2-element vector
 %                   default == [1, 0.4]
-%                   - 'AxesHandle': axes handle for created axes
+%                   - 'AxesHandle': axes handle to plot
 %                   must be a empty or a axes object handle
 %                   default == set in set_axes_properties.m
 %                   - 'AlwaysNew': whether to always create a new figure even if

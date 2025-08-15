@@ -54,6 +54,7 @@ function ax = set_axes_properties (varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_chevron.m
 %       cd/plot_frame.m
+%       cd/plot_raster.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_vertical_line.m
