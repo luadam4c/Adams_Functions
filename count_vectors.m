@@ -49,6 +49,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m
+%       cd/compute_trial_numbers.m
 %       cd/create_default_grouping.m
 %       cd/extract_channel.m
 %       cd/extract_columns.m
@@ -66,7 +67,6 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/parse_repetitive_pulses.m
 %       cd/plot_measures.m
 %       cd/plot_repetitive_protocols.m
-%       cd/plot_raster.m
 %       cd/plot_traces.m
 %       cd/save_all_zooms.m
 

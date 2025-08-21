@@ -40,6 +40,7 @@ function timeStamp = create_time_stamp (varargin)
 % 2018-10-21 Created by Adam Lu
 % 2025-08-01 Update to use datetime.m and added 'UseDateStr' as parameter
 %               to ensure backwards compatibility
+% 2025-08-21 Fixed to output a character array
 
 %% Hard-coded parameters
 
@@ -75,7 +76,7 @@ end
 %% Do the job
 if ~useDateStr && exist('datetime.m', 'file') == 2
     % Since R2014b
-    timeStamp = datetime('now', 'Format', formatOut);
+    timeStamp = char(datetime('now', 'Format', formatOut));
 else            
     % Introduced before R2006a, not recommended since R2022b
     timeStamp = datestr(now, formatOut);

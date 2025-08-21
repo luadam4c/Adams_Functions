@@ -9,6 +9,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable, hBars] = plot_raster (data, v
 %       data = {magic(3), 5, (1:5)'};
 %       plot_raster(data);
 %       plot_raster(data, 'PlotOnly', true);
+%       plot_raster(data, 'PlotOnly', true, 'plotMode', 'Dot');
 %       [hRaster, eventTimes, yEnds] = ...
 %           plot_raster(data, 'VertBarWidth', 0.6, ...
 %                       'LineStyle', '-', 'LineWidth', 2, ...
@@ -34,9 +35,14 @@ function [hRaster, eventTimes, yEnds, yTicksTable, hBars] = plot_raster (data, v
 % Arguments:    
 %       data        - event time arrays
 %                   must be a numeric array or a cell array of numeric arrays
-%       varargin    - 'PlotOnly': whether to plot the curves only
+%       varargin    - 'PlotOnly': whether to plot the lines or dots only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotMode': whether to plot lines or dots
+%                   must be one of the two values:
+%                       'Line'
+%                       'Dot'
+%                   default == 'Line'
 %                   - 'HorzBarWindows': horizontal bar windows
 %                   must be empty or a cell array of numeric vectors
 %                           with the same length as nVectors
@@ -121,7 +127,6 @@ function [hRaster, eventTimes, yEnds, yTicksTable, hBars] = plot_raster (data, v
 %       cd/apply_iteratively.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_error_for_nargin.m
-%       cd/count_vectors.m
 %       cd/decide_on_colormap.m
 %       cd/extract_common_prefix.m
 %       cd/force_column_vector.m
@@ -151,6 +156,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable, hBars] = plot_raster (data, v
 % 2019-10-07 Updated default y limits
 % 2019-12-02 Added 'PlotOnly' as an optional argument
 % 2025-08-14 Added 'AxesHandle' as an optional argument
+% 2025-08-21 Added 'plotMode' as an optional argument
 % TODO: Distinguish plot_raster.m vs plot_raster_plot.m?
 % 
 
@@ -159,6 +165,7 @@ maxNYTicks = 20;             % maximum number of Y ticks
 
 %% Default values for optional arguments
 plotOnlyDefault = false;        % setup default labels by default
+plotModeDefault = 'Line';       % plot lines by default
 horzBarWindowsDefault = [];     % no horizontal bars by default
 yMidDefault = [];               % set later
 vertBarWidthDefault = 0.6;      % default bar width relative to y value increments
@@ -205,6 +212,8 @@ addRequired(iP, 'data', ...             % a cell array of event time arrays
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotMode', plotModeDefault, ...
+    @(x) any(validatestring(x, {'Line', 'Dot'})));
 addParameter(iP, 'HorzBarWindows', horzBarWindowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['HorzBarWindows must be either a numeric array ', ...
@@ -258,6 +267,7 @@ addParameter(iP, 'AxesHandle', axHandleDefault);
 % Read from the Input Parser
 parse(iP, data, varargin{:});
 plotOnly = iP.Results.PlotOnly;
+plotMode = iP.Results.PlotMode;
 horzBarWindows = iP.Results.HorzBarWindows;
 yMidUser = iP.Results.YMid;
 vertBarWidth = iP.Results.VertBarWidth;
@@ -332,45 +342,23 @@ if isempty(labels)
     labels = create_labels_from_numbers(1:nArrays, 'Prefix', 'Group #');
 end
 
-% Get the number of vectors in each event time array
-nVectors = cellfun(@count_vectors, data);
-
-% If there is an empty vector, consider it a vector
-nVectors(nVectors == 0) = 1;
-
-% Get the total number of vectors
-nVectorsAll = sum(nVectors);
-
-% Assign trial numbers grouped by each event time array 
-trialNos = cell(size(data));
-ct = 0;                                 % counts number of trials assigned
-for iArray = 1:nArrays
-    % Get the number of vectors in this array
-    nVectorThis = nVectors(iArray);
-
-    % Assign the trial numbers in ascending order
-    trialNosThis = ct + transpose(1:nVectorThis);
-
-    % Store the trial numbers for this event time array
-    trialNos{iArray} = trialNosThis;
-
-    % Update number of trials assigned
-    ct = ct + nVectorThis;
-end
+% Compute trial numbers
+[trialNos, ~, nVectorsAll] = compute_trial_numbers(data);
 
 % Ungroup trial numbers
 trialNosAll = vertcat(trialNos{:});
 
-% Compute default y midpoints grouped by each event time array
-if isempty(yMidUser)
+% Compute y midpoints
+if isempty(yMidUser)  
+    % Default behavior: position trials from top to bottom
     yMids = cellfun(@(x) nVectorsAll - x + 1, trialNos, ...
                     'UniformOutput', false);
-    yMidsAll = vertcat(yMids{:});
 else
-    yMidsAll = yMidUser;
+    % User-provided behavior: use the specified y-positions
     yMids = cellfun(@(x) yMidUser(x), trialNos, ...
                     'UniformOutput', false);
 end
+yMidsAll = vertcat(yMids{:});
 
 % Compute y increment
 if isscalar(yMidsAll)
@@ -491,28 +479,60 @@ set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                 'AlwaysNew', alwaysNew);
 
 % Decide on the axes to plot on
-set_axes_properties('AxesHandle', axHandle);
+ax = set_axes_properties('AxesHandle', axHandle);
+
+% Hold on to the axes for plotting
+hold(ax, 'on'); 
 
 % Plot the event time arrays
 hRaster = cell(size(data));
 for iArray = 1:nArrays
-    % Get the event times and y endpoints
-    eventTimesThis = eventTimes{iArray};
-    yEndsThis = yEnds{iArray};
-
-    % Get the color for this array
+    % Get the color and label for this array
     colorThis = colorMap(iArray, :);
-
-    % Get the label for this array
     labelThis = labels{iArray};
 
-    % Plot the event times with the color for this array
-    hRaster{iArray} = line(eventTimesThis, yEndsThis, ...
-                            'LineStyle', lineStyleDefault, ...
-                            'LineWidth', lineWidthDefault, ...
-                            'Color', colorThis, ...
-                            'DisplayName', labelThis, otherArguments);
+    % Select plotting mode
+    switch plotMode
+        case 'Line'
+            % Get the event times and y endpoints
+            eventTimesThis = eventTimes{iArray};
+            yEndsThis = yEnds{iArray};
+
+            % Plot vertical lines
+            hRaster{iArray} = ...
+                line(ax, eventTimesThis, yEndsThis, ...
+                    'LineStyle', lineStyleDefault, ...
+                    'LineWidth', lineWidthDefault, ...
+                    'Color', colorThis, ...
+                    'DisplayName', labelThis, otherArguments);
+        case 'Dot'
+            % Get times and y midpoints
+            timesArray = data{iArray};
+            yMidsArray = yMids{iArray};
+
+            % Prepare data for a single plot call
+            xDots = timesArray(:);
+            
+            % Create a matrix of y-values matching the data matrix size
+            yMatrix = repmat(yMidsArray', size(timesArray, 1), 1);
+            yDots = yMatrix(:);
+            
+            % Remove any NaNs used for padding
+            nanMask = isnan(xDots);
+            xDots(nanMask) = [];
+            yDots(nanMask) = [];
+
+            % Plot all dots for this group at once
+            hRaster{iArray} = ...
+                plot(ax, xDots, yDots, ...
+                    'Marker', '.', 'LineStyle', 'none', ...
+                    'Color', colorThis, 'DisplayName', labelThis, ...
+                    otherArguments);
+    end
 end
+
+% Release the axes hold
+hold(ax, 'off');
 
 % Plot horizontal line(s) for duration if provided
 if ~isempty(horzBarWindows)
@@ -598,6 +618,27 @@ yEnds = transpose(yMidsVector + halfBarWidth * [-1, 1]);
 OLD CODE:
 
 yLimits = [minTrialNo - 1, maxTrialNo + 1];
+
+% Plot the event time arrays
+hRaster = cell(size(data));
+for iArray = 1:nArrays
+    % Get the event times and y endpoints
+    eventTimesThis = eventTimes{iArray};
+    yEndsThis = yEnds{iArray};
+
+    % Get the color for this array
+    colorThis = colorMap(iArray, :);
+
+    % Get the label for this array
+    labelThis = labels{iArray};
+
+    % Plot the event times with the color for this array
+    hRaster{iArray} = line(eventTimesThis, yEndsThis, ...
+                            'LineStyle', lineStyleDefault, ...
+                            'LineWidth', lineWidthDefault, ...
+                            'Color', colorThis, ...
+                            'DisplayName', labelThis, otherArguments);
+end
 
 %}
 
