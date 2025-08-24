@@ -2,9 +2,14 @@ function array = remove_empty (array, varargin)
 %% Removes empty elements from an array
 % Usage: array = remove_empty (array, varargin)
 % Explanation:
-%       TODO
+%       Removes elements considered 'empty' from an array
+%           For numeric arrays NaN is considered 'empty'
+%
 % Example(s):
-%       TODO
+%       remove_empty([NaN 1 2 NaN])
+%       remove_empty({'a', '', 'b'})
+%       remove_empty({{'a', '', 'b'}, {}, {'c', 'd'}})
+%
 % Outputs:
 %       array       - cleaned array
 % Arguments:
@@ -18,11 +23,13 @@ function array = remove_empty (array, varargin)
 %       cd/isemptycell.m
 %
 % Used by:
+%       cd/extract_elements.m
 %       cd/parse_all_abfs.m
 %       cd/unique_custom.m
 
 % File History:
 % 2019-01-04 Created by Adam Lu
+% 2025-08-23 Fixed the condition that array is not a cell array
 % TODO: Allow option to replace by NaNs
 % TODO: Somehow preserve matrix structure if an array is not a vector
 % 
@@ -59,7 +66,7 @@ parse(iP, array, varargin{:});
 if iscell(array)
     array = array(~isemptycell(array));
 else
-    array = array(~isempty(array));
+    array = array(~isnan(array));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

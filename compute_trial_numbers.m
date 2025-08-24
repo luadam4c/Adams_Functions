@@ -25,6 +25,7 @@ function [trialNos, nTrialsEachGroup, nTrialsTotal] = compute_trial_numbers (eve
 %
 % Used by:
 %       cd/plot_raster.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2025-08-21 Extracted from plot_raster.m

@@ -126,12 +126,12 @@ otherArguments = struct2arglist(iP.Unmatched);
 if isnum(x)
     if ignoreNan
         % Remove NaNs from the data
-        x = x(~isnan(x));
+        x = remove_empty(x);
     elseif treatNanAsEqual
         % Decide if there is an NaN
         if any(isnan(x))
             % Remove NaNs from the data
-            x = x(~isnan(x));
+            x = remove_empty(x);
 
             % Place one at the end
             if iscolumn(x)

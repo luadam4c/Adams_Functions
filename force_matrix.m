@@ -76,6 +76,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/create_indices.m
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/detect_spikes_current_clamp.m
+%       cd/extract_elements.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
 %       cd/force_data_as_matrix.m

@@ -210,6 +210,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 % 2020-06-26 Added 'indices' as the second output
 % 2020-07-24 Fixed 'ForceCellOutput' for 'indices'
 % 2021-05-23 Added 'ForceInRange' as an optional argument
+% 2025-08-23 Now uses isscalar and fixed bug
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -598,11 +599,8 @@ case {'leftAdjust', 'rightAdjust', 'leftAdjustPad', 'rightAdjustPad'}
     uniqueNSamples = apply_iteratively(@unique_custom, nSamples, ...
                                         'IgnoreNaN', true);
 
-    % Get the number of unique nSamples
-    nUniqueNSamples = numel(uniqueNSamples);
-
     % If nSamples are all equal, do nothing
-    if isscalar(nUniqueNSamples)
+    if isscalar(uniqueNSamples)
         return
     end
 case 'none'

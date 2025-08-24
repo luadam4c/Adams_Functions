@@ -1,5 +1,5 @@
 function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
-%% Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max')
+%% Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max', 'all')
 % Usage: [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Explanation:
 %       TODO
@@ -13,13 +13,15 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'center')
 %       extract_elements({[3; 5], []; [], [1, 2]}, 'specific', 'Index', 1)
 %       extract_elements([2, 3], 'first')
+%       [elements, idxElement] = extract_elements({[1 2 3], [10 20], [100 200 300]}, 'all')
+%       % ans{1} = [1 10 100]; ans{2} = [2 20 200]; ans{3} = [3 300]
 %
 % Outputs:
 %       elements    - element(s) from each vector extracted
-%                   specified as a numeric vector 
+%                   specified as a numeric vector
 %                       or a cell array of column numeric vectors
 %       idxElement  - indices(s) of elements extracted
-%                   specified as a numeric vector 
+%                   specified as a numeric vector
 %                       or a cell array of column numeric vectors
 %
 % Arguments:
@@ -27,18 +29,19 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                   must be a numeric array or a cell array
 %       extractMode - mode of extraction
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'first' - first element of each vector
-%                       'last'  - last element of each vector
-%                       'center'- center element of each vector
-%                       'min'   - minimum-valued element of each vector
-%                       'max'   - maximum-valued element of each vector
-%                       'maxabs'- maximum-absolute-valued element
+%                       'first'     - first element of each vector
+%                       'last'      - last element of each vector
+%                       'center'    - center element of each vector
+%                       'min'       - minimum-valued element of each vector
+%                       'max'       - maximum-valued element of each vector
+%                       'maxabs'    - maximum-absolute-valued element
 %                       'firstdiff' - first difference of each vector
 %                       'specific'  - at a a specific index
+%                       'all'       - all elements by column
 %       varargin    - 'Index': index of the element from each vector
 %                   must be a positive numeric vector
 %                   default == []
-%                   - 'ReturnNan': Return NaN instead of empty 
+%                   - 'ReturnNan': Return NaN instead of empty
 %                                       if nothing to extract
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -47,12 +50,15 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/array_fun.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/force_column_cell.m
 %       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/isaninteger.m
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_dimensions.m
 %       cd/match_format_vector_sets.m
+%       cd/remove_empty.m
 %
 % Used by:
 %       cd/adjust_edges.m
@@ -80,6 +86,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/plot_repetitive_protocols.m
 %       cd/select_similar_values.m
 %       cd/update_figure_for_corel.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu
@@ -96,18 +103,18 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
 %           and use extract_subvectors.m
-% 
+% 2025-08-23 Added 'all' mode to extract elements by column.
 
 %% Hard-coded parameters
 validExtractModes = {'first', 'last', 'center', 'min', 'max', 'maxabs', ...
-                        'firstdiff', 'specific'};
+                        'firstdiff', 'specific', 'all'};
 
 % TODO: Add as optional argument
 treatCellAsArray = false;   % TODO: Not working yet. UniformOutput might need to be set according to this
 
 %% Default values for optional arguments
 indexDefault = [];
-returnNanDefault = true;    % whether to return NaN instead of empty 
+returnNanDefault = true;    % whether to return NaN instead of empty
                             %   if nothing to extract by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,6 +150,69 @@ extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
 switch extractMode
+case 'all'
+    % This mode only works for cell arrays of vectors
+    if ~iscell(vecs)
+        error('The ''all'' extractMode only supports cell array inputs.');
+    end
+
+    % Determine which algorithm to use
+    % Check if the script force_matrix.m exists in path
+    if exist('force_matrix.m', 'file') == 2
+        % Use custom method
+
+        % First force all vectors as columns in a matrix padded by NaNs or
+        %  empty cells
+        matrix = force_matrix(vecs, 'AlignMethod', 'leftAdjustPad');
+
+        % Then transpose the matrix
+        matrixTransposed = matrix';
+
+        % Then extract each column as a cell array of vectors
+        elementsWithEmpty = force_column_cell(matrixTransposed);
+
+        % Remove empty
+        elements = cellfun(@remove_empty, elementsWithEmpty, 'UniformOutput', false);
+
+        % Set indices
+        idxElement = (1:numel(elements))';
+    else
+        % Use Gemini-generated method
+
+        % Find the length of the longest vector in the input cell array
+        vectorLengths = cellfun(@numel, vecs);
+        if isempty(vectorLengths)
+            maxLength = 0;
+        else
+            maxLength = max(vectorLengths);
+        end
+    
+        % Pre-allocate the output cell arrays for performance
+        elements = cell(1, maxLength);
+        idxElement = cell(1, maxLength);
+    
+        % Iterate through each "column" index, from 1 to the max length
+        for i = 1:maxLength
+            % For each column, build a new vector of elements and their indices
+            currentElements = [];
+            currentIndices = [];
+    
+            % Iterate through each of the original vectors
+            for j = 1:numel(vecs)
+                % Check if the current vector has an element at index 'i'
+                if numel(vecs{j}) >= i
+                    % If it does, append the element and its index
+                    currentElements(end + 1) = vecs{j}(i);
+                    currentIndices(end + 1) = i;
+                end
+            end
+    
+            % Assign the newly created vectors to the output cell arrays
+            elements{i} = currentElements;
+            idxElement{i} = currentIndices;
+        end
+    end
+
 case {'first', 'last', 'center', 'min', 'max', 'maxabs', 'firstdiff'}
     % Extract from a position
     if iscellnumericvector(vecs) && ~treatCellAsArray
