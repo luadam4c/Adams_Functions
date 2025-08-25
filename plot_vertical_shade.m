@@ -11,6 +11,7 @@ function h = plot_vertical_shade (varargin)
 %       plot_vertical_shade([1, 2; 3, 4; 5, 6], 'Color', 'Blue')
 %       plot_vertical_shade([1, 2], 'Color', 'Blue')
 %       plot_vertical_shade({[10, 20], [30, 40]})
+%       plot_vertical_shade({[10, 20], [30, 40]}, 1, 2)
 %       plot_vertical_shade([1, 2], 'HorizontalInstead', true)
 %
 % Outputs:
@@ -47,6 +48,7 @@ function h = plot_vertical_shade (varargin)
 %       cd/decide_on_colormap.m
 %       cd/force_column_cell.m
 %       cd/islinestyle.m
+%       cd/match_format_vectors.m
 %       cd/match_format_vector_sets.m
 %       cd/set_default_flag.m
 %       cd/struct2arglist.m
@@ -63,6 +65,8 @@ function h = plot_vertical_shade (varargin)
 % 2019-08-27 Created by Adam Lu
 % 2019-08-30 Now accepts cell arrays as inputs
 % 2019-08-30 Now accepts a 2 x n or n x 2 arrays as input
+% 2025-08-24 Updated conditional use of uistack
+% 2025-08-24 Fixed bug for the case plot_vertical_shade({[10, 20], [30, 40]}, 1, 2)
 % 
 
 %% Hard-coded parameters
@@ -152,6 +156,10 @@ if nYLows > 1 && nYHighs > 1 && nYLows ~= nYHighs
     return
 end
 
+% Match formats of vectors
+[x, yLow] = match_format_vectors(x, yLow);
+[x, yHigh] = match_format_vectors(x, yHigh);
+
 % Compute number of x values to plot
 nXToPlot = max([nXs, nYLows, nYHighs]);
 
@@ -213,8 +221,15 @@ if ~wasHold
     hold off
 end
 
-% Move it to the bottom of the figure stack
-uistack(h, 'bottom');
+% Get the current axes handle
+ax = gca;
+
+% Only call uistack if yyaxis is NOT active (i.e., there is only one Y-axis)
+% This prevents the "permutation of itself" error.
+if isscalar(ax.YAxis)
+    % Move it to the bottom of the figure stack
+    uistack(h, 'bottom');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
