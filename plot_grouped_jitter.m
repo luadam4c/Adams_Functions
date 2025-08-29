@@ -108,6 +108,7 @@ function handles = plot_grouped_jitter (data, varargin)
 %       ~/Adams_Functions/hold_on.m
 %       ~/Adams_Functions/hold_off.m
 %       ~/Adams_Functions/locate_functionsdir.m
+%       ~/Adams_Functions/plot_test_result.m
 %       ~/Adams_Functions/struct2arglist.m
 %       ~/Adams_Functions/test_normality.m
 %       ~/Downloaded_Functions/plotSpread/plotSpread.m
