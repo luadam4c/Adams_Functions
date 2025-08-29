@@ -51,6 +51,9 @@ function testResults = test_var_difference (dataTable, measureVars, groupingVar,
 %                   - 'OutFolder': directory to place spreadsheet file
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'AlphaTest': significance level for tests
+%                   must be a numeric scalar between 0 and 1
+%                   default == 0.05
 %                   - Any other parameter-value pair for 
 %                       the test_difference() function
 %
@@ -75,6 +78,7 @@ function testResults = test_var_difference (dataTable, measureVars, groupingVar,
 % 2019-10-12 Now uses test_normality.m
 % 2020-02-14 Now uses unique_groups.m
 % 2020-02-14 Pulled out test_difference.m
+% 2025-08-28 Fixed by Gemini by adding AlphaTest as an optional argument
 % TODO: IsPaired, especially for more than one grouping variables
 % 
 
@@ -87,8 +91,9 @@ histStyle = 'overlapped';
 
 %% Default values for optional arguments
 sheetNameDefault = '';
-prefixDefault = '';   	% prepend nothing to file names by default
+prefixDefault = '';     % prepend nothing to file names by default
 outFolderDefault = '';
+alphaTestDefault = 0.05;    % default significance level for tests
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -121,13 +126,16 @@ addParameter(iP, 'SheetName', sheetNameDefault, ...
 addParameter(iP, 'Prefix', prefixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'AlphaTest', alphaTestDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
 
 % Read from the Input Parser
 parse(iP, dataTable, measureVars, groupingVar, varargin{:});
 sheetName = iP.Results.SheetName;
 prefix = iP.Results.Prefix;
 outFolder = iP.Results.OutFolder;
+alphaTest = iP.Results.AlphaTest;
 
 % Keep unmatched arguments for the test_difference() function
 otherArguments = iP.Unmatched;
@@ -147,7 +155,7 @@ measureVars = force_column_cell(measureVars);
 measureData = cellfun(@(x) dataTable{:, x}, ...
                         measureVars, 'UniformOutput', false);
 
-% Creat full path to spreadsheet file if requested
+% Create full path to spreadsheet file if requested
 if ~isempty(sheetName)
     sheetName = construct_fullpath(sheetName, 'Directory', outFolder);
 end
@@ -157,6 +165,11 @@ prefix = force_string_end(prefix, '_', 'OnlyIfNonempty', true);
 
 %% Perform the appropriate comparison test
 if nParams == 1
+    % Pass AlphaTest to the subfunction if it wasn't provided directly
+    if ~isfield(otherArguments, 'AlphaTest')
+        otherArguments.AlphaTest = alphaTest;
+    end
+    
     % Perform t test, rank sum test or ANOVA
     statsStructs = cellfun(@(a) test_difference(a, grouping, ...
                             otherArguments), measureData);

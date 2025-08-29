@@ -15,6 +15,7 @@ function nSamples = count_samples (vectors, varargin)
 %       count_samples(repmat({repmat({'sdf'}, 3, 1)}, 3, 1))
 %       count_samples(repmat({1:3}, 3, 4))
 %       count_samples(repmat({1:3}, 3, 4), 'TreatCellNumAsArray', true)
+%       count_samples(repmat({1:3}, 3, 4), 'CountMethod', 'numel')
 %       count_samples(repmat({'sdf'}, 3, 4))
 %       count_samples(repmat({'sdf'}, 3, 4), 'TreatCellStrAsArray', false)
 %
@@ -110,6 +111,8 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-23 Now maintains uniform output if possible
 % 2019-04-24 Added 'CountMethod' as an optional argument
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
+% 2025-08-28 No longer uses parpool to count samples
+% 2025-08-28 Force Column Output now ignores nonvector arrays
 % 
 
 %% Hard-coded parameters
@@ -184,7 +187,8 @@ elseif iscell(vectors) && ~treatCellAsArray && ...
                             'TreatCellNumAsArray', treatCellNumAsArray, ...
                             'TreatCellStrAsArray', treatCellStrAsArray, ...
                             'CountMethod', countMethod), ...
-                            vectors, 'UniformOutput', true);
+                            vectors, 'UniformOutput', true, ...
+                            'UseParpool', false);
     catch
         nSamples = array_fun(@(x) count_samples(x, ...
                             'ForceColumnOutput', forceColumnOutput, ...
@@ -192,7 +196,8 @@ elseif iscell(vectors) && ~treatCellAsArray && ...
                             'TreatCellNumAsArray', treatCellNumAsArray, ...
                             'TreatCellStrAsArray', treatCellStrAsArray, ...
                             'CountMethod', countMethod), ...
-                            vectors, 'UniformOutput', false);
+                            vectors, 'UniformOutput', false, ...
+                            'UseParpool', false);
     end
 else
     % Either a non-cell array or a cell array treated as an array
@@ -249,7 +254,7 @@ end
 
 % Force nSamples to be a column vector unless requested not to
 if forceColumnOutput
-    nSamples = force_column_vector(nSamples);
+    nSamples = force_column_vector(nSamples, 'IgnoreNonVectors', true);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

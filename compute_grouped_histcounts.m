@@ -66,6 +66,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 % 2020-07-23 Now makes sure stats and grouping vectors have
 %               the same number of elements
 % 2020-07-23 Now updates stats from create_default_grouping.m
+% 2025-08-28 Now uses 'ForceVectorOutput', true in create_default_grouping.m to simplify code
 
 %% Hard-coded parameters
 
@@ -116,26 +117,18 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the grouping vector
+%   TODO: Check if can use 'ForceVectorOutput', true to simplify code
 [grouping, uniqueGroupValues, ~, stats] = ...
-    create_default_grouping('Stats', stats, 'Grouping', grouping);
-
-% Count the number of groups
-nGroups = numel(uniqueGroupValues);
-
-% Force non-vectors as cell arrays of numeric vectors
-[stats, grouping] = ...
-    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
-            stats, grouping);
-
-% If stats and grouping are cell arrays of numeric vectors, pool them
-if iscellnumeric(stats) && iscellnumeric(grouping)
-    [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
-end
+    create_default_grouping('Stats', stats, 'Grouping', grouping, ...
+                            'ForceVectorOutput', true);
 
 % Make sure stats and grouping vectors have the same number of elements
 if numel(stats) ~= numel(grouping)
     error('stats and grouping does not have the same number of elements!');
 end
+
+% Count the number of groups
+nGroups = numel(uniqueGroupValues);
 
 %% Break up stats into a cell array of vectors
 statsCell = arrayfun(@(x) stats(grouping == uniqueGroupValues(x)), ...
@@ -191,6 +184,16 @@ end
 
 %{
 OLD CODE:
+
+% Force non-vectors as cell arrays of numeric vectors
+[stats, grouping] = ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
+            stats, grouping);
+
+% If stats and grouping are cell arrays of numeric vectors, pool them
+if iscellnumeric(stats) && iscellnumeric(grouping)
+    [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
+end
 
 %}
 

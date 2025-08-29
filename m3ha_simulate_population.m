@@ -1451,7 +1451,8 @@ switch plotType
 
         % Plot groups as a grouped jitter plot
         handles = plot_grouped_jitter(logOpdGroups, 'XTickLabels', xTickLabels, ...
-                            'YLabel', logOpdLabel, 'GroupingLabels', cellLabels);
+                            'YLabel', logOpdLabel, 'GroupingLabels', cellLabels, ...
+                            'UsePlotSpread', true);
     case 'scatter'
         % Add to path base
         pathBase = [pathBase, '_vs_concavity'];

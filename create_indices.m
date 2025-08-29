@@ -147,6 +147,7 @@ function indices = create_indices (varargin)
 % 2020-05-13 Now makes create_indices([NaN; NaN], 'Vectors', vecs) 
 %               to be full index range
 % 2020-08-11 Added forceInRange as an optional argument
+% 2025-08-28 Fixed usage of match_format_vectors to ignore nonvectors
 % TODO: Added 'spanboth', 'spanleft' and 'spanright' as align methods
 % TODO: Use argument 'ForcePositive' as false where necessary
 
@@ -367,7 +368,8 @@ function indices = create_indices_helper (idxStart, idxEnd, maxNum, ...
                                             forcePositive, alignMethod)
 
 % Match idxStart and idxEnd
-[idxStart, idxEnd] = match_format_vectors(idxStart, idxEnd);
+[idxStart, idxEnd] = match_format_vectors(idxStart, idxEnd, ...
+                                'IgnoreNonvectors', true);
 
 % Construct vectors of indices
 if numel(idxStart) == 1 && numel(idxEnd) == 1

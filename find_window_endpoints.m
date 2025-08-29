@@ -19,6 +19,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       endPoints10 = find_window_endpoints({[], [2.5; 3.5]}, 0:6)
 %       endPoints11 = find_window_endpoints([0.5, 1.5; 2.5, 3.5], [(0:6)', (1:7)'])
 %       endPoints12 = find_window_endpoints([3.5, 1.5], 5:-1:1, 'BoundaryMode', 'inclusive')
+%       endPoints8 = find_window_endpoints({[0.5, 1.5], [2.5; 3.5]})
 %
 % Outputs:
 %       endPoints   - index(ices) of window endpoints

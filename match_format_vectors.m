@@ -18,6 +18,9 @@ function varargout = match_format_vectors (varargin)
 %
 % Arguments:
 %       varargin    - vectors to be matched
+%                   - 'IgnoreNonVectors': whether to ignore non-vectors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'RowInstead': whether to force as row vector instead
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -44,8 +47,11 @@ function varargout = match_format_vectors (varargin)
 
 % File History:
 % 2018-12-16 Created by Adam Lu
+% 2025-08-28 Added 'IgnoreNonvectors' as an optional argument with default 'false'
+% 
 
 %% Default values for optional arguments
+ignoreNonvectorsDefault = false;    % don't ignore non-vectors by default
 rowInsteadDefault = false;      % whether to force as row vector instead
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -58,17 +64,33 @@ if nargin < nargout
 end
 
 %% Preparation
-% % Look for 'RowInstead' in the argument list
-[params, varargin] = extract_parameter_value_pairs(varargin);
-if ~isempty(params)
-    rowInstead = first_matching_field(params, {'RowInstead', 'rowInstead'});
+% Remove any parameter-value pairs
+[params, inputList] = extract_parameter_value_pairs(varargin);
 
+% Deal with parameter-value pairs for this function
+% TODO: Create and use parse_and_remove_from_struct.m
+if ~isempty(params)
+    [ignoreNonvectors, fieldName] = first_matching_field(params, {'IgnoreNonvectors', 'ignoreNonvectors'});
+    params = rmfield_custom(params, fieldName);
+    if isempty(ignoreNonvectors)
+        ignoreNonvectors = ignoreNonvectorsDefault;
+    end
+else
+    ignoreNonvectors = ignoreNonvectorsDefault;
+end
+
+if ~isempty(params)
+    [rowInstead, fieldName] = first_matching_field(params, {'RowInstead', 'rowInstead'});
+    params = rmfield_custom(params, fieldName);
     if isempty(rowInstead)
         rowInstead = rowInsteadDefault;
     end
 else
     rowInstead = rowInsteadDefault;
 end
+
+% Keep unmatched arguments for the match_row_count() function
+otherArguments = struct2arglist(params);
 
 % Decide on the dimension to match
 if rowInstead
@@ -81,15 +103,15 @@ end
 % Force as column vectors
 vararginTransformed = ...
     cellfun(@(x) force_column_vector(x, 'RowInstead', rowInstead, ...
-                                    'IgnoreNonvectors', false), ...
-            varargin, 'UniformOutput', false);
+                                    'IgnoreNonvectors', ignoreNonvectors), ...
+            inputList, 'UniformOutput', false);
 
 % Compute the maximum number of values over all vectors
 maxNValues = compute_maximum_numel(vararginTransformed);
 
 % Match the number of rows to maxNValues for each vector
 varargout = cellfun(@(x) match_row_count(x, maxNValues, ...
-                                        'DimToMatch', dimToMatch), ...
+                            'DimToMatch', dimToMatch, otherArguments{:}), ...
                     vararginTransformed, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1861,7 +1861,8 @@ uniqueGroupLabels = convert_to_char(uniqueGroupValues);
 % Plot groups as a grouped jitter plot
 jitters = plot_grouped_jitter(allValues, 'XTickLabels', pharmLabels, ...
                         'XTickAngle', xTickAngle, 'YLabel', measureTitle, ...
-                        'GroupingLabels', uniqueGroupLabels, otherArguments);
+                        'GroupingLabels', uniqueGroupLabels, otherArguments, ...
+                        'UsePlotSpread', true);
 
 % Create title
 title(figTitle);

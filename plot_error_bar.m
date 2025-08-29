@@ -32,16 +32,16 @@ function lines = plot_error_bar (pValue, rLow, rHigh, varargin)
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
-%       cd/argfun.m
-%       cd/create_error_for_nargin.m
-%       cd/force_column_vector.m
-%       cd/plot_vertical_line.m
-%       cd/plot_horizontal_line.m
-%       cd/struct2arglist.m
+%       ~/Adams_Functions/argfun.m
+%       ~/Adams_Functions/create_error_for_nargin.m
+%       ~/Adams_Functions/force_column_vector.m
+%       ~/Adams_Functions/plot_vertical_line.m
+%       ~/Adams_Functions/plot_horizontal_line.m
+%       ~/Adams_Functions/struct2arglist.m
 %
 % Used by:
-%       cd/plot_bar.m
-%       cd/plot_chevron.m
+%       ~/Adams_Functions/plot_bar.m
+%       ~/Adams_Functions/plot_chevron.m
 
 % File History:
 % 2019-01-24 Created by Adam and Katerina

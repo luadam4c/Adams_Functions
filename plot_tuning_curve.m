@@ -19,6 +19,9 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       plot_tuning_curve(pValues, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
 %       plot_tuning_curve(pValues, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
 %
+%       plot_tuning_curve((1:3)', [rand(1, 10); 2*rand(1, 10); 5*rand(1, 10)]);
+%       plot_tuning_curve((1:3)', [rand(1, 10); 2*rand(1, 10); 5*rand(1, 10)], 'RunTTest', true, 'RunRankTest', true);
+%       plot_tuning_curve((1:3)', [randn(1, 10); 5 + randn(1, 10); 4 + randn(1, 10)], 'RunTTest', true, 'RunRankTest', true);
 %       plot_tuning_curve(1:5, 2:6);
 %       plot_tuning_curve(1:20, 20:-1:1, 'ColorMap', @lines);
 %       plot_tuning_curve(1:100, randi(100, 1, 100), 'ColorMap', @parula);
@@ -235,48 +238,49 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
-%       cd/argfun.m
-%       cd/cell2num.m
-%       cd/count_samples.m
-%       cd/create_error_for_nargin.m
-%       cd/create_labels_from_numbers.m
-%       cd/decide_on_colormap.m
-%       cd/extract_fileparts.m
-%       cd/fill_markers.m
-%       cd/force_matrix.m
-%       cd/force_row_vector.m
-%       cd/hold_off.m
-%       cd/hold_on.m
-%       cd/isfigtype.m
-%       cd/islegendlocation.m
-%       cd/islog2scale.m
-%       cd/match_column_count.m
-%       cd/parse_phase_info.m
-%       cd/plot_horizontal_line.m
-%       cd/plot_selected.m
-%       cd/plot_vertical_line.m
-%       cd/plot_window_boundaries.m
-%       cd/remove_outliers.m
-%       cd/save_all_figtypes.m
-%       cd/set_axes_properties.m
-%       cd/set_default_flag.m
-%       cd/set_figure_properties.m
-%       cd/test_normality.m
-%       cd/unique_custom.m
-%       cd/union_over_cells.m
-%       cd/update_figure_for_corel.m
+%       ~/Adams_Functions/argfun.m
+%       ~/Adams_Functions/cell2num.m
+%       ~/Adams_Functions/count_samples.m
+%       ~/Adams_Functions/create_error_for_nargin.m
+%       ~/Adams_Functions/create_labels_from_numbers.m
+%       ~/Adams_Functions/decide_on_colormap.m
+%       ~/Adams_Functions/extract_fileparts.m
+%       ~/Adams_Functions/fill_markers.m
+%       ~/Adams_Functions/force_matrix.m
+%       ~/Adams_Functions/force_row_vector.m
+%       ~/Adams_Functions/hold_off.m
+%       ~/Adams_Functions/hold_on.m
+%       ~/Adams_Functions/isfigtype.m
+%       ~/Adams_Functions/islegendlocation.m
+%       ~/Adams_Functions/islog2scale.m
+%       ~/Adams_Functions/match_column_count.m
+%       ~/Adams_Functions/parse_phase_info.m
+%       ~/Adams_Functions/plot_horizontal_line.m
+%       ~/Adams_Functions/plot_selected.m
+%       ~/Adams_Functions/plot_test_result.m
+%       ~/Adams_Functions/plot_vertical_line.m
+%       ~/Adams_Functions/plot_window_boundaries.m
+%       ~/Adams_Functions/remove_outliers.m
+%       ~/Adams_Functions/save_all_figtypes.m
+%       ~/Adams_Functions/set_axes_properties.m
+%       ~/Adams_Functions/set_default_flag.m
+%       ~/Adams_Functions/set_figure_properties.m
+%       ~/Adams_Functions/test_normality.m
+%       ~/Adams_Functions/unique_custom.m
+%       ~/Adams_Functions/union_over_cells.m
+%       ~/Adams_Functions/update_figure_for_corel.m
 %
 % Used by:
-%       cd/m3ha_network_tuning_curves.m
-%       cd/m3ha_plot_figure08.m
-%       cd/parse_current_family.m
-%       cd/plot_calcium_imaging_traces.m
-%       cd/plot_chevron.m
-%       cd/plot_table_parallel.m
-%       cd/plot_measures.m
-%       cd/plot_struct.m
-%       cd/plot_traces.m
-%       cd/plot_table.m
+%       ~/Adams_Functions/m3ha_network_tuning_curves.m
+%       ~/Adams_Functions/m3ha_plot_figure08.m
+%       ~/Adams_Functions/parse_current_family.m
+%       ~/Adams_Functions/plot_calcium_imaging_traces.m
+%       ~/Adams_Functions/plot_chevron.m
+%       ~/Adams_Functions/plot_table_parallel.m
+%       ~/Adams_Functions/plot_measures.m
+%       ~/Adams_Functions/plot_struct.m
+%       ~/Adams_Functions/plot_traces.m
+%       ~/Adams_Functions/plot_table.m
 %       ~/Matts_Functions/contour_plot.m
 %       ~/Marks_Functions/Adam/CLC2/markCLC2figures.m
 %       ~/Marks_Functions/Katie/twoDGtimeSeries.m
@@ -325,6 +329,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-12-23 Added 'ReadoutIsLog' as an optional argument
 % 2020-02-17 Added normality tests
 % 2020-02-19 Added 'PlotForCorel' as an optional argument
+% 2025-08-29 Updated to use plot_test_result.m by Gemini
 % TODO: Allow inputs to be cell arrays (use force_matrix.m)
 % TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
@@ -760,7 +765,7 @@ else
     pValuesToPlot = pValues;
 end
 
-% Run paired t-tests if requested
+% Decide on whether parametric or nonparametric tests are more appropriate
 if (runTTest || runRankTest)
     if size(readout, 1) > 1
         % Transpose the readout matrix
@@ -776,7 +781,10 @@ if (runTTest || runRankTest)
         diffData = afters - befores;
 
         % Test whether each pair of differences is normally-distributed
-        isNormal = test_normality(diffData);
+        isNormal = ...
+            arrayfun(@(x) test_normality(diffData(:, x), ...
+                                'SigLevel', sigLevel), ...
+                    1:size(afters, 2));
     else
         disp('Difference test can''t be conducted for less than 2 groups!');
         runTTest = false;
@@ -787,7 +795,11 @@ end
 % Run paired t-tests if requested
 if runTTest
     % Run t-tests on each pair of columns
-    [~, tTestPValues] = ttest(afters, befores, 'Alpha', sigLevel);
+    % TODO: Make a function vecfun.m
+    [~, tTestPValues] = ...
+        arrayfun(@(x) ttest(afters(:, x), befores(:, x), ...
+                                'Alpha', sigLevel), ...
+                    1:size(afters, 2));
 else
     tTestPValues = [];
 end
@@ -1204,20 +1216,27 @@ if plotAverageWindows && ~isempty(averageWindows)
                 transpose(1:maxNPhases), 'UniformOutput', false);
 end
 
+% Decide on the x locations for the test results
+if ~isempty(tTestPValues) || ~isempty(rankTestPValues)
+    xIntervals = diff(pValuesAll);
+    xLocText = pValuesAll(1:end-1) + xIntervals .* testXLocRel;
+    xLocStar = pValuesAll(1:end-1) + xIntervals .* starXLocRel;
+end
+
 % Plot t-test p values if any
 if ~isempty(tTestPValues)
-    plot_test_result(tTestPValues, tTestPString, ...
-                    tTestYLocText, tTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValuesAll, ...
-                    sigLevel, isNormal);
+    plot_test_result(tTestPValues, 'PString', tTestPString, ...
+                    'YLocTextRel', tTestYLocText, 'YLocStarRel', tTestYLocStar, ...
+                    'XLocText', xLocText, 'XLocStar', xLocStar, ...
+                    'SigLevel', sigLevel, 'IsAppropriate', isNormal);
 end
 
 % Plot rank test p values if any
 if ~isempty(rankTestPValues)
-    plot_test_result(rankTestPValues, rankTestPString, ...
-                    rankTestYLocText, rankTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValuesAll, ...
-                    sigLevel, ~isNormal);
+    plot_test_result(rankTestPValues, 'PString', rankTestPString, ...
+                    'YLocTextRel', rankTestYLocText, 'YLocStarRel', rankTestYLocStar, ...
+                    'XLocText', xLocText, 'XLocStar', xLocStar, ...
+                    'SigLevel', sigLevel, 'IsAppropriate', ~isNormal);
 end
 
 % Hold off
@@ -1296,61 +1315,6 @@ function indices = add_next_index(indices, lastIndex)
 
 if indices(end) < lastIndex
     indices = [indices; indices(end) + 1];
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function plot_test_result (testPValues, pString, yLocTextRel, yLocStarRel, ...
-                            xLocTextRel, xLocStarRel, pValuesAll, ...
-                            sigLevel, isAppropriate)
-%% Plots p values and star if significant
-
-% Decide on the x locations
-xLocsText = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocTextRel;
-xLocsStar = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocStarRel;
-
-% Get current y axis limits
-yLimitsNow = get(gca, 'YLim');
-
-% Decide on the y location for texts
-yLocText = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocTextRel;
-
-% Decide on the y location for stars
-yLocStar = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocStarRel;
-
-% Plot texts
-for iValue =  1:numel(testPValues)
-    % Get the current values
-    testPValueThis = testPValues(iValue);
-    xLocTextThis = xLocsText(iValue);
-    xLocStarThis = xLocsStar(iValue);
-    isAppropriateThis = isAppropriate(iValue);
-
-    % Create a p value string to 2 significant digits
-    pValueString = [pString, ' = ', num2str(testPValueThis, 2)];
-
-    % Plot gray if inappropriate, red if significant
-    if ~isAppropriateThis
-        pColor = [0.5, 0.5, 0.5];       % rgb('Gray')
-    elseif testPValueThis < sigLevel
-        pColor = 'r';
-    else
-        pColor = 'k';
-    end
-
-    % Plot text
-    % TODO: Make function plot_text.m
-    text(xLocTextThis, yLocText, pValueString, 'Color', pColor, ...
-            'HorizontalAlignment', 'center');
-
-    % Plot star if significant, 'NS' if not
-    if testPValueThis < sigLevel
-        plot(xLocStarThis, yLocStar, '*', 'Color', [0, 0, 0], ...
-            'MarkerSize', 4);
-    else
-        text(xLocStarThis, yLocStar, 'NS', 'Color', [0, 0, 0], ...
-            'HorizontalAlignment', 'center');
-    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1531,6 +1495,59 @@ end
 %% Hard-coded constants
 WHITE = [1, 1, 1];
 confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
+
+function plot_test_result (testPValues, pString, yLocTextRel, yLocStarRel, ...
+                            xLocTextRel, xLocStarRel, pValuesAll, ...
+                            sigLevel, isAppropriate)
+%% Plots p values and star if significant
+
+% Decide on the x locations
+xLocText = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocTextRel;
+xLocStar = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocStarRel;
+
+% Get current y axis limits
+yLimitsNow = get(gca, 'YLim');
+
+% Decide on the y location for texts
+yLocText = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocTextRel;
+
+% Decide on the y location for stars
+yLocStar = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocStarRel;
+
+% Plot texts
+for iValue =  1:numel(testPValues)
+    % Get the current values
+    testPValueThis = testPValues(iValue);
+    xLocTextThis = xLocText(iValue);
+    xLocStarThis = xLocStar(iValue);
+    isAppropriateThis = isAppropriate(iValue);
+
+    % Create a p value string to 2 significant digits
+    pValueString = [pString, ' = ', num2str(testPValueThis, 2)];
+
+    % Plot gray if inappropriate, red if significant
+    if ~isAppropriateThis
+        pColor = [0.5, 0.5, 0.5];       % rgb('Gray')
+    elseif testPValueThis < sigLevel
+        pColor = 'r';
+    else
+        pColor = 'k';
+    end
+
+    % Plot text
+    % TODO: Make function plot_text.m
+    text(xLocTextThis, yLocText, pValueString, 'Color', pColor, ...
+            'HorizontalAlignment', 'center');
+
+    % Plot star if significant, 'NS' if not
+    if testPValueThis < sigLevel
+        plot(xLocStarThis, yLocStar, '*', 'Color', [0, 0, 0], ...
+            'MarkerSize', 4);
+    else
+        text(xLocStarThis, yLocStar, 'NS', 'Color', [0, 0, 0], ...
+            'HorizontalAlignment', 'center');
+    end
+end
 
 %}
 

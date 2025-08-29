@@ -18,11 +18,14 @@ function varargout = array_fun (myFunc, varargin)
 %       myFunc      - function to apply over cells or arrays
 %                   must be a function handle
 %       varargin    - 2nd to last arguments to cellfun or arrayfun
+%                   - 'UseParpool': whether to use parallel parpool 
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'RenewParpool': whether to renew parallel parpool 
 %                                       every batch to release memory
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%
+%                   
 % Requires:
 %       cd/cleanup_parcluster.m
 %       cd/create_error_for_nargin.m
@@ -71,12 +74,18 @@ function varargout = array_fun (myFunc, varargin)
 % 2020-03-09 Added RenewParpool as an optional argument
 % 2020-04-26 Fixed bug when nArgOut is 0
 % 2020-05-16 Fixed concatenation using parfor when uniform output
+% 2025-08-25 Added 'UseParpool' as an optional argument with default true
+% TODO: Fix UseParpool to work with 2D cell arrays
 % TODO: Convert all arguments to a cell array (with num2cell) 
 %       if any argument is a cell array
 
 %% Hard-coded parameters
 minItemsForParfor = 12;
 maxNumWorkers = 12;
+
+%% Default values for optional arguments
+useParpoolDefault = true;       % use parpool by default
+renewParpoolDefault = false;    % do not renew parpool by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -106,12 +115,19 @@ nArgOut = nargout;
 [params, inputList] = extract_parameter_value_pairs(varargin);
 
 % Deal with parameter-value pairs for this function
-% TODO: Use parse_and_remove_from_struct.m
+% TODO: Create and use parse_and_remove_from_struct.m
+if isfield(params, 'UseParpool')
+    useParpool = params.UseParpool;
+    params = rmfield_custom(params, 'UseParpool');
+else
+    useParpool = useParpoolDefault;
+end
+
 if isfield(params, 'RenewParpool')
     renewParpool = params.RenewParpool;
     params = rmfield_custom(params, 'RenewParpool');
 else
-    renewParpool = false;
+    renewParpool = renewParpoolDefault;
 end
 
 % Count the number of items
@@ -121,7 +137,7 @@ nItems = numel(inputList{1});
 oldDimensions = size(inputList{1});
 
 %% Do the job
-if is_in_parallel || nItems < minItemsForParfor
+if ~useParpool || is_in_parallel || nItems < minItemsForParfor
     % Place parameters in a list
     paramList = struct2arglist(params);
 

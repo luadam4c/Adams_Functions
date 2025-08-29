@@ -8,7 +8,13 @@ function varargout = create_default_grouping (varargin)
 % Example(s):
 %       [v, u, l, s] = create_default_grouping('Stats', magic(3))
 %       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10})
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10}, 'ToLinearize', true)
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10}, 'ForceMatrixOutput', true)
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10}, 'ForceVectorOutput', true)
 %       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4}, 'ToLinearize', true)
+%       TODO: Fix this condition: [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4}, 'ForceMatrixOutput', true)
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4}, 'ForceVectorOutput', true)
 %       [v, u, l, s] = create_default_grouping('Stats', {{1:5}, {1:3, 1:4}})
 %       [v, u, l, s] = create_default_grouping('Counts', magic(3))
 %       [v, u, l, s] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
@@ -18,7 +24,7 @@ function varargout = create_default_grouping (varargin)
 %       uniqueGroupValues   - unique grouping values
 %       groupingLabels      - final group labels
 %       stats               - reorganized stats array 
-%                               that is the same dimesions as grouping
+%                               that is the same dimensions as grouping
 %
 % Arguments:
 %       varargin    - 'Grouping': group assignment for each data point
@@ -31,6 +37,9 @@ function varargout = create_default_grouping (varargin)
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == {'Group #1', 'Group #2', ...}
+%                   - 'GroupingLabelPrefix': prefix for default grouping labels
+%                   must be a character vector or a string scalar
+%                   default == 'Group'
 %                   - 'Stats': data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
@@ -52,6 +61,13 @@ function varargout = create_default_grouping (varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'ToLinearize': whether to linearize a non-vector array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ForceMatrixOutput': whether to force cell array of numeric vectors as matrix output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ForceVectorOutput': whether to force outputs as
+%                                           single vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   
@@ -87,16 +103,21 @@ function varargout = create_default_grouping (varargin)
 % 2020-04-18 Now accepts cell arrays of cell arrays or numeric arrays
 % 2020-04-18 Added 'ToLinearize' as an optional argument
 % 2020-05-14 Fixed infinite loop
+% 2025-08-28 No longer forces as a matrix output by default, 
+%               usage of dependent code may need to be changed
+%            Added 'ForceMatrixOutput' with default false
+% 2025-08-28 Added 'ForceVectorOutput' with default false
+% 2025-08-28 Made groupingLabelPrefix an optional argument
 
 %% Hard-coded parameters
 % TODO: Make these optional arguments
-groupingLabelPrefix = 'Group';
 ignoreEmpty = true;
 useVectorCounts = false;
 
 %% Default values for optional arguments
 groupingDefault = [];           % set later
 groupingLabelsDefault = '';     % set later
+groupingLabelPrefixDefault = 'Group'; % default prefix for grouping labels
 statsDefault = [];              % set later
 countsDefault = [];             % set later
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
@@ -104,6 +125,8 @@ treatCellNumAsArrayDefault = false;
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 toLinearizeDefault = false;     % whether to linearize a nonvector array
+forceMatrixOutputDefault = false; % whether to force as matrix output
+forceVectorOutputDefault = false; % whether to force as vector output
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -123,6 +146,8 @@ addParameter(iP, 'Grouping', groupingDefault, ...
                                 'datetime', 'duration'}, {'2d'}));
 addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'GroupingLabelPrefix', groupingLabelPrefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Stats', statsDefault, ...
     @(x) isnum(x) || iscell(x));
 addParameter(iP, 'Counts', countsDefault, ...
@@ -135,17 +160,24 @@ addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceMatrixOutput', forceMatrixOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceVectorOutput', forceVectorOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 grouping = iP.Results.Grouping;
 groupingLabels = iP.Results.GroupingLabels;
+groupingLabelPrefix = iP.Results.GroupingLabelPrefix;
 stats = iP.Results.Stats;
 counts = iP.Results.Counts;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 toLinearize = iP.Results.ToLinearize;
+forceMatrixOutput = iP.Results.ForceMatrixOutput;
+forceVectorOutput = iP.Results.ForceVectorOutput;
 
 %% Preparation
 % If data and grouping is a cell array of cell arrays, reformat
@@ -174,8 +206,8 @@ if iscell(stats) && iscell(stats{1})
     end
 end
 
-% Force as a matrix if a cell array of numeric vectors
-if iscellnumericvector(stats) || iscellnumericvector(grouping)
+% Force cell array of numeric vectors as a matrix if requested
+if forceMatrixOutput && (iscellnumericvector(stats) || iscellnumericvector(grouping))
     [stats, grouping] = ...
         argfun(@(x) force_matrix(x, 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
@@ -216,7 +248,7 @@ else
     % Do nothing
 end
 
-% Linearize as column vector if requested
+% Linearize non-vector arrays as column vectors if requested
 %   Note: Must do this after default grouping vector creation
 if toLinearize
     [stats, grouping] = ...
@@ -225,6 +257,19 @@ if toLinearize
                                 'TreatCellStrAsArray', treatCellStrAsArray, ...
                                 'ToLinearize', true), ...
                                 stats, grouping);
+end
+
+% Concatenate everything into a single column vector if requested
+if forceVectorOutput
+    % Force non-vectors as cell arrays of numeric vectors
+    [stats, grouping] = ...
+        argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
+                stats, grouping);
+    
+    % If stats and grouping are cell arrays of numeric vectors, pool them
+    if iscellnumeric(stats) && iscellnumeric(grouping)
+        [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
+    end
 end
 
 % Determine unique group values

@@ -30,6 +30,7 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/plot_grouped_jitter.m
 %       cd/plot_tuning_curve.m
 %       cd/test_difference.m
 

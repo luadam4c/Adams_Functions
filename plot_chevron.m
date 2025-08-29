@@ -99,27 +99,27 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   - Any other parameter-value pair for plot_tuning_curve()
 %
 % Requires:
-%       cd/argfun.m
-%       cd/compute_stats.m
-%       cd/create_error_for_nargin.m
-%       cd/create_labels_from_numbers.m
-%       cd/decide_on_colormap.m
-%       cd/extract_fileparts.m
-%       cd/force_data_as_matrix.m
-%       cd/hold_off.m
-%       cd/hold_on.m
-%       cd/plot_error_bar.m
-%       cd/plot_tuning_curve.m
-%       cd/save_all_figtypes.m
-%       cd/set_axes_properties.m
-%       cd/set_figure_properties.m
+%       ~/Adams_Functions/argfun.m
+%       ~/Adams_Functions/compute_stats.m
+%       ~/Adams_Functions/create_error_for_nargin.m
+%       ~/Adams_Functions/create_labels_from_numbers.m
+%       ~/Adams_Functions/decide_on_colormap.m
+%       ~/Adams_Functions/extract_fileparts.m
+%       ~/Adams_Functions/force_data_as_matrix.m
+%       ~/Adams_Functions/hold_off.m
+%       ~/Adams_Functions/hold_on.m
+%       ~/Adams_Functions/plot_error_bar.m
+%       ~/Adams_Functions/plot_tuning_curve.m
+%       ~/Adams_Functions/save_all_figtypes.m
+%       ~/Adams_Functions/set_axes_properties.m
+%       ~/Adams_Functions/set_figure_properties.m
 %
 % Used by:
-%       cd/m3ha_oscillations_analyze.m
-%       cd/metabolismR01_plot_chevrons.m
-%       cd/plot_measures.m
-%       cd/plot_relative_events.m
-%       cd/plot_small_chevrons.m
+%       ~/Adams_Functions/m3ha_oscillations_analyze.m
+%       ~/Adams_Functions/metabolismR01_plot_chevrons.m
+%       ~/Adams_Functions/plot_measures.m
+%       ~/Adams_Functions/plot_relative_events.m
+%       ~/Adams_Functions/plot_small_chevrons.m
 
 % File History:
 % 2019-10-01 Created by Adam Lu
@@ -380,7 +380,7 @@ end
 % Plot error bars if requested
 % TODO: Plot mean circle and error bar without overlap
 if plotErrorBars
-    % Compute the mean, lower and upper confidence interval bounds
+    % Compute the lower and upper confidence interval bounds
     [lower95s, upper95s] = ...
         argfun(@(x) compute_stats(dataValues, x, 'IgnoreNan', true), ...
                 'lower95', 'upper95');
@@ -398,7 +398,7 @@ end
 
 % Plot mean circles if requested
 if plotMeanValues
-    % Compute the mean, lower and upper confidence interval bounds
+    % Compute the means
     means = compute_stats(dataValues, 'mean', 'IgnoreNan', true);
 
     % Hold on
