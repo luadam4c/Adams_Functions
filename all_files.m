@@ -113,6 +113,7 @@ function varargout = all_files (varargin)
 %       cd/plot_traces_EEG.m
 %       cd/read_data_atf.m
 %       cd/update_file_base_in_matfiles.m
+%       cd/virt_analyze_sniff_whisk.m
 %       ~/plethR01/plethR01_analyze.m
 %       ~/FluoroSNNAP/FluroSNNAP.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting63.m

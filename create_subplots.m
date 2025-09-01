@@ -6,6 +6,8 @@ function [fig, ax] = create_subplots (varargin)
 %
 % Example(s):
 %       [fig, ax] = create_subplots(4);
+%       [fig, ax] = create_subplots(2, 2, 'FigExpansion', [0.5, 0.5]);
+%       [fig, ax] = create_subplots(2, 2, 'FigExpansion', [0.5, 0.5], 'TightInset', true);
 %       [fig, ax] = create_subplots(1, 4);
 %       [fig, ax] = create_subplots(1, 1, 'FigNumber', 3);
 %       [fig, ax] = create_subplots(1, 3, 'FigNumber', 4);
@@ -70,6 +72,10 @@ function [fig, ax] = create_subplots (varargin)
 %                                           so that it fits
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'TightInset': whether to remove margins outside axis
+%                                       ticks
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for the subplot() function
 %
 % Requires:
@@ -110,6 +116,7 @@ function [fig, ax] = create_subplots (varargin)
 % 2020-04-19 Made the first argument nPlotsOrNRows 
 % 2020-04-19 Made all arguments optional
 % 2021-05-16 Added 'AdjustPosition' as an optional argument
+% 2025-09-01 Added 'TightInset' as an optional argument with default false
 % TODO: Added 'TransposeOrder' as an optional argument
 
 %% Hard-coded parameters
@@ -131,6 +138,7 @@ clearFigureDefault = true;      % clear figure by default
 alwaysNewDefault = false;       % don't always create new figure by default
 centerPositionDefault = [];     % set later
 adjustPositionDefault = true;   % adjust position to fit window by default
+tightInsetDefault = false;      % remove margins outside labels by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -180,6 +188,8 @@ addParameter(iP, 'CenterPosition', centerPositionDefault, ...
                 'Position must be a empty or a numeric vector!'));
 addParameter(iP, 'AdjustPosition', adjustPositionDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TightInset', tightInsetDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -197,6 +207,7 @@ clearFigure = iP.Results.ClearFigure;
 alwaysNew = iP.Results.AlwaysNew;
 centerPosition = iP.Results.CenterPosition;
 adjustPosition = iP.Results.AdjustPosition;
+tightInset = iP.Results.TightInset;
 
 % Keep unmatched arguments for the subplot() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -277,14 +288,14 @@ end
 
 % Create subplots
 ax = arrayfun(@(x) create_one_subplot(x, gridPositions, ...
-                                        nRows, nColumns, otherArguments), ...
+                                        nRows, nColumns, tightInset, otherArguments), ...
                 transpose(1:nSubPlots));
 
 % If any subplot got deleted, recreate it
 %   Note: For some reason, subplots sometime disappear 
 while any(~isvalid(ax))
     ax = arrayfun(@(x) create_subplot_again(ax(x), x, gridPositions, ...
-                                            nRows, nColumns, otherArguments), ...
+                                            nRows, nColumns, tightInset, otherArguments), ...
                     transpose(1:nSubPlots));
 end
 
@@ -296,7 +307,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function axThis = create_one_subplot (iSubPlot, gridPositions, ...
-                                        nRows, nColumns, otherArguments)
+                        nRows, nColumns, tightInset, otherArguments)
 %% Creates one subplot
 
 % Get the grid positions for this subplot
@@ -327,16 +338,31 @@ axThis = subplot(nRows, nColumns, gridPositionsThis, ...
 % Modify the outer position
 set(axThis, 'OuterPosition', outerPositionThis);
 
+% Remove margins outside labels if requested
+if tightInset
+    % Get the minimum margins required to not clip labels
+    tightInsetThis = get(axThis, 'TightInset');
+
+    % Calculate the new position based on the OuterPosition and the inset
+    newPosition = [outerPositionThis(1) + tightInsetThis(1), ...
+                   outerPositionThis(2) + tightInsetThis(2), ...
+                   outerPositionThis(3) - tightInsetThis(1) - tightInsetThis(3), ...
+                   outerPositionThis(4) - tightInsetThis(2) - tightInsetThis(4)];
+
+    % Set the new, tighter position
+    set(axThis, 'Position', newPosition);
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function axThis = create_subplot_again (axThis, iSubPlot, gridPositions, ...
-                                        nRows, nColumns, otherArguments)
+                                        nRows, nColumns, tightInset, otherArguments)
 %% Creates a subplot again if it is not valid
 
 if ~isvalid(axThis)
     % Recreate and save subplot in array
     axThis = create_one_subplot(iSubPlot, gridPositions, ...
-                                    nRows, nColumns, otherArguments);
+                                    nRows, nColumns, tightInset, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

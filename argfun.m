@@ -120,6 +120,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/test_difference.m
 %       cd/transform_vectors.m
 %       cd/update_figure_for_corel.m
+%       cd/virt_analyze_sniff_whisk.m
 %       cd/write_data_atf.m
 %       cd/xolotl_add_current_injection.m
 

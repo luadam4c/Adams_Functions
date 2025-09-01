@@ -15,6 +15,7 @@ function string = print_cellstr (cellStr, varargin)
 %       print_cellstr({'a', 'b', 'c'}, 'OmitQuotes', true)
 %       print_cellstr({'a', 'b', 'c'}, 'OmitBraces', true)
 %       print_cellstr({'a', 'b', 'c'}, 'OmitNewline', true)
+%       print_cellstr({'a', 'b', 'c'}, 'ToPrint', false, 'OmitQuotes', true, 'OmitBraces', true, 'OmitNewline', true)
 %
 % Side Effects:
 %       Prints to standard output or a file with given FileID
@@ -72,6 +73,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/print_or_show_message.m
 %       cd/print_and_show_message.m
 %       cd/print_structure.m
+%       cd/virt_analyze_sniff_whisk.m
 %       cd/write_data_atf.m
 
 % File History:
@@ -85,6 +87,7 @@ function string = print_cellstr (cellStr, varargin)
 % 2018-06-21 AL - Added 'ToPrint', 'FileID'
 % 2018-06-21 AL - Now also prints to standard output by default
 % 2025-08-01 Escape backslashes for fprintf
+% 2025-09-01 Now takes an empty array as an argument
 %
 % TODO: Consider 3-D cell arrays of strings
 
@@ -117,7 +120,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'cellStr', ...
-    @(x) iscellstr(x) || ischar(x) || isstring(x));     
+    @(x) isempty(x) || iscellstr(x) || ischar(x) || isstring(x));     
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Delimiter', delimiterDefault, ...
@@ -176,6 +179,11 @@ else
 end
 
 %% Perform task
+% Make empty array arguments behave the same way as empty strings
+if isempty(cellStr)
+    cellStr = '';
+end
+
 % Prepend prefices and append suffixes
 cellStr = strcat(prefix, cellStr, suffix);
 

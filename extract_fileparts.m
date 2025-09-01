@@ -41,8 +41,8 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                       'directory' - directory containing the file(s)
 %                       'dirbase'   - directory base containing the file(s)
 %                       'parentdir' - directory one level up
-%                       'name'      - file name with the extension
-%                       'base'      - file base name without the extension
+%                       'name' or 'filename' - file name with the extension
+%                       'base' or 'filebase' - file base name without the extension
 %                       'pathbase'  - full file path without the extension
 %                       'extension' - file extension including the leading '.'
 %       varargin    - 'Delimiter': delimiter used for file suffixes
@@ -112,6 +112,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/save_all_zooms.m
 %       cd/update_file_base_in_matfiles.m
+%       cd/virt_analyze_sniff_whisk.m
 %       cd/write_data_atf.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 

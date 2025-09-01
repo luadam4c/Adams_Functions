@@ -48,6 +48,7 @@ function check_dir (directories, varargin)
 %       cd/plot_measures.m
 %       cd/plot_traces_abf.m
 %       cd/plot_traces_EEG.m
+%       cd/virt_analyze_sniff_whisk.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting42.m
 %       /home/Matlab/function_template.m
 %       \Shared\vIRt\virt_moore.m

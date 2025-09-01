@@ -5,8 +5,11 @@ function handles = plot_traces (tVecs, data, varargin)
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'HorzBarWindow', [1.5, 2.5])
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
+%       plot_traces(1:3, magic(3), 'PlotMode', 'parallel', 'XLabel', 'Time (s)')
 %       plot_traces(1:3, magic(3), 'PlotMode', 'averaged')
 %       plot_traces(1:3, magic(3), 'PlotMode', 'averaged', 'ColorMap', 'r')
+%       plot_traces(1:4, magic(4), 'PlotMode', 'parallel', 'SubplotOrder', 'square')
+%       plot_traces(1:4, magic(4), 'PlotMode', 'parallel', 'SubplotOrder', 'square', 'YLabel', 'Readout')
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered')
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered', 'HorzBarWindow', {[0 10], [0 20], [0 30]})
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered', 'YAmount', 1)
@@ -171,6 +174,11 @@ function handles = plot_traces (tVecs, data, varargin)
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == {'Trace #1', 'Trace #2', ...}
+%                   - 'TraceLabelsToCompare': labels for the traces to compare with, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == {'Trace #1 to compare', 'Trace #2 to compare', ...}
 %                   - 'YTickLocs': locations of Y ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == ntrials:1
@@ -256,9 +264,8 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
 %       cd/struct2arglist.m
-%       cd/suptitle.m
+%       cd/suptitle_custom.m
 %       cd/transform_vectors.m
-%       ~/Downloaded_Function/suplabel.m
 %
 % Used by:
 %       cd/create_trace_plot_movie.m
@@ -275,6 +282,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/plot_fitted_traces.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_traces_abf.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2018-09-18 Moved from plot_traces_abf.m
@@ -325,6 +333,8 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2020-02-06 Added 'ColorMapToCompare' as an optional argument
 % 2020-04-09 Now allows yTickLocs to be updated in parallel mode
 % 2025-08-14 Added 'averaged' as a plot mode
+% 2025-09-01 Added 'TraceLabelsToCompare'
+% 2025-09-01 Removed dependency on suplabel.m
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -345,7 +355,9 @@ maxNRowsForYTickLabels = 30;
 maxNRowsForXAxis = 30;
 maxNColsForYAxis = 30;
 maxNYTicks = 20;                % maximum number of Y ticks
-subPlotSqeezeFactor = 1.2;
+xMargin = 0.08;                 % Margin at the bottom for overarching x-label
+yMargin = 0.05;                 % Margin on the left for overarching y-label
+tMargin = 0.08;                 % Margin at the top for overarching title
 
 %% Default values for optional arguments
 verboseDefault = true;
@@ -376,6 +388,7 @@ xUnitsDefault = 'unit';         % the default x-axis units
 xLabelDefault = '';             % set later
 yLabelDefault = '';             % set later
 traceLabelsDefault = '';        % set later
+traceLabelsToCompareDefault = ''; % set later
 yTickLocsDefault = [];          % set later
 yTickLabelsDefault = {};        % set later
 colorMapDefault = [];           % set later
@@ -481,6 +494,8 @@ addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'TraceLabelsToCompare', traceLabelsToCompareDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x) || ...
                 iscellnumericvector(x), ...
@@ -542,6 +557,7 @@ xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
 traceLabels = iP.Results.TraceLabels;
+traceLabelsToCompare = iP.Results.TraceLabelsToCompare;
 yTickLocs = iP.Results.YTickLocs;
 yTickLabels = iP.Results.YTickLabels;
 colorMap = iP.Results.ColorMap;
@@ -685,6 +701,9 @@ else
         create_labels_from_numbers(defaultTraceNumbers, 'Prefix', 'Trace #');
 end
 
+% Set the default trace labels to compare
+defaultTraceLabelsToCompare = strcat(defaultTraceLabels, ' to compare');
+
 % Set the default x-axis label
 if isempty(xLabel)
     xLabel = ['Time (', xUnits, ')'];
@@ -733,6 +752,9 @@ end
 if isempty(traceLabels)
     traceLabels = defaultTraceLabels;
 end
+if isempty(traceLabelsToCompare)
+    traceLabelsToCompare = defaultTraceLabelsToCompare;
+end
 
 % Make sure trace labels are cell arrays
 if ~isempty(traceLabels) && ...
@@ -740,11 +762,20 @@ if ~isempty(traceLabels) && ...
     ~strcmpi(traceLabels, 'suppress')
     traceLabels = {traceLabels};
 end
+if ~isempty(traceLabelsToCompare) && ...
+    (ischar(traceLabelsToCompare) || isstring(traceLabelsToCompare)) && ...
+    ~strcmpi(traceLabelsToCompare, 'suppress')
+    traceLabelsToCompare = {traceLabelsToCompare};
+end
 
 % Check if traceLabels has the correct length
 if iscell(traceLabels) && numel(traceLabels) ~= nPlots
     error('traceLabels has %d elements instead of %d!!', ...
             numel(traceLabels), nPlots);
+end
+if iscell(traceLabelsToCompare) && numel(traceLabelsToCompare) ~= nPlots
+    error('traceLabels has %d elements instead of %d!!', ...
+            numel(traceLabelsToCompare), nPlots);
 end
 
 % Set the default figure title
@@ -832,7 +863,7 @@ if iscell(xLimits)
                         horzBarWindows, horzBarYValues, ...
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimitsThis, yLimits, linkAxesOption, ...
-                        xLabel, yLabel, yLabelProvided, traceLabels, ...
+                        xLabel, yLabel, yLabelProvided, traceLabels, traceLabelsToCompare, ...
                         yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                         legendLocation, figTitleThis, figSubTitles, ...
                         figHandle, figExpansion, figNumber, ...
@@ -843,7 +874,7 @@ if iscell(xLimits)
                         maxNRowsForTicks, maxNRowsForYTickLabels, ...
                         maxNRowsForXAxis, maxNColsForYAxis, ...
                         maxNYTicks, minimalLabels, ...
-                        subPlotSqeezeFactor, ...
+                        xMargin, yMargin, tMargin, ... ...
                         otherArguments);
             
             % Hold off and close figure
@@ -867,7 +898,7 @@ else
                         horzBarWindows, horzBarYValues, ...
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
-                        xLabel, yLabel, yLabelProvided, traceLabels, ...
+                        xLabel, yLabel, yLabelProvided, traceLabels, traceLabelsToCompare, ...
                         yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                         legendLocation, figTitle, figSubTitles, ...
                         figHandle, figExpansion, figNumber, ...
@@ -878,7 +909,7 @@ else
                         maxNRowsForTicks, maxNRowsForYTickLabels, ...
                         maxNRowsForXAxis, maxNColsForYAxis, ...
                         maxNYTicks, minimalLabels, ...
-                        subPlotSqeezeFactor, ...
+                        xMargin, yMargin, tMargin, ... ...
                         otherArguments);
 end
 
@@ -898,7 +929,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     horzBarWindows, horzBarYValues, ...
                     horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                     xUnits, xLimits, yLimits, linkAxesOption, ...
-                    xLabel, yLabel, yLabelProvided, traceLabels, ...
+                    xLabel, yLabel, yLabelProvided, traceLabels, traceLabelsToCompare, ...
                     yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                     legendLocation, figTitle, figSubTitles, ...
                     figHandle, figExpansion, figNumber, figName, figTypes, ...
@@ -908,7 +939,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     maxNRowsForTicks, maxNRowsForYTickLabels, ...
                     maxNRowsForXAxis, maxNColsForYAxis, ...
                     maxNYTicks, minimalLabels, ...
-                    subPlotSqeezeFactor, ...
+                    xMargin, yMargin, tMargin, ...
                     otherArguments)
 
 switch plotMode
@@ -936,6 +967,13 @@ case {'overlapped', 'staggered', 'averaged'}
     % Decide on the axes to plot on
     ax = set_axes_properties('AxesHandle', axHandles);
 case 'parallel'
+    % Decide on whether to remove margins outside axes ticks
+    if ischar(yLabel) && ~strcmpi(yLabel, 'suppress') && nRows <= maxNPlotsForAnnotations
+        tightInset = true;
+    else
+        tightInset = false;
+    end
+
     if numel(axHandles) == nRows * nColumns
         ax = axHandles;
         fig = ancestor(ax(1), 'figure');
@@ -943,7 +981,7 @@ case 'parallel'
     else
         % Create subplots
         [fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
-                        'ClearFigure', false, ...
+                        'ClearFigure', false, 'TightInset', tightInset, ...
                         'FigNumber', figNumber, 'FigExpansion', figExpansion);
     end
 otherwise
@@ -1159,8 +1197,13 @@ case {'overlapped', 'staggered', 'averaged'}
             end
     
             % Set the legend label as the trace label if provided
-            if ~strcmpi(traceLabels, 'suppress')
+            if any(~strcmpi(traceLabels, 'suppress'))
                 set(p1, 'DisplayName', traceLabels{iPlot});
+            end
+
+            % Set the legend label as the trace label if provided
+            if comparePlotted && any(~strcmpi(traceLabelsToCompare, 'suppress'))
+                set(p2, 'DisplayName', traceLabelsToCompare{iPlot});
             end
     
             % Store handles in array
@@ -1357,10 +1400,12 @@ case 'parallel'
 
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iPlot})
+            comparePlotted = true;
             pToCompare = ...
                 plot(tVecs{iPlot}, dataToCompare{iPlot}, 'Color', colorToCompareThis, ...
                         'LineStyle', lineStyleToCompare, otherArguments{:});
         else
+            comparePlotted = false;
             pToCompare = gobjects(1);
         end
 
@@ -1384,8 +1429,11 @@ case 'parallel'
         end
 
         % Set the legend label as the trace label if provided
-        if ~strcmpi(traceLabels, 'suppress')
+        if any(~strcmpi(traceLabels, 'suppress'))
             set(p, 'DisplayName', traceLabels{iPlot});
+        end
+        if comparePlotted && any(~strcmpi(traceLabelsToCompare, 'suppress'))
+            set(pToCompare, 'DisplayName', traceLabelsToCompare{iPlot});
         end
 
         % Set time axis limits
@@ -1412,7 +1460,16 @@ case 'parallel'
 
         % Generate a legend
         if ~strcmpi(legendLocation, 'suppress')
-            legend(axThis, p, 'location', legendLocation, 'AutoUpdate', 'off');
+            % Decide on the plot handles for the legend
+            if comparePlotted
+                plotsForLegend = [p, pToCompare];
+            else
+                plotsForLegend = p;
+            end
+    
+            % Show legend
+            legend(axThis, plotsForLegend, 'location', legendLocation, ...
+                    'AutoUpdate', 'off');
         end
 
         % Remove x ticks if too many columns
@@ -1477,26 +1534,74 @@ case 'parallel'
         end
     end
     
-    % Create an overarching x-axis label
-    if ~strcmpi(xLabel, 'suppress') && nColumns <= maxNPlotsForAnnotations
-        suplabel(xLabel, 'x');
-    end
+    % Determine whether overarching labels are needed
+    xLabelNeeded = ~strcmpi(xLabel, 'suppress') && nColumns <= maxNPlotsForAnnotations;
+    yLabelNeeded = ischar(yLabel) && ~strcmpi(yLabel, 'suppress') && nRows <= maxNPlotsForAnnotations;
+    titleNeeded = ~strcmpi(figTitle, 'suppress') && nPlots > 1;
 
-    % Create an overarching y-axis label
-    if ischar(yLabel) && ~strcmpi(yLabel, 'suppress') && ...
-            nRows <= maxNPlotsForAnnotations
-        suplabel(yLabel, 'y');
-    end
+    % Manually resize all subplots to make room for overarching labels
+    if xLabelNeeded || yLabelNeeded || titleNeeded
+        % Define how much normalized space to reserve for each label
+        xMarginToUse = 0;
+        if xLabelNeeded, xMarginToUse = xMargin; end
+        yMarginToUse = 0;
+        if yLabelNeeded, yMarginToUse = yMargin; end
+        tMarginToUse = 0;
+        if titleNeeded, tMarginToUse = tMargin; end
 
-    % Create an overarching title
-    if ~strcmpi(figTitle, 'suppress')
-        if nPlots > 1
-            suptitle(figTitle);
-            % suplabel(figTitle, 't');
-        else
-            title(figTitle);
+        % Define the new total area available for plots after margins
+        newPlotArea = [yMarginToUse, xMarginToUse, 1 - yMarginToUse, 1 - (xMarginToUse + tMarginToUse)];
+
+        % Get the handles for all the subplots
+        allAxes = ax;
+
+        for i = 1:numel(allAxes)
+            % Get the original outer position of the subplot
+            pos = get(allAxes(i), 'OuterPosition'); % [left, bottom, width, height]
+
+            % Calculate the new outer position by scaling and shifting the 
+            %  original outer position to fit inside the new plot area.
+            newPos = [newPlotArea(1) + pos(1) * newPlotArea(3), ...  % New Left
+                      newPlotArea(2) + pos(2) * newPlotArea(4), ...  % New Bottom
+                      pos(3) * newPlotArea(3), ...                   % New Width
+                      pos(4) * newPlotArea(4)];                      % New Height
+            
+            % Apply the new outer position to the subplot
+            set(allAxes(i), 'OuterPosition', newPos);
+
+            % If using a single overarching Y-label, remove the space
+            %   for individual y-labels on all subplots
+            if yLabelNeeded
+                % TODO: The following doesn't work well
+                % set(allAxes(i), 'YAxisLocation', 'right'); 
+            end
         end
-    end  
+
+        % Create a new, invisible axes that covers the entire plotting area
+        supAx = axes('Position', newPlotArea, 'Visible', 'off', ...
+                     'Units', 'normalized', 'Tag', 'super_axis');
+        set(supAx, 'XTick', [], 'YTick', []); % Remove x and y ticks
+
+        % Add the required labels to this new axes and make them visible
+        if xLabelNeeded
+            xlabel(supAx, xLabel, 'Visible', 'on');
+        end
+        if yLabelNeeded
+            ylabel(supAx, yLabel, 'Visible', 'on');
+        end
+        if titleNeeded
+            title(supAx, figTitle, 'Visible', 'on');
+        end
+        
+        % Bring the new axes to the front to ensure it is not hidden
+        % uistack(supAx, 'top');
+    end
+
+    % Handle the title for the simple, single-plot case separately.
+    if ~strcmpi(figTitle, 'suppress') && nPlots <= 1
+        title(figTitle);
+    end
+
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end
@@ -1563,7 +1668,7 @@ if ~isempty(figName)
 
                 % Create an overarching title
                 if ~strcmpi(figTitleThis, 'suppress') && nColumns > 1
-                    suptitle(figTitleThis);
+                    suptitle_custom(figTitleThis);
                 end
             end
 
@@ -1699,7 +1804,7 @@ if ~strcmpi(xLabel, 'suppress') && nColumns == 1 && ...
 end
 % Create an overarching title
 if ~strcmpi(figTitle, 'suppress') && nColumns > 1
-    suptitle(figTitle);
+    suptitle_custom(figTitle);
 end
 % Create an overarching x-axis label
 if ~strcmpi(xLabel, 'suppress') && nColumns > 1 && ...

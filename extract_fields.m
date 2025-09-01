@@ -49,6 +49,7 @@ function varargout = extract_fields (structs, varargin)
 %       cd/parse_spike2_mat.m
 %       cd/plot_correlation_coefficient.m
 %       cd/update_figure_for_corel.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu
