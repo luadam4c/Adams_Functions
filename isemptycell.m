@@ -40,6 +40,7 @@ function isEmpty = isemptycell (cellArray)
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
 %       cd/transform_vectors.m
+%       cd/validate_string.m
 
 % File History:
 % 2019-01-04 Created by Adam Lu

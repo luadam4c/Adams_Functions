@@ -86,6 +86,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/save_all_zooms.m
 %       cd/test_difference.m
 %       cd/transpose_table.m
+%       cd/virt_analyze_sniff_whisk.m
 %       cd/write_data_atf.m
 
 % File History:

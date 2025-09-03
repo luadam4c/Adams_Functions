@@ -4,7 +4,9 @@ function handles = plot_traces (tVecs, data, varargin)
 % Examples:
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'HorzBarWindow', [1.5, 2.5])
+%       plot_traces(1:3, magic(3), 'XBoundaries', [1.5, 2.5])
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
+%       plot_traces(1:3, magic(3), 'PlotMode', 'parallel', 'XBoundaries', [1, 2; 1.5, 2.5; 2, 3])
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel', 'XLabel', 'Time (s)')
 %       plot_traces(1:3, magic(3), 'PlotMode', 'averaged')
 %       plot_traces(1:3, magic(3), 'PlotMode', 'averaged', 'ColorMap', 'r')
@@ -88,6 +90,44 @@ function handles = plot_traces (tVecs, data, varargin)
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == []
+%                   - 'XBoundaries': x boundary values
+%                       Note: each row is a set of boundaries
+%                   must be a numeric array
+%                   default == []
+%                   - 'XBoundaryType': type of x boundaries
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'verticalLines'     - vertical dotted lines
+%                       'horizontalBars'    - horizontal bars
+%                       'verticalShades'    - vertical shades
+%                   default == 'verticalShades'
+%                   - 'XBoundaryColor': color for x boundaries
+%                   must be a string/character vector or a an n-by-3 numeric array
+%                   default == '' (set in plot_window_boundaries.m)
+%                   - 'XBoundaryLineStyle': line style for x boundaries
+%                   must be a valid line style
+%                   default == '' (set in plot_window_boundaries.m)
+%                   - 'XBoundaryLineWidth': line width for x boundaries
+%                   must be a positive scalar
+%                   default == [] (set in plot_window_boundaries.m)
+%                   - 'YBoundaries': y boundary values
+%                       Note: each row is a set of boundaries
+%                   must be a numeric array
+%                   default == []
+%                   - 'YBoundaryType': type of y boundaries
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'horizontalLines'   - horizontal dotted lines
+%                       'verticalBars'      - vertical bars
+%                       'horizontalShades'  - horizontal shades
+%                   default == 'horizontalShades'
+%                   - 'YBoundaryColor': color for y boundaries
+%                   must be a string/character vector or a an n-by-3 numeric array
+%                   default == '' (set in plot_window_boundaries.m)
+%                   - 'YBoundaryLineStyle': line style for y boundaries
+%                   must be a valid line style
+%                   default == '' (set in plot_window_boundaries.m)
+%                   - 'YBoundaryLineWidth': line width for y boundaries
+%                   must be a positive scalar
+%                   default == [] (set in plot_window_boundaries.m)
 %                   - 'HorzBarWindows': horizontal bar windows
 %                   must be empty or a cell array of numeric vectors
 %                           with the same length as nTraces
@@ -259,6 +299,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/ispositivescalar.m
 %       cd/match_format_vector_sets.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_window_boundaries.m
 %       cd/save_all_figtypes.m
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
@@ -335,6 +376,8 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2025-08-14 Added 'averaged' as a plot mode
 % 2025-09-01 Added 'TraceLabelsToCompare'
 % 2025-09-01 Removed dependency on suplabel.m
+% 2025-09-02 Added 'XBoundaries' and 'YBoundaries' as optional arguments
+% 2025-09-02 Made boundary style parameters optional arguments
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -343,6 +386,8 @@ validPlotModes = {'overlapped', 'parallel', 'staggered', 'averaged'};
 validSubplotOrders = {'bycolor', 'square', 'list', 'auto'};
 validColorModes = {'byPlot', 'byRow', 'byTraceInPlot', 'auto'};
 validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
+validXBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
+validYBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 maxRowsWithOneOnly = 8;
 maxNPlotsForTraceNum = 8;
 maxNPlotsForAnnotations = 8;
@@ -372,6 +417,16 @@ plotModeDefault = 'overlapped'; % plot traces overlapped by default
 subplotOrderDefault = 'auto';   % set later
 colorModeDefault = 'auto';      % set later
 dataToCompareDefault = [];      % no data to compare against by default
+xBoundariesDefault = [];
+xBoundaryTypeDefault = 'verticalShades';
+xBoundaryColorDefault = '';            % set in plot_window_boundaries.m
+xBoundaryLineStyleDefault = '';        % set in plot_window_boundaries.m
+xBoundaryLineWidthDefault = [];        % set in plot_window_boundaries.m
+yBoundariesDefault = [];
+yBoundaryTypeDefault = 'horizontalShades';
+yBoundaryColorDefault = '';            % set in plot_window_boundaries.m
+yBoundaryLineStyleDefault = '';        % set in plot_window_boundaries.m
+yBoundaryLineWidthDefault = [];        % set in plot_window_boundaries.m
 horzBarWindowsDefault = [];     % no horizontal bars by default
 horzBarYValuesDefault = [];     % set later
 horzBarColorMapDefault = [];       % set later
@@ -451,6 +506,26 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['DataToCompare must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'XBoundaries', xBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'XBoundaryType', xBoundaryTypeDefault, ...
+    @(x) any(validatestring(x, validXBoundaryTypes)));
+addParameter(iP, 'XBoundaryColor', xBoundaryColorDefault);
+addParameter(iP, 'XBoundaryLineStyle', xBoundaryLineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'XBoundaryLineWidth', xBoundaryLineWidthDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                'XBoundaryLineWidth must be empty or a positive scalar!'));
+addParameter(iP, 'YBoundaries', yBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'YBoundaryType', yBoundaryTypeDefault, ...
+    @(x) any(validatestring(x, validYBoundaryTypes)));
+addParameter(iP, 'YBoundaryColor', yBoundaryColorDefault);
+addParameter(iP, 'YBoundaryLineStyle', yBoundaryLineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'YBoundaryLineWidth', yBoundaryLineWidthDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                'YBoundaryLineWidth must be empty or a positive scalar!'));
 addParameter(iP, 'HorzBarWindows', horzBarWindowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['HorzBarWindows must be either a numeric array ', ...
@@ -542,6 +617,16 @@ dataToCompare = iP.Results.DataToCompare;
 [~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 [~, lineStyleToCompare] = ...
     islinestyle(iP.Results.LineStyleToCompare, 'ValidateMode', true);
+xBoundaries = iP.Results.XBoundaries;
+xBoundaryType = validatestring(iP.Results.XBoundaryType, validXBoundaryTypes);
+xBoundaryColor = iP.Results.XBoundaryColor;
+[~, xBoundaryLineStyle] = islinestyle(iP.Results.XBoundaryLineStyle, 'ValidateMode', true);
+xBoundaryLineWidth = iP.Results.XBoundaryLineWidth;
+yBoundaries = iP.Results.YBoundaries;
+yBoundaryType = validatestring(iP.Results.YBoundaryType, validYBoundaryTypes);
+yBoundaryColor = iP.Results.YBoundaryColor;
+[~, yBoundaryLineStyle] = islinestyle(iP.Results.YBoundaryLineStyle, 'ValidateMode', true);
+yBoundaryLineWidth = iP.Results.YBoundaryLineWidth;
 horzBarWindows = iP.Results.HorzBarWindows;
 horzBarYValues = iP.Results.HorzBarYValues;
 horzBarColorMap = iP.Results.HorzBarColorMap;
@@ -860,6 +945,10 @@ if iscell(xLimits)
                         autoZoom, yAmountToStagger, yBase, ...
                         tVecsThis, dataThis, ...
                         dataToCompareThis, lineStyle, lineStyleToCompare, ...
+                        xBoundaries, xBoundaryType, ...
+                        xBoundaryColor, xBoundaryLineStyle, xBoundaryLineWidth, ...
+                        yBoundaries, yBoundaryType, ...
+                        yBoundaryColor, yBoundaryLineStyle, yBoundaryLineWidth, ...
                         horzBarWindows, horzBarYValues, ...
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimitsThis, yLimits, linkAxesOption, ...
@@ -895,6 +984,10 @@ else
                         autoZoom, yAmountToStagger, yBase, ...
                         tVecs, data, dataToCompare, ...
                         lineStyle, lineStyleToCompare, ...
+                        xBoundaries, xBoundaryType, ...
+                        xBoundaryColor, xBoundaryLineStyle, xBoundaryLineWidth, ...
+                        yBoundaries, yBoundaryType, ...
+                        yBoundaryColor, yBoundaryLineStyle, yBoundaryLineWidth, ...
                         horzBarWindows, horzBarYValues, ...
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
@@ -926,6 +1019,10 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     autoZoom, yAmountToStagger, yBase, ...
                     tVecs, data, dataToCompare, ...
                     lineStyle, lineStyleToCompare, ...
+                    xBoundaries, xBoundaryType, ...
+                    xBoundaryColor, xBoundaryLineStyle, xBoundaryLineWidth, ...
+                    yBoundaries, yBoundaryType, ...
+                    yBoundaryColor, yBoundaryLineStyle, yBoundaryLineWidth, ...
                     horzBarWindows, horzBarYValues, ...
                     horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                     xUnits, xLimits, yLimits, linkAxesOption, ...
@@ -1243,7 +1340,7 @@ case {'overlapped', 'staggered', 'averaged'}
             'LineStyle', horzBarLineStyle, 'LineWidth', horzBarLineWidth);
     end
 
-    % Set time axis limits
+    % Set x axis limits
     if ~iscell(xLimits) && ...
         ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
         xlim(xLimits);
@@ -1253,6 +1350,24 @@ case {'overlapped', 'staggered', 'averaged'}
     if ~isempty(yLimits) && ...
         ~(ischar(yLimits) && strcmpi(yLimits, 'suppress'))
         ylim(yLimits);
+    end
+
+    % Plot x boundaries (must do this after setting y axis limits)
+    if ~isempty(xBoundaries)
+        plot_window_boundaries(xBoundaries, ...
+                                'BoundaryType', xBoundaryType, ...
+                                'LineWidth', xBoundaryLineWidth, ...
+                                'LineStyle', xBoundaryLineStyle, ...
+                                'ColorMap', xBoundaryColor);
+    end
+
+    % Plot y boundaries (must do this after setting x axis limits)
+    if ~isempty(yBoundaries)
+        plot_window_boundaries(yBoundaries, ...
+                                'BoundaryType', yBoundaryType, ...
+                                'LineWidth', yBoundaryLineWidth, ...
+                                'LineStyle', yBoundaryLineStyle, ...
+                                'ColorMap', yBoundaryColor);
     end
 
     % Generate an x-axis label
@@ -1445,6 +1560,40 @@ case 'parallel'
         if ~isempty(yLimitsThis) && ~any(isnan(yLimitsThis)) && ...
                 ~strcmpi(yLimitsThis, 'suppress')
             ylim(yLimitsThis);
+        end
+
+        % Plot x boundaries (must do this after setting y axis limits)
+        if ~isempty(xBoundaries)
+            % Get the current boundaries to plot
+            if min(size(xBoundaries)) > 1
+                xBoundariesThis = xBoundaries(iPlot, :);
+            else
+                xBoundariesThis = xBoundaries;
+            end
+
+            % Plot the boundaries
+            plot_window_boundaries(xBoundariesThis, ...
+                                    'BoundaryType', xBoundaryType, ...
+                                    'LineWidth', xBoundaryLineWidth, ...
+                                    'LineStyle', xBoundaryLineStyle, ...
+                                    'ColorMap', xBoundaryColor);
+        end
+
+        % Plot y boundaries (must do this after setting x axis limits)
+        if ~isempty(yBoundaries)
+            % Get the current boundaries to plot
+            if min(size(yBoundaries)) > 1
+                yBoundariesThis = yBoundaries(iPlot, :);
+            else
+                yBoundariesThis = yBoundaries;
+            end
+
+            % Plot the boundaries
+            plot_window_boundaries(yBoundariesThis, ...
+                                    'BoundaryType', yBoundaryType, ...
+                                    'LineWidth', yBoundaryLineWidth, ...
+                                    'LineStyle', yBoundaryLineStyle, ...
+                                    'ColorMap', yBoundaryColor);
         end
 
         % Generate a y-axis label

@@ -67,6 +67,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/parse_pleth_trace.m
 %       cd/sscanf_full.m
 %       cd/vecfun.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2020-01-01 Created by Adam Lu

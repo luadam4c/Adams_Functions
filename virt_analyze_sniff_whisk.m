@@ -15,10 +15,15 @@
 % Requires:
 %       cd/all_files.m
 %       cd/argfun.m
+%       cd/array_fun.m
 %       cd/check_dir.m
+%       cd/count_vectors.m
+%       cd/create_labels_from_numbers.m
 %       cd/extract_fields.m
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
+%       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
 %       cd/plot_traces.m
 %       cd/print_cellstr.m
 %
@@ -38,18 +43,28 @@ prefixDataFile = 'swdata_';             % Prefix for the data files
 suffixDataFile = '_angle';              % Suffix for the data files
 suffixParamFile = '_parameters';        % Suffix for the parameter files
 
+% Detection parameters
+ammoniaPuffString = 'ammpuff';
+airPuffString = 'airpuff';
+minPulseAmplitude = 2;                  % Minimum pulse amplitude for piezo trace
+
 % Plotting parameters
+sampleFileNumsToPlot = (1:38)';         % The sample file number(s) to plot (max 38)
+toSpeedUp = true;                       % Whether to use parpool and hide figures
 whiskAngleLimits = [-75, 75];           % Whisk angle limits to be plotted
+piezoLimits = [-1, 10];
 whiskAngleLabel = 'Whisk Angle (degrees)';
-thermLimits = [-7.55, 7.55] * 1e-5;     % Thermocouple limits to be plotted
-sampleExpNum = 38;                      % The sample experiment number to plot (max 38)
+sniffToWhiskRangeRatio = 0.8;           % Sniff amplitude to whisk amplitude ratio for plotting
 timeLabel = 'Time (s)';
 whiskLabel = 'Whisking';
 sniffLabel = 'Breathing';
 legendLocation1 = 'northeast';
-figTitle1 = 'Sample whisking (blue) and breathing (red) data';
-figName1 = ['sniff_whisk_all_traces_', num2str(sampleExpNum)];
-figTypes = {'eps', 'png'};
+legendLocation2 = 'suppress';
+figTitlePrefix1 = 'Whisking (blue) and breathing (red) data';
+figTitlePrefix2 = 'Stimulation (Puff) data';
+figPrefix1 = 'sniff_whisk_all_traces_';
+figPrefix2 = 'sniff_whisk_all_stims_';
+figTypes = {'png'}; % {'eps', 'png'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -95,40 +110,8 @@ trialNames = cellfun(@(x) erase(x, suffixDataFile), trialNames, 'UniformOutput',
                         'Extension', extDataFile, 'Suffix', suffixParamFile);
 fprintf('\nFinished searching.\n\n');
 
-%% Put all metadata together and save
-
-% Load parameters from each file
-paramStructs = cellfun(@load, pathParamFiles);
-paramTable = struct2table(paramStructs);
-
-% Check if any matching pairs were found
-if isempty(trialNames)
-    fprintf('No matching data and parameter file pairs were found in the directory.\n');
-else
-    % Create a table for all meta data
-    metaDataFiles = table(trialNames, pathDataFiles, pathParamFiles, ...
-                     'VariableNames', {'TrialName', 'DataFilePath', 'ParameterFilePath'});
-    metaData = horzcat(metaDataFiles, paramTable);
-
-    % Expand the cell arrays to a single string
-    metaDataToPrint = metaData;
-    [metaDataToPrint.roiswitch, metaDataToPrint.records, ...
-        metaDataToPrint.anesrecords] = ...
-        argfun(@(x) cellfun(@(a) print_cellstr(a, 'Delimiter', ' ', ...
-                                'ToPrint', false, 'OmitQuotes', true, ...
-                                'OmitBraces', true, 'OmitNewline', true), ...
-                                x, 'UniformOutput', false), ...
-            metaData.roiswitch, metaData.records, metaData.anesrecords);
-
-    % Display the resulting table in the command window
-    fprintf('Generated Metadata Table:\n');
-    disp(metaDataToPrint);
-
-    % Save metadata table
-    pathMetaData = fullfile(pathOutDir, fileNameMetaData);
-    writetable(metaDataToPrint, pathMetaData);
-    fprintf('Metadata table saved to %s\n', pathMetaData);
-end
+% Count files
+nFiles = numel(trialNames);
 
 %% Load data
 % Load data from each file: the data struct contains a single field
@@ -152,27 +135,115 @@ thermVecs = extract_fields(sniffWhiskDataCell, 'therm');
 % Extract the external air pulses (puffs of ammonia or control puffs of unscented air to the nose)
 pulseVecs = extract_fields(sniffWhiskDataCell, 'piezo');
 
-%% Reformat data for ease of plotting
-% Find the maximum and minimum whisk angles
-maxWhiskAngle = apply_iteratively(@max, whiskVecs); % == 72.5
-minWhiskAngle = apply_iteratively(@min, whiskVecs); % == -71.9
+% Count the number of vectors
+nTrials = count_vectors(tVecs);
 
-% Find the maximum and minimum thermocouple values
-maxThermValue = apply_iteratively(@max, thermVecs); % == 7.54e-05
-minThermValue = apply_iteratively(@min, thermVecs); % == -6.88e-05
+% Check whether is ammonia puff or air puff trials
+isAmmoniaPuff = contains(trialNames, ammoniaPuffString);
+
+% Check whether is ammonia puff or air puff trials
+isAirPuff = contains(trialNames, airPuffString);
+
+%% Reformat data for ease of plotting
+% Invert whisk angle vectors and thermocouple vectors
+thermVecs = cellfun(@(x) -x, thermVecs, 'UniformOutput', false);
+whiskVecs = cellfun(@(x) -x, whiskVecs, 'UniformOutput', false);
+
+% Find the maximum and minimum whisk angles
+maxWhiskAngle = apply_iteratively(@max, whiskVecs); % == 71.9
+minWhiskAngle = apply_iteratively(@min, whiskVecs); % == -72.5
+
+% Find the maximum and minimum thermocouple values for each file
+maxThermValueEachFile = cellfun(@(x) apply_iteratively(@max, x), thermVecs);
+minThermValueEachFile = cellfun(@(x) apply_iteratively(@min, x), thermVecs);
+
+% Calculate plotting limits for thermocouple vectors for each file
+meanThermLimitsEachFile = (maxThermValueEachFile + minThermValueEachFile) / 2;
+rangeThermLimitsEachFile = (maxThermValueEachFile - minThermValueEachFile) / sniffToWhiskRangeRatio;
+lowerThermLimitEachFile = meanThermLimitsEachFile - rangeThermLimitsEachFile / 2;
 
 % Create sniff/breath vectors scaled to the order of whisk angle vectors
-whiskAngleLimRange = diff(whiskAngleLimits);
-thermLimRange = diff(thermLimits);
-sniffVecs = cellfun(@(x) whiskAngleLimits(1) + (x - thermLimits(1)) * ...
-                    whiskAngleLimRange / thermLimRange, thermVecs, ...
+rangeWhiskAngleLimits = diff(whiskAngleLimits);
+sniffVecs = cellfun(@(a, b, c) whiskAngleLimits(1) + (a - b) * ...
+                    rangeWhiskAngleLimits / c, thermVecs, ...
+                    num2cell(lowerThermLimitEachFile), num2cell(rangeThermLimitsEachFile), ...
                     'UniformOutput', false);
 
+% Detect the first pulse start and end times
+pulseParams = cellfun(@(x, y) parse_pulse(x, 'TimeVecs', y, ...
+        'MinPulseAmplitude', minPulseAmplitude), pulseVecs, tVecs, 'UniformOutput', false);
+pulseStartTimes = cellfun(@(x) x.timeAfterStartMs, pulseParams, 'UniformOutput', false);
+pulseEndTimes = cellfun(@(x) x.timeBeforeEndMs, pulseParams, 'UniformOutput', false);
+
 %% Plot all data
+[handles1, handles2] = ...
+    array_fun(@(a) plot_one_file (a, tVecs, whiskVecs, sniffVecs, ...
+        pulseVecs, pulseStartTimes, pulseEndTimes, ...
+        isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
+        pathOutDir, timeLabel, whiskAngleLimits, whiskAngleLabel, piezoLimits, ...
+        legendLocation1, legendLocation2, figTitlePrefix1, figTitlePrefix2, ...
+        figPrefix1, figPrefix2, figTypes, toSpeedUp), ...
+        sampleFileNumsToPlot, 'UseParpool', toSpeedUp);
+
+%% Put all metadata together and save
+
+% Load parameters from each file
+paramStructs = cellfun(@load, pathParamFiles);
+paramTable = struct2table(paramStructs);
+
+% Check if any matching pairs were found
+if isempty(trialNames)
+    fprintf('No matching data and parameter file pairs were found in the directory.\n');
+else
+    % Create a table for all meta data
+    metaDataFiles = table(trialNames, pathDataFiles, pathParamFiles, ...
+                     'VariableNames', {'TrialName', 'DataFilePath', 'ParameterFilePath'});
+    metaData = horzcat(metaDataFiles, paramTable);
+
+    % Add detection results
+    metaData.nRecords = nTrials;
+    metaData.isAmmoniaPuff = isAmmoniaPuff;
+    metaData.isAirPuff = isAirPuff;
+
+    % Expand the cell arrays to a single string
+    metaDataToPrint = metaData;
+    [metaDataToPrint.roiswitch, metaDataToPrint.records, ...
+        metaDataToPrint.anesrecords] = ...
+        argfun(@(x) cellfun(@(a) print_cellstr(a, 'Delimiter', ' ', ...
+                                'ToPrint', false, 'OmitQuotes', true, ...
+                                'OmitBraces', true, 'OmitNewline', true), ...
+                                x, 'UniformOutput', false), ...
+            metaData.roiswitch, metaData.records, metaData.anesrecords);
+
+    % Display the resulting table in the command window
+    fprintf('Generated Metadata Table:\n');
+    disp(metaDataToPrint);
+
+    % Save metadata table
+    pathMetaData = fullfile(pathOutDir, fileNameMetaData);
+    writetable(metaDataToPrint, pathMetaData);
+    fprintf('Metadata table saved to %s\n', pathMetaData);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [handles1, handles2] = ...
+    plot_one_file (sampleFileNum, tVecs, whiskVecs, sniffVecs, ...
+        pulseVecs, pulseStartTimes, pulseEndTimes, ...
+        isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
+        pathOutDir, timeLabel, whiskAngleLimits, whiskAngleLabel, piezoLimits, ...
+        legendLocation1, legendLocation2, figTitlePrefix1, figTitlePrefix2, ...
+        figPrefix1, figPrefix2, figTypes, toSpeedUp)
+
 % Extract data to plot
-tVecsThis = tVecs{sampleExpNum};
-whiskVecsThis = whiskVecs{sampleExpNum};
-sniffVecsThis = sniffVecs{sampleExpNum};
+tVecsThis = tVecs{sampleFileNum};
+whiskVecsThis = whiskVecs{sampleFileNum};
+sniffVecsThis = sniffVecs{sampleFileNum};
+pulseVecsThis = pulseVecs{sampleFileNum};
+pulseStartTimesThis = pulseStartTimes{sampleFileNum};
+pulseEndTimesThis = pulseEndTimes{sampleFileNum};
+isAmmoniaPuffThis = isAmmoniaPuff(sampleFileNum);
+isAirPuffThis = isAirPuff(sampleFileNum);
 
 % Count the number of plots
 nPlots = size(tVecsThis, 2);
@@ -182,30 +253,80 @@ iPlots = (1:nPlots)';
 whiskLabels = create_labels_from_numbers(iPlots, 'Prefix', whiskLabel);
 sniffLabels = create_labels_from_numbers(iPlots, 'Prefix', sniffLabel);
 
-% Create paths for saving
-figPath1 = fullfile(pathOutDir, figName1);
+% Decide on puff window colors and titles
+if isAmmoniaPuffThis
+    figTitlePrefix1 = replace(figTitlePrefix1, 'data', 'data with Ammonia Puffs (green)');
+    figTitlePrefix2 = replace(figTitlePrefix2, 'Puff', 'Ammonia Puff');
+    puffWindowColor = [0.5625, 0.9297, 0.5625];  % rgb('LightGreen')
+elseif isAirPuffThis
+    figTitlePrefix1 = replace(figTitlePrefix1, 'data', 'data with Control Air Puffs (gray)');
+    figTitlePrefix2 = replace(figTitlePrefix2, 'Puff', 'Control Air Puff');
+    puffWindowColor = 0.8242 * [1, 1, 1]; % rgb('LightGray')
+else
+    puffWindowColor = 0.8242 * [1, 1, 1]; % rgb('LightGray')
+end
 
-% Create sample plot
-figure(1); clf;
+% Create figure titles
+figTitle1 = [figTitlePrefix1, ' for File # ', num2str(sampleFileNum)];
+figTitle2 = [figTitlePrefix2, ' for File # ', num2str(sampleFileNum)];
+
+% Create paths for saving
+figName1 = [figPrefix1, num2str(sampleFileNum)];
+figName2 = [figPrefix2, num2str(sampleFileNum)];
+figPath1 = fullfile(pathOutDir, figName1);
+figPath2 = fullfile(pathOutDir, figName2);
+
+% Create sample traces plot
+fprintf('Plotting sample traces for file %d ...\n', sampleFileNum);
+if toSpeedUp
+    set_figure_properties('AlwaysNew', true, 'Visible', 'off');
+else
+    set_figure_properties('FigNumber', 1, 'AlwaysNew', false, 'ClearFigure', true);
+end
 if ~isempty(sniffVecsThis)
-    handles = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', 'b', ...
+    handles1 = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', 'b', ...
                 'DataToCompare', sniffVecsThis, 'ColorMapToCompare', 'r', ...
+                'XBoundaries', [pulseStartTimesThis, pulseEndTimesThis], ...
+                'XBoundaryColor', puffWindowColor, ...
                 'TraceLabels', whiskLabels, 'TraceLabelsToCompare', sniffLabels, ...
                 'PlotMode', 'parallel', 'FigTitle', figTitle1, ...
                 'XLabel', timeLabel, 'LegendLocation', legendLocation1, ...
                 'YLimits', whiskAngleLimits, 'YLabel', whiskAngleLabel, ...
                 'FigName', figPath1, 'FigTypes', figTypes);
 else
-    handles = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', 'b', ...
+    handles1 = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', 'b', ...
                 'TraceLabels', whiskLabels, 'TraceLabelsToCompare', sniffLabels, ...
+                'XBoundaries', [pulseStartTimesThis, pulseEndTimesThis], ...
+                'XBoundaryColor', puffWindowColor, ...
                 'PlotMode', 'parallel', 'FigTitle', figTitle1, ...
                 'XLabel', timeLabel, 'LegendLocation', legendLocation1, ...
                 'YLimits', whiskAngleLimits, 'YLabel', whiskAngleLabel, ...
                 'FigName', figPath1, 'FigTypes', figTypes);
 end
 
-figure(2); clf;
-plot_traces(tVecs{end}, pulseVecs{end}, 'PlotMode', 'parallel');
+% Plot stim traces with detection
+if ~isempty(pulseVecsThis)
+    fprintf('Plotting stim traces with detection for file %d ...\n', sampleFileNum);
+    if toSpeedUp
+        set_figure_properties('AlwaysNew', true, 'Visible', 'off');
+    else
+        set_figure_properties('FigNumber', 2, 'AlwaysNew', false, 'ClearFigure', true);
+    end
+    handles2 = plot_traces(tVecsThis, pulseVecsThis, 'ColorMap', 'k', ...
+                'XBoundaries', [pulseStartTimesThis, pulseEndTimesThis], ...
+                'XBoundaryColor', puffWindowColor, ...
+                'PlotMode', 'parallel', 'FigTitle', figTitle2, ...
+                'XLabel', timeLabel, 'LegendLocation', legendLocation2, ...
+                'YLimits', piezoLimits, ...
+                'FigName', figPath2, 'FigTypes', figTypes);
+else
+    handles2.fig = gobjects;
+    handles2.subPlots = gobjects;
+    handles2.plotsData = gobjects;
+    handles2.plotsDataToCompare = gobjects;
+end
+
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

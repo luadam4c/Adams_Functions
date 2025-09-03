@@ -69,6 +69,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_traces.m
 %       cd/save_all_zooms.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu

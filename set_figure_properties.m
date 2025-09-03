@@ -92,6 +92,7 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 %       cd/update_figure_for_corel.m
+%       cd/virt_analyze_sniff_whisk.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting.m
 
 % File History:

@@ -1,8 +1,8 @@
 function [indStart1, indEnd1, indStart2, indEnd2] = ...
-            find_pulse_endpoints (vectors)
+            find_pulse_endpoints (vectors, varargin)
 %% Returns the start and end indices of the first pulse from vector(s)
 % Usage: [indStart1, indEnd1, indStart2, indEnd2] = ...
-%           find_pulse_endpoints (vectors)
+%           find_pulse_endpoints (vectors, varargin)
 % Outputs:
 %       indStart1    - indices of pulse start (right before pulse start)
 %                       specified as a positive integer (or NaN) vector
@@ -17,6 +17,9 @@ function [indStart1, indEnd1, indStart2, indEnd2] = ...
 %                   Note: If a cell array, each element must be a vector
 %                         If an array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
+%       varargin    - 'MinPulseAmplitude': minimum pulse amplitude
+%                   must be a non-negative scalar
+%                   default == 0
 %
 % Requires:
 %       cd/force_column_cell.m
@@ -37,6 +40,11 @@ function [indStart1, indEnd1, indStart2, indEnd2] = ...
 % 2018-10-10 Added indStart2 and indEnd2
 % 2018-12-15 Now uses force_column_cell.m
 % 2018-12-15 Now returns NaN if there is no pulse
+% 2025-09-02 Now returns NaN if vector is empty
+% 2025-09-02 Added 'MinPulseAmplitude' as an optional parameter
+
+%% Default values for optional arguments
+minPulseAmplitudeDefault = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -56,8 +64,13 @@ addRequired(iP, 'vectors', ...                   % vectors
                 ['vectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'MinPulseAmplitude', minPulseAmplitudeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+
 % Read from the Input Parser
-parse(iP, vectors);
+parse(iP, vectors, varargin{:});
+minPulseAmplitude = iP.Results.MinPulseAmplitude;
 
 %% Preparation
 % Force vectors as a cell array of numeric vectors
@@ -65,16 +78,25 @@ vectors = force_column_cell(vectors);
 
 %% Do the job
 [indStart1, indEnd1, indStart2, indEnd2] = ...
-    cellfun(@find_pulse_endpoints_helper, vectors);
+    cellfun(@(v) find_pulse_endpoints_helper(v, minPulseAmplitude), vectors);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [idxStart1, idxEnd1, idxStart2, idxEnd2] = ...
-                find_pulse_endpoints_helper(vector)
+                find_pulse_endpoints_helper(vector, minPulseAmplitude)
 %% Finds pulse endpoints from a single vector
 
 % Count the number of samples
 nSamples = length(vector);
+
+% If empty vector, return NaN
+if nSamples == 0
+    idxStart1 = NaN; 
+    idxEnd1 = NaN; 
+    idxStart2 = NaN; 
+    idxEnd2 = NaN;
+    return
+end
 
 % Subtract the trace by the initial value
 vectorShifted = vector - vector(1);
@@ -82,6 +104,15 @@ vectorShifted = vector - vector(1);
 % Find the maximum absolute value and make that the pulse amplitude
 [~, idxAbsMax] = max(abs(vectorShifted));
 amplitude = vectorShifted(idxAbsMax);
+
+% If amplitude is less than the minimum, return NaN for all indices
+if abs(amplitude) < minPulseAmplitude
+    idxStart1 = NaN; 
+    idxEnd1 = NaN; 
+    idxStart2 = NaN; 
+    idxEnd2 = NaN;
+    return
+end
 
 % Find the sign of the amplitude
 signAmplitude = sign(amplitude);

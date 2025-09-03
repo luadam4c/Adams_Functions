@@ -167,7 +167,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       'horizontalLines'   - horizontal dotted lines
 %                       'verticalBars'      - vertical bars
 %                       'horizontalShades'  - horizontal shades
-%                   default == 'verticalLines'
+%                   default == 'horizontalLines'
 %                   - 'PhaseVectors': phase information for each readout vector
 %                   must be a numeric matrix or a cell array of numeric vectors
 %                   default == {}

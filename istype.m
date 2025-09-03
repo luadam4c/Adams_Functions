@@ -37,7 +37,8 @@ function [results, validatedTypes] = istype (strs, validTypes, varargin)
 %
 % File History:
 % 2018-05-16 Modified from issheettype.m
-% 
+% 2025-09-02 Moved results determination to validate_string.m
+%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,16 +80,15 @@ end
 
 %% Check strings and validate
 if iscell(strs)
-    validatedTypes = cellfun(@(x) validate_string(x, validTypes, ...
+    [validatedTypes, resultsCell] = cellfun(@(x) validate_string(x, validTypes, ...
                                             'ValidateMode', validateMode, ...
                                             'MatchMode', matchMode), ...
                                             strs, 'UniformOutput', false);
-    results = ~isemptycell(validatedTypes);
+    results = cell2num(resultsCell);
 elseif ischar(strs)
-    validatedTypes = validate_string(strs, validTypes, ...
+    [validatedTypes, results] = validate_string(strs, validTypes, ...
                                 'ValidateMode', validateMode, ...
                                 'MatchMode', matchMode);
-    results = ~isempty(validatedTypes);
 else
     error(['input argument is in the wrong format! ', ...
             'Type ''help %s'' for usage'], mfilename);
@@ -99,6 +99,9 @@ end
 
 %{
 OLD CODE:
+
+results = ~isemptycell(validatedTypes);
+results = ~isempty(validatedTypes);
 
 %}
 

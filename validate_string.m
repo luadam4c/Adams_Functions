@@ -1,9 +1,11 @@
-function strValidated = validate_string (str, validStrings, varargin)
+function [strValidated, isValid] = validate_string (str, validStrings, varargin)
 %% Validate whether a string is an element of a cell array of valid strings
-% Usage: strValidated = validate_string (str, validStrings, varargin)
+% Usage: [strValidated, isValid] = validate_string (str, validStrings, varargin)
 % Explanation:
 %       Same as the built-in validatestring() except that an empty string can be 
-%       returned if str is not matched in validStrings
+%       returned if str is not matched in validStrings, and an empty string
+%       can be valid if validStrings contain empty
+%
 % Outputs:
 %       strValidated    - validated text, i.e., the shortest match in  
 %                           validStrings that contains str as a substring
@@ -31,6 +33,7 @@ function strValidated = validate_string (str, validStrings, varargin)
 %
 % Requires:
 %       cd/find_in_strings.m
+%       cd/isemptycell.m
 %
 % Used by:
 %       cd/istype.m
@@ -44,6 +47,8 @@ function strValidated = validate_string (str, validStrings, varargin)
 % 2018-02-01 Updated description
 % 2018-05-15 issheettype.m also uses this now
 % 2018-05-16 Now is used by istype.m instead
+% 2025-09-02 Now returns isValid and make it true if an empty string
+%               is validated in a list of strings including an empty string
 %
 
 %% Default values for optional arguments
@@ -87,6 +92,20 @@ validateMode = iP.Results.ValidateMode;
 matchMode = iP.Results.MatchMode;
 ignoreCase = iP.Results.IgnoreCase;
 
+% Deal with special case: str is empty
+if isempty(str)
+    % The validated string is still empty
+    strValidated = str;
+
+    % It's valid if the validStrings contain empty
+    if any(isemptycell(strValidated))
+        isValid = true;
+    else
+        isValid = false;
+    end
+    return
+end
+
 % Validate string
 if validateMode     % throws error if no match found
     % Find the shortest match in validStrings that contains str as a substring 
@@ -113,6 +132,12 @@ else                % returns an empty string if no match found
     end
 end
 
+% Return whether string is validated
+if isempty(strValidated)
+    isValid = false;
+else
+    isValid = true;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

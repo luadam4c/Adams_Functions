@@ -1,10 +1,12 @@
 function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
-%% Parses pulse widths, endpoints, amplitudes for vector(s) containing a pulse
+%% Parses pulse widths, endpoints, amplitudes for vector(s) containing a single pulse
 % Usage: [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%       
 % Outputs:
 %       parsedParams    - a table containing the parsed parameters, including:
 %                           nSamples
@@ -17,7 +19,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %                           baseValue
 %                           pulseValue
 %                           pulseAmplitude
-%                       if siMs is provided, also:
+%                       if siMs or timeVecs is provided, also:
 %                           pulseWidthMs
 %                           timeBeforeStartMs
 %                           timeBeforeEndMs
@@ -36,8 +38,18 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %                         If an array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
 %       varargin    - 'SamplingIntervalMs': sampling interval(s) in ms
+%                   Note: Only one of 'SamplingIntervalMs' or 'TimeVecs'
+%                         can be provided.
 %                   must be a positive vector
 %                   default == []
+%                   - 'TimeVecs': corresponding time vectors
+%                   Note: Only one of 'SamplingIntervalMs' or 'TimeVecs'
+%                         can be provided.
+%                   must be a numeric array or a cell array of numeric vectors
+%                   default == []
+%                   - 'MinPulseAmplitude': minimum pulse amplitude
+%                   must be a non-negative scalar
+%                   default == 0
 %
 % Requires:
 %       cd/compute_stats.m
@@ -46,6 +58,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/ispositivevector.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:    
 %       cd/parse_stim.m
@@ -58,12 +71,15 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 % 2018-10-10 Created by Adam Lu
 % 2018-12-15 Now allows vectors to have no pulse (will return NaNs)
 % 2018-12-17 Now computes times if SamplingIntervalMs is provided
+% 2025-09-02 Modified to accept 'TimeVecs' as an optional parameter
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 samplingIntervalMsDefault = []; % no time information by default
+timeVecsDefault = [];           % no time vectors by default
+minPulseAmplitudeDefault = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,14 +102,34 @@ addRequired(iP, 'vectors', ...                   % vectors
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) isempty(x) || ispositivevector(x));
+addParameter(iP, 'TimeVecs', timeVecsDefault, ...
+    @(x) isempty(x) || isnumeric(x) || iscellnumeric(x));
+addParameter(iP, 'MinPulseAmplitude', minPulseAmplitudeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
 siMs = iP.Results.SamplingIntervalMs;
+timeVecs = iP.Results.TimeVecs;
+minPulseAmplitude = iP.Results.MinPulseAmplitude;
+
+% Check that 'SamplingIntervalMs' and 'TimeVecs' are not both provided
+if ~isempty(siMs) && ~isempty(timeVecs)
+    error('Usage error: ''SamplingIntervalMs'' and ''TimeVecs'' cannot both be provided.');
+end
 
 %% Preparation
 % Force vectors to be a column cell array
 vectors = force_column_cell(vectors);
+
+% If time vectors provided, match the vector sets
+if ~isempty(timeVecs)
+    % Force to a column cell array
+    timeVecs = force_column_cell(timeVecs);
+
+    % Match the number of vectors
+    [timeVecs, vectors] = match_format_vector_sets(timeVecs, vectors);
+end
 
 % Count the number of samples for each vector
 nSamples = count_samples(vectors);
@@ -101,7 +137,7 @@ nSamples = count_samples(vectors);
 %% Do the job
 % Find indices for all the pulse endpoints
 [idxBeforeStart, idxBeforeEnd, idxAfterStart, idxAfterEnd] = ...
-    find_pulse_endpoints(vectors);
+    find_pulse_endpoints(vectors, 'MinPulseAmplitude', minPulseAmplitude);
 
 % Find indices for all the pulse midpoints
 idxMidpoint = round((idxAfterStart + idxBeforeEnd) ./ 2);
@@ -136,9 +172,17 @@ parsedParams = table(nSamples, pulseWidthSamples, ...
 parsedData = table(vectors, indBase, indPulse);
 
 %% Optional extra parameters
-% If siMs provided, add the corresponding times
-if ~isempty(siMs)
-    % Compute the corresponding times
+% If time information is provided, add the corresponding times
+if ~isempty(timeVecs)
+    % Compute the corresponding times from the time vectors
+    timeBeforeStartMs = cellfun(@(tv, idx) get_time_at_idx(tv, idx), timeVecs, num2cell(idxBeforeStart));
+    timeBeforeEndMs   = cellfun(@(tv, idx) get_time_at_idx(tv, idx), timeVecs, num2cell(idxBeforeEnd));
+    timeAfterStartMs  = cellfun(@(tv, idx) get_time_at_idx(tv, idx), timeVecs, num2cell(idxAfterStart));
+    timeAfterEndMs    = cellfun(@(tv, idx) get_time_at_idx(tv, idx), timeVecs, num2cell(idxAfterEnd));
+    timeMidpointMs    = cellfun(@(tv, idx) get_time_at_idx(tv, idx), timeVecs, num2cell(idxMidpoint));
+    pulseWidthMs      = timeBeforeEndMs - timeBeforeStartMs;
+elseif ~isempty(siMs)
+    % Compute the corresponding times from the sampling interval
     % TODO: Use convert_to_time.m
     % TODO: Does the time make sense if doesn't start from zero?
     [pulseWidthMs, timeBeforeStartMs, timeBeforeEndMs, ...
@@ -146,7 +190,9 @@ if ~isempty(siMs)
         argfun(@(x) x .* siMs, ...
             pulseWidthSamples, idxBeforeStart, idxBeforeEnd, ...
             idxAfterStart, idxAfterEnd, idxMidpoint);
+end
 
+if ~isempty(timeVecs) || ~isempty(siMs)
     % Place in table
     timeParams = table(pulseWidthMs, timeBeforeStartMs, timeBeforeEndMs, ...
                         timeAfterStartMs, timeAfterEndMs, timeMidpointMs);
@@ -181,6 +227,16 @@ if isnan(idxAfterStart) || isnan(idxBeforeEnd)
 else
     % Use the restrictive pulse endpoints
     indPulse = idxAfterStart:idxBeforeEnd;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function timeValue = get_time_at_idx(timeVector, index)
+%% Safely gets a time value from a time vector at a specific index
+if isnan(index) || isempty(index) || index < 1 || index > numel(timeVector)
+    timeValue = NaN;
+else
+    timeValue = timeVector(index);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

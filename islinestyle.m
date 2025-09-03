@@ -15,7 +15,7 @@ function [results, linestyles] = islinestyle (candidates, varargin)
 %                   must be a string vector, a character vector, 
 %                       or a cell array of character vectors
 %       varargin    - 'ValidateMode': whether to validate string and 
-%                       throw error if string is not a substring of a sheettype
+%                       throw error if string is not a substring of a line style
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'MatchMode': the matching mode
