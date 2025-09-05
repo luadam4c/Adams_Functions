@@ -6,11 +6,14 @@ function filteredData = freqfilter (data, fc, varargin)
 %       to remove lag effect of filter.
 %
 % Outputs:
-%       filteredData - the filtered version of data
+%       filteredData - The filtered version of data. The output format (numeric
+%                      matrix or cell array) matches the input format of 'data'.
 %
 % Arguments:    
-%       data        - data where each column is a vector of samples
-%                   must be a nonempty numeric array
+%       data        - Data to be filtered. Each column is a vector of samples.
+%                   Note: If 'data' is a cell array of numeric vectors, the
+%                         output will also be a cell array.
+%                   must be a nonempty numeric array or a cell array of numeric vectors
 %       fc          the cutoff frequency(ies) (Hz or normalized) for the filter
 %                   must be a numeric and:
 %                       a scalar by default or if ftype == 'low' or 'high'
@@ -37,16 +40,20 @@ function filteredData = freqfilter (data, fc, varargin)
 %                   must be a numeric scalar that is a positive integer
 %                   consistent with the documentation for butter()
 %
+% Requires:
+%
 % Used by:
 %       cd/crosscorr_profile.m
 %       cd/detect_spikes_multiunit.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/identify_CI_protocol.m
+%       cd/parse_oscillation.m
 %       cd/parse_pleth_trace.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/minEASE.m
 %           many others; apply this command in a LINUX terminal to find them:
 %             grep --include=*.m -rlw '/home/Matlab/' -e "freqfilter"
+%       \Shared\Code\vIRt\virt_moore.m
 %
 % File History:
 % 2018-08-03 AL - Adapted from /home/Matlab/Marks_Functions/zof_mark.m
@@ -55,9 +62,7 @@ function filteredData = freqfilter (data, fc, varargin)
 % 2020-08-13 Improved bandpass filter design based on 
 %               https://dsp.stackexchange.com/questions/42797/why-butterworth-bandpass-filter-changes-signal-in-the-passband
 % 2021-05-07 Added maxNPoles and set it at 20
-% TODO: Check lower and upper bounds for fc (0, Nyquist frequency)
-% TODO: Allow data to be a cell array but attempt to concatenate
-%           into array 
+% 2025-09-04 Improved by Gemini to handle cell arrays and check fc bounds.
 
 %% Hard-coded parameters
 validFilterTypes = {'low', 'high', 'bandpass', 'stop', 'auto'};
@@ -86,7 +91,8 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'data', ...     % vector of samples
-    @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
+    @(x) assert(isnumeric(x) || iscell(x), ...
+                'Data must be a numeric array or a cell array of numeric vectors!'));
 addRequired(iP, 'fc', ...       % the cutoff frequency(ies) (Hz or normalized)
     @(x) isnumeric(x) && isvector(x) && numel(x) <= 2);
 
@@ -127,11 +133,28 @@ if strcmp(ftype, 'auto')
 end
 
 %% Preparation
+% Store whether the input was a cell array
+isCellInput = iscell(data);
+
+% Calculate the Nyquist frequency
+nyquistFreq = 1 / (2 * si);
+
 % If fc has two elements but ftype is not 'bandpass' or 'stop',
 %   return error
 if numel(fc) > 1 && ~any(strcmp(ftype, {'bandpass', 'stop'}))
     error(['Filter type must be ''bandpass'' or ''stop'' ', ...
             'if two cutoff frequencies are provided!']);
+end
+
+% Validate fc against lower and upper bounds
+if any(fc < 0)
+    warning('Cutoff frequency has negative values, will change to 0!');
+    fc(fc < 0) = 0;
+end
+if any(fc >= nyquistFreq)
+    warning('Cutoff frequency has values greater than Nyquist frequency (%.2f Hz).', nyquistFreq);
+    warning('Will change to 0.99 times Nyquist frequency!');
+    fc(fc >= nyquistFreq) = 0.99 * nyquistFreq;
 end
 
 % Change bandpass to lowpass if necessary
@@ -146,35 +169,38 @@ if strcmp(ftype, 'stop') && fc(1) <= 0
     fc = fc(2);
 end
 
-% If data is a vector, make sure it is a column
-if isvector(data)
-    data = data(:);
+% Prepare data and get dimensions if input is a matrix
+if ~isCellInput
+    % If data is a vector, make sure it is a column
+    if isvector(data)
+        data = data(:);
+    end
+
+    % Count the number of traces to filter
+    nTraces = size(data, 2);
+
+    % Count the number of samples per trace
+    nSamples = size(data, 1);
 end
 
-% Count the number of traces to filter
-nTraces = size(data, 2);
-
-% Count the number of samples per trace
-nSamples = size(data, 1);
-
-% Force as a column vector
+% Force fc as a column vector
 fc = fc(:);
 
 % Compute filter order and cutoff frequencies
 if isempty(nPoles)
     % Compute the pass band frequencies
-    passBandFrequency = fc * 2 * si;
+    passBandFrequency = fc / nyquistFreq;
 
     % Compute the stop band frequencies
     switch ftype
         case 'low'
-            stopBandFrequency = (fc + passStopBandDiffHz) * 2 * si;
+            stopBandFrequency = (fc + passStopBandDiffHz) / nyquistFreq;
         case 'high'
-            stopBandFrequency = (fc - passStopBandDiffHz) * 2 * si;
+            stopBandFrequency = (fc - passStopBandDiffHz) / nyquistFreq;
         case 'bandpass'
-            stopBandFrequency = (fc + passStopBandDiffHz * [-1; 1]) * 2 * si;
+            stopBandFrequency = (fc + passStopBandDiffHz * [-1; 1]) / nyquistFreq;
         case 'stop'
-            stopBandFrequency = (fc + passStopBandDiffHz * [1; -1]) * 2 * si;
+            stopBandFrequency = (fc + passStopBandDiffHz * [1; -1]) / nyquistFreq;
     end
 
     % Fix values if out of range
@@ -195,33 +221,71 @@ else
     % Find the normalized cutoff frequency(ies) Wn = fc/(fs/2), 
     %   where fs = sampling frequency (Hz) = 1/si
     %   and fs/2 is the Nyquist frequency
-    Wn = fc * 2 * si;           % normalized cutoff frequency (half-cycles/sample)
+    Wn = fc / nyquistFreq;      % normalized cutoff frequency (half-cycles/sample)
 end
 
 % Find the transfer function coefficients of a Butterworth filter
 %   with order npoles and normalized cutoff frequency(ies) Wn
 [numeratorCoeff, denominatorCoeff] = butter(nPoles, Wn, ftype);
 
-% Check the order of the filter
-orderFilter = filtord(numeratorCoeff, denominatorCoeff);
-if nSamples <= 3 * orderFilter
-    error(['Not enough data points to apply a ', ...
-            'Butterworth filter of order %d twice!\n'], ...
-            orderFilter);
-end
-
 %% Filter each trace one by one
-filteredData = zeros(size(data));       % initialize filtered data
-for i = 1:nTraces
-    % Extract the ith trace to filter
-    thisTrace = data(:, i);             % ith trace to filter
+if isCellInput
+    % If input is a cell array, filter each cell individually and return a cell array
+    filteredData = cellfun(@(x) filter_single_trace(x, numeratorCoeff, denominatorCoeff), ...
+                           data, 'UniformOutput', false);
+else
+    % If input is a matrix, filter each column
+    
+    % Check if there are enough data points for the filter
+    orderFilter = filtord(numeratorCoeff, denominatorCoeff);
+    if nSamples <= 3 * orderFilter
+        error(['Not enough data points (%d) to apply a ', ...
+                'Butterworth filter of order %d twice!\n'], ...
+                nSamples, orderFilter);
+    end
 
-    % Lowpass-filter data twice (forward & reverse directions)
-    thisTraceFiltered = filtfilt(numeratorCoeff, denominatorCoeff, thisTrace);
+    % Initialize filtered data
+    filteredData = zeros(size(data));
 
-    % Place filtered trace in output matrix
-    filteredData(:, i) = thisTraceFiltered;
+    for i = 1:nTraces
+        % Extract the ith trace to filter
+        thisTrace = data(:, i);
+
+        % Ignore NaNs from padding
+        isNan = isnan(thisTrace);
+        thisTrace(isNan) = 0; % Replace NaNs with 0 for filtering
+
+        % Lowpass-filter data twice (forward & reverse directions)
+        thisTraceFiltered = filtfilt(numeratorCoeff, denominatorCoeff, thisTrace);
+
+        % Restore NaNs
+        thisTraceFiltered(isNan) = NaN;
+
+        % Place filtered trace in output matrix
+        filteredData(:, i) = thisTraceFiltered;
+    end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function outTrace = filter_single_trace(inTrace, b, a)
+%% Applies filtfilt to a single vector, with safety checks.
+
+% Get the effective order of the filter for the length check
+orderFilter = filtord(b, a);
+
+% If trace is empty or too short for the filter, return it unchanged
+if isempty(inTrace) || numel(inTrace) <= 3 * orderFilter
+    outTrace = inTrace;
+    warning(['Not enough data points to apply a ', ...
+            'Butterworth filter of order %d twice!'], ...
+            orderFilter);
+    warning('The original vector will be returned!');
+    return;
+end
+
+% Apply the filter forwards and backwards
+outTrace = filtfilt(b, a, inTrace);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

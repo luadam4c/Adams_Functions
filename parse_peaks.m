@@ -1,22 +1,28 @@
 function parsedParams = parse_peaks (vec, varargin)
-%% Parses peaks for one vector
+%% Parses peaks or troughs and define the peak regions for one vector
 % Usage: parsedParams = parse_peaks (vec, varargin)
 % Explanation:
-%       TODO
+%       This function is a wrapper for MATLAB's findpeaks() to identify peaks
+%       or troughs and return detailed parameters in a structured format.
 %
 % Example(s):
 %       load sunspot.dat
 %       year = sunspot(:, 1);
 %       avSpots = sunspot(:, 2);
-%       parsedParams = parse_peaks(avSpots)
-%       parsedParams = parse_peaks(avSpots, 'ParseMode', 'max')
-%       parsedParams = parse_peaks(avSpots, 'ParseMode', 'first')
+%       % Find all peaks (default behavior)
+%       peakParams = parse_peaks(avSpots)
+%       % Find all troughs by setting DetectMode
+%       troughParams = parse_peaks(avSpots, 'DetectMode', 'troughs')
+%       % Find only the maximum peaks
+%       maxPeak = parse_peaks(avSpots, 'ParseMode', 'max')
+%       % Find only the first peaks
+%       maxPeak = parse_peaks(avSpots, 'ParseMode', 'max')
 %
 % Outputs:
 %       parsedParams    - parsed scalars, with fields or columns:
 %                           peakNum     - peak number
-%                           idxPeak     - peak index
-%                           peakAmp     - peak amplitude
+%                           idxPeak     - peak/trough index
+%                           peakAmp     - peak/trough amplitude
 %                           peakWidth   - peak width
 %                           peakProm    - peak prominence
 %                           idxPeakStart- index of peak region start
@@ -26,7 +32,12 @@ function parsedParams = parse_peaks (vec, varargin)
 % Arguments:
 %       vec         - vector to parse
 %                   must be a numeric vector
-%       varargin    - 'ParseMode': parse mode
+%       varargin    - 'DetectMode': what to detect
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'peaks'   - detect peaks (positive maxima)
+%                       'troughs' - detect troughs (valleys or minima)
+%                   default == 'peaks'
+%                   - 'ParseMode': parse mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'all'   - all peaks
 %                       'max'   - the maximum peak
@@ -62,8 +73,10 @@ function parsedParams = parse_peaks (vec, varargin)
 % 2020-04-20 Created by Adam Lu
 % 2020-04-22 Added 'maxOfAll' as a valid parseMode
 % 2020-05-13 Now makes the entire vector a peak if no peaks are found
+% 2025-09-04 Modified by Gemini to include 'DetectMode' for trough detection
 
 %% Hard-coded parameters
+validDetectModes = {'peaks', 'troughs'};
 validParseModes = {'all', 'max', 'maxOfAll', 'first'};
 validOutputModes = {'auto', 'table', 'struct'};
 parsedParamsVariableNames = {'peakNum'; 'idxPeak'; 'peakAmp'; ...
@@ -73,6 +86,7 @@ parsedParamsVariableTypes = {'double'; 'double'; 'double'; ...
                             'double'; 'double'; 'double'; 'double'};
 
 %% Default values for optional arguments
+detectModeDefault = 'peaks';        % detect peaks by default
 parseModeDefault = 'all';           % set later
 outputModeDefault = 'auto';         % set later
 peakLowerBoundDefault = [];
@@ -96,6 +110,8 @@ addRequired(iP, 'vec', ...
                 'vecs must be a numeric vector!'));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'DetectMode', detectModeDefault, ...
+    @(x) any(validatestring(x, validDetectModes)));
 addParameter(iP, 'ParseMode', parseModeDefault, ...
     @(x) any(validatestring(x, validParseModes)));
 addParameter(iP, 'OutputMode', outputModeDefault, ...
@@ -106,6 +122,7 @@ addParameter(iP, 'PeakLowerBound', peakLowerBoundDefault, ...
 
 % Read from the Input Parser
 parse(iP, vec, varargin{:});
+detectMode = validatestring(iP.Results.DetectMode, validDetectModes);
 parseMode = validatestring(iP.Results.ParseMode, validParseModes);
 outputMode = validatestring(iP.Results.OutputMode, validOutputModes);
 peakLowerBound = iP.Results.PeakLowerBound;
@@ -181,17 +198,28 @@ if nSamples == 0
     return
 end
 
-% Find all peaks
-if numel(vec) >= 3
-    [peakAmp, idxPeak, peakWidth, peakProm] = ...
-        findpeaks(vec, otherArguments{:});
+% Prepare vector for parsing based on detection mode
+if strcmp(detectMode, 'troughs')
+    vecToParse = -vec;
 else
-    peakAmp = [];
+    vecToParse = vec;
 end
 
-% Return if empty
-if isempty(peakAmp)
-    [parsedParams.peakAmp, parsedParams.idxPeak] = max(vec);
+% Find all peaks/troughs
+if numel(vecToParse) >= 3
+    [~, idxPeak, peakWidth, peakProm] = ...
+        findpeaks(vecToParse, otherArguments{:});
+else
+    idxPeak = [];
+end
+
+% Handle case where no peaks/troughs are found by finding the max/min point
+if isempty(idxPeak)
+    if strcmp(detectMode, 'troughs')
+        [parsedParams.peakAmp, parsedParams.idxPeak] = min(vec);
+    else
+        [parsedParams.peakAmp, parsedParams.idxPeak] = max(vec);
+    end
     parsedParams.peakNum = 1;
     parsedParams.peakWidth = NaN;
     parsedParams.peakProm = NaN;
@@ -199,6 +227,9 @@ if isempty(peakAmp)
     parsedParams.idxPeakEnd = nSamples;
     return
 end
+
+% Get the actual peak/trough amplitudes from the original vector
+peakAmp = vec(idxPeak);
 
 % Force as column vectors
 [peakAmp, idxPeak, peakWidth, peakProm] = ...
@@ -220,7 +251,7 @@ peakTable = table(peakNum, idxPeak, peakAmp, peakWidth, peakProm);
 
 % Find the minimums between each peak and the bounds
 [~, indTroughsSorted] = ...
-    find_troughs_from_peaks(vec, [1; idxPeakSorted; nSamples]);
+    find_troughs_from_peaks(vecToParse, [1; idxPeakSorted; nSamples]);
 
 % Set the peak starts to be the trough on the left
 idxPeakStartSorted = indTroughsSorted(1:end-1);
