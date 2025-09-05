@@ -24,19 +24,42 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %                                    'MinPeakProminence', 0.5);
 %
 % Outputs:
-%       peakTable   - A table for detected peaks with columns for index, value,
-%                     amplitude, and surrounding valley info.
-%       valleyTable - A table for detected valleys with columns for index, value,
-%                     amplitude, and surrounding peak info.
+%       peakTable   - A table for detected peaks with the following columns:
+%                       'peakIndex'       - Index of the peak in the vector.
+%                       'peakValue'       - Value of the peak.
+%                       'preValleyIndex'  - Index of the preceding valley.
+%                       'postValleyIndex' - Index of the succeeding valley.
+%                       'preValleyValue'  - Value of the preceding valley.
+%                       'postValleyValue' - Value of the succeeding valley.
+%                       'amplitude'       - Computed amplitude of the peak.
+%                       'peakTime'        - (Optional) Time of the peak.
+%                       'preValleyTime'   - (Optional) Time of the preceding valley.
+%                       'postValleyTime'  - (Optional) Time of the succeeding valley.
+%       valleyTable - A table for detected valleys with the following columns:
+%                       'valleyIndex'     - Index of the valley in the vector.
+%                       'valleyValue'     - Value of the valley.
+%                       'prePeakIndex'    - Index of the preceding peak.
+%                       'postPeakIndex'   - Index of the succeeding peak.
+%                       'prePeakValue'    - Value of the preceding peak.
+%                       'postPeakValue'   - Value of the succeeding peak.
+%                       'amplitude'       - Computed amplitude of the valley.
+%                       'valleyTime'      - (Optional) Time of the valley.
+%                       'prePeakTime'     - (Optional) Time of the preceding peak.
+%                       'postPeakTime'    - (Optional) Time of the succeeding peak.
 %       otherResults- A structure with other results including:
-%                       freqFundamental - fundamental frequency if time info provided
+%                       'freqFundamental' - Fundamental frequency (Hz) if computed.
 %
 % Arguments:
 %       vec         - The time-series vector to analyze.
 %                   must be a numeric vector
-%       varargin    - 'TimeVec': A time vector corresponding to 'vec' (default in ms)
+%       varargin    - 'TimeVec': A time vector corresponding to 'vec'
 %                   must be a numeric vector of the same length as 'vec'
 %                   default == []
+%                   - 'TimeUnits': Units for TimeVec
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'ms'  - milliseconds
+%                       's'   - seconds
+%                   default == 'ms'
 %                   - 'SamplingIntervalMs': Sampling interval in ms
 %                           Required if filtering is applied.
 %                   must be a positive scalar
@@ -89,6 +112,7 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %       cd/freqfilter.m
 %
 % Used by:
+%       cd/virt_analyze_sniff_whisk.m
 %       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
@@ -97,14 +121,17 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 % 2025-09-04 Modified by Gemini to include internal filtering capabilities.
 % 2025-09-05 Added 'MinPeakDistanceMs', 'MinValleyDistanceMs' and 
 %               'PromThresholdPerc', 'FilterCutoffsRelToFund' as optional arguments
+% 2025-09-05 Added 'TimeUnits' as an optional argument by Gemini.
 % TODO: Make 'ParsePsd' an optional argument and use parse_psd.m and 
 %       store results in otherResults
 
 %% Hard-coded parameters
 validAmpModes = {'peak-to-equilibrium', 'peak-to-avgvalley', 'peak-to-prevalley'};
+validTimeUnits = {'ms', 's'};
 
 %% Default values for optional arguments
 timeVecDefault = [];
+timeUnitsDefault = 'ms';
 siMsDefault = [];
 filterCutoffsDefault = [];
 filterCutoffsRelToFundDefault = [];
@@ -136,6 +163,8 @@ addRequired(iP, 'vec', @isnumericvector);
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'TimeVec', timeVecDefault, @isnumericvector);
+addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
+    @(x) any(validatestring(x, validTimeUnits)));
 addParameter(iP, 'SamplingIntervalMs', siMsDefault, @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'FilterCutoffs', filterCutoffsDefault, @isnumeric);
 addParameter(iP, 'FilterCutoffsRelToFund', filterCutoffsRelToFundDefault, @isnumeric);
@@ -156,6 +185,7 @@ addParameter(iP, 'MinValleyProminence', minValleyProminenceDefault, @isnumeric);
 % Read from the Input Parser
 parse(iP, vec, varargin{:});
 timeVec = iP.Results.TimeVec;
+timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 siMs = iP.Results.SamplingIntervalMs;
 filterCutoffs = iP.Results.FilterCutoffs;
 filterCutoffsRelToFund = iP.Results.FilterCutoffsRelToFund;
@@ -199,8 +229,17 @@ if toFilter
     % Decide on the sampling interval
     if isempty(siMs)
         if ~isempty(timeVec)
-            siMs = mean(diff(timeVec));
-        else
+            % Get the mean sampling interval
+            avgSI = mean(diff(timeVec));
+
+            % Convert to ms if time vector is in seconds
+            switch timeUnits
+            case 's'
+                siMs = avgSI * 1000;
+            case 'ms'
+                siMs = avgSI;
+            end
+         else
             error('Either Time vector (TimeVec) or Sampling Interval (SamplingIntervalMs) must be provided for filtering.');
         end
     end
@@ -216,10 +255,6 @@ if toFilter
 
     % Save fundamental frequency in otherResults
     otherResults.freqFundamental = freqFundamental;
-
-    % Compute the fundamental frequency of the oscillation (Hz)
-    freqFundamental = ...
-        compute_fundamental_frequency(vec, 'SamplingIntervalMs', siMs);
 end
 
 

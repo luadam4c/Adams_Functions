@@ -13,6 +13,9 @@ function strs = convert_to_char (data, varargin)
 %       convert_to_char({{'dog', 'cat'}, "fly"})
 %       convert_to_char({{'dog', 'cat'}, "fly"}, 'SingleOutput', true)
 %       convert_to_char(linspace(1, 10, 15), 'Precision', 3);
+%       convert_to_char([4, 2, 5], 'SingleOutput', true, 'Delimiter', ' ')
+%       convert_to_char([4; 2; 5], 'SingleOutput', true, 'Delimiter', ' ')
+%       convert_to_char(magic(3), 'SingleOutput', true, 'Delimiter', ' ')
 %
 % Outputs:
 %       strs        - strings
@@ -46,6 +49,7 @@ function strs = convert_to_char (data, varargin)
 %       cd/m3ha_plot_figure08.m.
 %       cd/m3ha_rank_neurons.m
 %       cd/parse_spike2_mat.m
+%       cd/print_cellstr.m
 %       cd/test_ifference.m
 %       cd/test_var_difference.m
 
@@ -55,6 +59,7 @@ function strs = convert_to_char (data, varargin)
 % 2019-01-11 Added 'SingleOutput' and 'Delimiter' as optional arguments
 % 2019-08-14 Added 'Precision' and 'FormatSpec' as optional arguments
 % 2020-02-14 Added 'ForceCellOutput' as an optional argument
+% 2025-09-05 Fixed bug for the 'SingleOutput' condition for the delimiter
 % TODO: Make a convert_to_string.m for string array outputs
 %           that can take non-scalar arguments
 % 
@@ -120,7 +125,6 @@ end
 %% Do the job
 if numel(data) > 1
     if singleOutput && (iscellstr(data) || isstring(data))
-        % TODO: Use print_cellstr.m?
         strs = char(strjoin(data, delimiter));
     elseif iscell(data)
         strs = cellfun(@(x) convert_to_char_helper(x, singleOutput, ...
@@ -138,7 +142,8 @@ end
 
 if singleOutput && ~ischar(strs)
     strs = convert_to_char(strs, 'SingleOutput', singleOutput, ...
-                    'Precision', precision, 'FormatSpec', formatSpec);
+                    'Delimiter', delimiter, 'Precision', precision, ...
+                    'FormatSpec', formatSpec);
 end
 
 % Force as cell array if requested

@@ -16,6 +16,8 @@ function string = print_cellstr (cellStr, varargin)
 %       print_cellstr({'a', 'b', 'c'}, 'OmitBraces', true)
 %       print_cellstr({'a', 'b', 'c'}, 'OmitNewline', true)
 %       print_cellstr({'a', 'b', 'c'}, 'ToPrint', false, 'OmitQuotes', true, 'OmitBraces', true, 'OmitNewline', true)
+%       print_cellstr({'a', 1, [2, 3], []}, 'OmitBraces', true, 'OmitQuotes', true)
+%       print_cellstr({'a', 1, [2; 3], []}, 'OmitBraces', true, 'OmitQuotes', true)
 %
 % Side Effects:
 %       Prints to standard output or a file with given FileID
@@ -24,9 +26,9 @@ function string = print_cellstr (cellStr, varargin)
 %       string      - a character array that includes elements of a cell array
 %
 % Arguments:
-%       cellStr   - a cell array of character arrays to be printed
-%                       or a character array
-%                   must be a cell array of character arrays or a character array
+%       cellStr   - a cell array to be printed. Can contain character arrays,
+%                   strings, or numeric vectors. Can also be a character array.
+%                   must be a cell array, character array, or string
 %       varargin    - 'Delimiter': used to delimit separate entries
 %                   must be a character array
 %                   default == ''
@@ -59,6 +61,7 @@ function string = print_cellstr (cellStr, varargin)
 %                   default == 1 (standard output)
 %
 % Requires:
+%       cd/convert_to_char.m
 %       cd/create_error_for_nargin.m
 %
 % Used by:
@@ -88,6 +91,7 @@ function string = print_cellstr (cellStr, varargin)
 % 2018-06-21 AL - Now also prints to standard output by default
 % 2025-08-01 Escape backslashes for fprintf
 % 2025-09-01 Now takes an empty array as an argument
+% 2025-09-05 Modified by Gemini to handle cell arrays of numeric vectors
 %
 % TODO: Consider 3-D cell arrays of strings
 
@@ -120,7 +124,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'cellStr', ...
-    @(x) isempty(x) || iscellstr(x) || ischar(x) || isstring(x));     
+    @(x) isempty(x) || iscell(x) || ischar(x) || isstring(x));     
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Delimiter', delimiterDefault, ...
@@ -182,6 +186,23 @@ end
 % Make empty array arguments behave the same way as empty strings
 if isempty(cellStr)
     cellStr = '';
+end
+
+% If a cell array contains numeric vectors, convert them to strings
+if iscell(cellStr)
+    for i = 1:numel(cellStr)
+        % Check if the element is numeric
+        if isnumeric(cellStr{i})
+            if isempty(cellStr{i})
+                % If it's empty, replace with an empty character vector
+                cellStr{i} = '';
+            else
+                % Otherwise, convert the numeric vector to a single character vector
+                cellStr{i} = convert_to_char(cellStr{i}, ...
+                            'SingleOutput', true, 'Delimiter', ' ');
+            end
+        end
+    end
 end
 
 % Prepend prefices and append suffixes

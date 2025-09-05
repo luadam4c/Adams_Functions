@@ -66,6 +66,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/plot_window_boundaries.m
 %       cd/set_axes_properties.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu

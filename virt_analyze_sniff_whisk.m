@@ -6,11 +6,11 @@
 % Dataset: sniff_whisk_data
 % Description from Jeff: 
 %   - unilateral whisking and sniffing data, head restrained
-% 	- whisking data are from tracking a single vibrissa in full-field video
+%   - whisking data are from tracking a single vibrissa in full-field video
 %   - breathing data are from a thermocouple
-% 	- some trials contain puffs of ammonia or control puffs of unscented air to the nose
+%   - some trials contain puffs of ammonia or control puffs of unscented air to the nose
 %       time of application is indicated by the pulse in channel "piezo"
-% 	- check sign
+%   - check sign
 %
 % Requires:
 %       cd/all_files.m
@@ -24,20 +24,23 @@
 %       cd/find_matching_files.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
+%       cd/parse_oscillation.m
 %       cd/plot_traces.m
+%       cd/plot_vertical_line.m
 %       cd/print_cellstr.m
 %
 % Used by:
 
 % File History:
 % 2025-08-31 Created by Adam Lu
+% 2025-09-05 Modified by Gemini to detect sniff transitions
 % 
 
 %% Hard-coded parameters
 % Directory and file naming conventions
 nameDataDir = 'data_sniff_whisk';       % Name of the directory containing the data files
 nameOutDir = 'output_sniff_whisk';      % Name of the output directory
-fileNameMetaData = 'metadata.csv';      % File name of the meta data file
+fileNameMetaData = 'sniff_whisk_metadata.csv';      % File name of the meta data file
 extDataFile = 'mat';                    % Extension for the data files
 prefixDataFile = 'swdata_';             % Prefix for the data files
 suffixDataFile = '_angle';              % Suffix for the data files
@@ -48,11 +51,31 @@ ammoniaPuffString = 'ammpuff';
 airPuffString = 'airpuff';
 minPulseAmplitude = 2;                  % Minimum pulse amplitude for piezo trace
 
+% Analysis parameters
+%   Note: Keep this consistent with virt_moore.m
+amplitudeDefinition = 'peak-to-avgvalley';        
+fCutoffRelToFund = [0.1, 10];   % ratio of Butterworth bandpass filter cutoff for effector trace
+                                % relative to the fundamental frequency
+filterOrder = 2;            % filter order for effector trace
+promThresholdPerc = 10;     % Percentage of amplitude range for minimum peak prominence
+minPeakDistanceMs = 30;     % Minimum peak distance in ms
+sniffIpiThresholdMs = 250;  % Inter-peak interval threshold for sniffing in ms
+
 % Plotting parameters
-sampleFileNumsToPlot = (1:38)';         % The sample file number(s) to plot (max 38)
+sampleFileNumsToPlot = 4; %(1:38)';         % The sample file number(s) to plot (max 38)
 toSpeedUp = true;                       % Whether to use parpool and hide figures
 whiskAngleLimits = [-75, 75];           % Whisk angle limits to be plotted
 piezoLimits = [-1, 10];
+colorWhisk = 'b';                       % Color for whisk trace
+colorSniff = 'r';                       % Color for sniff trace
+colorStim = 'k';                        % Color for stim trace
+colorAmmoniaPuff = [0.6, 0.8, 0.2];     % Color for Ammonia Puff (Yellow Green)
+colorAirPuff = 0.5 * [1, 1, 1];         % Color for Air Puff (Gray)
+markerPeaksValleys = 'o';               % Circle for sniff peaks and valleys
+colorPeaksValleys = 'm';                % Color for sniff peaks and valleys
+colorSniffStart = [0, 0.4, 0];          % Color for sniff start transition lines (Dark Green)
+colorSniffEnd = [0.6, 0, 0.8];          % Color for sniff end transition lines (Dark Violet)
+lineWidthTransition = 0.25;             % Line width for sniff transition lines
 whiskAngleLabel = 'Whisk Angle (degrees)';
 sniffToWhiskRangeRatio = 0.8;           % Sniff amplitude to whisk amplitude ratio for plotting
 timeLabel = 'Time (s)';
@@ -169,17 +192,34 @@ sniffVecs = cellfun(@(a, b, c) whiskAngleLimits(1) + (a - b) * ...
                     num2cell(lowerThermLimitEachFile), num2cell(rangeThermLimitsEachFile), ...
                     'UniformOutput', false);
 
-% Detect the first pulse start and end times
+%% Detect the first pulse start and end times
 pulseParams = cellfun(@(x, y) parse_pulse(x, 'TimeVecs', y, ...
         'MinPulseAmplitude', minPulseAmplitude), pulseVecs, tVecs, 'UniformOutput', false);
 pulseStartTimes = cellfun(@(x) x.timeAfterStartMs, pulseParams, 'UniformOutput', false);
 pulseEndTimes = cellfun(@(x) x.timeBeforeEndMs, pulseParams, 'UniformOutput', false);
 
+%% Detect sniff transitions
+fprintf('Detecting sniff transitions...\n');
+
+% Use array_fun to apply the function to each file's data
+[sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll] = ...
+    array_fun(@(x, y, z) parse_sniff_vecs(x, y, z, ...
+                    amplitudeDefinition, fCutoffRelToFund, filterOrder, ...
+                    promThresholdPerc, minPeakDistanceMs, ...
+                    sniffIpiThresholdMs), ...
+                sniffVecs, tVecs, num2cell(nTrials), 'UniformOutput', false);
+
+
+fprintf('Finished detecting sniff transitions.\n\n');
+
 %% Plot all data
 [handles1, handles2] = ...
     array_fun(@(a) plot_one_file (a, tVecs, whiskVecs, sniffVecs, ...
         pulseVecs, pulseStartTimes, pulseEndTimes, ...
+        sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
         isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
+        colorWhisk, colorSniff, colorStim, colorAmmoniaPuff, colorAirPuff, ...
+        markerPeaksValleys, colorPeaksValleys, colorSniffStart, colorSniffEnd, lineWidthTransition, ...
         pathOutDir, timeLabel, whiskAngleLimits, whiskAngleLabel, piezoLimits, ...
         legendLocation1, legendLocation2, figTitlePrefix1, figTitlePrefix2, ...
         figPrefix1, figPrefix2, figTypes, toSpeedUp), ...
@@ -204,16 +244,20 @@ else
     metaData.nRecords = nTrials;
     metaData.isAmmoniaPuff = isAmmoniaPuff;
     metaData.isAirPuff = isAirPuff;
+    metaData.sniffStartTimes = sniffStartTimesAll;
+    metaData.sniffEndTimes = sniffEndTimesAll;
 
     % Expand the cell arrays to a single string
     metaDataToPrint = metaData;
     [metaDataToPrint.roiswitch, metaDataToPrint.records, ...
-        metaDataToPrint.anesrecords] = ...
+        metaDataToPrint.anesrecords, metaDataToPrint.sniffStartTimes, ...
+        metaDataToPrint.sniffEndTimes] = ...
         argfun(@(x) cellfun(@(a) print_cellstr(a, 'Delimiter', ' ', ...
                                 'ToPrint', false, 'OmitQuotes', true, ...
                                 'OmitBraces', true, 'OmitNewline', true), ...
                                 x, 'UniformOutput', false), ...
-            metaData.roiswitch, metaData.records, metaData.anesrecords);
+            metaData.roiswitch, metaData.records, metaData.anesrecords, ...
+            metaDataToPrint.sniffStartTimes, metaDataToPrint.sniffEndTimes);
 
     % Display the resulting table in the command window
     fprintf('Generated Metadata Table:\n');
@@ -230,7 +274,10 @@ end
 function [handles1, handles2] = ...
     plot_one_file (sampleFileNum, tVecs, whiskVecs, sniffVecs, ...
         pulseVecs, pulseStartTimes, pulseEndTimes, ...
+        sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
         isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
+        colorWhisk, colorSniff, colorStim, colorAmmoniaPuff, colorAirPuff, ...
+        markerPeaksValleys, colorPeaksValleys, colorSniffStart, colorSniffEnd, lineWidthTransition, ...
         pathOutDir, timeLabel, whiskAngleLimits, whiskAngleLabel, piezoLimits, ...
         legendLocation1, legendLocation2, figTitlePrefix1, figTitlePrefix2, ...
         figPrefix1, figPrefix2, figTypes, toSpeedUp)
@@ -244,26 +291,30 @@ pulseStartTimesThis = pulseStartTimes{sampleFileNum};
 pulseEndTimesThis = pulseEndTimes{sampleFileNum};
 isAmmoniaPuffThis = isAmmoniaPuff(sampleFileNum);
 isAirPuffThis = isAirPuff(sampleFileNum);
+sniffPeakTablesThis = sniffPeakTablesAll{sampleFileNum};
+sniffValleyTablesThis = sniffValleyTablesAll{sampleFileNum};
+sniffStartTimesThis = sniffStartTimesAll{sampleFileNum};
+sniffEndTimesThis = sniffEndTimesAll{sampleFileNum};
 
-% Count the number of plots
-nPlots = size(tVecsThis, 2);
-iPlots = (1:nPlots)';
+% Count the number of records to plot
+nRecords = size(tVecsThis, 2);
+iRecord = (1:nRecords)';
 
 % Create labels for legend
-whiskLabels = create_labels_from_numbers(iPlots, 'Prefix', whiskLabel);
-sniffLabels = create_labels_from_numbers(iPlots, 'Prefix', sniffLabel);
+whiskLabels = create_labels_from_numbers(iRecord, 'Prefix', whiskLabel);
+sniffLabels = create_labels_from_numbers(iRecord, 'Prefix', sniffLabel);
 
 % Decide on puff window colors and titles
 if isAmmoniaPuffThis
     figTitlePrefix1 = replace(figTitlePrefix1, 'data', 'data with Ammonia Puffs (green)');
     figTitlePrefix2 = replace(figTitlePrefix2, 'Puff', 'Ammonia Puff');
-    puffWindowColor = [0.5625, 0.9297, 0.5625];  % rgb('LightGreen')
+    puffWindowColor = colorAmmoniaPuff;
 elseif isAirPuffThis
     figTitlePrefix1 = replace(figTitlePrefix1, 'data', 'data with Control Air Puffs (gray)');
     figTitlePrefix2 = replace(figTitlePrefix2, 'Puff', 'Control Air Puff');
-    puffWindowColor = 0.8242 * [1, 1, 1]; % rgb('LightGray')
+    puffWindowColor = colorAirPuff; 
 else
-    puffWindowColor = 0.8242 * [1, 1, 1]; % rgb('LightGray')
+    puffWindowColor = colorAirPuff; 
 end
 
 % Create figure titles
@@ -284,18 +335,63 @@ else
     set_figure_properties('FigNumber', 1, 'AlwaysNew', false, 'ClearFigure', true);
 end
 if ~isempty(sniffVecsThis)
-    handles1 = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', 'b', ...
-                'DataToCompare', sniffVecsThis, 'ColorMapToCompare', 'r', ...
+    handles1 = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', colorWhisk, ...
+                'DataToCompare', sniffVecsThis, 'ColorMapToCompare', colorSniff, ...
                 'XBoundaries', [pulseStartTimesThis, pulseEndTimesThis], ...
                 'XBoundaryColor', puffWindowColor, ...
                 'TraceLabels', whiskLabels, 'TraceLabelsToCompare', sniffLabels, ...
                 'PlotMode', 'parallel', 'FigTitle', figTitle1, ...
                 'XLabel', timeLabel, 'LegendLocation', legendLocation1, ...
-                'YLimits', whiskAngleLimits, 'YLabel', whiskAngleLabel, ...
-                'FigName', figPath1, 'FigTypes', figTypes);
+                'YLimits', whiskAngleLimits, 'YLabel', whiskAngleLabel);
+
+    % Overlay detected peaks, valleys, and transitions
+    % Get all subplots
+    allSubPlots = handles1.subPlots;
+
+    % Plot over each subplot with a record
+    for iRecord = 1:nRecords
+        % Hold on to current subplot
+        subplot(allSubPlots(iRecord));
+        hold on;
+
+        % Extract the peak and valley tables for this record
+        peakTable = sniffPeakTablesThis{iRecord};
+        valleyTable = sniffValleyTablesThis{iRecord};
+        
+        % Plot peaks if they exist
+        if ~isempty(peakTable) && ismember('peakIndex', peakTable.Properties.VariableNames)
+            plot(peakTable.peakTime, peakTable.peakValue, ...
+                markerPeaksValleys, 'Color', colorPeaksValleys);
+        end
+     
+        % Plot valleys if they exist
+        if ~isempty(valleyTable) && ismember('valleyIndex', valleyTable.Properties.VariableNames)
+            plot(valleyTable.valleyTime, valleyTable.valleyValue, ...
+                markerPeaksValleys, 'Color', colorPeaksValleys);
+        end
+        
+        % Get the transition times for this record
+        sniffStartTimesThisRecord = sniffStartTimesThis{iRecord};
+        sniffEndTimesThisRecord = sniffEndTimesThis{iRecord};
+
+        % Plot basal-to-sniff transitions
+        if ~isempty(sniffStartTimesThisRecord)
+            plot_vertical_line(sniffStartTimesThisRecord, 'Color', colorSniffStart, ...
+                'LineStyle', '--', 'LineWidth', lineWidthTransition);
+        end
+
+        % Plot sniff-to-basal transitions
+        if ~isempty(sniffEndTimesThisRecord)
+            plot_vertical_line(sniffEndTimesThisRecord, 'Color', colorSniffEnd, ...
+                'LineStyle', '--', 'LineWidth', lineWidthTransition);
+        end
+    end
+
+    % Save figure
+    save_all_figtypes(handles1.fig, figPath1, figTypes);
 else
-    handles1 = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', 'b', ...
-                'TraceLabels', whiskLabels, 'TraceLabelsToCompare', sniffLabels, ...
+    handles1 = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', colorWhisk, ...
+                'TraceLabels', whiskLabels, ...
                 'XBoundaries', [pulseStartTimesThis, pulseEndTimesThis], ...
                 'XBoundaryColor', puffWindowColor, ...
                 'PlotMode', 'parallel', 'FigTitle', figTitle1, ...
@@ -312,7 +408,7 @@ if ~isempty(pulseVecsThis)
     else
         set_figure_properties('FigNumber', 2, 'AlwaysNew', false, 'ClearFigure', true);
     end
-    handles2 = plot_traces(tVecsThis, pulseVecsThis, 'ColorMap', 'k', ...
+    handles2 = plot_traces(tVecsThis, pulseVecsThis, 'ColorMap', colorStim, ...
                 'XBoundaries', [pulseStartTimesThis, pulseEndTimesThis], ...
                 'XBoundaryColor', puffWindowColor, ...
                 'PlotMode', 'parallel', 'FigTitle', figTitle2, ...
@@ -327,6 +423,95 @@ else
 end
 
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [peakTables, valleyTables, sniffStartTimes, sniffEndTimes] = ...
+    parse_sniff_vecs(sniffVecsThisFile, tVecsThisFile, nRecords, ...
+                    amplitudeDefinition, fCutoffRelToFund, filterOrder, ...
+                    promThresholdPerc, minPeakDistanceMs, ...
+                    sniffIpiThresholdMs)
+%% Parses Sniff vectors for each file
+
+% Hard-coded parameters for this function's logic
+minSniffPeaks = 3;      % Minimum number of peaks to detect transitions
+
+% Convert to seconds
+sniffIpiThresholdSec = sniffIpiThresholdMs / 1000;
+
+% Initialize cell arrays to store results for each record in this file.
+peakTables = cell(nRecords, 1);
+valleyTables = cell(nRecords, 1);
+sniffStartTimes = cell(nRecords, 1);
+sniffEndTimes = cell(nRecords, 1);
+
+% If sniff vector is empty, return
+if isempty(sniffVecsThisFile)
+    return
+end
+
+% Loop through each record (trial) within the current file.
+for iRec = 1:nRecords
+    % Extract the sniff vector for the current record.
+    sniffVec = sniffVecsThisFile(:, iRec);
+    % Extract the time vector for the current record.
+    timeVec = tVecsThisFile(:, iRec);
+
+    % Find all peak times and preceding valley times for the current sniff vector.
+    [peakTable, valleyTable] = ...
+        parse_oscillation(sniffVec, ...
+                        'TimeVec', timeVec, 'TimeUnits', 's', ...
+                        'AmpMode', amplitudeDefinition, ...
+                        'FilterCutoffsRelToFund', fCutoffRelToFund, ...
+                        'FilterOrder', filterOrder, ...
+                        'PromThresholdPerc', promThresholdPerc, ...
+                        'MinPeakDistanceMs', minPeakDistanceMs);
+
+    % Store the tables
+    peakTables{iRec} = peakTable;
+    valleyTables{iRec} = valleyTable;
+
+    % If fewer than the minimum required peaks are found, we can't compute IPIs, so we skip.
+    if height(peakTable) < minSniffPeaks
+        sniffStartTimes{iRec} = []; % Store an empty result for this record.
+        sniffEndTimes{iRec} = []; % Store an empty result for this record.
+        continue; % Move to the next record.
+    end
+
+    % Extract the peak times from the resulting table.
+    peakTimes = peakTable.peakTime;
+
+    % Extract the times of the valleys that precede each peak.
+    preValleyTimes = peakTable.preValleyTime;
+
+    % Compute the inter-peak intervals (IPIs) between all sniff peaks.
+    interPeakIntervals = diff(peakTimes);
+
+    % Remove first and last peak from peaks to test
+    preValleyTimesToTest = preValleyTimes(2:end-1);
+
+    % Find the preceding inter-peak intervals for each peak 2:end
+    preIPIs = interPeakIntervals(1:end-1);
+
+    % Find the succeeding inter-peak intervals for each peak 2:end
+    postIPIs = interPeakIntervals(2:end);
+
+    % Detect basal-respiration-to-sniffing transition times (start of sniffing).
+    % This is defined as a long IPI (basal) followed by a short IPI (sniffing).
+    isSniffStart = preIPIs > sniffIpiThresholdSec & postIPIs <= sniffIpiThresholdSec;
+    sniffStartTimes{iRec} = preValleyTimesToTest(isSniffStart);
+
+    % Detect sniffing-to-basal-respiration transition times (end of sniffing).
+    % This is defined as a short IPI (sniffing) followed by a long IPI (basal).
+    isSniffEnd = preIPIs <= sniffIpiThresholdSec & postIPIs > sniffIpiThresholdSec;
+    sniffEndTimes{iRec} = preValleyTimesToTest(isSniffEnd);
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
