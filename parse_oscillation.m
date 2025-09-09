@@ -128,11 +128,12 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %               'PromThresholdPerc', 'FilterCutoffsRelToFund' as optional arguments
 % 2025-09-05 Added 'TimeUnits' as an optional argument by Gemini.
 % 2025-09-05 Added 'FundFreqRange' optional argument
+% 2025-09-09 Fixed pre- and post-valley detection
 % TODO: Make 'ParsePsd' an optional argument and use parse_psd.m and 
 %       store results in otherResults
 
 %% Hard-coded parameters
-validAmpModes = {'peak-to-equilibrium', 'peak-to-avgvalley', 'peak-to-prevalley'};
+validAmpModes = {'peak-to-equilibrium', 'peak-to-avgvalley', 'peak-to-prevalley', 'peak-to-postvalley'};
 validTimeUnits = {'ms', 's'};
 
 %% Default values for optional arguments
@@ -330,7 +331,7 @@ preValleyValues = nan(nPeaks, 1);
 postValleyValues = nan(nPeaks, 1);
 peakAmplitudes = nan(nPeaks, 1);
 
-% For each peak, find its surrounding valleys and compute amplitude
+% For each peak, find its surrounding valleys and compute amplitude if possible
 for i = 1:nPeaks
     idxCurrentPeak = peakIndices(i);
 
@@ -338,32 +339,34 @@ for i = 1:nPeaks
     precedingValleys = valleyIndices(valleyIndices < idxCurrentPeak);
     if ~isempty(precedingValleys)
         idxPreValley = precedingValleys(end);
-    else
-        continue; % Cannot calculate amplitude
+        valPreValley = vec(idxPreValley);
+        preValleyIndices(i) = idxPreValley;
+        preValleyValues(i) = valPreValley;
     end
 
     % Find the closest succeeding valley
     succeedingValleys = valleyIndices(valleyIndices > idxCurrentPeak);
     if ~isempty(succeedingValleys)
         idxPostValley = succeedingValleys(1);
-    else
-        continue; % Cannot calculate amplitude
+        valPostValley = vec(idxPostValley);
+        postValleyIndices(i) = idxPostValley;
+        postValleyValues(i) = valPostValley;
     end
 
-    % Store valley indices and values from the original vector
-    preValleyIndices(i) = idxPreValley;
-    postValleyIndices(i) = idxPostValley;
-    preValleyValues(i) = vec(idxPreValley);
-    postValleyValues(i) = vec(idxPostValley);
-
-    % Compute the amplitude based on the selected mode
-    switch ampMode
-        case 'peak-to-equilibrium'
-            peakAmplitudes(i) = vec(idxCurrentPeak) - mean(vec);
-        case 'peak-to-avgvalley'
-            peakAmplitudes(i) = vec(idxCurrentPeak) - mean([vec(idxPreValley), vec(idxPostValley)]);
-        case 'peak-to-prevalley'
-            peakAmplitudes(i) = vec(idxCurrentPeak) - vec(idxPreValley);
+    % Compute the amplitude for the peak based on the selected mode
+    %   only if preceding and succeeding valleys are present
+    if ~isempty(precedingValleys) && ~isempty(succeedingValleys)
+        valPeak = vec(idxCurrentPeak);
+        switch ampMode
+            case 'peak-to-equilibrium'
+                peakAmplitudes(i) = valPeak - mean(vec);
+            case 'peak-to-avgvalley'
+                peakAmplitudes(i) = valPeak - mean([valPreValley, valPostValley]);
+            case 'peak-to-prevalley'
+                peakAmplitudes(i) = valPeak - valPreValley;
+            case 'peak-to-postvalley'
+                peakAmplitudes(i) = valPeak - valPostValley;
+        end
     end
 end
 
@@ -385,7 +388,7 @@ prePeakValues = nan(nValleys, 1);
 postPeakValues = nan(nValleys, 1);
 valleyAmplitudes = nan(nValleys, 1);
 
-% For each valley, find its surrounding peaks and compute amplitude
+% For each valley, find its surrounding peaks and compute amplitude if possible
 for i = 1:nValleys
     idxCurrentValley = valleyIndices(i);
 
@@ -393,32 +396,34 @@ for i = 1:nValleys
     precedingPeaks = peakIndices(peakIndices < idxCurrentValley);
     if ~isempty(precedingPeaks)
         idxPrePeak = precedingPeaks(end);
-    else
-        continue; % Cannot calculate amplitude
+        valPrePeak = vec(idxPrePeak);
+        prePeakIndices(i) = idxPrePeak;
+        prePeakValues(i) = valPrePeak;
     end
 
     % Find the closest succeeding peak
     succeedingPeaks = peakIndices(peakIndices > idxCurrentValley);
     if ~isempty(succeedingPeaks)
         idxPostPeak = succeedingPeaks(1);
-    else
-        continue; % Cannot calculate amplitude
+        valPostPeak = vec(idxPostPeak);
+        postPeakIndices(i) = idxPostPeak;
+        postPeakValues(i) = valPostPeak;
     end
 
-    % Store peak indices and values from the original vector
-    prePeakIndices(i) = idxPrePeak;
-    postPeakIndices(i) = idxPostPeak;
-    prePeakValues(i) = vec(idxPrePeak);
-    postPeakValues(i) = vec(idxPostPeak);
-
-    % Compute the amplitude for the valley
-    switch ampMode
-        case 'peak-to-equilibrium'
-            valleyAmplitudes(i) = mean(vec) - vec(idxCurrentValley);
-        case 'peak-to-avgvalley'
-            valleyAmplitudes(i) = mean([vec(idxPrePeak), vec(idxPostPeak)]) - vec(idxCurrentValley);
-        case 'peak-to-prevalley'
-            valleyAmplitudes(i) = vec(idxPostPeak) - vec(idxCurrentValley);
+    % Compute the amplitude for the valley based on the selected mode
+    %   only if preceding and succeeding peaks are present
+    if ~isempty(precedingPeaks) && ~isempty(succeedingPeaks)
+        valValley = vec(idxCurrentValley);
+        switch ampMode
+            case 'peak-to-equilibrium'
+                valleyAmplitudes(i) = mean(vec) - valValley;
+            case 'peak-to-avgvalley'
+                valleyAmplitudes(i) = mean([valPrePeak, valPostPeak]) - valValley;
+            case 'peak-to-prevalley'
+                valleyAmplitudes(i) = valPrePeak - valValley;
+            case 'peak-to-postvalley'
+                valleyAmplitudes(i) = valPostPeak - valValley;
+        end
     end
 end
 
