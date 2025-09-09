@@ -181,7 +181,7 @@ thermVecs = extract_fields(sniffWhiskDataCell, 'therm');
 pulseVecs = extract_fields(sniffWhiskDataCell, 'piezo');
 
 % Count the number of vectors
-nTrials = count_vectors(tVecs);
+nSweepsEachFile = count_vectors(tVecs);
 
 % Check whether is ammonia puff or air puff trials
 isAmmoniaPuff = contains(trialNames, ammoniaPuffString);
@@ -229,7 +229,7 @@ fprintf('Detecting sniff transitions...\n');
                     amplitudeDefinition, fundFreqRange, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, ...
                     sniffIpiThresholdMs), ...
-                sniffVecs, tVecs, num2cell(nTrials), 'UniformOutput', false);
+                sniffVecs, tVecs, num2cell(nSweepsEachFile), 'UniformOutput', false);
 
 
 fprintf('Finished detecting sniff transitions.\n\n');
@@ -240,7 +240,7 @@ fprintf('Detecting whisk peaks and valleys...\n');
     array_fun(@(a, b, c, d, e) parse_whisk_vecs(a, b, c, d, e, ...
                     amplitudeDefinition, fundFreqRange, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, nWhisksToAnalyze), ...
-                whiskVecs, tVecs, num2cell(nTrials), ...
+                whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
                 sniffStartTimesAll, sniffEndTimesAll, 'UniformOutput', false, ...
                 'UseParpool', false);
 fprintf('Finished detecting whisk peaks and valleys.\n\n');
@@ -255,7 +255,7 @@ fprintf('Finished augmenting analysis windows.\n\n');
 
 %% Plot all data
 [handles1, handles2, handles3] = ...
-    array_fun(@(a) plot_one_file (a, tVecs, whiskVecs, sniffVecs, ...
+    array_fun(@(a) plot_one_file (a, trialNames, tVecs, whiskVecs, sniffVecs, ...
         pulseVecs, pulseStartTimes, pulseEndTimes, ...
         sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
         whiskPeakTablesAll, whiskValleyTablesAll, analysisWinTablesAll, ...
@@ -290,7 +290,7 @@ else
     metaData = horzcat(metaDataFiles, paramTable);
 
     % Add detection results
-    metaData.nRecords = nTrials;
+    metaData.nSweeps = nSweepsEachFile;
     metaData.isAmmoniaPuff = isAmmoniaPuff;
     metaData.isAirPuff = isAirPuff;
     metaData.sniffStartTimes = sniffStartTimesAll;
@@ -325,7 +325,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [handles1, handles2, handles3] = ...
-    plot_one_file (sampleFileNum, tVecs, whiskVecs, sniffVecs, ...
+    plot_one_file (sampleFileNum, trialNames, tVecs, whiskVecs, sniffVecs, ...
         pulseVecs, pulseStartTimes, pulseEndTimes, ...
         sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
         whiskPeakTablesAll, whiskValleyTablesAll, analysisWinTablesAll, ...
@@ -344,6 +344,7 @@ function [handles1, handles2, handles3] = ...
         figPrefix1, figPrefix2, figPrefix3, figTypes, toSpeedUp)
 
 % Extract data to plot
+trialName = trialNames{sampleFileNum};
 tVecsThis = tVecs{sampleFileNum};
 whiskVecsThis = whiskVecs{sampleFileNum};
 sniffVecsThis = sniffVecs{sampleFileNum};
@@ -361,12 +362,12 @@ whiskValleyTablesThis = whiskValleyTablesAll{sampleFileNum};
 analysisWinTableForFile = analysisWinTablesAll{sampleFileNum};
 
 % Count the number of records to plot
-nRecords = size(tVecsThis, 2);
-iRecord = (1:nRecords)';
+nSweeps = size(tVecsThis, 2);
+recordNumbers = (1:nSweeps)';
 
 % Create labels for legend
-whiskLabels = create_labels_from_numbers(iRecord, 'Prefix', whiskLabel);
-sniffLabels = create_labels_from_numbers(iRecord, 'Prefix', sniffLabel);
+whiskLabels = create_labels_from_numbers(recordNumbers, 'Prefix', whiskLabel);
+sniffLabels = create_labels_from_numbers(recordNumbers, 'Prefix', sniffLabel);
 
 % Decide on puff window colors and titles
 if isAmmoniaPuffThis
@@ -387,9 +388,9 @@ figTitle2 = [figTitlePrefix2, ' for File # ', num2str(sampleFileNum)];
 figTitle3 = [figTitlePrefix3, ' for File # ', num2str(sampleFileNum)];
 
 % Create paths for saving
-figName1 = [figPrefix1, num2str(sampleFileNum)];
-figName2 = [figPrefix2, num2str(sampleFileNum)];
-figName3 = [figPrefix3, num2str(sampleFileNum)];
+figName1 = [figPrefix1, 'File', num2str(sampleFileNum), '_', trialName];
+figName2 = [figPrefix2, 'File', num2str(sampleFileNum), '_', trialName];
+figName3 = [figPrefix3, 'File', num2str(sampleFileNum), '_', trialName];
 figPath1 = fullfile(pathOutDir, figName1);
 figPath2 = fullfile(pathOutDir, figName2);
 figPath3 = fullfile(pathOutDir, figName3);
@@ -416,35 +417,35 @@ if ~isempty(sniffVecsThis)
     % Get all subplots
     allSubPlots = handles1.subPlots;
 
-    % Plot over each subplot with a record
-    for iRecord = 1:nRecords
+    % Plot annotations for each sweep
+    for iSwp = 1:nSweeps
         % Hold on to current subplot
-        subplot(allSubPlots(iRecord));
+        subplot(allSubPlots(iSwp));
         hold on;
 
-        % Get the analysis windows for this specific record
+        % Get the analysis windows for this specific sweep
         if ~isempty(analysisWinTableForFile)
-            analysisWinTableForRecord = ...
-                analysisWinTableForFile(analysisWinTableForFile.recordNumber == iRecord, :);
+            analysisWinTableForSweep = ...
+                analysisWinTableForFile(analysisWinTableForFile.sweepNumber == iSwp, :);
         else
-            analysisWinTableForRecord = [];
+            analysisWinTableForSweep = [];
         end
 
         % Plot analysis windows if they exist
-        if ~isempty(analysisWinTableForRecord)
-            % Get all window boundaries for this record
-            winBoundaries = [analysisWinTableForRecord.analysisWinStartTime, ...
-                             analysisWinTableForRecord.analysisWinEndTime];
+        if ~isempty(analysisWinTableForSweep)
+            % Get all window boundaries for this sweep
+            winBoundaries = [analysisWinTableForSweep.analysisWinStartTime, ...
+                             analysisWinTableForSweep.analysisWinEndTime];
 
-            % Plot all shades for this record
+            % Plot all shades for this sweep
             plot_vertical_shade(winBoundaries', 'Color', colorAnalysisWin, 'FaceAlpha', faceAlphaAnalysisWin);
         end
 
-        % Extract the peak and valley tables for this record
-        sniffPeakTable = sniffPeakTablesThis{iRecord};
-        sniffValleyTable = sniffValleyTablesThis{iRecord};
-        whiskPeakTable = whiskPeakTablesThis{iRecord};
-        whiskValleyTable = whiskValleyTablesThis{iRecord};
+        % Extract the peak and valley tables for this sweep
+        sniffPeakTable = sniffPeakTablesThis{iSwp};
+        sniffValleyTable = sniffValleyTablesThis{iSwp};
+        whiskPeakTable = whiskPeakTablesThis{iSwp};
+        whiskValleyTable = whiskValleyTablesThis{iSwp};
         
         % Plot peaks if they exist
         if ~isempty(sniffPeakTable) && ismember('peakIndex', sniffPeakTable.Properties.VariableNames)
@@ -470,19 +471,19 @@ if ~isempty(sniffVecsThis)
                 'MarkerSize', markerSizeForSample, 'LineWidth', lineWidthForSample);
         end
         
-        % Get the transition times for this record
-        sniffStartTimesThisRecord = sniffStartTimesThis{iRecord};
-        sniffEndTimesThisRecord = sniffEndTimesThis{iRecord};
+        % Get the transition times for this sweep
+        sniffStartTimesThisSweep = sniffStartTimesThis{iSwp};
+        sniffEndTimesThisSweep = sniffEndTimesThis{iSwp};
 
         % Plot basal-to-sniff transitions
-        if ~isempty(sniffStartTimesThisRecord)
-            plot_vertical_line(sniffStartTimesThisRecord, 'Color', colorSniffStart, ...
+        if ~isempty(sniffStartTimesThisSweep)
+            plot_vertical_line(sniffStartTimesThisSweep, 'Color', colorSniffStart, ...
                 'LineStyle', '--', 'LineWidth', lineWidthForSample);
         end
 
         % Plot sniff-to-basal transitions
-        if ~isempty(sniffEndTimesThisRecord)
-            plot_vertical_line(sniffEndTimesThisRecord, 'Color', colorSniffEnd, ...
+        if ~isempty(sniffEndTimesThisSweep)
+            plot_vertical_line(sniffEndTimesThisSweep, 'Color', colorSniffEnd, ...
                 'LineStyle', '--', 'LineWidth', lineWidthForSample);
         end
     end
@@ -529,7 +530,7 @@ if ~isempty(analysisWinTableForFile)
 
     % Get the number of analysis windows
     nWindows = height(analysisWinTableForFile);
-    recNums = analysisWinTableForFile.recordNumber;
+    recNums = analysisWinTableForFile.sweepNumber;
     winStarts = analysisWinTableForFile.analysisWinStartTime;
     winEnds = analysisWinTableForFile.analysisWinEndTime;
     sniffStarts = analysisWinTableForFile.sniffStartTime;
@@ -558,14 +559,14 @@ if ~isempty(analysisWinTableForFile)
     sniffVecsForWin = cell(nWindows, 1);
     for iWin = 1:nWindows
         % Get info for the current window
-        recNum = recNums(iWin);
+        swpNum = recNums(iWin);
         winStart = winStarts(iWin);
         winEnd = winEnds(iWin);
         
-        % Get the full traces for the corresponding record
-        tFull = tVecsThis(:, recNum);
-        whiskFull = whiskVecsThis(:, recNum);
-        sniffFull = sniffVecsThis(:, recNum);
+        % Get the full traces for the corresponding sweep
+        tFull = tVecsThis(:, swpNum);
+        whiskFull = whiskVecsThis(:, swpNum);
+        sniffFull = sniffVecsThis(:, swpNum);
         
         % Find indices within the current analysis window
         indicesInWin = find(tFull >= winStart & tFull <= winEnd);
@@ -672,7 +673,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [sniffPeakTables, valleyTables, sniffStartTimes, sniffEndTimes, sniffFreqFundamental] = ...
-    parse_sniff_vecs(sniffVecsThisFile, tVecsThisFile, nRecords, ...
+    parse_sniff_vecs(sniffVecsThisFile, tVecsThisFile, nSweeps, ...
                     amplitudeDefinition, fundFreqRange, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, ...
                     sniffIpiThresholdMs)
@@ -684,24 +685,24 @@ minSniffPeaks = 3;      % Minimum number of peaks to detect transitions
 % Convert to seconds
 sniffIpiThresholdSec = sniffIpiThresholdMs / 1000;
 
-% Initialize cell arrays to store results for each record in this file.
-sniffPeakTables = cell(nRecords, 1);
-valleyTables = cell(nRecords, 1);
-sniffStartTimes = cell(nRecords, 1);
-sniffEndTimes = cell(nRecords, 1);
-sniffFreqFundamental = cell(nRecords, 1);
+% Initialize cell arrays to store results for each sweep in this file.
+sniffPeakTables = cell(nSweeps, 1);
+valleyTables = cell(nSweeps, 1);
+sniffStartTimes = cell(nSweeps, 1);
+sniffEndTimes = cell(nSweeps, 1);
+sniffFreqFundamental = cell(nSweeps, 1);
 
 % If sniff vector is empty, return
 if isempty(sniffVecsThisFile)
     return
 end
 
-% Loop through each record (trial) within the current file.
-for iRec = 1:nRecords
-    % Extract the sniff vector for the current record.
-    sniffVec = sniffVecsThisFile(:, iRec);
-    % Extract the time vector for the current record.
-    timeVec = tVecsThisFile(:, iRec);
+% Loop through each sweep within the current file.
+for iSwp = 1:nSweeps
+    % Extract the sniff vector for the current sweep.
+    sniffVec = sniffVecsThisFile(:, iSwp);
+    % Extract the time vector for the current sweep.
+    timeVec = tVecsThisFile(:, iSwp);
 
     % Find all peak times and preceding valley times for the current sniff vector.
     [sniffPeakTable, sniffValleyTable, otherResults] = ...
@@ -715,21 +716,21 @@ for iRec = 1:nRecords
                         'MinPeakDistanceMs', minPeakDistanceMs);
 
     % Store the tables
-    sniffPeakTables{iRec} = sniffPeakTable;
-    valleyTables{iRec} = sniffValleyTable;
+    sniffPeakTables{iSwp} = sniffPeakTable;
+    valleyTables{iSwp} = sniffValleyTable;
 
     % Store the fundamental frequency if it was computed
     if isfield(otherResults, 'freqFundamental')
-        sniffFreqFundamental{iRec} = otherResults.freqFundamental;
+        sniffFreqFundamental{iSwp} = otherResults.freqFundamental;
     else
-        sniffFreqFundamental{iRec} = NaN;
+        sniffFreqFundamental{iSwp} = NaN;
     end
 
     % If fewer than the minimum required peaks are found, we can't compute IPIs, so we skip.
     if height(sniffPeakTable) < minSniffPeaks
-        sniffStartTimes{iRec} = []; % Store an empty result for this record.
-        sniffEndTimes{iRec} = []; % Store an empty result for this record.
-        continue; % Move to the next record.
+        sniffStartTimes{iSwp} = []; % Store an empty result for this sweep.
+        sniffEndTimes{iSwp} = []; % Store an empty result for this sweep.
+        continue; % Move to the next sweep.
     end
 
     % Extract the peak times from the resulting table.
@@ -753,12 +754,12 @@ for iRec = 1:nRecords
     % Detect basal-respiration-to-sniffing transition times (start of sniffing).
     % This is defined as a long IPI (basal) followed by a short IPI (sniffing).
     isSniffStart = preIPIs > sniffIpiThresholdSec & postIPIs <= sniffIpiThresholdSec;
-    sniffStartTimes{iRec} = preValleyTimesToTest(isSniffStart);
+    sniffStartTimes{iSwp} = preValleyTimesToTest(isSniffStart);
 
     % Detect sniffing-to-basal-respiration transition times (end of sniffing).
     % This is defined as a short IPI (sniffing) followed by a long IPI (basal).
     isSniffEnd = preIPIs <= sniffIpiThresholdSec & postIPIs > sniffIpiThresholdSec;
-    sniffEndTimes{iRec} = preValleyTimesToTest(isSniffEnd);
+    sniffEndTimes{iSwp} = preValleyTimesToTest(isSniffEnd);
 end
 
 end
@@ -766,20 +767,20 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [whiskPeakTables, whiskValleyTables, whiskFreqFundamental, analysisWinTable] = ...
-    parse_whisk_vecs(whiskVecsThisFile, tVecsThisFile, nRecords, ...
+    parse_whisk_vecs(whiskVecsThisFile, tVecsThisFile, nSweeps, ...
                     sniffStartTimesThisFile, sniffEndTimesThisFile, ...
                     amplitudeDefinition, fundFreqRange, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, nWhisksToAnalyze)
 %% Parses whisk vectors for a single file and generates an analysis window table
 
-% Initialize cell arrays to store results for each record in this file.
-whiskPeakTables = cell(nRecords, 1);
-whiskValleyTables = cell(nRecords, 1);
-whiskFreqFundamental = cell(nRecords, 1);
+% Initialize cell arrays to store results for each sweep in this file.
+whiskPeakTables = cell(nSweeps, 1);
+whiskValleyTables = cell(nSweeps, 1);
+whiskFreqFundamental = cell(nSweeps, 1);
 
 % Define empty table structure for when no windows are found
 emptyTable = table(zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), {}, {}, {}, {}, {}, {}, {}, ...
-                'VariableNames', {'recordNumber', 'analysisWinStartTime', 'analysisWinEndTime', 'sniffStartTime', ...
+                'VariableNames', {'sweepNumber', 'analysisWinStartTime', 'analysisWinEndTime', 'sniffStartTime', ...
                                   'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
                                   'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
                                   'whiskValleyTimes', 'whiskValleyValues'});
@@ -791,11 +792,11 @@ if isempty(whiskVecsThisFile)
 end
 
 % Detect whisk peaks in parallel
-parfor iRec = 1:nRecords
+parfor iSwp = 1:nSweeps
     % Find all peak times and preceding valley times for the current whisk vector.
     [whiskPeakTable, whiskValleyTable, otherResults] = ...
-        parse_oscillation(whiskVecsThisFile(:, iRec), ...
-                        'TimeVec', tVecsThisFile(:, iRec), 'TimeUnits', 's', ...
+        parse_oscillation(whiskVecsThisFile(:, iSwp), ...
+                        'TimeVec', tVecsThisFile(:, iSwp), 'TimeUnits', 's', ...
                         'AmpMode', amplitudeDefinition, ...
                         'FundFreqRange', fundFreqRange, ...
                         'FilterCutoffsRelToFund', fCutoffRelToFund, ...
@@ -804,31 +805,31 @@ parfor iRec = 1:nRecords
                         'MinPeakDistanceMs', minPeakDistanceMs);
     
     % Store the tables
-    whiskPeakTables{iRec} = whiskPeakTable;
-    whiskValleyTables{iRec} = whiskValleyTable;
+    whiskPeakTables{iSwp} = whiskPeakTable;
+    whiskValleyTables{iSwp} = whiskValleyTable;
     
     % Store the fundamental frequency if it was computed
     if isfield(otherResults, 'freqFundamental')
-        whiskFreqFundamental{iRec} = otherResults.freqFundamental;
+        whiskFreqFundamental{iSwp} = otherResults.freqFundamental;
     else
-        whiskFreqFundamental{iRec} = NaN;
+        whiskFreqFundamental{iSwp} = NaN;
     end
 end
 
 % Now, process records serially to build the analysis window table
 allWindowsCell = {};
-for iRec = 1:nRecords
-    % Obtain whisk peak and valley tables for this record
-    whiskPeakTable = whiskPeakTables{iRec};
-    whiskValleyTable = whiskValleyTables{iRec};
+for iSwp = 1:nSweeps
+    % Obtain whisk peak and valley tables for this sweep
+    whiskPeakTable = whiskPeakTables{iSwp};
+    whiskValleyTable = whiskValleyTables{iSwp};
 
     % Obtain whisk peak times and sniff period start and end times
     peakTimes = whiskPeakTable.peakTime;
-    sniffStartTimes = sniffStartTimesThisFile{iRec};
-    sniffEndTimes = sniffEndTimesThisFile{iRec};
+    sniffStartTimes = sniffStartTimesThisFile{iSwp};
+    sniffEndTimes = sniffEndTimesThisFile{iSwp};
     valleyTimes = whiskValleyTable.valleyTime;
 
-    % If there are no sniff periods or no whisks, skip this record
+    % If there are no sniff periods or no whisks, skip this sweep
     if isempty(sniffStartTimes) || isempty(whiskPeakTable)
         continue;
     end
@@ -842,7 +843,7 @@ for iRec = 1:nRecords
     % If there are more sniff period start times then end times, 
     %   add the end of time vector as an sniff end time
     if numel(sniffStartTimes) > numel(sniffEndTimes)
-        sniffEndTimes(end+1) = tVecsThisFile(end, iRec);
+        sniffEndTimes(end+1) = tVecsThisFile(end, iSwp);
     end
 
     % Loop through all sniff periods
@@ -852,9 +853,9 @@ for iRec = 1:nRecords
         currentSniffEnd = sniffEndTimes(iSniff);
 
         % Find all peaks within the sniff period
-        isWhiskInSniffPer = peakTimes >= currentSniffStart & ...
+        isInSniffPeriod = peakTimes >= currentSniffStart & ...
                             peakTimes <= currentSniffEnd;
-        whiskPeaksInSniffPeriod = whiskPeakTable(isWhiskInSniffPer, :);
+        whiskPeaksInSniffPeriod = whiskPeakTable(isInSniffPeriod, :);
 
         % If there are at least nWhisksToAnalyze peaks
         %   within this sniff period, add to analysis window
@@ -879,11 +880,11 @@ for iRec = 1:nRecords
             whiskValleysToAnalyze = whiskValleyTable(isValleyInWin, :);
 
             % Create a one-row table for this window
-            newWindow = table(iRec, analysisWinStartTime, analysisWinEndTime, currentSniffStart, ...
+            newWindow = table(iSwp, analysisWinStartTime, analysisWinEndTime, currentSniffStart, ...
                 {whiskPeaksToAnalyze.peakTime}, {whiskPeaksToAnalyze.peakValue}, ...
                 {whiskPeaksToAnalyze.amplitude}, {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
                 {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, ...
-                'VariableNames', {'recordNumber', 'analysisWinStartTime', 'analysisWinEndTime', 'sniffStartTime', ...
+                'VariableNames', {'sweepNumber', 'analysisWinStartTime', 'analysisWinEndTime', 'sniffStartTime', ...
                                   'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
                                   'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
                                   'whiskValleyTimes', 'whiskValleyValues'});
@@ -936,14 +937,14 @@ sniffValleyValuesInWin = cell(nWindows, 1);
 
 % Loop through each analysis window in the table
 for iWin = 1:nWindows
-    % Get window start/end times and record number
+    % Get window start/end times and sweep number
     winStart = analysisWinTable.analysisWinStartTime(iWin);
     winEnd = analysisWinTable.analysisWinEndTime(iWin);
-    recNum = analysisWinTable.recordNumber(iWin);
+    swpNum = analysisWinTable.sweepNumber(iWin);
 
-    % Get the sniff data for the corresponding record
-    sniffPeakTable = sniffPeakTablesThisFile{recNum};
-    sniffValleyTable = sniffValleyTablesThisFile{recNum};
+    % Get the sniff data for the corresponding sweep
+    sniffPeakTable = sniffPeakTablesThisFile{swpNum};
+    sniffValleyTable = sniffValleyTablesThisFile{swpNum};
 
     % Find sniff peaks within the window
     if ~isempty(sniffPeakTable)
