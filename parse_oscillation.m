@@ -64,6 +64,11 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %                           Required if filtering is applied.
 %                   must be a positive scalar
 %                   default == [] computed from time vector that is assumed to be in ms
+%                   - 'FundFreqRange': A two-element vector specifying the 
+%                                      range [minHz, maxHz] to search for the
+%                                      fundamental frequency.
+%                   must be a two-element numeric vector or empty
+%                   default == [] (no restriction)
 %                   - 'FilterCutoffs': Cutoff frequency(ies) for filtering in Hz.
 %                                      Can be a 2-element vector for a bandpass
 %                                      filter (e.g., [fLow, fHigh]).
@@ -122,6 +127,7 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 % 2025-09-05 Added 'MinPeakDistanceMs', 'MinValleyDistanceMs' and 
 %               'PromThresholdPerc', 'FilterCutoffsRelToFund' as optional arguments
 % 2025-09-05 Added 'TimeUnits' as an optional argument by Gemini.
+% 2025-09-05 Added 'FundFreqRange' optional argument
 % TODO: Make 'ParsePsd' an optional argument and use parse_psd.m and 
 %       store results in otherResults
 
@@ -133,6 +139,7 @@ validTimeUnits = {'ms', 's'};
 timeVecDefault = [];
 timeUnitsDefault = 'ms';
 siMsDefault = [];
+fundFreqRangeDefault = [];          % no frequency range restriction by default
 filterCutoffsDefault = [];
 filterCutoffsRelToFundDefault = [];
 filterOrderDefault = 2;
@@ -166,6 +173,8 @@ addParameter(iP, 'TimeVec', timeVecDefault, @isnumericvector);
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) any(validatestring(x, validTimeUnits)));
 addParameter(iP, 'SamplingIntervalMs', siMsDefault, @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'FundFreqRange', fundFreqRangeDefault, ...         % The frequency range in Hz
+    @(x) isempty(x) || (isnumeric(x) && isvector(x) && numel(x) == 2)); % Must be a 2-element vector or empty
 addParameter(iP, 'FilterCutoffs', filterCutoffsDefault, @isnumeric);
 addParameter(iP, 'FilterCutoffsRelToFund', filterCutoffsRelToFundDefault, @isnumeric);
 addParameter(iP, 'FilterOrder', filterOrderDefault, @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
@@ -187,6 +196,7 @@ parse(iP, vec, varargin{:});
 timeVec = iP.Results.TimeVec;
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 siMs = iP.Results.SamplingIntervalMs;
+fundFreqRange = iP.Results.FundFreqRange;                           % Store the frequency range
 filterCutoffs = iP.Results.FilterCutoffs;
 filterCutoffsRelToFund = iP.Results.FilterCutoffsRelToFund;
 filterOrder = iP.Results.FilterOrder;
@@ -246,7 +256,8 @@ if toFilter
 
     % Compute the fundamental frequency of the oscillation (Hz)
     freqFundamental = ...
-        compute_fundamental_frequency(vec, 'SamplingIntervalMs', siMs);
+        compute_fundamental_frequency(vec, 'SamplingIntervalMs', siMs, ...
+                                    'FundFreqRange', fundFreqRange);
 
     % Define filter cutoffs if fundamental frequency is found
     if isempty(filterCutoffs) && ~isempty(filterCutoffsRelToFund)

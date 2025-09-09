@@ -24,6 +24,12 @@ function fundamentalFrequencies = compute_fundamental_frequency (vectors, vararg
 %       signals = {y, y2};
 %       freqs = compute_fundamental_frequency(signals, 'SamplingIntervalMs', siMs)
 %       
+%       % --- Example 4: With a noisy signal and a specified frequency range ---
+%       noise = 0.5 * randn(size(t));
+%       y_noisy = sin(2 * pi * 10 * t) + 2 * sin(2 * pi * 50 * t) + noise; % 10 Hz and 50 Hz
+%       % Find the peak frequency only in the 0-20 Hz range
+%       low_freq = compute_fundamental_frequency(y_noisy, 'SamplingIntervalMs', siMs, 'FundFreqRange', [0, 20])
+%       
 % Outputs:
 %       fundamentalFrequencies - The detected fundamental frequency in Hz for
 %                                each input vector.
@@ -45,6 +51,11 @@ function fundamentalFrequencies = compute_fundamental_frequency (vectors, vararg
 %                         Only one of 'SamplingIntervalMs' or 'TimeVecs' can be provided.
 %                   must be a numeric array or a cell array of numeric vectors
 %                   default == []
+%                   - 'FundFreqRange': A two-element vector specifying the 
+%                                      range [minHz, maxHz] to search for the
+%                                      fundamental frequency.
+%                   must be a two-element numeric vector or empty
+%                   default == [] (no restriction)
 %
 % Requires:
 %       cd/array_fun.m
@@ -58,7 +69,7 @@ function fundamentalFrequencies = compute_fundamental_frequency (vectors, vararg
 % File History:
 % 2025-09-04 Created by Gemini, based on logic from virt_moore.m
 % 2025-09-04 Modified by Gemini to use array_fun instead of a for loop
-% 
+% 2025-09-05 Added 'FundFreqRange' optional argument
 
 %% Hard-coded parameters
 % None
@@ -66,6 +77,7 @@ function fundamentalFrequencies = compute_fundamental_frequency (vectors, vararg
 %% Default values for optional arguments
 samplingIntervalMsDefault = 0.1;    % default sampling interval is 0.1 ms (10 kHz)
 timeVecsDefault = [];               % no time vectors by default
+fundFreqRangeDefault = [];          % no frequency range restriction by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -82,14 +94,16 @@ addRequired(iP, 'vectors', ...                                      % The input 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ... % The sampling interval in ms
     @(x) validateattributes(x, {'numeric'}, {'positive'}));         % Must be a positive number
-
 addParameter(iP, 'TimeVecs', timeVecsDefault, ...                   % The time vector(s) in ms
     @(x) isempty(x) || isnumeric(x) || iscellnumeric(x));           % Can be empty, numeric, or a cell array
+addParameter(iP, 'FundFreqRange', fundFreqRangeDefault, ...         % The frequency range in Hz
+    @(x) isempty(x) || (isnumeric(x) && isvector(x) && numel(x) == 2)); % Must be a 2-element vector or empty
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});                                    % Parse the inputs
 siMs = iP.Results.SamplingIntervalMs;                               % Store the sampling interval
 timeVecs = iP.Results.TimeVecs;                                     % Store the time vectors
+fundFreqRange = iP.Results.FundFreqRange;                           % Store the frequency range
 
 % Check that 'SamplingIntervalMs' and 'TimeVecs' are not both provided
 if ~isempty(timeVecs) && ~any(siMs ~= samplingIntervalMsDefault)
@@ -98,6 +112,11 @@ if ~isempty(timeVecs) && ~any(siMs ~= samplingIntervalMsDefault)
 elseif ~isempty(timeVecs) && any(siMs ~= samplingIntervalMsDefault)
     % If both are explicitly provided, raise an error
     error('Usage error: ''SamplingIntervalMs'' and ''TimeVecs'' cannot both be provided.');
+end
+
+% Validate the frequency range
+if ~isempty(fundFreqRange) && fundFreqRange(1) > fundFreqRange(2)
+    error('The first element of ''FundFreqRange'' must be less than or equal to the second element.');
 end
 
 %% Preparation
@@ -127,13 +146,14 @@ end
 
 %% Do the job
 % Compute fundamental frequency for all vectors using array_fun
-% This approach passes each vector and its corresponding sampling interval
-% to the local function 'compute_single_freq' for processing.
-fundamentalFrequencies = array_fun(@compute_single_freq, vectors, num2cell(siMs));
+% This approach passes each vector, its sampling interval, and the frequency
+% range to the local function 'compute_single_freq' for processing.
+fundamentalFrequencies = array_fun(@(vec, s) compute_single_freq(vec, s, fundFreqRange), ...
+                                    vectors, num2cell(siMs));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function freqFundamental = compute_single_freq(thisVector, thisSiMs)
+function freqFundamental = compute_single_freq(thisVector, thisSiMs, fundFreqRange)
 %% Computes the fundamental frequency for a single vector
 
 % Return NaN if the vector is empty or too short for FFT
@@ -166,12 +186,37 @@ P1(2:end-1) = 2*P1(2:end-1);
 % Create the frequency vector corresponding to the P1 spectrum
 fVec = fs*(0:(L/2))/L;
 
-% Find the index of the maximum power in the spectrum, EXCLUDING the DC component (P1(1))
-[~, idx] = max(P1(2:end));
+% --- Find the peak frequency ---
+
+% Create a vector of possible indices, excluding the DC component (index 1)
+possibleIndices = (2:length(P1))';
+
+% If a frequency range is specified, restrict the search indices
+if ~isempty(fundFreqRange)
+    % Find indices from fVec that fall within the specified range
+    inRange = fVec >= fundFreqRange(1) & fVec <= fundFreqRange(2);
+    % Intersect these with the possible indices (to keep excluding DC)
+    searchIndices = possibleIndices(inRange(possibleIndices));
+else
+    % If no range, search all possible indices
+    searchIndices = possibleIndices;
+end
+
+% Check if there are any valid frequencies to search
+if isempty(searchIndices)
+    warning('No frequencies to analyze in the specified range. Returning NaN.');
+    freqFundamental = NaN;
+    return;
+end
+
+% Find the index of the maximum power within the restricted P1 spectrum
+[~, maxIdxInSearch] = max(P1(searchIndices));
+        
+% Get the corresponding index in the original P1/fVec
+finalIdx = searchIndices(maxIdxInSearch);
 
 % Get the fundamental frequency from the frequency vector
-% We add 1 to the index because the search started from the 2nd element of P1
-freqFundamental = fVec(idx + 1);
+freqFundamental = fVec(finalIdx);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

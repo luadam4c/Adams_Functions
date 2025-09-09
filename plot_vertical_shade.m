@@ -59,6 +59,7 @@ function h = plot_vertical_shade (varargin)
 %       cd/plot_relative_events.m
 %       cd/plot_window_boundaries.m
 %       cd/virt_golomb_generate_output.m
+%       cd/virt_analyze_sniff_whisk.m
 %       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
