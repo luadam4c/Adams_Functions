@@ -40,6 +40,7 @@
 % 2025-09-05 Now stores sniff and whisk fundamental frequencies in metadata
 % 2025-09-06 Now finds and plots analysis windows based on sniff/whisk criteria
 % 2025-09-09 Added a third plot for individual analysis windows
+% 2025-09-09 Now calculates average whisk amplitude ratios
 
 %% Hard-coded parameters
 % Directory and file naming conventions
@@ -253,6 +254,12 @@ analysisWinTablesAll = ...
                 'UniformOutput', false);
 fprintf('Finished augmenting analysis windows.\n\n');
 
+%% Calculate average whisk amplitude ratios
+fprintf('Calculating average whisk amplitude ratios...\n');
+avgRatioPerFile = cellfun(@(x) mean(x.avgSuccessiveWhiskAmpRatio, 'omitnan'), ...
+                            analysisWinTablesAll);
+fprintf('Finished calculating ratios.\n\n');
+
 %% Plot all data
 [handles1, handles2, handles3] = ...
     array_fun(@(a) plot_one_file (a, trialNames, tVecs, whiskVecs, sniffVecs, ...
@@ -297,6 +304,7 @@ else
     metaData.sniffEndTimes = sniffEndTimesAll;
     metaData.sniffFreqFundamental = sniffFreqsFundamentalAll;
     metaData.whiskFreqFundamental = whiskFreqsFundamentalAll;
+    metaData.avgSuccessiveWhiskAmpRatio = avgRatioPerFile;
 
     % Expand the cell arrays to a single string
     metaDataToPrint = metaData;
@@ -543,6 +551,7 @@ if ~isempty(analysisWinTableForFile)
     whiskPeakAmplitudesForWin = analysisWinTableForFile.whiskPeakAmplitudes;
     whiskValleyTimesForWin = analysisWinTableForFile.whiskValleyTimes;
     whiskValleyValuesForWin = analysisWinTableForFile.whiskValleyValues;
+    avgRatiosForWin = analysisWinTableForFile.avgSuccessiveWhiskAmpRatio;
     
     % Compute window durations
     windowDurations = winEnds - winStarts;
@@ -607,6 +616,7 @@ if ~isempty(analysisWinTableForFile)
         whiskPeakAmplitudes = whiskPeakAmplitudesForWin{iWin};
         whiskValleyTimes = whiskValleyTimesForWin{iWin};
         whiskValleyValues = whiskValleyValuesForWin{iWin};
+        avgRatioForWin = avgRatiosForWin(iWin);
 
         % Select the correct subplot
         subplot(handles3.subPlots(iWin));
@@ -655,6 +665,14 @@ if ~isempty(analysisWinTableForFile)
             plot(whiskValleyTimes, whiskValleyValues, ...
                 markerWhiskPeaksValleys, 'Color', colorWhiskPeaksValleys, ...
                 'LineWidth', lineWidthForAnalysis, 'MarkerSize', markerSizeForAnalysis);
+        end
+
+        % Display the average successive amplitude ratio
+        if ~isnan(avgRatioForWin)
+            axLimits = axis;
+            xPos = axLimits(1) + 0.05 * (axLimits(2) - axLimits(1));
+            yPos = axLimits(4) - 0.1 * (axLimits(4) - axLimits(3));
+            text(xPos, yPos, sprintf('Avg Amp Ratio: %.2f', avgRatioForWin));
         end
     end
     
@@ -779,11 +797,11 @@ whiskValleyTables = cell(nSweeps, 1);
 whiskFreqFundamental = cell(nSweeps, 1);
 
 % Define empty table structure for when no windows are found
-emptyTable = table(zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), {}, {}, {}, {}, {}, {}, {}, ...
+emptyTable = table(zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), {}, {}, {}, {}, {}, {}, {}, zeros(0, 1), ...
                 'VariableNames', {'sweepNumber', 'analysisWinStartTime', 'analysisWinEndTime', 'sniffStartTime', ...
                                   'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
                                   'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
-                                  'whiskValleyTimes', 'whiskValleyValues'});
+                                  'whiskValleyTimes', 'whiskValleyValues', 'avgSuccessiveWhiskAmpRatio'});
 
 % If whisk vector is empty, return empty results
 if isempty(whiskVecsThisFile)
@@ -879,15 +897,24 @@ for iSwp = 1:nSweeps
                           valleyTimes <= analysisWinEndTime;
             whiskValleysToAnalyze = whiskValleyTable(isValleyInWin, :);
 
+            % Compute the average ratio of successive whisk peak amplitudes
+            peakAmplitudes = whiskPeaksToAnalyze.amplitude;
+            if numel(peakAmplitudes) > 1
+                successiveRatios = peakAmplitudes(2:end) ./ peakAmplitudes(1:end-1);
+                avgRatio = mean(successiveRatios, 'omitnan');
+            else
+                avgRatio = NaN;
+            end
+            
             % Create a one-row table for this window
             newWindow = table(iSwp, analysisWinStartTime, analysisWinEndTime, currentSniffStart, ...
                 {whiskPeaksToAnalyze.peakTime}, {whiskPeaksToAnalyze.peakValue}, ...
-                {whiskPeaksToAnalyze.amplitude}, {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
-                {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, ...
+                {peakAmplitudes}, {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
+                {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, avgRatio, ...
                 'VariableNames', {'sweepNumber', 'analysisWinStartTime', 'analysisWinEndTime', 'sniffStartTime', ...
                                   'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
                                   'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
-                                  'whiskValleyTimes', 'whiskValleyValues'});
+                                  'whiskValleyTimes', 'whiskValleyValues', 'avgSuccessiveWhiskAmpRatio'});
 
             allWindowsCell{end+1} = newWindow;
         end
