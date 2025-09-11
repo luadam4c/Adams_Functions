@@ -7,6 +7,8 @@ function string = print_cellstr (cellStr, varargin)
 % Example(s):
 %       print_cellstr({'a', 'b', 'c'})
 %       print_cellstr('a')
+%       print_cellstr([2 3])
+%       print_cellstr([2 3], 'OmitBraces', true, 'OmitQuotes', true, 'OmitNewline', true)
 %       print_cellstr('a\c');
 %       print_cellstr('a\\c');
 %       print_cellstr('a\n');
@@ -91,7 +93,8 @@ function string = print_cellstr (cellStr, varargin)
 % 2018-06-21 AL - Now also prints to standard output by default
 % 2025-08-01 Escape backslashes for fprintf
 % 2025-09-01 Now takes an empty array as an argument
-% 2025-09-05 Modified by Gemini to handle cell arrays of numeric vectors
+% 2025-09-05 Modified to handle cell arrays of numeric vectors
+% 2025-09-10 Modified to handle numeric vectors
 %
 % TODO: Consider 3-D cell arrays of strings
 
@@ -124,7 +127,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'cellStr', ...
-    @(x) isempty(x) || iscell(x) || ischar(x) || isstring(x));     
+    @(x) isempty(x) || isnumeric(x) || iscell(x) || ischar(x) || isstring(x));     
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Delimiter', delimiterDefault, ...
@@ -188,21 +191,15 @@ if isempty(cellStr)
     cellStr = '';
 end
 
-% If a cell array contains numeric vectors, convert them to strings
+% If numeric, convert to character vector
+if isnumeric(cellStr)
+    cellStr = convert_to_char(cellStr, 'SingleOutput', true, 'Delimiter', ' ');
+end
+
+% If a cell array contains numeric vectors, convert them to character vectors
 if iscell(cellStr)
-    for i = 1:numel(cellStr)
-        % Check if the element is numeric
-        if isnumeric(cellStr{i})
-            if isempty(cellStr{i})
-                % If it's empty, replace with an empty character vector
-                cellStr{i} = '';
-            else
-                % Otherwise, convert the numeric vector to a single character vector
-                cellStr{i} = convert_to_char(cellStr{i}, ...
-                            'SingleOutput', true, 'Delimiter', ' ');
-            end
-        end
-    end
+    cellStr = cellfun(@(x) convert_to_char(x, 'SingleOutput', true, 'Delimiter', ' '), ...
+                        cellStr, 'UniformOutput', false);
 end
 
 % Prepend prefices and append suffixes

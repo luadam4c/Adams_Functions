@@ -8,7 +8,8 @@ function handles = plot_test_result (testPValues, varargin)
 %       For each p-value, it displays a text string (e.g., 'p_t = 0.04').
 %       The text is colored black for non-significant results, red for
 %       significant results, and gray if the test was deemed inappropriate.
-%       It also plots a '*' for significance or 'NS' for non-significance.
+%       It also plots a symbol ('*' by default) for significance or 'NS'
+%       for non-significance.
 %
 % Example(s):
 %       % Create a base plot
@@ -20,25 +21,39 @@ function handles = plot_test_result (testPValues, varargin)
 %       pvals = [0.04, 0.6, 0.01];
 %       x_axis_values = 1:4;
 %
-%       % Let the function calculate x-locations automatically
-%       plot_test_result(pvals, 'XValuesAll', x_axis_values, ...
-%                        'IsAppropriate', [true, true, false]);
+%       % Provide a cell array of test functions to generate labels automatically
+%       plot_test_result(pvals, 'TestFunction', {'ttest', 'ranksum', 'anova'}, ...
+%                        'XValuesAll', x_axis_values);
 %
-%       % Provide specific x-locations
-%       plot_test_result(pvals, 'XLocText', [6, 7, 8], 'XLocStar', [6, 7, 8]);
+%       % Provide a custom symbol for significance
+%       plot_test_result([0.02], 'Symbol', 'd', 'XLocText', [9]);
+%
+%       % Provide a mixed cell array of p-strings and symbols
+%       plot_test_result(pvals, 'PString', {'p_t', 'p-value', 'p_ANOVA'}, ...
+%                        'Symbol', {'s', 's', 'p'}, ...
+%                        'XLocText', [6, 7, 8], 'XLocStar', [6, 7, 8]);
 %
 % Outputs:
 %       handles     - A structure containing handles to the plotted objects:
 %                       .pText - handles to the p-value text objects
-%                       .sigMarker - handles to the significance markers ('*' or 'NS')
+%                       .sigMarker - handles to the significance markers
 %                   specified as a structure
 %
 % Arguments:
 %       testPValues - p-values to plot
 %                   must be a numeric vector
-%       varargin    - 'PString': The prefix for the p-value text (e.g., 'p_t')
-%                   must be a character vector or a string
+%       varargin    - 'PString': Prefix for the p-value text.
+%                   must be a char array, a string, or a cell array of strings
+%                   of the same length as testPValues.
 %                   default == 'p'
+%                   - 'TestFunction': Name(s) of the statistical test (e.g., 'ttest')
+%                   must be a char array, a string, or a cell array of strings
+%                   of the same length as testPValues.
+%                   default == ''
+%                   - 'Symbol': Marker to use for significant results.
+%                   must be a char array, a string, or a cell array of strings
+%                   of the same length as testPValues.
+%                   default == '*'
 %                   - 'XLocText': Absolute x-coordinates for p-value text
 %                   must be a numeric vector
 %                   default == [] (calculated from XValuesAll, XLocTextRel)
@@ -68,19 +83,24 @@ function handles = plot_test_result (testPValues, varargin)
 %                   default == true for all values
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
+%       cd/create_error_for_nargin.m
 %
 % Used by:
-%       ~/Adams_Functions/plot_grouped_jitter.m
-%       ~/Adams_Functions/plot_tuning_curve.m
+%       cd/plot_grouped_jitter.m
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2025-08-29 Created by Gemini by extracting from plot_tuning_curve.m
 % 2025-08-29 Refactored by Gemini to use inputParser and optional x-locations
+% 2025-09-11 Added 'TestFunction' optional argument by Gemini
+% 2025-09-11 Allowed 'PString' and 'TestFunction' to be vectors by Gemini
+% 2025-09-11 Added 'Symbol' optional argument by Gemini
 %
 
 %% Default values for optional arguments
 pStringDefault = 'p';
+testFunctionDefault = '';
+symbolDefault = '';
 xLocTextDefault = [];
 xLocStarDefault = [];
 yLocTextRelDefault = 0.2;
@@ -109,7 +129,11 @@ addRequired(iP, 'testPValues', @isnumeric);
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PString', pStringDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'TestFunction', testFunctionDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'Symbol', symbolDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'XLocText', xLocTextDefault, @isnumeric);
 addParameter(iP, 'XLocStar', xLocStarDefault, @isnumeric);
 addParameter(iP, 'YLocTextRel', yLocTextRelDefault, ...
@@ -128,6 +152,8 @@ addParameter(iP, 'IsAppropriate', isAppropriateDefault, @islogical);
 % Read from the Input Parser
 parse(iP, testPValues, varargin{:});
 pString = iP.Results.PString;
+testFunction = iP.Results.TestFunction;
+symbol = iP.Results.Symbol;
 xLocText = iP.Results.XLocText;
 xLocStar = iP.Results.XLocStar;
 yLocTextRel = iP.Results.YLocTextRel;
@@ -141,6 +167,17 @@ isAppropriate = iP.Results.IsAppropriate;
 %% Preparation
 % Get the number of p-values to plot
 nValues = numel(testPValues);
+
+% Validate vector argument lengths
+if iscell(pString) && numel(pString) ~= nValues
+    error('PString must be a scalar or have the same number of elements as testPValues');
+end
+if iscell(testFunction) && numel(testFunction) ~= nValues
+    error('TestFunction must be a scalar or have the same number of elements as testPValues');
+end
+if iscell(symbol) && numel(symbol) ~= nValues
+    error('Symbol must be a scalar or have the same number of elements as testPValues');
+end
 
 % Set default for isAppropriate if not provided
 if isempty(isAppropriate)
@@ -191,8 +228,53 @@ for iValue = 1:nValues
     xLocStarThis = xLocStar(iValue);
     isAppropriateThis = isAppropriate(iValue);
 
-    % Create a p-value string with 2 significant digits
-    pValueString = [pString, ' = ', num2str(testPValueThis, 2)];
+    % Decide on the symbol for this iteration
+    if iscell(symbol)
+        symbolToUse = symbol{iValue};
+    else
+        symbolToUse = symbol;
+    end
+
+    % If empty symbol passed in, decide based on significance
+    if isempty(symbolToUse)
+        if testPValueThis < sigLevel
+            symbolToUse = '*';
+        else
+            symbolToUse = 'NS';
+        end
+    end
+
+    % --- Logic for determining the p-value string for this iteration ---
+    pStringToUse = '';
+    pStringIsDefault = true;
+
+    % Check if a specific PString was provided for this value
+    if iscell(pString)
+        pStringToUse = pString{iValue};
+        pStringIsDefault = false;
+    elseif ~ismember('PString', iP.UsingDefaults)
+        pStringToUse = pString;
+        pStringIsDefault = false;
+    end
+
+    % If PString was default, check for TestFunction
+    if pStringIsDefault
+        testFunctionToUse = '';
+        if iscell(testFunction)
+            testFunctionToUse = testFunction{iValue};
+        elseif ~isempty(testFunction)
+            testFunctionToUse = testFunction;
+        end
+        
+        if ~isempty(testFunctionToUse)
+            pStringToUse = ['p_{', testFunctionToUse, '}'];
+        else
+            pStringToUse = pStringDefault; % Fallback to the absolute default
+        end
+    end
+
+    % Create the final p-value string with 2 significant digits
+    pValueString = [pStringToUse, ' = ', num2str(testPValueThis, 2)];
 
     % Determine the color for the text based on appropriateness and significance
     if ~isAppropriateThis
@@ -208,16 +290,18 @@ for iValue = 1:nValues
                                 'Color', pColor, ...
                                 'HorizontalAlignment', 'center');
 
-    % Plot a star for significance or 'NS' for non-significance
-    if testPValueThis < sigLevel
-        % Plot star marker
-        sigMarkerHandles(iValue) = plot(xLocStarThis, yLocStar, '*', ...
-                                        'Color', [0, 0, 0], 'MarkerSize', 4, ...
-                                        'HandleVisibility', 'off');
-    else
-        % Plot 'NS' text
-        sigMarkerHandles(iValue) = text(xLocStarThis, yLocStar, 'NS', ...
-                                        'Color', [0, 0, 0], ...
+    % Plot the specified symbol or text
+    switch symbolToUse
+    case {'*', '**', '***'}
+        % Use text() with larger, bold font for star symbols
+        sigMarkerHandles(iValue) = text(xLocStarThis, yLocStar, symbolToUse, ...
+                                        'Color', pColor, ...
+                                        'HorizontalAlignment', 'center', ...
+                                        'FontSize', 14, 'FontWeight', 'bold');
+    otherwise
+        % Use text() for 'NS' or other custom symbols
+        sigMarkerHandles(iValue) = text(xLocStarThis, yLocStar, symbolToUse, ...
+                                        'Color', pColor, ...
                                         'HorizontalAlignment', 'center');
     end
 end
@@ -234,3 +318,4 @@ OLD CODE:
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

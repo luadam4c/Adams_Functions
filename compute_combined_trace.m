@@ -99,6 +99,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/m3ha_plot_figure08.m
 %       cd/minEASE.m
 %       cd/parse_ipsc.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace
