@@ -32,19 +32,19 @@ function string = print_cellstr (cellStr, varargin)
 %                   strings, or numeric vectors. Can also be a character array.
 %                   must be a cell array, character array, or string
 %       varargin    - 'Delimiter': used to delimit separate entries
-%                   must be a character array
+%                   must be a character array or string
 %                   default == ''
 %                   - 'ColDelimiter': used to delimit separate columns
-%                   must be a character array
+%                   must be a character array or string
 %                   default == ', '
 %                   - 'RowDelimiter': used to delimit separate rows
-%                   must be a character array
+%                   must be a character array or string
 %                   default == '; '
 %                   - 'Prefix': prefix to prepend to each element
-%                   must be a character array
+%                   must be a character array or string
 %                   default == ''
 %                   - 'Suffix': suffix to append to each element
-%                   must be a character array
+%                   must be a character array or string
 %                   default == ''
 %                   - 'OmitQuotes': whether to omit quotes
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -80,6 +80,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/print_structure.m
 %       cd/virt_analyze_sniff_whisk.m
 %       cd/write_data_atf.m
+%       cd/write_table.m
 
 % File History:
 % 2018-01-31 Modified from code in find_data_files.m by Mira

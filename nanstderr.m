@@ -13,6 +13,7 @@ function stdErr = nanstderr(X, varargin)
 % File History:
 % 2017-12-14 Created
 % 2019-03-14 Added 'dim' as an optional argument
+% 2025-09-11 Fixed the case where dim is 2
 
 %% Default values for optional arguments
 dimDefault = [];
@@ -43,9 +44,9 @@ dim = iP.Results.dim;
 
 %% Do the job
 if isempty(dim)
-    stdErr = nanstd(X, 0) ./ sqrt(length(X(~isnan(X))));
+    stdErr = nanstd(X, 0) ./ sqrt(numel(X(~isnan(X))));
 else
-    stdErr = nanstd(X, 0, dim) ./ sqrt(size(X(~isnan(X)), dim));
+    stdErr = nanstd(X, 0, dim) ./ sqrt(numel(X(~isnan(X))));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

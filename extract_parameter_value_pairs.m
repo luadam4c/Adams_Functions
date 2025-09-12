@@ -1,6 +1,6 @@
-function [paramsStruct, argList] = extract_parameter_value_pairs (argList)
+function [paramsOutput, argList] = extract_parameter_value_pairs (argList, varargin)
 %% Extracts parameter-value pairs from an argument list and return remaining
-% Usage: [paramsStruct, argList] = extract_parameter_value_pairs (argList)
+% Usage: [paramsOutput, argList] = extract_parameter_value_pairs (argList, varargin)
 % Explanation:
 %       TODO
 %
@@ -9,25 +9,40 @@ function [paramsStruct, argList] = extract_parameter_value_pairs (argList)
 %       [params, varargin] = extract_parameter_value_pairs(varargin)
 %
 % Outputs:
-%       paramsStruct    - structure of extract parameters
-%                       specified as a scalar structure
+%       paramsOutput    - structure or cell array of extract parameters
+%                       specified as a scalar structure or cell array
 %       argList     - a cell array of remaining arguments
-%                   must be a cell array
+%                   specified as a cell array
 %
 % Arguments:
 %       argList     - a cell array of arguments
 %                   must be a cell array
+%       varargin    - 'OutputMode': whether to output params as 
+%                                   a structure or a cell array
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'struct' - scalar structure
+%                       'cell'   - cell array
+%                   default == 'struct'
 %
 % Requires:
+%       cd/arglist2struct.m
 %       cd/create_error_for_nargin.m
 %
 % Used by:
 %       cd/array_fun.m
 %       cd/match_format_vectors.m
+%       cd/write_table.m
 
 % File History:
 % 2020-01-04 Moved from array_fun.m
+% 2025-09-12 Added 'OutputMode' as an optional argument
 % TODO: Right now this assumes parameters are char but not string
+
+%% Hard-coded parameters
+validOutputModes = {'struct', 'cell'};
+
+%% Default values for optional arguments
+outputModeDefault = 'struct';       % default: returns params as a struct
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,8 +60,13 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'argList', ...
     @(x) validateattributes(x, {'cell'}, {'2d'}));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'OutputMode', outputModeDefault, ...
+    @(x) any(validatestring(x, validOutputModes)));
+
 % Read from the Input Parser
-parse(iP, argList);
+parse(iP, argList, varargin{:});
+outputMode = validatestring(iP.Results.OutputMode, validOutputModes);
 
 %% Do the job
 % Initialize starting index of parameter-value pairs
@@ -69,13 +89,23 @@ if ~isnan(idxParamsStart)
     % Create a parameters list
     paramsList = argList(idxParamsStart:end);
 
-    % Output as a parameters structure
-    paramsStruct = arglist2struct(paramsList);
+    % Output parameters
+    switch outputMode
+        case 'struct'
+            paramsOutput = arglist2struct(paramsList);
+        case 'cell'
+            paramsOutput = paramsList;
+    end
 
     % Truncate the original argument list
     argList = argList(1:idxParamsStart - 1);
 else
-    paramsStruct = struct.empty;
+    switch outputMode
+        case 'struct'
+            paramsOutput = struct.empty;
+        case 'cell'
+            paramsOutput = {};
+    end    
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

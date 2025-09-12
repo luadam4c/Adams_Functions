@@ -14,7 +14,6 @@
 %
 % Requires:
 %       cd/all_files.m
-%       cd/argfun.m
 %       cd/array_fun.m
 %       cd/check_dir.m
 %       cd/compute_combined_trace.m
@@ -25,6 +24,7 @@
 %       cd/extract_subvectors.m
 %       cd/find_matching_files.m
 %       cd/parse_oscillation.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_test_result.m
 %       cd/plot_traces.m
 %       cd/plot_vertical_line.m
@@ -34,6 +34,7 @@
 %       cd/set_figure_properties.m
 %       cd/test_difference.m
 %       cd/vecfun.m
+%       cd/write_table.m
 %
 % Used by:
 
@@ -48,19 +49,24 @@
 % 2025-09-10 Changed to compute whisk logarithmic decrements
 % 2025-09-11 Now computes averages statistics for whisk logarithmic decrements
 % 2025-09-11 Renamed analysis window as sniff start window
+% 2025-09-12 Updated table outputs to be saved
 % TODO: Analyze basal respiration windows
 % TODO: Fix sniff vec filter cutoff to [1, 15] Hz, filter order to 3
 % TODO: Fix whisk vec filter cutoff to [3, 25] Hz, filter order to 3
 
 %% Hard-coded parameters
-% Directory and file naming conventions
+% Input Directory and file naming conventions
 nameDataDir = 'data_sniff_whisk';       % Name of the directory containing the data files
-nameOutDir = 'output_sniff_whisk';      % Name of the output directory
-fileNameMetaData = 'sniff_whisk_metadata.csv';      % File name of the meta data file
 extDataFile = 'mat';                    % Extension for the data files
 prefixDataFile = 'swdata_';             % Prefix for the data files
 suffixDataFile = '_angle';              % Suffix for the data files
 suffixParamFile = '_parameters';        % Suffix for the parameter files
+
+% Output Directory and file naming conventions
+nameOutDir = 'output_sniff_whisk';      % Name of the output directory
+fileNameMetaData = 'sniff_whisk_metadata.csv';               % File name of the metadata table file
+fileNameSniffStartWin = 'sniff_start_window_table.csv';      % File name of the sniff start window table file
+fileNameAnalysisResults = 'sniff_whisk_analysis.mat';        % File name of the analysis results mat file
 
 % Detection parameters
 ammoniaPuffString = 'ammpuff';
@@ -83,9 +89,9 @@ nWhisksToAnalyze = 5;       % Number of whisks at the start of a sniff period to
 excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
 
 % Plotting parameters
-%fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
+fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
-fileNumsToPlot = (1:38)';              % The file number(s) to plot (max 38)
+%fileNumsToPlot = (1:38)';              % The file number(s) to plot (max 38)
 toSpeedUp = false;                      % Whether to use parpool and hide figures
 %toSpeedUp = true;                      % Whether to use parpool and hide figures
 whiskAngleLimits = [-75, 75];           % Whisk angle limits to be plotted
@@ -95,8 +101,8 @@ colorSniff = [1, 0, 0];                 % Color for sniff trace (Red)
 colorStim = [0, 0, 0];                  % Color for stim trace (Black)
 colorAmmoniaPuff = [0.6, 0.8, 0.2];     % Color for Ammonia Puff (Yellow Green)
 colorAirPuff = 0.5 * [1, 1, 1];         % Color for Air Puff (Gray)
-colorAnalysisWin = [0.5, 1.0, 0.8];     % Color for sniff start windows (Aquamarine)
-faceAlphaAnalysisWin = 0.8;             % Transparencies for sniff start windows
+colorSniffStartWin = [0.5, 1.0, 0.8];   % Color for sniff start windows (Aquamarine)
+faceAlphaSniffStartWin = 0.8;           % Transparencies for sniff start windows
 markerSniffPeaksValleys = 'o';          % Marker for sniff peaks and valleys (circle)
 colorSniffPeaksValleys = [1, 0.7, 0];   % Color for sniff peaks and valleys (Orange)
 markerWhiskPeaksValleys = 'x';          % Marker for whisk peaks and valleys (cross)
@@ -173,6 +179,12 @@ fprintf('\nFinished searching.\n\n');
 
 % Count files
 nFiles = numel(trialNames);
+
+% Check if any matching pairs were found
+if nFiles == 0
+    fprintf('No matching data and parameter file pairs were found in the directory.\n');
+    return
+end
 
 %% Load data
 % Load data from each file: the data struct contains a single field
@@ -273,7 +285,7 @@ fprintf('Finished augmenting sniff start windows.\n\n');
 fprintf('Calculating statistics for whisk logarithmic decrements for each file ...\n');
 
 % Calculate the number of sniff start windows per file
-nAnalysisWindowsPerFile = cellfun(@height, sniffStartWinTablesAll);
+nSniffStartWindowsPerFile = cellfun(@height, sniffStartWinTablesAll);
 
 % Calculate the average whisk logarithmic decrements per file
 meanWhiskLogDecrementsPerFile = ...
@@ -297,16 +309,19 @@ upper95WhiskLogDecrementsPerFile = ...
 
 fprintf('Finished calculating ratios.\n\n');
 
-%% Plot aggregate data
+%% Analyze and plot aggregate data
 % Identify files to use for averaging
-[~, fileNumsToAverage] = identify_files_for_averaging(trialNames, excludeStringsFromAverage);
+[isUsedForAverage, fileNumsToAverage] = ...
+    identify_files_for_averaging(trialNames, excludeStringsFromAverage);
 
 % Combine sniff start windows from selected files
-sniffStartWinTableToAverage = combine_sniffstart_windows(sniffStartWinTablesAll, ...
-                                    fileNumsToAverage, trialNames);
+sniffStartWinTableToAverage = ...
+    combine_sniffstart_windows(sniffStartWinTablesAll, fileNumsToAverage, trialNames);
 
-% Plot the whisk logarithmic decrements as a grouped jitter plot
-average_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, figTypes, figTitle4, figName4);
+% Average the whisk logarithmic decrements and plot as a grouped jitter plot
+[whiskLogDecrementResults, handles4] = ...
+    average_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, ...
+                                figTypes, figTitle4, figName4);
 
 %% Plot all data
 [handles1, handles2, handles3] = ...
@@ -316,7 +331,7 @@ average_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, figTypes, 
         whiskPeakTablesAll, whiskValleyTablesAll, sniffStartWinTablesAll, ...
         isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
         colorWhisk, colorSniff, colorStim, colorAmmoniaPuff, colorAirPuff, ...
-        colorAnalysisWin, faceAlphaAnalysisWin, ...
+        colorSniffStartWin, faceAlphaSniffStartWin, ...
         markerSniffPeaksValleys, colorSniffPeaksValleys, ...
         markerWhiskPeaksValleys, colorWhiskPeaksValleys, ...
         lineStyleWhiskAmplitudes, colorWhiskAmplitudes, ...
@@ -329,63 +344,47 @@ average_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, figTypes, 
         figPrefix1, figPrefix2, figPrefix3, figTypes, toSpeedUp), ...
         fileNumsToPlot, 'UseParpool', toSpeedUp);
 
-%% Put all metadata together and save
+%% Put all metadata together
 
 % Load parameters from each file
 paramStructs = cellfun(@load, pathParamFiles);
 paramTable = struct2table(paramStructs);
 
-% Check if any matching pairs were found
-if isempty(trialNames)
-    fprintf('No matching data and parameter file pairs were found in the directory.\n');
-else
-    % Create a table for all meta data
-    metaDataFiles = table(trialNames, pathDataFiles, pathParamFiles, ...
-                     'VariableNames', {'TrialName', 'DataFilePath', 'ParameterFilePath'});
-    metaData = horzcat(metaDataFiles, paramTable);
+% Create a table for all meta data
+metaDataFiles = table(trialNames, pathDataFiles, pathParamFiles, ...
+                 'VariableNames', {'TrialName', 'DataFilePath', 'ParameterFilePath'});
+metaDataTable = horzcat(metaDataFiles, paramTable);
 
-    % Add detection results
-    metaData.nSweeps = nSweepsEachFile;
-    metaData.isAmmoniaPuff = isAmmoniaPuff;
-    metaData.isAirPuff = isAirPuff;
-    metaData.sniffStartTimes = sniffStartTimesAll;
-    metaData.sniffEndTimes = sniffEndTimesAll;
-    metaData.sniffFreqFundamental = sniffFreqsFundamentalAll;
-    metaData.whiskFreqFundamental = whiskFreqsFundamentalAll;
-    metaData.nAnalysisWindows = nAnalysisWindowsPerFile;
-    metaData.meanWhiskLogDecrements = meanWhiskLogDecrementsPerFile;
-    metaData.stderrWhiskLogDecrements = stderrWhiskLogDecrementsPerFile;
-    metaData.lower95WhiskLogDecrements = lower95WhiskLogDecrementsPerFile;
-    metaData.upper95WhiskLogDecrements = upper95WhiskLogDecrementsPerFile;
+% Add detection results
+metaDataTable.isUsedForAverage = isUsedForAverage;
+metaDataTable.nSweeps = nSweepsEachFile;
+metaDataTable.isAmmoniaPuff = isAmmoniaPuff;
+metaDataTable.isAirPuff = isAirPuff;
+metaDataTable.sniffStartTimes = sniffStartTimesAll;
+metaDataTable.sniffEndTimes = sniffEndTimesAll;
+metaDataTable.sniffFreqFundamental = sniffFreqsFundamentalAll;
+metaDataTable.whiskFreqFundamental = whiskFreqsFundamentalAll;
+metaDataTable.nSniffStartWindows = nSniffStartWindowsPerFile;
+metaDataTable.meanWhiskLogDecrements = meanWhiskLogDecrementsPerFile;
+metaDataTable.stderrWhiskLogDecrements = stderrWhiskLogDecrementsPerFile;
+metaDataTable.lower95WhiskLogDecrements = lower95WhiskLogDecrementsPerFile;
+metaDataTable.upper95WhiskLogDecrements = upper95WhiskLogDecrementsPerFile;
 
-    % Expand the cell arrays to a single string
-    metaDataToPrint = metaData;
-    [metaDataToPrint.roiswitch, metaDataToPrint.records, ...
-        metaDataToPrint.anesrecords, metaDataToPrint.sniffStartTimes, ...
-        metaDataToPrint.sniffEndTimes, metaDataToPrint.sniffFreqFundamental, ...
-        metaDataToPrint.whiskFreqFundamental, ...
-        metaData.meanWhiskLogDecrements, metaData.stderrWhiskLogDecrements, ...
-        metaData.lower95WhiskLogDecrements, metaData.upper95WhiskLogDecrements] = ...
-        argfun(@(x) cellfun(@(a) print_cellstr(a, 'Delimiter', ' ', ...
-                                'ToPrint', false, 'OmitQuotes', true, ...
-                                'OmitBraces', true, 'OmitNewline', true), ...
-                                x, 'UniformOutput', false), ...
-            metaData.roiswitch, metaData.records, ...
-            metaData.anesrecords, metaData.sniffStartTimes, ...
-            metaData.sniffEndTimes, metaData.sniffFreqFundamental, ...
-            metaData.whiskFreqFundamental, ...
-            metaData.meanWhiskLogDecrements, metaData.stderrWhiskLogDecrements, ...
-            metaData.lower95WhiskLogDecrements, metaData.upper95WhiskLogDecrements);
+%% Save results
+% Save metadata table
+pathMetaData = fullfile(pathOutDir, fileNameMetaData);
+metaDataToPrint = write_table(metaDataTable, pathMetaData);
+fprintf('Metadata table saved to %s!\n', pathMetaData);
 
-    % Display the resulting table in the command window
-    fprintf('Generated Metadata Table:\n');
-    disp(metaDataToPrint);
+% Save sniff start window info
+pathSniffStartWin = fullfile(pathOutDir, fileNameSniffStartWin);
+sniffStartWinTableToPrint = write_table(sniffStartWinTableToAverage, pathSniffStartWin);
+fprintf('Sniff Start Window table saved to %s!\n', pathSniffStartWin);
 
-    % Save metadata table
-    pathMetaData = fullfile(pathOutDir, fileNameMetaData);
-    writetable(metaDataToPrint, pathMetaData);
-    fprintf('Metadata table saved to %s\n', pathMetaData);
-end
+% Save analysis results in a mat file
+pathMatFile = fullfile(pathOutDir, fileNameAnalysisResults);
+save(pathMatFile, 'metaDataTable', 'sniffStartWinTableToAverage', 'whiskLogDecrementResults', 'sniffPeakTablesAll', 'sniffValleyTablesAll', 'whiskPeakTablesAll', 'whiskValleyTablesAll');
+fprintf('Analysis results saved to %s!\n', pathMatFile);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -396,7 +395,7 @@ function [handles1, handles2, handles3] = ...
         whiskPeakTablesAll, whiskValleyTablesAll, sniffStartWinTablesAll, ...
         isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
         colorWhisk, colorSniff, colorStim, colorAmmoniaPuff, colorAirPuff, ...
-        colorAnalysisWin, faceAlphaAnalysisWin, ...
+        colorSniffStartWin, faceAlphaSniffStartWin, ...
         markerSniffPeaksValleys, colorSniffPeaksValleys, ...
         markerWhiskPeaksValleys, colorWhiskPeaksValleys, ...
         lineStyleWhiskAmplitudes, colorWhiskAmplitudes, ...
@@ -426,7 +425,7 @@ whiskPeakTablesThis = whiskPeakTablesAll{sampleFileNum};
 whiskValleyTablesThis = whiskValleyTablesAll{sampleFileNum};
 sniffStartWinTableForFile = sniffStartWinTablesAll{sampleFileNum};
 
-% Count the number of records to plot
+% Count the number of sweeps to plot
 nSweeps = size(tVecsThis, 2);
 recordNumbers = (1:nSweeps)';
 
@@ -503,7 +502,7 @@ if ~isempty(sniffVecsThis)
                              sniffStartWinTableForSweep.sniffStartWinEndTime];
 
             % Plot all shades for this sweep
-            plot_vertical_shade(winBoundaries', 'Color', colorAnalysisWin, 'FaceAlpha', faceAlphaAnalysisWin);
+            plot_vertical_shade(winBoundaries', 'Color', colorSniffStartWin, 'FaceAlpha', faceAlphaSniffStartWin);
         end
 
         % Extract the peak and valley tables for this sweep
@@ -854,8 +853,8 @@ whiskValleyTables = cell(nSweeps, 1);
 whiskFreqFundamental = cell(nSweeps, 1);
 
 % Define empty table structure for when no windows are found
-emptyTable = table(zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), {}, {}, {}, {}, {}, {}, {}, {}, ...
-                'VariableNames', {'sweepNumber', 'sniffStartWinStartTime', 'sniffStartWinEndTime', 'sniffStartTime', ...
+emptyTable = table(zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), {}, {}, {}, {}, {}, {}, {}, {}, ...
+                'VariableNames', {'sweepNumber', 'windowNumber', 'sniffStartWinStartTime', 'sniffStartWinEndTime', 'sniffStartTime', ...
                                   'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
                                   'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
                                   'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
@@ -891,7 +890,7 @@ parfor iSwp = 1:nSweeps
     end
 end
 
-% Now, process records serially to build the sniff start window table
+% Now, process sweeps serially to build the sniff start window table
 allWindowsCell = {};
 for iSwp = 1:nSweeps
     % Obtain whisk peak and valley tables for this sweep
@@ -903,6 +902,9 @@ for iSwp = 1:nSweeps
     sniffStartTimes = sniffStartTimesThisFile{iSwp};
     sniffEndTimes = sniffEndTimesThisFile{iSwp};
     valleyTimes = whiskValleyTable.valleyTime;
+
+    % Initialize window count 
+    iWindow = 0;
 
     % If there are no sniff periods or no whisks, skip this sweep
     if isempty(sniffStartTimes) || isempty(whiskPeakTable)
@@ -921,7 +923,7 @@ for iSwp = 1:nSweeps
         sniffEndTimes(end+1) = tVecsThisFile(end, iSwp);
     end
 
-    % Loop through all sniff periods
+    % Loop through all sniff periods for this sweep
     for iSniff = 1:numel(sniffStartTimes)
         % Get current sniff period start and end times
         currentSniffStart = sniffStartTimes(iSniff);
@@ -962,12 +964,15 @@ for iSwp = 1:nSweeps
                 logDecrements = nan(size(nWhisksToAnalyze - 1, 1));
             end
             
+            % Increment window count
+            iWindow = iWindow + 1;
+            
             % Create a one-row table for this window
-            newWindow = table(iSwp, sniffStartWinStartTime, sniffStartWinEndTime, currentSniffStart, ...
+            newWindow = table(iSwp, iWindow, sniffStartWinStartTime, sniffStartWinEndTime, currentSniffStart, ...
                 {whiskPeaksToAnalyze.peakTime}, {whiskPeaksToAnalyze.peakValue}, ...
                 {peakAmplitudes}, {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
                 {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, {logDecrements}, ...
-                'VariableNames', {'sweepNumber', 'sniffStartWinStartTime', 'sniffStartWinEndTime', 'sniffStartTime', ...
+                'VariableNames', {'sweepNumber', 'windowNumber', 'sniffStartWinStartTime', 'sniffStartWinEndTime', 'sniffStartTime', ...
                                   'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
                                   'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
                                   'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
@@ -1062,20 +1067,20 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [isUsedToAverage, fileNumsToAverage] = ...
+function [isUsedForAverage, fileNumsToAverage] = ...
                 identify_files_for_averaging(trialNames, excludeStringsFromAverage)
 %% Identifies files for averaging by excluding specific trial names.
 
 % Initialize as all true
-isUsedToAverage = true(size(trialNames));
+isUsedForAverage = true(size(trialNames));
 
 % Iteratively apply exclusion criteria
 for i = 1:numel(excludeStringsFromAverage)
-    isUsedToAverage = isUsedToAverage & ~contains(trialNames, excludeStringsFromAverage{i});
+    isUsedForAverage = isUsedForAverage & ~contains(trialNames, excludeStringsFromAverage{i});
 end
 
 % Find the file numbers (indices) to be used for averaging
-fileNumsToAverage = find(isUsedToAverage);
+fileNumsToAverage = find(isUsedForAverage);
 
 end
 
@@ -1117,15 +1122,23 @@ else
     combinedTable = table();
 end
 
+% Reorder columns
+combinedTable = movevars(combinedTable, 'fileNumber', 'Before', 1);
+combinedTable = movevars(combinedTable, 'trialName', 'Before', 1);
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function average_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, figTypes, figTitle4, figName4)
+function [results, handles4] = average_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, figTypes, figTitle4, figName4)
 %% Averages and plots whisk logarithmic decrements as a grouped jitter plot,
 %  with mean, 95% CI, and statistical test results overlaid.
 
 fprintf('Plotting aggregated whisk log decrements jitter plot...\n');
+
+% Initialize output
+results = struct;
+handles4.fig = gobjects;
 
 % If there's no data to plot, exit early
 if isempty(sniffStartWinTableToAverage)
@@ -1137,7 +1150,7 @@ end
 whiskLogDecrementsCell = sniffStartWinTableToAverage.whiskLogDecrements;
 fileNumbersEachWin = sniffStartWinTableToAverage.fileNumber;
 
-% Check if there is anything to plot after unpacking
+% Check if there is anything to average after unpacking
 if isempty(whiskLogDecrementsCell) || isempty(whiskLogDecrementsCell{1})
     fprintf('No log decrement data found to plot.\n');
     return;
@@ -1148,18 +1161,19 @@ end
 allLogDecrementsMatrix = transpose(horzcat(whiskLogDecrementsCell{:}));
 
 % Count the number of sniff start windows
-nAnalysisWin = size(allLogDecrementsMatrix, 1);
+nSniffStartWin = size(allLogDecrementsMatrix, 1);
 
 % Count the number of log decrements
-nLogDecrements = size(allLogDecrementsMatrix, 2);
+nWhiskLogDecrements = size(allLogDecrementsMatrix, 2);
 
 % Create matching decrement numbers and file numbers
-allDecrementNumbersMatrix = repmat((1:nLogDecrements), nAnalysisWin, 1);
-allFileNumbersMatrix = repmat(fileNumbersEachWin, 1, nLogDecrements);
+allDecrementNumbersMatrix = repmat((1:nWhiskLogDecrements), nSniffStartWin, 1);
+allFileNumbersMatrix = repmat(fileNumbersEachWin, 1, nWhiskLogDecrements);
 
 %% Compute statistics
 % Calculate mean and 95% confidence intervals
 meanWhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'mean');
+stderrWhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'stderr');
 lower95WhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'lower95');
 upper95WhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'upper95');
 
@@ -1171,11 +1185,28 @@ pValues = extract_fields(stats, 'pValue');
 testFunctions = extract_fields(stats, 'testFunction');
 symbols = extract_fields(stats, 'symbol');
 
+% Get the geometric mean of amplitude ratios
+avgWhiskAmpRatios = exp(meanWhiskLogDecrements);
+
+%% Save results
+results.allLogDecrements = allLogDecrementsMatrix;
+results.allDecrementNumbers = allDecrementNumbersMatrix;
+results.allFileNumbers = allFileNumbersMatrix;
+results.nSniffStartWin = nSniffStartWin;
+results.meanWhiskLogDecrements = meanWhiskLogDecrements;
+results.stderrWhiskLogDecrements = stderrWhiskLogDecrements;
+results.lower95WhiskLogDecrements = lower95WhiskLogDecrements;
+results.upper95WhiskLogDecrements = upper95WhiskLogDecrements;
+results.pValues = pValues;
+results.testFunctions = testFunctions;
+results.symbols = symbols;
+results.avgWhiskAmpRatios = avgWhiskAmpRatios;
+
 %% Prepare data for the jitter plot
-allLogDecrements = allLogDecrementsMatrix(:);
-allDecrementNumbers = allDecrementNumbersMatrix(:);
-allFileNumbers = allFileNumbersMatrix(:);
-xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nLogDecrements, 'UniformOutput', false);
+allLogDecrementsVec = allLogDecrementsMatrix(:);
+allDecrementNumbersVec = allDecrementNumbersMatrix(:);
+allFileNumbersVec = allFileNumbersMatrix(:);
+xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nWhiskLogDecrements, 'UniformOutput', false);
 
 %% Plot the jitter plot and overlay stats
 % Set up figure properties
@@ -1183,7 +1214,7 @@ fig4 = set_figure_properties('FigNumber', 4, 'AlwaysNew', false, 'ClearFigure', 
 figPath = fullfile(pathOutDir, figName4);
 
 % 1. Generate the base jitter plot, ensuring it doesn't plot its own stats
-plot_grouped_jitter(allLogDecrements, allFileNumbers, allDecrementNumbers, ...
+handles4 = plot_grouped_jitter(allLogDecrementsVec, allFileNumbersVec, allDecrementNumbersVec, ...
     'XTickLabels', xTickLabels, ...
     'YLabel', 'Log Decrement (ln(A_{n+1}/A_{n}))', ...
     'LegendLocation', 'suppress', ...
@@ -1194,20 +1225,23 @@ plot_grouped_jitter(allLogDecrements, allFileNumbers, allDecrementNumbers, ...
 hold on;
 
 % 3. Plot the mean and 95% CI error bars with a distinct style
-xValues = 1:nLogDecrements;
+xValues = 1:nWhiskLogDecrements;
 errLower = meanWhiskLogDecrements - lower95WhiskLogDecrements;
 errUpper = upper95WhiskLogDecrements - meanWhiskLogDecrements;
 
-errorbar(xValues, meanWhiskLogDecrements, errLower, errUpper, '_', ...
+handles4.errorbar = ...
+    errorbar(xValues, meanWhiskLogDecrements, errLower, errUpper, '_', ...
          'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
-plot(xValues, meanWhiskLogDecrements, 'o', 'MarkerEdgeColor', 'k', ...
+handles4.mean = ...
+    plot(xValues, meanWhiskLogDecrements, 'o', 'MarkerEdgeColor', 'k', ...
      'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
 
 % 4. Add a horizontal line at y=0 for the null hypothesis
-yline(0, '--k', 'LineWidth', 1);
+handles4.null = yline(0, '--k', 'LineWidth', 1);
 
 % 5. Annotate plot with symbol and p-values near the top of the plot area
-plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...        
+handles4.testResult = ...
+    plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...        
                  'XLocText', xValues, 'YLocTextRel', 0.90, 'YLocStarRel', 0.95);
 
 % 6. Finalize plot
@@ -1218,6 +1252,9 @@ hold off;
 % 7. Save the figure
 save_all_figtypes(fig4, figPath, figTypes);
 
+% 8. Return in handles
+handles4.fig = fig4;
+
 fprintf('Finished plotting jitter plot with mean/CI overlay.\n\n');
 
 end
@@ -1227,7 +1264,28 @@ end
 %{
 OLD CODE:
 
+% Expand the cell arrays to a single string
+metaDataToPrint = metaDataTable;
+[metaDataToPrint.roiswitch, metaDataToPrint.records, ...
+    metaDataToPrint.anesrecords, metaDataToPrint.sniffStartTimes, ...
+    metaDataToPrint.sniffEndTimes, metaDataToPrint.sniffFreqFundamental, ...
+    metaDataToPrint.whiskFreqFundamental, ...
+    metaDataTable.meanWhiskLogDecrements, metaDataTable.stderrWhiskLogDecrements, ...
+    metaDataTable.lower95WhiskLogDecrements, metaDataTable.upper95WhiskLogDecrements] = ...
+    argfun(@(x) cellfun(@(a) print_cellstr(a, 'Delimiter', ' ', ...
+                            'ToPrint', false, 'OmitQuotes', true, ...
+                            'OmitBraces', true, 'OmitNewline', true), ...
+                            x, 'UniformOutput', false), ...
+        metaDataTable.roiswitch, metaDataTable.records, ...
+        metaDataTable.anesrecords, metaDataTable.sniffStartTimes, ...
+        metaDataTable.sniffEndTimes, metaDataTable.sniffFreqFundamental, ...
+        metaDataTable.whiskFreqFundamental, ...
+        metaDataTable.meanWhiskLogDecrements, metaDataTable.stderrWhiskLogDecrements, ...
+        metaDataTable.lower95WhiskLogDecrements, metaDataTable.upper95WhiskLogDecrements);
 
+% Display the resulting table in the command window
+fprintf('Generated Metadata Table:\n');
+disp(metaDataToPrint);
 
 %}
 

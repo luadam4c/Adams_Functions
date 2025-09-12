@@ -116,6 +116,7 @@ function handles = plot_grouped_jitter (data, varargin)
 % Used by:
 %       ~/Adams_Functions/m3ha_plot_figure08.m
 %       ~/Adams_Functions/m3ha_simulate_population.m
+%       ~/Adams_Functions/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2020-04-13 Modified from plot_violin.m
