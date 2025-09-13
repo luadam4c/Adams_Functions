@@ -103,6 +103,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/spike2Mat2Text.m
 %       cd/transform_vectors.m
 %       cd/vecfun.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2019-01-03 Created by Adam Lu

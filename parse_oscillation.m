@@ -100,7 +100,9 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %                   - 'MinValleyDistance': Minimum distance between valleys.
 %                   must be empty or a non-negative scalar
 %                   default == 0
-%                   - 'PromThresholdPerc': Prominence threshold percentage for peak/valley detection.
+%                   - 'PromThresholdPerc': Prominence threshold percentage
+%                               for peak/valley detection. Adds to MinPeakProminence
+%                               and MinValleyProminence
 %                   must be empty or a non-negative scalar
 %                   default == [] (not provided)
 %                   - 'MinPeakProminence': Minimum prominence for peak detection.
@@ -129,6 +131,8 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 % 2025-09-05 Added 'TimeUnits' as an optional argument by Gemini.
 % 2025-09-05 Added 'FundFreqRange' optional argument
 % 2025-09-09 Fixed pre- and post-valley detection
+% 2025-09-12 'PromThresholdPerc' and 'MinPeakProminence' are no longer
+%               exclusive
 % TODO: Make 'ParsePsd' an optional argument and use parse_psd.m and 
 %       store results in otherResults
 
@@ -282,16 +286,26 @@ else
     minValleyDistance = 0;
 end
 
-% Decide on prominence threshold
-if isempty(minPeakProminence) && ~isempty(promThresholdPerc)
+% Decide on prominence thresholds
+if ~isempty(minPeakProminence) && ~isempty(promThresholdPerc)
+    minPeakProminence = max([minPeakProminence, ...
+                            (promThresholdPerc / 100) * range(vec)]);
+elseif isempty(minPeakProminence) && ~isempty(promThresholdPerc)
     minPeakProminence = (promThresholdPerc / 100) * range(vec);
-else
+elseif isempty(minPeakProminence) && isempty(promThresholdPerc)
     minPeakProminence = 0;
-end
-if isempty(minValleyProminence) && ~isempty(promThresholdPerc)
-    minValleyProminence = (promThresholdPerc / 100) * range(vec);
 else
+    % Do nothing
+end
+if ~isempty(minValleyProminence) && ~isempty(promThresholdPerc)
+    minValleyProminence = max([minValleyProminence, ...
+                            (promThresholdPerc / 100) * range(vec)]);
+elseif isempty(minValleyProminence) && ~isempty(promThresholdPerc)
+    minValleyProminence = (promThresholdPerc / 100) * range(vec);
+elseif isempty(minValleyProminence) && isempty(promThresholdPerc)
     minValleyProminence = 0;
+else
+    % Do nothing
 end
 
 %% Filter the vector if requested
@@ -366,6 +380,12 @@ for i = 1:nPeaks
                 peakAmplitudes(i) = valPeak - valPreValley;
             case 'peak-to-postvalley'
                 peakAmplitudes(i) = valPeak - valPostValley;
+        end
+
+        % If amplitude is negative, the data is too noisy so do not 
+        %   count this peak
+        if peakAmplitudes(i) < 0
+            peakAmplitudes(i) = NaN;
         end
     end
 end
