@@ -59,8 +59,10 @@
 % 2025-09-12 Fixed whisk vec filter cutoff at [3, 25] Hz, filter order changed to 3
 % 2025-09-12 Added minPeakPromWhisk
 % 2025-09-12 Added analysis of basal respiration cycles
-% 2025-09-12 Changed promThresholdPerc to 5
+% 2025-09-12 Changed promThresholdPerc from 10 to 5
 % 2025-09-13 Added analysis of amplitude correlations
+% 2025-09-13 Changed minPeakPromWhisk to 5 and Added maxWhiskDurationMs at 250 ms
+%               and force nalysis windows to have whisks without NaN amplitudes
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -86,14 +88,17 @@ minPulseAmplitude = 2;                  % Minimum pulse amplitude for piezo trac
 %   Note: Keep this consistent with virt_moore.m
 amplitudeDefinition = 'peak-to-avgvalley';
 fundFreqRange = [0.5, 20];  % range of possible fundamental frequencies to be detected
-fCutoffSniff = [1, 15];     % bandpass filter cutoff for sniff trace (Moore et al 2013 used [1, 15] Hz)
+fCutoffResp = [1, 15];      % bandpass filter cutoff for resp trace (Moore et al 2013 used [1, 15] Hz)
 fCutoffWhisk = [3, 25];     % bandpass filter cutoff for whisk trace (Moore et al 2013 used [3, 25] Hz)
 fCutoffRelToFund = [];      % don't use this
-filterOrderSniff = 3;       % Butterworth filter order for sniff trace (Moore et al 2013 used 3)
+filterOrderResp = 3;        % Butterworth filter order for resp trace (Moore et al 2013 used 3)
 filterOrderWhisk = 3;       % Butterworth filter order for whisk trace (Moore et al 2013 used 3)
-promThresholdPerc = 5;     % Percentage of amplitude range for minimum peak prominence
-minPeakPromWhisk = 1;       % Minimum whisk angle change to detect as a peak
-minPeakDistanceMs = 30;     % Minimum peak distance in ms
+promThresholdPercResp = 5;  % Percentage of amplitude range for minimum peak prominence for resp peaks
+promThresholdPercWhisk = 5; % Percentage of amplitude range for minimum peak prominence for whisk peaks
+minPeakPromWhisk = 5;       % Minimum whisk angle change (degrees) to detect as a peak (Moore et al 2013 used 5 degrees)
+maxWhiskDurationMs = 250;   % Maximum whisk inter-valley interval (ms) (Moore et al 2013 used whisk duration < 250 ms)
+minPeakDistanceMsResp = 30;     % Minimum peak distance (ms) for resp peaks
+minPeakDistanceMsWhisk = 30;    % Minimum peak distance (ms) for whisk peaks
 sniffFreqThreshold = 4;     % Frequency threshold for sniffing in Hz
 basalFreqThreshold = 3;     % Frequency threshold for basal respiration in Hz
 nWhisksSniffStartToAnalyze = 5; % Number of whisks at the start of a sniff period to be analyzed
@@ -106,15 +111,15 @@ excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
 
 % Plotting parameters
 %fileNumsToPlot = 7;                    % The file number(s) to plot (max 38)
-fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
+%fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
-%fileNumsToPlot = (1:38)';              % The file number(s) to plot (max 38)
+fileNumsToPlot = (1:38)';               % The file number(s) to plot (max 38)
 toSpeedUp = false;                      % Whether to use parpool and hide figures
 %toSpeedUp = true;                      % Whether to use parpool and hide figures
 whiskAngleLimits = [-75, 75];           % Whisk angle limits to be plotted
 piezoLimits = [-1, 10];
 colorWhisk = [0, 0, 1];                 % Color for whisk trace (Blue)
-colorSniff = [1, 0, 0];                 % Color for sniff trace (Red)
+colorResp = [1, 0, 0];                  % Color for resp trace (Red)
 colorStim = [0, 0, 0];                  % Color for stim trace (Black)
 colorAmmoniaPuff = [0.6, 0.8, 0.2];     % Color for Ammonia Puff (Yellow Green)
 colorAirPuff = 0.5 * [1, 1, 1];         % Color for Air Puff (Gray)
@@ -122,8 +127,8 @@ colorSniffStartWin = [0.5, 1.0, 0.8];   % Color for sniff start windows (Aquamar
 colorBasalRespCycle = [1.0, 0.8, 0.5];  % Color for basal respiration cycles (Light Orange)
 faceAlphaSniffStartWin = 0.8;           % Transparencies for sniff start windows
 faceAlphaBasalRespCycle = 0.8;          % Transparencies for basal respiration cycles
-markerSniffPeaksValleys = 'o';          % Marker for sniff peaks and valleys (circle)
-colorSniffPeaksValleys = [1, 0.7, 0];   % Color for sniff peaks and valleys (Orange)
+markerRespPeaksValleys = 'o';           % Marker for resp peaks and valleys (circle)
+colorRespPeaksValleys = [1, 0.7, 0];    % Color for resp peaks and valleys (Orange)
 markerWhiskPeaksValleys = 'x';          % Marker for whisk peaks and valleys (cross)
 colorWhiskPeaksValleys = [0, 0.8, 0.8]; % Color for whisk peaks and valleys (Cyan)
 lineStyleWhiskAmplitudes = '-';         % Line Style for whisk peak amplitudes (solid line)
@@ -138,10 +143,10 @@ markerTypeScatter = '.';
 markerSizeScatter = 4;
 markerLineWidthScatter = 0.5;
 whiskAngleLabel = 'Whisk Angle (degrees)';
-sniffToWhiskRangeRatio = 0.8;           % Sniff amplitude to whisk amplitude ratios for plotting
+respToWhiskRangeRatio = 0.8;           % Sniff amplitude to whisk amplitude ratios for plotting
 timeLabel = 'Time (s)';
 whiskLabel = 'Whisking';
-sniffLabel = 'Breathing';
+respLabel = 'Breathing';
 legendLocation1 = 'suppress'; %'northeast';
 legendLocation2 = 'suppress';
 legendLocation3 = 'suppress';
@@ -263,12 +268,12 @@ minThermValueEachFile = cellfun(@(x) apply_iteratively(@min, x), thermVecs);
 
 % Calculate plotting limits for thermocouple vectors for each file
 meanThermLimitsEachFile = (maxThermValueEachFile + minThermValueEachFile) / 2;
-rangeThermLimitsEachFile = (maxThermValueEachFile - minThermValueEachFile) / sniffToWhiskRangeRatio;
+rangeThermLimitsEachFile = (maxThermValueEachFile - minThermValueEachFile) / respToWhiskRangeRatio;
 lowerThermLimitEachFile = meanThermLimitsEachFile - rangeThermLimitsEachFile / 2;
 
 % Create sniff/breath vectors scaled to the order of whisk angle vectors
 rangeWhiskAngleLimits = diff(whiskAngleLimits);
-sniffVecs = cellfun(@(a, b, c) whiskAngleLimits(1) + (a - b) * ...
+respVecs = cellfun(@(a, b, c) whiskAngleLimits(1) + (a - b) * ...
                     rangeWhiskAngleLimits / c, thermVecs, ...
                     num2cell(lowerThermLimitEachFile), num2cell(rangeThermLimitsEachFile), ...
                     'UniformOutput', false);
@@ -283,13 +288,13 @@ pulseEndTimes = cellfun(@(x) x.timeBeforeEndMs, pulseParams, 'UniformOutput', fa
 fprintf('Detecting sniff transitions and basal respiration peaks...\n');
 
 % Use array_fun to apply the function to each file's data
-[sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
+[respPeakTablesAll, respValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
     sniffFreqsFundamentalAll, basalRespPeakTablesAll] = ...
-    array_fun(@(x, y, z) parse_sniff_vecs(x, y, z, ...
-                    amplitudeDefinition, fundFreqRange, fCutoffSniff, fCutoffRelToFund, filterOrderSniff, ...
-                    promThresholdPerc, minPeakDistanceMs, ...
+    array_fun(@(x, y, z) parse_resp_vecs(x, y, z, ...
+                    amplitudeDefinition, fundFreqRange, fCutoffResp, fCutoffRelToFund, filterOrderResp, ...
+                    promThresholdPercResp, minPeakDistanceMsResp, ...
                     sniffFreqThreshold, basalFreqThreshold), ...
-                sniffVecs, tVecs, num2cell(nSweepsEachFile), 'UniformOutput', false);
+                respVecs, tVecs, num2cell(nSweepsEachFile), 'UniformOutput', false);
 
 fprintf('Finished detecting sniff transitions and basal respiration peaks.\n\n');
 
@@ -299,7 +304,7 @@ fprintf('Detecting whisk peaks and valleys and defining analysis windows ...\n')
     sniffStartWinTablesAll, basalRespCycleTablesAll] = ...
     array_fun(@(a, b, c, d, e, f) parse_whisk_vecs(a, b, c, d, e, f, ...
                     amplitudeDefinition, fundFreqRange, fCutoffWhisk, fCutoffRelToFund, filterOrderWhisk, ...
-                    promThresholdPerc, minPeakDistanceMs, minPeakPromWhisk, ...
+                    promThresholdPercWhisk, minPeakDistanceMsWhisk, minPeakPromWhisk, maxWhiskDurationMs, ...
                     nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze), ...
                 whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
                 sniffStartTimesAll, sniffEndTimesAll, basalRespPeakTablesAll, ...
@@ -310,20 +315,20 @@ fprintf('Finished detecting whisk peaks and valleys and defining analysis window
 fprintf('Augmenting sniff start windows with sniff data...\n');
 sniffStartWinTablesAll = ...
     array_fun(@(a, b, c) augment_sniffstart_windows(a, b, c), ...
-                sniffStartWinTablesAll, sniffPeakTablesAll, sniffValleyTablesAll, ...
+                sniffStartWinTablesAll, respPeakTablesAll, respValleyTablesAll, ...
                 'UniformOutput', false);
 fprintf('Finished augmenting sniff start windows.\n\n');
 
 %% Plot all data
 [handles1, handles2, handles3, handles4] = ...
-    array_fun(@(a) plot_one_file (a, trialNames, tVecs, whiskVecs, sniffVecs, ...
+    array_fun(@(a) plot_one_file (a, trialNames, tVecs, whiskVecs, respVecs, ...
         pulseVecs, pulseStartTimes, pulseEndTimes, ...
-        sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
+        respPeakTablesAll, respValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
         whiskPeakTablesAll, whiskValleyTablesAll, sniffStartWinTablesAll, basalRespCycleTablesAll, ...
-        isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
-        colorWhisk, colorSniff, colorStim, colorAmmoniaPuff, colorAirPuff, ...
+        isAmmoniaPuff, isAirPuff, whiskLabel, respLabel, ...
+        colorWhisk, colorResp, colorStim, colorAmmoniaPuff, colorAirPuff, ...
         colorSniffStartWin, colorBasalRespCycle, faceAlphaSniffStartWin, faceAlphaBasalRespCycle, ...
-        markerSniffPeaksValleys, colorSniffPeaksValleys, ...
+        markerRespPeaksValleys, colorRespPeaksValleys, ...
         markerWhiskPeaksValleys, colorWhiskPeaksValleys, ...
         lineStyleWhiskAmplitudes, colorWhiskAmplitudes, ...
         colorSniffStart, colorSniffEnd, ...
@@ -446,21 +451,21 @@ fprintf('Basal Respiration Cycle table saved to %s!\n', pathBasalRespCycleTable)
 pathMatFile = fullfile(pathOutDir, fileNameAnalysisResults);
 save(pathMatFile, 'metaDataTable', 'sniffStartWinTableToAverage', ...
      'basalRespCycleTableToAverage', 'sniffWhiskLogDecrementResults', ...
-     'basalWhiskLogDecrementResults', 'sniffPeakTablesAll', ...
-     'sniffValleyTablesAll', 'whiskPeakTablesAll', 'whiskValleyTablesAll');
+     'basalWhiskLogDecrementResults', 'respPeakTablesAll', ...
+     'respValleyTablesAll', 'whiskPeakTablesAll', 'whiskValleyTablesAll');
 fprintf('Analysis results saved to %s!\n', pathMatFile);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [handles1, handles2, handles3, handles4] = ...
-    plot_one_file (sampleFileNum, trialNames, tVecs, whiskVecs, sniffVecs, ...
+    plot_one_file (sampleFileNum, trialNames, tVecs, whiskVecs, respVecs, ...
         pulseVecs, pulseStartTimes, pulseEndTimes, ...
-        sniffPeakTablesAll, sniffValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
+        respPeakTablesAll, respValleyTablesAll, sniffStartTimesAll, sniffEndTimesAll, ...
         whiskPeakTablesAll, whiskValleyTablesAll, sniffStartWinTablesAll, basalRespCycleTablesAll, ...
-        isAmmoniaPuff, isAirPuff, whiskLabel, sniffLabel, ...
-        colorWhisk, colorSniff, colorStim, colorAmmoniaPuff, colorAirPuff, ...
+        isAmmoniaPuff, isAirPuff, whiskLabel, respLabel, ...
+        colorWhisk, colorResp, colorStim, colorAmmoniaPuff, colorAirPuff, ...
         colorSniffStartWin, colorBasalRespCycle, faceAlphaSniffStartWin, faceAlphaBasalRespCycle, ...
-        markerSniffPeaksValleys, colorSniffPeaksValleys, ...
+        markerRespPeaksValleys, colorRespPeaksValleys, ...
         markerWhiskPeaksValleys, colorWhiskPeaksValleys, ...
         lineStyleWhiskAmplitudes, colorWhiskAmplitudes, ...
         colorSniffStart, colorSniffEnd, ...
@@ -475,14 +480,14 @@ function [handles1, handles2, handles3, handles4] = ...
 trialName = trialNames{sampleFileNum};
 tVecsThis = tVecs{sampleFileNum};
 whiskVecsThis = whiskVecs{sampleFileNum};
-sniffVecsThis = sniffVecs{sampleFileNum};
+respVecsThis = respVecs{sampleFileNum};
 pulseVecsThis = pulseVecs{sampleFileNum};
 pulseStartTimesThis = pulseStartTimes{sampleFileNum};
 pulseEndTimesThis = pulseEndTimes{sampleFileNum};
 isAmmoniaPuffThis = isAmmoniaPuff(sampleFileNum);
 isAirPuffThis = isAirPuff(sampleFileNum);
-sniffPeakTablesThis = sniffPeakTablesAll{sampleFileNum};
-sniffValleyTablesThis = sniffValleyTablesAll{sampleFileNum};
+respPeakTablesThis = respPeakTablesAll{sampleFileNum};
+respValleyTablesThis = respValleyTablesAll{sampleFileNum};
 sniffStartTimesThis = sniffStartTimesAll{sampleFileNum};
 sniffEndTimesThis = sniffEndTimesAll{sampleFileNum};
 whiskPeakTablesThis = whiskPeakTablesAll{sampleFileNum};
@@ -496,7 +501,7 @@ recordNumbers = (1:nSweeps)';
 
 % Create labels for legend
 whiskLabels = create_labels_from_numbers(recordNumbers, 'Prefix', whiskLabel);
-sniffLabels = create_labels_from_numbers(recordNumbers, 'Prefix', sniffLabel);
+sniffLabels = create_labels_from_numbers(recordNumbers, 'Prefix', respLabel);
 
 % Decide on puff window colors and titles
 if isAmmoniaPuffThis
@@ -534,9 +539,9 @@ if toSpeedUp
 else
     set_figure_properties('FigNumber', 1, 'AlwaysNew', false, 'ClearFigure', true);
 end
-if ~isempty(sniffVecsThis)
+if ~isempty(respVecsThis)
     handles1 = plot_traces(tVecsThis, whiskVecsThis, 'ColorMap', colorWhisk, ...
-                'DataToCompare', sniffVecsThis, 'ColorMapToCompare', colorSniff, ...
+                'DataToCompare', respVecsThis, 'ColorMapToCompare', colorResp, ...
                 'XBoundaries', [pulseStartTimesThis, pulseEndTimesThis], ...
                 'XBoundaryColor', puffWindowColor, ...
                 'TraceLabels', whiskLabels, 'TraceLabelsToCompare', sniffLabels, ...
@@ -592,15 +597,15 @@ if ~isempty(sniffVecsThis)
         end
 
         % Extract the peak and valley tables for this sweep
-        sniffPeakTable = sniffPeakTablesThis{iSwp};
-        sniffValleyTable = sniffValleyTablesThis{iSwp};
+        respPeakTable = respPeakTablesThis{iSwp};
+        respValleyTable = respValleyTablesThis{iSwp};
         whiskPeakTable = whiskPeakTablesThis{iSwp};
         whiskValleyTable = whiskValleyTablesThis{iSwp};
         
         % Plot peaks if they exist
-        if ~isempty(sniffPeakTable) && ismember('peakIndex', sniffPeakTable.Properties.VariableNames)
-            plot(sniffPeakTable.peakTime, sniffPeakTable.peakValue, ...
-                markerSniffPeaksValleys, 'Color', colorSniffPeaksValleys, ...
+        if ~isempty(respPeakTable) && ismember('peakIndex', respPeakTable.Properties.VariableNames)
+            plot(respPeakTable.peakTime, respPeakTable.peakValue, ...
+                markerRespPeaksValleys, 'Color', colorRespPeaksValleys, ...
                 'MarkerSize', markerSizeForSample, 'LineWidth', lineWidthForSample);
         end
         if ~isempty(whiskPeakTable) && ismember('peakIndex', whiskPeakTable.Properties.VariableNames)
@@ -610,9 +615,9 @@ if ~isempty(sniffVecsThis)
         end
      
         % Plot valleys if they exist
-        if ~isempty(sniffValleyTable) && ismember('valleyIndex', sniffValleyTable.Properties.VariableNames)
-            plot(sniffValleyTable.valleyTime, sniffValleyTable.valleyValue, ...
-                markerSniffPeaksValleys, 'Color', colorSniffPeaksValleys, ...
+        if ~isempty(respValleyTable) && ismember('valleyIndex', respValleyTable.Properties.VariableNames)
+            plot(respValleyTable.valleyTime, respValleyTable.valleyValue, ...
+                markerRespPeaksValleys, 'Color', colorRespPeaksValleys, ...
                 'MarkerSize', markerSizeForSample, 'LineWidth', lineWidthForSample);
         end
         if ~isempty(whiskValleyTable) && ismember('valleyIndex', whiskValleyTable.Properties.VariableNames)
@@ -684,10 +689,10 @@ if ~isempty(sniffStartWinTableForFile)
     winStarts = sniffStartWinTableForFile.sniffStartWinStartTime;
     winEnds = sniffStartWinTableForFile.sniffStartWinEndTime;
     sniffStarts = sniffStartWinTableForFile.sniffStartTime;
-    sniffPeakTimesForWin = sniffStartWinTableForFile.sniffPeakTimes;
-    sniffPeakValuesForWin = sniffStartWinTableForFile.sniffPeakValues;
-    sniffValleyTimesForWin = sniffStartWinTableForFile.sniffValleyTimes;
-    sniffValleyValuesForWin = sniffStartWinTableForFile.sniffValleyValues;
+    respPeakTimesForWin = sniffStartWinTableForFile.respPeakTimes;
+    respPeakValuesForWin = sniffStartWinTableForFile.respPeakValues;
+    respValleyTimesForWin = sniffStartWinTableForFile.respValleyTimes;
+    respValleyValuesForWin = sniffStartWinTableForFile.respValleyValues;
     whiskPeakTimesForWin = sniffStartWinTableForFile.whiskPeakTimes;
     whiskPeakValuesForWin = sniffStartWinTableForFile.whiskPeakValues;
     whiskPeakAmplitudesForWin = sniffStartWinTableForFile.whiskPeakAmplitudes;
@@ -707,7 +712,7 @@ if ~isempty(sniffStartWinTableForFile)
     % Loop through each sniff start window to extract data segments
     tVecsForWin = cell(nWindows, 1);
     whiskVecsForWin = cell(nWindows, 1);
-    sniffVecsForWin = cell(nWindows, 1);
+    respVecsForWin = cell(nWindows, 1);
     for iWin = 1:nWindows
         % Get info for the current window
         swpNum = sweepNums(iWin);
@@ -717,7 +722,7 @@ if ~isempty(sniffStartWinTableForFile)
         % Get the full traces for the corresponding sweep
         tFull = tVecsThis(:, swpNum);
         whiskFull = whiskVecsThis(:, swpNum);
-        sniffFull = sniffVecsThis(:, swpNum);
+        sniffFull = respVecsThis(:, swpNum);
         
         % Find indices within the current sniff start window
         indicesInWin = find(tFull >= winStart & tFull <= winEnd);
@@ -725,7 +730,7 @@ if ~isempty(sniffStartWinTableForFile)
         % Use extract_subvectors to get the data segments
         tVecsForWin{iWin} = extract_subvectors(tFull, 'Indices', indicesInWin);
         whiskVecsForWin{iWin} = extract_subvectors(whiskFull, 'Indices', indicesInWin);
-        sniffVecsForWin{iWin} = extract_subvectors(sniffFull, 'Indices', indicesInWin);
+        respVecsForWin{iWin} = extract_subvectors(sniffFull, 'Indices', indicesInWin);
     end
 
     % Set figure properties for the new plot
@@ -737,7 +742,7 @@ if ~isempty(sniffStartWinTableForFile)
     
     % Plot all extracted windows in parallel subplots
     handles3 = plot_traces(tVecsForWin, whiskVecsForWin, 'ColorMap', colorWhisk, ...
-        'DataToCompare', sniffVecsForWin, 'ColorMapToCompare', colorSniff, ...
+        'DataToCompare', respVecsForWin, 'ColorMapToCompare', colorResp, ...
         'PlotMode', 'parallel', 'FigTitle', figTitle3, ...
         'XLabel', timeLabel, 'LegendLocation', legendLocation3, ...
         'YLimits', whiskAngleLimits, 'YLabel', whiskAngleLabel, ...
@@ -749,10 +754,10 @@ if ~isempty(sniffStartWinTableForFile)
         winStart = winStarts(iWin);
         winEndToPlot = winEndsToPlot(iWin);
         sniffStart = sniffStarts(iWin);
-        sniffPeakTimes = sniffPeakTimesForWin{iWin};
-        sniffPeakValues = sniffPeakValuesForWin{iWin};
-        sniffValleyTimes = sniffValleyTimesForWin{iWin};
-        sniffValleyValues = sniffValleyValuesForWin{iWin};
+        respPeakTimes = respPeakTimesForWin{iWin};
+        respPeakValues = respPeakValuesForWin{iWin};
+        respValleyTimes = respValleyTimesForWin{iWin};
+        respValleyValues = respValleyValuesForWin{iWin};
         whiskPeakTimes = whiskPeakTimesForWin{iWin};
         whiskPeakValues = whiskPeakValuesForWin{iWin};
         whiskPeakAmplitudes = whiskPeakAmplitudesForWin{iWin};
@@ -773,17 +778,17 @@ if ~isempty(sniffStartWinTableForFile)
                 'LineWidth', lineWidthForAnalysis, 'LineStyle', '--');
         end
         
-        % Plot sniff peaks used for analysis
-        if ~isempty(sniffPeakTimes)
-            plot(sniffPeakTimes, sniffPeakValues, ...
-                markerSniffPeaksValleys, 'Color', colorSniffPeaksValleys, ...
+        % Plot resp peaks used for analysis
+        if ~isempty(respPeakTimes)
+            plot(respPeakTimes, respPeakValues, ...
+                markerRespPeaksValleys, 'Color', colorRespPeaksValleys, ...
                 'LineWidth', lineWidthForAnalysis, 'MarkerSize', markerSizeForAnalysis);
         end
 
-        % Plot sniff valleys used for analysis
-        if ~isempty(sniffValleyTimes)
-            plot(sniffValleyTimes, sniffValleyValues, ...
-                markerSniffPeaksValleys, 'Color', colorSniffPeaksValleys, ...
+        % Plot resp valleys used for analysis
+        if ~isempty(respValleyTimes)
+            plot(respValleyTimes, respValleyValues, ...
+                markerRespPeaksValleys, 'Color', colorRespPeaksValleys, ...
                 'LineWidth', lineWidthForAnalysis, 'MarkerSize', markerSizeForAnalysis);
         end
         
@@ -859,7 +864,7 @@ if ~isempty(basalRespCycleTableForFile)
     % Loop through each cycle to extract data segments
     tVecsForCycle = cell(nCycles, 1);
     whiskVecsForCycle = cell(nCycles, 1);
-    sniffVecsForCycle = cell(nCycles, 1);
+    respVecsForCycle = cell(nCycles, 1);
     for iCycle = 1:nCycles
         % Get info for the current cycle
         swpNum = sweepNums(iCycle);
@@ -869,7 +874,7 @@ if ~isempty(basalRespCycleTableForFile)
         % Get the full traces for the corresponding sweep
         tFull = tVecsThis(:, swpNum);
         whiskFull = whiskVecsThis(:, swpNum);
-        sniffFull = sniffVecsThis(:, swpNum);
+        sniffFull = respVecsThis(:, swpNum);
         
         % Find indices within the current cycle
         indicesInWin = find(tFull >= winStart & tFull <= winEnd);
@@ -877,7 +882,7 @@ if ~isempty(basalRespCycleTableForFile)
         % Use extract_subvectors to get the data segments
         tVecsForCycle{iCycle} = extract_subvectors(tFull, 'Indices', indicesInWin);
         whiskVecsForCycle{iCycle} = extract_subvectors(whiskFull, 'Indices', indicesInWin);
-        sniffVecsForCycle{iCycle} = extract_subvectors(sniffFull, 'Indices', indicesInWin);
+        respVecsForCycle{iCycle} = extract_subvectors(sniffFull, 'Indices', indicesInWin);
     end
 
     % Set figure properties for the new plot
@@ -889,7 +894,7 @@ if ~isempty(basalRespCycleTableForFile)
     
     % Plot all extracted cycles in parallel subplots
     handles4 = plot_traces(tVecsForCycle, whiskVecsForCycle, 'ColorMap', colorWhisk, ...
-        'DataToCompare', sniffVecsForCycle, 'ColorMapToCompare', colorSniff, ...
+        'DataToCompare', respVecsForCycle, 'ColorMapToCompare', colorResp, ...
         'PlotMode', 'parallel', 'FigTitle', figTitle4, ...
         'XLabel', timeLabel, 'LegendLocation', legendLocation4, ...
         'YLimits', whiskAngleLimits, 'YLabel', whiskAngleLabel, ...
@@ -919,13 +924,13 @@ if ~isempty(basalRespCycleTableForFile)
         
         % Plot resp peaks and valley times used for analysis
         if ~isempty(respPeakTime)
-            plot_vertical_line(respPeakTime, 'Color', colorSniffPeaksValleys, ...
+            plot_vertical_line(respPeakTime, 'Color', colorRespPeaksValleys, ...
                 'LineStyle', '--', ...
                 'LineWidth', lineWidthForAnalysis, 'MarkerSize', markerSizeForAnalysis);
-            plot_vertical_line(respPreValleyTime, 'Color', colorSniffPeaksValleys, ...
+            plot_vertical_line(respPreValleyTime, 'Color', colorRespPeaksValleys, ...
                 'LineStyle', '--', ...
                 'LineWidth', lineWidthForAnalysis, 'MarkerSize', markerSizeForAnalysis);
-            plot_vertical_line(respPostValleyTime, 'Color', colorSniffPeaksValleys, ...
+            plot_vertical_line(respPostValleyTime, 'Color', colorRespPeaksValleys, ...
                 'LineStyle', '--', ...
                 'LineWidth', lineWidthForAnalysis, 'MarkerSize', markerSizeForAnalysis);
         end
@@ -974,23 +979,23 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [sniffPeakTables, valleyTables, sniffStartTimes, sniffEndTimes, sniffFreqFundamental, basalRespPeakTable] = ...
-    parse_sniff_vecs(sniffVecsThisFile, tVecsThisFile, nSweeps, ...
+function [respPeakTables, valleyTables, sniffStartTimes, sniffEndTimes, sniffFreqFundamental, basalRespPeakTable] = ...
+    parse_resp_vecs(respVecsThisFile, tVecsThisFile, nSweeps, ...
                     amplitudeDefinition, fundFreqRange, fCutoff, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, ...
                     sniffFreqThreshold, basalFreqThreshold)
 %% Parses Sniff vectors for each file
 
 % Hard-coded parameters for this function's logic
-minSniffPeaksForBasal = 2;      % Minimum number of peaks to detect basal respiration
-minSniffPeaksForTransition = 3; % Minimum number of peaks to detect transitions
+minRespPeaksForBasal = 2;      % Minimum number of peaks to detect basal respiration
+minRespPeaksForTransition = 3; % Minimum number of peaks to detect transitions
 
 % Compute inter peak interval thresholds
 sniffIpiThresholdSec = 1 / sniffFreqThreshold;
 basalIpiThresholdSec = 1 / basalFreqThreshold;
 
 % Initialize cell arrays to store results for each sweep in this file.
-sniffPeakTables = cell(nSweeps, 1);
+respPeakTables = cell(nSweeps, 1);
 valleyTables = cell(nSweeps, 1);
 sniffStartTimes = cell(nSweeps, 1);
 sniffEndTimes = cell(nSweeps, 1);
@@ -998,7 +1003,7 @@ sniffFreqFundamental = cell(nSweeps, 1);
 basalRespPeakTablesPerSweep = cell(nSweeps, 1);
 
 % If sniff vector is empty, return
-if isempty(sniffVecsThisFile)
+if isempty(respVecsThisFile)
     basalRespPeakTable = table();
     return
 end
@@ -1006,13 +1011,13 @@ end
 % Loop through each sweep within the current file.
 for iSwp = 1:nSweeps
     % Extract the sniff vector for the current sweep.
-    sniffVec = sniffVecsThisFile(:, iSwp);
+    respVec = respVecsThisFile(:, iSwp);
     % Extract the time vector for the current sweep.
     timeVec = tVecsThisFile(:, iSwp);
 
     % Find all peak times and preceding valley times for the current sniff vector.
-    [sniffPeakTable, sniffValleyTable, otherResults] = ...
-        parse_oscillation(sniffVec, ...
+    [respPeakTable, respValleyTable, otherResults] = ...
+        parse_oscillation(respVec, ...
                         'TimeVec', timeVec, 'TimeUnits', 's', ...
                         'AmpMode', amplitudeDefinition, ...
                         'FundFreqRange', fundFreqRange, ...
@@ -1023,8 +1028,8 @@ for iSwp = 1:nSweeps
                         'MinPeakDistanceMs', minPeakDistanceMs);
 
     % Store the tables
-    sniffPeakTables{iSwp} = sniffPeakTable;
-    valleyTables{iSwp} = sniffValleyTable;
+    respPeakTables{iSwp} = respPeakTable;
+    valleyTables{iSwp} = respValleyTable;
 
     % Store the fundamental frequency if it was computed
     if isfield(otherResults, 'freqFundamental')
@@ -1034,7 +1039,7 @@ for iSwp = 1:nSweeps
     end
 
     % If fewer than the minimum required peaks are found, we can't compute IPIs, so we skip.
-    if height(sniffPeakTable) < minSniffPeaksForBasal
+    if height(respPeakTable) < minRespPeaksForBasal
         sniffStartTimes{iSwp} = []; % Store an empty result for this sweep.
         sniffEndTimes{iSwp} = []; % Store an empty result for this sweep.
         basalRespPeakTablesPerSweep{iSwp} = table(); % Store an empty table for this sweep.
@@ -1042,12 +1047,12 @@ for iSwp = 1:nSweeps
     end
 
     % Extract the peak times from the resulting table.
-    peakTimes = sniffPeakTable.peakTime;
+    peakTimes = respPeakTable.peakTime;
 
-    % Compute the inter-peak intervals (IPIs) between all sniff peaks.
+    % Compute the inter-peak intervals (IPIs) between all resp peaks.
     interPeakIntervals = diff(peakTimes);
 
-    % Detect basal respiration peaks. A basal respiration peak is a sniff trace peak
+    % Detect basal respiration peaks. A basal respiration peak is a resp trace peak
     % with a succeeding inter-peak interval >= basalIpiThresholdSec.
     succeedingIPIs = interPeakIntervals; % for peaks 1 to end-1
     isBasalRespPeak = succeedingIPIs >= basalIpiThresholdSec;
@@ -1055,8 +1060,8 @@ for iSwp = 1:nSweeps
     basalRespSucceedingIPIs = succeedingIPIs(isBasalRespPeak);
 
     if ~isempty(basalRespPeakIndices)
-        % Get the corresponding peak and valley info from sniffPeakTable
-        basalRespPeaksData = sniffPeakTable(basalRespPeakIndices, :);
+        % Get the corresponding peak and valley info from respPeakTable
+        basalRespPeaksData = respPeakTable(basalRespPeakIndices, :);
 
         % Create the basalRespPeakTable for this sweep
         sweepNumber = repmat(iSwp, height(basalRespPeaksData), 1);
@@ -1073,14 +1078,14 @@ for iSwp = 1:nSweeps
     end
 
     % If fewer than the minimum required peaks are found, we can't compute IPIs, so we skip.
-    if height(sniffPeakTable) < minSniffPeaksForTransition
+    if height(respPeakTable) < minRespPeaksForTransition
         sniffStartTimes{iSwp} = []; % Store an empty result for this sweep.
         sniffEndTimes{iSwp} = []; % Store an empty result for this sweep.
         continue; % Move to the next sweep.
     end
 
     % Extract the times of the valleys that precede each peak.
-    preValleyTimes = sniffPeakTable.preValleyTime;
+    preValleyTimes = respPeakTable.preValleyTime;
 
     % Remove first and last peak from peaks to test
     preValleyTimesToTest = preValleyTimes(2:end-1);
@@ -1113,7 +1118,7 @@ function [whiskPeakTables, whiskValleyTables, whiskFreqFundamental, sniffStartWi
     parse_whisk_vecs(whiskVecsThisFile, tVecsThisFile, nSweeps, ...
                     sniffStartTimesThisFile, sniffEndTimesThisFile, basalRespPeakTableThisFile, ...
                     amplitudeDefinition, fundFreqRange, fCutoff, fCutoffRelToFund, filterOrder, ...
-                    promThresholdPerc, minPeakDistanceMs, minPeakPromWhisk, ...
+                    promThresholdPerc, minPeakDistanceMs, minPeakProm, maxWhiskDurationMs, ...
                     nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze)
 %% Parses whisk vectors for a single file and generates sniff start window and basal resp cycle tables
 
@@ -1163,9 +1168,10 @@ parfor iSwp = 1:nSweeps
                         'FilterCutoffsRelToFund', fCutoffRelToFund, ...
                         'FilterOrder', filterOrder, ...
                         'PromThresholdPerc', promThresholdPerc, ...
-                        'MinPeakProminence', minPeakPromWhisk, ...
-                        'MinValleyProminence', minPeakPromWhisk, ...
-                        'MinPeakDistanceMs', minPeakDistanceMs);
+                        'MinPeakProminence', minPeakProm, ...
+                        'MinValleyProminence', minPeakProm, ...
+                        'MinPeakDistanceMs', minPeakDistanceMs, ...
+                        'MaxDurationForAmplitudeMs', maxWhiskDurationMs);
     
     % Store the tables
     whiskPeakTables{iSwp} = whiskPeakTable;
@@ -1222,9 +1228,10 @@ for iSwp = 1:nSweeps
         whiskPeaksInSniffPeriod = whiskPeakTable(isInSniffPeriod, :);
 
         % If there are at least nWhisksSniffStartToAnalyze peaks
-        %   within this sniff period, add to sniff start window
-        %   with appropriate boundaries
-        if height(whiskPeaksInSniffPeriod) >= nWhisksSniffStartToAnalyze
+        %   within this sniff period with all valid amplitudes, 
+        %   add to sniff start window with appropriate boundaries
+        if height(whiskPeaksInSniffPeriod) >= nWhisksSniffStartToAnalyze && ...
+                all(~isnan(whiskPeaksInSniffPeriod.amplitude))
             % Increment window count
             iWindow = iWindow + 1;
 
@@ -1394,19 +1401,26 @@ for iSwp = 1:nSweeps
         
         % Find intervening whisks after the current inspiratory whisk
         %   and before the search end time
-        interWhiskPeakNum = ...
+        interWhiskPeakNumbers = ...
             find(whiskPeakTimesThisSwp > inspWhiskPeakTime & ...
                 whiskPeakTimesThisSwp < searchEndTime);
         
         % Define a basal respiration cycle to be analyzed as 
         %   one in which there are enough intervening whisk for a cycle
-        if numel(interWhiskPeakNum) >= minWhisksBasalRespToAnalyze - 1
+        %   and that all whisk peaks have valid amplitudes
+        if numel(interWhiskPeakNumbers) >= minWhisksBasalRespToAnalyze - 1
+            % Collect all whisks for this cycle (inspiratory + all intervening)
+            whiskIndicesForCycle = [inspWhiskPeakNum; interWhiskPeakNumbers];
+            whiskPeaksToAnalyze = whiskPeaks(whiskIndicesForCycle, :);
+
+            % Skip this inspiratory whisk if some whisk peak
+            %   does not have a valid amplitude
+            if any(isnan(whiskPeaksToAnalyze.amplitude))
+                continue;
+            end
+
             % Increment cycle number
             iCycle = iCycle + 1;
-
-            % Collect all whisks for this cycle (inspiratory + all intervening)
-            whiskIndicesForCycle = [inspWhiskPeakNum; interWhiskPeakNum];
-            whiskPeaksToAnalyze = whiskPeaks(whiskIndicesForCycle, :);
 
             % Cycle start time is the preceding valley of the inspiratory whisk
             %   or if not present, the preceding valley of the basal respiration
@@ -1470,16 +1484,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function sniffStartWinTable = augment_sniffstart_windows(sniffStartWinTable, ...
-                                        sniffPeakTablesThisFile, ...
-                                        sniffValleyTablesThisFile)
+                                        respPeakTablesThisFile, ...
+                                        respValleyTablesThisFile)
 %% Augments a single sniff start window table with sniff data for one file
 
 % If no sniff start windows were found for this file, return the empty table
 if isempty(sniffStartWinTable)
     % Define empty columns for the case where the input table is empty
-    newCols = {'sniffPeakTimes', 'sniffPeakValues', 'sniffPeakAmplitudes', ...
-                'sniffPreValleyTimes', 'sniffPostValleyTimes', ...
-                'sniffValleyTimes', 'sniffValleyValues'};
+    newCols = {'respPeakTimes', 'respPeakValues', 'respPeakAmplitudes', ...
+                'respPreValleyTimes', 'respPostValleyTimes', ...
+                'respValleyTimes', 'respValleyValues'};
     for i = 1:numel(newCols)
         sniffStartWinTable.(newCols{i}) = cell(0, 1);
     end
@@ -1491,13 +1505,13 @@ end
 nWindows = height(sniffStartWinTable);
 
 % Initialize new columns as cell arrays
-sniffPeakTimesInWin = cell(nWindows, 1);
-sniffPeakValuesInWin = cell(nWindows, 1);
-sniffPeakAmpsInWin = cell(nWindows, 1);
-sniffPreValleyTimesInWin = cell(nWindows, 1);
-sniffPostValleyTimesInWin = cell(nWindows, 1);
-sniffValleyTimesInWin = cell(nWindows, 1);
-sniffValleyValuesInWin = cell(nWindows, 1);
+respPeakTimesInWin = cell(nWindows, 1);
+respPeakValuesInWin = cell(nWindows, 1);
+respPeakAmpsInWin = cell(nWindows, 1);
+respPreValleyTimesInWin = cell(nWindows, 1);
+respPostValleyTimesInWin = cell(nWindows, 1);
+respValleyTimesInWin = cell(nWindows, 1);
+respValleyValuesInWin = cell(nWindows, 1);
 
 % Loop through each sniff start window in the table
 for iWin = 1:nWindows
@@ -1507,37 +1521,37 @@ for iWin = 1:nWindows
     swpNum = sniffStartWinTable.sweepNumber(iWin);
 
     % Get the sniff data for the corresponding sweep
-    sniffPeakTable = sniffPeakTablesThisFile{swpNum};
-    sniffValleyTable = sniffValleyTablesThisFile{swpNum};
+    respPeakTable = respPeakTablesThisFile{swpNum};
+    respValleyTable = respValleyTablesThisFile{swpNum};
 
-    % Find sniff peaks within the window
-    if ~isempty(sniffPeakTable)
-        isPeakInWin = sniffPeakTable.peakTime >= winStart & ...
-                      sniffPeakTable.peakTime <= winEnd;
-        sniffPeakTimesInWin{iWin} = sniffPeakTable.peakTime(isPeakInWin);
-        sniffPeakValuesInWin{iWin} = sniffPeakTable.peakValue(isPeakInWin);
-        sniffPeakAmpsInWin{iWin} = sniffPeakTable.amplitude(isPeakInWin);
-        sniffPreValleyTimesInWin{iWin} = sniffPeakTable.preValleyTime(isPeakInWin);
-        sniffPostValleyTimesInWin{iWin} = sniffPeakTable.postValleyTime(isPeakInWin);
+    % Find resp peaks within the window
+    if ~isempty(respPeakTable)
+        isPeakInWin = respPeakTable.peakTime >= winStart & ...
+                      respPeakTable.peakTime <= winEnd;
+        respPeakTimesInWin{iWin} = respPeakTable.peakTime(isPeakInWin);
+        respPeakValuesInWin{iWin} = respPeakTable.peakValue(isPeakInWin);
+        respPeakAmpsInWin{iWin} = respPeakTable.amplitude(isPeakInWin);
+        respPreValleyTimesInWin{iWin} = respPeakTable.preValleyTime(isPeakInWin);
+        respPostValleyTimesInWin{iWin} = respPeakTable.postValleyTime(isPeakInWin);
     end
 
-    % Find sniff valleys within the window
-    if ~isempty(sniffValleyTable)
-        isValleyInWin = sniffValleyTable.valleyTime >= winStart & ...
-                        sniffValleyTable.valleyTime <= winEnd;
-        sniffValleyTimesInWin{iWin} = sniffValleyTable.valleyTime(isValleyInWin);
-        sniffValleyValuesInWin{iWin} = sniffValleyTable.valleyValue(isValleyInWin);
+    % Find resp valleys within the window
+    if ~isempty(respValleyTable)
+        isValleyInWin = respValleyTable.valleyTime >= winStart & ...
+                        respValleyTable.valleyTime <= winEnd;
+        respValleyTimesInWin{iWin} = respValleyTable.valleyTime(isValleyInWin);
+        respValleyValuesInWin{iWin} = respValleyTable.valleyValue(isValleyInWin);
     end
 end
 
 % Add the new data as columns to the table
-sniffStartWinTable.sniffPeakTimes = sniffPeakTimesInWin;
-sniffStartWinTable.sniffPeakValues = sniffPeakValuesInWin;
-sniffStartWinTable.sniffPeakAmplitudes = sniffPeakAmpsInWin;
-sniffStartWinTable.sniffPreValleyTimes = sniffPreValleyTimesInWin;
-sniffStartWinTable.sniffPostValleyTimes = sniffPostValleyTimesInWin;
-sniffStartWinTable.sniffValleyTimes = sniffValleyTimesInWin;
-sniffStartWinTable.sniffValleyValues = sniffValleyValuesInWin;
+sniffStartWinTable.respPeakTimes = respPeakTimesInWin;
+sniffStartWinTable.respPeakValues = respPeakValuesInWin;
+sniffStartWinTable.respPeakAmplitudes = respPeakAmpsInWin;
+sniffStartWinTable.respPreValleyTimes = respPreValleyTimesInWin;
+sniffStartWinTable.respPostValleyTimes = respPostValleyTimesInWin;
+sniffStartWinTable.respValleyTimes = respValleyTimesInWin;
+sniffStartWinTable.respValleyValues = respValleyValuesInWin;
 
 end
 

@@ -7,14 +7,8 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 %       on top to hold an overarching x-label, y-label, and/or title.
 %
 % Example(s):
-%       figure; 
-%       subplot(2,2,1); plot(1:10); 
-%       subplot(2,2,2); plot(rand(10,1));
-%       subplot(2,2,3); plot(sin(1:10));
-%       subplot(2,2,4); plot(cos(1:10));
-%       resize_subplots_for_labels('XLabel', 'Time (s)', ...
-%                                   'YLabel', 'Amplitude', ...
-%                                   'FigTitle', 'Various Waveforms');
+%       figure; subplot(2,2,1); plot(1:10); subplot(2,2,2); plot(rand(10,1)); subplot(2,2,3); plot(sin(1:10)); subplot(2,2,4); plot(cos(1:10));
+%       [supAx, axHandles] = resize_subplots_for_labels('XLabel', 'Time (s)', 'YLabel', 'Amplitude', 'FigTitle', 'Various Waveforms');
 %
 % Outputs:
 %       supAx       - Handle for the invisible "super" axes holding the labels
@@ -46,7 +40,9 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 %                   default == 0.08
 %
 % Requires:
+%       cd/argfun.m
 %       cd/create_error_for_nargin.m
+%       cd/extract_elements.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -56,8 +52,7 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 % File History:
 % 2025-09-13 Created by Gemini using prompt by Adam Lu
 %               to extract code from plot_traces.m
-% 2025-09-13 Fixed code to create invisible axes at the default axes
-%               positions
+% 2025-09-13 Fixed code to create invisible axes at the proper position
 
 %% Hard-coded parameters
 
@@ -133,9 +128,13 @@ if xLabelNeeded || yLabelNeeded || titleNeeded
     % Define the new total area available for plots after margins
     newPlotArea = [yMarginToUse, xMarginToUse, 1 - yMarginToUse, 1 - (xMarginToUse + tMarginToUse)];
 
+    % Get the original outer position of all subplots
+    originalPositions = get(axHandles, 'OuterPosition'); % Get all original outer positions
+
+    % Calculate the new outer positions for each subplot
     for i = 1:numel(axHandles)
         % Get the original outer position of the subplot
-        pos = get(axHandles(i), 'OuterPosition'); % [left, bottom, width, height]
+        pos = originalPositions{i}; % [left, bottom, width, height]
 
         % Calculate the new outer position by scaling and shifting the 
         % original outer position to fit inside the new plot area.
@@ -148,8 +147,8 @@ if xLabelNeeded || yLabelNeeded || titleNeeded
         set(axHandles(i), 'OuterPosition', newPos);
     end
 
-    % Create a new, invisible axes that covers the usual plotting area
-    supAx = axes('Position', get(0, 'DefaultAxesPosition'), 'Visible', 'off', ...
+    % Create a new, invisible axes that covers the original total plotting area
+    supAx = axes('Position', newPlotArea, 'Visible', 'off', ...
                  'Units', 'normalized', 'Tag', 'super_axis');
     set(supAx, 'XTick', [], 'YTick', []); % Remove x and y ticks
 
@@ -174,6 +173,27 @@ end
 
 %{
 OLD CODE:
+
+[allLefts, allBottoms, allWidths, allHeights] = ...
+    argfun(@(x) extract_elements(originalPositions, 'specific', 'Index', x), ...
+            1, 2, 3, 4);
+
+% Get the Rights and Tops
+allRights = allLefts + allWidths;
+allTops = allBottoms + allHeights;
+
+% Get the four corners
+minLeft = min(allLefts);
+minBottom = min(allBottoms);
+maxRight = max(allRights);
+maxTop = max(allTops);
+
+% Get the original width and height
+widthOrig = maxRight - minLeft;
+heightOrig = maxTop - minBottom;
+
+% Get the approximate outer position of an axes covering all subplots
+originalTotalPosition = [minLeft, minBottom, widthOrig, heightOrig];
 
 %}
 

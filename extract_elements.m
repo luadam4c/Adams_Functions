@@ -84,6 +84,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/parse_stim.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_repetitive_protocols.m
+%       cd/resize_subplots_for_labels.m
 %       cd/select_similar_values.m
 %       cd/update_figure_for_corel.m
 %       \Shared\Code\vIRt\virt_moore.m

@@ -111,6 +111,9 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %                   - 'MinValleyProminence': Minimum prominence for valley detection.
 %                   must be empty or a non-negative scalar
 %                   default == 0
+%                   - 'MaxDurationForAmplitudeMs': Maximum difference between surrounding features for amplitude calculation
+%                   must be empty or a non-negative scalar
+%                   default == [] (none)
 %                   - Any other parameter-value pair for findpeaks()
 %
 % Requires:
@@ -129,10 +132,11 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 % 2025-09-05 Added 'MinPeakDistanceMs', 'MinValleyDistanceMs' and 
 %               'PromThresholdPerc', 'FilterCutoffsRelToFund' as optional arguments
 % 2025-09-05 Added 'TimeUnits' as an optional argument by Gemini.
-% 2025-09-05 Added 'FundFreqRange' optional argument
+% 2025-09-05 Added 'FundFreqRange' as an optional argument
 % 2025-09-09 Fixed pre- and post-valley detection
 % 2025-09-12 'PromThresholdPerc' and 'MinPeakProminence' are no longer
 %               exclusive
+% 2025-09-13 Added 'MaxDurationForAmplitudeMs' as an optional argument
 % TODO: Make 'ParsePsd' an optional argument and use parse_psd.m and 
 %       store results in otherResults
 
@@ -156,6 +160,7 @@ minValleyDistanceDefault = [];
 promThresholdPercDefault = [];
 minPeakProminenceDefault = [];
 minValleyProminenceDefault = [];
+maxDurationForAmplitudeMsDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -195,6 +200,7 @@ addParameter(iP, 'PromThresholdPerc', promThresholdPercDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'MinPeakProminence', minPeakProminenceDefault, @isnumeric);
 addParameter(iP, 'MinValleyProminence', minValleyProminenceDefault, @isnumeric);
+addParameter(iP, 'MaxDurationForAmplitudeMs', maxDurationForAmplitudeMsDefault, @isnumeric);
 
 % Read from the Input Parser
 parse(iP, vec, varargin{:});
@@ -213,6 +219,7 @@ minValleyDistance = iP.Results.MinValleyDistance;
 promThresholdPerc = iP.Results.PromThresholdPerc;
 minPeakProminence = iP.Results.MinPeakProminence;
 minValleyProminence = iP.Results.MinValleyProminence;
+maxDurationForAmplitudeMs = iP.Results.MaxDurationForAmplitudeMs;
 
 % Keep unmatched arguments for the findpeaks() function
 otherArguments = iP.Unmatched;
@@ -284,6 +291,12 @@ if isempty(minValleyDistance) && ~isempty(minValleyDistanceMs) && ~isempty(siMs)
     minValleyDistance = round(minValleyDistanceMs / siMs);
 else
     minValleyDistance = 0;
+end
+
+if isempty(maxDurationForAmplitudeMs)
+    maxDurationForAmplitude = [];
+else
+    maxDurationForAmplitude = round(maxDurationForAmplitudeMs / siMs);
 end
 
 % Decide on prominence thresholds
@@ -385,6 +398,14 @@ for i = 1:nPeaks
         % If amplitude is negative, the data is too noisy so do not 
         %   count this peak
         if peakAmplitudes(i) < 0
+            peakAmplitudes(i) = NaN;
+        end
+
+        % If maxDurationForAmplitudeMs provided,
+        %   do not count this peak if difference between 
+        %   preceding and succeeeding valley is greater than maxDurationForAmplitudeMs
+        if ~isempty(maxDurationForAmplitude) && ...
+                (idxPostValley - idxPreValley) > maxDurationForAmplitude
             peakAmplitudes(i) = NaN;
         end
     end
