@@ -104,6 +104,7 @@ function [fig, ax] = create_subplots (varargin)
 %       cd/plot_spectrogram_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
+%       cd/virt_analyze_sniff_whisk.m
 %       cd/virt_golomb_generate_output.m
 %       \Shared\Code\vIRt\virt_moore.m
 

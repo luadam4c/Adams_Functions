@@ -11,7 +11,7 @@ function hout = suptitle_custom (str)
 %
 % Used by:
 %       cd/m3ha_plot_simulated_traces.m   
-%
+
 % File History:
 %   2018-03-08 Changed axes(haold) to set(gcf, 'CurrentAxes', haold)
 %   2020-08-06 Changed plotregion from .92 to .96 

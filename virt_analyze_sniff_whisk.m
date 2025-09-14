@@ -18,6 +18,7 @@
 %       cd/check_dir.m
 %       cd/compute_combined_trace.m
 %       cd/count_vectors.m
+%       cd/create_subplots.m
 %       cd/create_labels_from_numbers.m
 %       cd/extract_fields.m
 %       cd/extract_fileparts.m
@@ -25,7 +26,9 @@
 %       cd/find_matching_files.m
 %       cd/force_matrix.m
 %       cd/parse_oscillation.m
+%       cd/plot_correlation_coefficient.m
 %       cd/plot_grouped_jitter.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_test_result.m
 %       cd/plot_traces.m
 %       cd/plot_vertical_line.m
@@ -33,6 +36,7 @@
 %       cd/print_cellstr.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
+%       cd/resize_subplots_for_labels.m
 %       cd/test_difference.m
 %       cd/vecfun.m
 %       cd/write_table.m
@@ -55,6 +59,8 @@
 % 2025-09-12 Fixed whisk vec filter cutoff at [3, 25] Hz, filter order changed to 3
 % 2025-09-12 Added minPeakPromWhisk
 % 2025-09-12 Added analysis of basal respiration cycles
+% 2025-09-12 Changed promThresholdPerc to 5
+% 2025-09-13 Added analysis of amplitude correlations
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -85,19 +91,21 @@ fCutoffWhisk = [3, 25];     % bandpass filter cutoff for whisk trace (Moore et a
 fCutoffRelToFund = [];      % don't use this
 filterOrderSniff = 3;       % Butterworth filter order for sniff trace (Moore et al 2013 used 3)
 filterOrderWhisk = 3;       % Butterworth filter order for whisk trace (Moore et al 2013 used 3)
-promThresholdPerc = 10;     % Percentage of amplitude range for minimum peak prominence
+promThresholdPerc = 5;     % Percentage of amplitude range for minimum peak prominence
 minPeakPromWhisk = 1;       % Minimum whisk angle change to detect as a peak
 minPeakDistanceMs = 30;     % Minimum peak distance in ms
 sniffFreqThreshold = 4;     % Frequency threshold for sniffing in Hz
 basalFreqThreshold = 3;     % Frequency threshold for basal respiration in Hz
 nWhisksSniffStartToAnalyze = 5; % Number of whisks at the start of a sniff period to be analyzed
-nWhisksBasalRespToAnalyze = 3;  % Minimum number of whisks at the start of a basal respiration cycle to be analyzed
+minWhisksBasalRespToAnalyze = 3;  % Minimum number of whisks at the start of a basal respiration cycle to be analyzed
+maxWhisksBasalRespToAnalyze = 7;  % Maximum number of whisks at the start of a basal respiration cycle to be analyzed
+nCorrToAnalyze = 4;         % Number of whisk amplitude correlations to analyze
 
 % Hard-coded strings in file names to exclude from averaging
 excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
 
 % Plotting parameters
-%fileNumsToPlot = 1;                    % The file number(s) to plot (max 38)
+%fileNumsToPlot = 7;                    % The file number(s) to plot (max 38)
 fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = (1:38)';              % The file number(s) to plot (max 38)
@@ -126,12 +134,15 @@ lineWidthForSample = 0.5;               % Line width for sample traces plots
 lineWidthForAnalysis = 1;               % Line width for sniff start window plots
 markerSizeForSample = 6;                % Marker size for sample traces plots
 markerSizeForAnalysis = 12;             % Marker size for sniff start window plots
+markerTypeScatter = '.';
+markerSizeScatter = 4;
+markerLineWidthScatter = 0.5;
 whiskAngleLabel = 'Whisk Angle (degrees)';
 sniffToWhiskRangeRatio = 0.8;           % Sniff amplitude to whisk amplitude ratios for plotting
 timeLabel = 'Time (s)';
 whiskLabel = 'Whisking';
 sniffLabel = 'Breathing';
-legendLocation1 = 'northeast';
+legendLocation1 = 'suppress'; %'northeast';
 legendLocation2 = 'suppress';
 legendLocation3 = 'suppress';
 legendLocation4 = 'suppress';
@@ -139,14 +150,18 @@ figTitlePrefix1 = 'Whisking (blue) and breathing (red) data';
 figTitlePrefix2 = 'Stimulation (Puff) data';
 figTitlePrefix3 = 'Sniff Start Windows';
 figTitlePrefix4 = 'Basal Respiration Cycles';
-figTitle5 = 'Sniff-Start Whisk Logarithmic Decrements';
-figTitle6 = 'Basal-Cycle Whisk Logarithmic Decrements';
+figTitle5 = 'Sniff Start Whisk Logarithmic Decrements';
+figTitle6 = 'Basal Respiration Whisk Logarithmic Decrements';
+figTitle7 = 'Sniff Start Whisk Amplitude Correlations';
+figTitle8 = 'Basal Respiration Whisk Amplitude Correlations';
 figPrefix1 = 'sniff_whisk_all_traces_';
 figPrefix2 = 'sniff_whisk_all_stims_';
 figPrefix3 = 'sniff_whisk_sniffstart_windows_';
 figPrefix4 = 'sniff_whisk_basalresp_cycles_';
 figName5 = 'sniff_whisk_log_decrements_jitter';
 figName6 = 'basal_whisk_log_decrements_jitter';
+figName7 = 'sniff_whisk_amplitudes_scatter';
+figName8 = 'basal_whisk_amplitudes_scatter';
 figTypes = {'png'}; % {'eps', 'png'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -285,7 +300,7 @@ fprintf('Detecting whisk peaks and valleys and defining analysis windows ...\n')
     array_fun(@(a, b, c, d, e, f) parse_whisk_vecs(a, b, c, d, e, f, ...
                     amplitudeDefinition, fundFreqRange, fCutoffWhisk, fCutoffRelToFund, filterOrderWhisk, ...
                     promThresholdPerc, minPeakDistanceMs, minPeakPromWhisk, ...
-                    nWhisksSniffStartToAnalyze, nWhisksBasalRespToAnalyze), ...
+                    nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze), ...
                 whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
                 sniffStartTimesAll, sniffEndTimesAll, basalRespPeakTablesAll, ...
                 'UniformOutput', false, 'UseParpool', false);
@@ -328,36 +343,14 @@ nSniffStartWindowsPerFile = cellfun(@height, sniffStartWinTablesAll);
 nBasalRespCyclesPerFile = cellfun(@height, basalRespCycleTablesAll);
 
 % Calculate the average whisk logarithmic decrements per file
-meanSniffWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'mean'), ...
+[meanSniffWhiskLogDecrementsPerFile, stderrSniffWhiskLogDecrementsPerFile, ...
+    lower95SniffWhiskLogDecrementsPerFile, upper95SniffWhiskLogDecrementsPerFile] = ...
+    array_fun(@(x) compute_stats_for_cellnumeric(x.whiskLogDecrements), ...
             sniffStartWinTablesAll, 'UniformOutput', false);
-meanBasalWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'mean'), ...
-            basalRespCycleTablesAll, 'UniformOutput', false);
-
-% Calculate the standard error of whisk logarithmic decrements per file
-stderrSniffWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'stderr'), ...
+[meanBasalWhiskLogDecrementsPerFile, stderrBasalWhiskLogDecrementsPerFile, ...
+    lower95BasalWhiskLogDecrementsPerFile, upper95BasalWhiskLogDecrementsPerFile] = ...
+    array_fun(@(x) compute_stats_for_cellnumeric(x.whiskLogDecrements), ...
             sniffStartWinTablesAll, 'UniformOutput', false);
-stderrBasalWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'stderr'), ...
-            basalRespCycleTablesAll, 'UniformOutput', false);
-
-% Calculate the lower bound of 95% confidence interval of whisk logarithmic decrements per file
-lower95SniffWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'lower95'), ...
-            sniffStartWinTablesAll, 'UniformOutput', false);
-lower95BasalWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'lower95'), ...
-            basalRespCycleTablesAll, 'UniformOutput', false);
-
-% Calculate the upper bound of 95% confidence interval of whisk logarithmic decrements per file
-upper95SniffWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'upper95'), ...
-            sniffStartWinTablesAll, 'UniformOutput', false);
-upper95BasalWhiskLogDecrementsPerFile = ...
-    cellfun(@(x) compute_combined_trace(x.whiskLogDecrements, 'upper95'), ...
-            basalRespCycleTablesAll, 'UniformOutput', false);
 
 fprintf('Finished calculating statistics for each file.\n\n');
 
@@ -374,15 +367,33 @@ sniffStartWinTableToAverage = ...
 basalRespCycleTableToAverage = ...
     combine_across_files(basalRespCycleTablesAll, fileNumsToAverage, trialNames);
 
-% Average the whisk logarithmic decrements and plot as a grouped jitter plot
+% Average the whisk logarithmic decrements in sniff start windows and plot as a grouped jitter plot
+fprintf('Plotting aggregated sniff-start whisk log decrements jitter plot...\n');
 [sniffWhiskLogDecrementResults, handles5] = ...
-    average_sniffstart_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, ...
-                                figTypes, figTitle5, figName5);
+    average_log_decrement_jitter(sniffStartWinTableToAverage, [], ...
+                                pathOutDir, figTypes, figTitle5, figName5);
+fprintf('Finished plotting aggregated sniff-start whisk log decrements jitter plot with mean/CI overlay.\n\n');
 
-% Average the whisk logarithmic decrements and plot as a grouped jitter plot for basal cycles
+% Average the whisk logarithmic decrements in basal respiration cycles and plot as a grouped jitter plot
+fprintf('Plotting aggregated basal-cycle whisk log decrements jitter plot...\n');
 [basalWhiskLogDecrementResults, handles6] = ...
-    average_basalresp_log_decrement_jitter(basalRespCycleTableToAverage, pathOutDir, ...
-                                figTypes, figTitle6, figName6);
+    average_log_decrement_jitter(basalRespCycleTableToAverage, maxWhisksBasalRespToAnalyze, ...
+                                pathOutDir, figTypes, figTitle6, figName6);
+fprintf('Finished plotting aggregated basal-cycle whisk log decrements jitter plot with mean/CI overlay.\n\n');
+
+% Plot successive whisk amplitudes in sniff start windows against each
+%   other and compute the correlation coefficients
+[sniffWhiskAmpCorrelationResults, handles7] = ...
+    correlate_successive_whiskamp(sniffStartWinTableToAverage, nCorrToAnalyze, ...
+                                pathOutDir, figTypes, figTitle7, figName7, ...
+                                markerTypeScatter, markerSizeScatter, markerLineWidthScatter);
+
+% Plot successive whisk amplitudes in basal respiration cycles against each
+%   other and compute the correlation coefficients
+[basalWhiskAmpCorrelationResults, handles8] = ...
+    correlate_successive_whiskamp(basalRespCycleTableToAverage, nCorrToAnalyze, ...
+                                pathOutDir, figTypes, figTitle8, figName8, ...
+                                markerTypeScatter, markerSizeScatter, markerLineWidthScatter);
 
 %% Put all metadata together
 
@@ -1103,7 +1114,7 @@ function [whiskPeakTables, whiskValleyTables, whiskFreqFundamental, sniffStartWi
                     sniffStartTimesThisFile, sniffEndTimesThisFile, basalRespPeakTableThisFile, ...
                     amplitudeDefinition, fundFreqRange, fCutoff, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, minPeakPromWhisk, ...
-                    nWhisksSniffStartToAnalyze, nWhisksBasalRespToAnalyze)
+                    nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze)
 %% Parses whisk vectors for a single file and generates sniff start window and basal resp cycle tables
 
 % Initialize cell arrays to store results for each sweep in this file.
@@ -1153,6 +1164,7 @@ parfor iSwp = 1:nSweeps
                         'FilterOrder', filterOrder, ...
                         'PromThresholdPerc', promThresholdPerc, ...
                         'MinPeakProminence', minPeakPromWhisk, ...
+                        'MinValleyProminence', minPeakPromWhisk, ...
                         'MinPeakDistanceMs', minPeakDistanceMs);
     
     % Store the tables
@@ -1219,16 +1231,23 @@ for iSwp = 1:nSweeps
             % Extract whisk peaks to analyze
             whiskPeaksToAnalyze = whiskPeaksInSniffPeriod(1:nWhisksSniffStartToAnalyze, :);
 
-            % Start of sniff start window is the earlier of the sniff start time 
-            % and the pre-valley time of the 1st peak to analyze
+            % Start of sniff start window is the pre-valley time of the 
+            %   1st peak to analyze, or if doesn't exist, the sniff start time 
             firstPeakToAnalyze = whiskPeaksToAnalyze(1, :);
-            sniffStartWinStartTime = min([currentSniffStart, firstPeakToAnalyze.preValleyTime]);
+            firstPreValleyTime = firstPeakToAnalyze.preValleyTime;
+            if ~isnan(firstPreValleyTime)
+                sniffStartWinStartTime = firstPreValleyTime;
+            else
+                sniffStartWinStartTime = currentSniffStart;
+            end
 
             % End of sniff start window is the post-valley time of the 
             %   last peak to analyze, or if doesn't exist, the sniff end time
             lastPeakToAnalyze = whiskPeaksToAnalyze(end, :);
-            sniffStartWinEndTime = lastPeakToAnalyze.postValleyTime;
-            if isnan(sniffStartWinEndTime)
+            lastPostValleyTime = lastPeakToAnalyze.postValleyTime;
+            if ~isnan(lastPostValleyTime)
+                sniffStartWinEndTime = lastPostValleyTime;
+            else
                 sniffStartWinEndTime = currentSniffEnd;
             end
 
@@ -1381,7 +1400,7 @@ for iSwp = 1:nSweeps
         
         % Define a basal respiration cycle to be analyzed as 
         %   one in which there are enough intervening whisk for a cycle
-        if numel(interWhiskPeakNum) >= nWhisksBasalRespToAnalyze - 1
+        if numel(interWhiskPeakNum) >= minWhisksBasalRespToAnalyze - 1
             % Increment cycle number
             iCycle = iCycle + 1;
 
@@ -1389,16 +1408,23 @@ for iSwp = 1:nSweeps
             whiskIndicesForCycle = [inspWhiskPeakNum; interWhiskPeakNum];
             whiskPeaksToAnalyze = whiskPeaks(whiskIndicesForCycle, :);
 
-            % Cycle start time is the earlier of the 
-            %   preceding valley of the inspiratory whisk
-            %   or the preceding valley of the basal respiration
-            basalRespCycleStartTime = min([inspWhiskPreValleyTime, basalRespPreValleyTime]);
+            % Cycle start time is the preceding valley of the inspiratory whisk
+            %   or if not present, the preceding valley of the basal respiration
+            if ~isnan(inspWhiskPreValleyTime)
+                basalRespCycleStartTime = inspWhiskPreValleyTime;
+            else
+                basalRespCycleStartTime = basalRespPreValleyTime;
+            end
 
-            % Cycle end time is the later of the 
-            %   succeeding valley of the last whisk
-            %   or the search end time
+            % Cycle end time is the succeeding valley of the last intervening whisk
+            %   or if not present, the search end time
             lastWhiskInCycle = whiskPeaksToAnalyze(end, :);
-            basalRespCycleEndTime = max([lastWhiskInCycle.postValleyTime, searchEndTime]);
+            lastWhiskPostValleyTime = lastWhiskInCycle.postValleyTime;
+            if ~isnan(lastWhiskPostValleyTime)
+                basalRespCycleEndTime = lastWhiskPostValleyTime;
+            else
+                basalRespCycleEndTime = searchEndTime;
+            end
             
             % Find valleys within the cycle
             isValleyInCycle = whiskValleyTimesThisSwp >= basalRespCycleStartTime & ...
@@ -1517,6 +1543,18 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function [means, stderrs, lower95s, upper95s] = compute_stats_for_cellnumeric (vecs)
+%% Computes the statistics for a cell array of numeric vectors
+
+means = compute_combined_trace(vecs, 'mean');
+stderrs = compute_combined_trace(vecs, 'stderr');
+lower95s = compute_combined_trace(vecs, 'lower95');
+upper95s = compute_combined_trace(vecs, 'upper95');
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [isUsedForAverage, fileNumsToAverage] = ...
                 identify_files_for_averaging(trialNames, excludeStringsFromAverage)
 %% Identifies files for averaging by excluding specific trial names.
@@ -1582,25 +1620,23 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [results, handles] = average_sniffstart_log_decrement_jitter(sniffStartWinTableToAverage, pathOutDir, figTypes, figTitle, figName)
+function [results, handles] = average_log_decrement_jitter(T, maxDecrementsToAnalyze, pathOutDir, figTypes, figTitle, figName)
 %% Averages and plots whisk logarithmic decrements as a grouped jitter plot,
 %  with mean, 95% CI, and statistical test results overlaid.
-
-fprintf('Plotting aggregated sniff-start whisk log decrements jitter plot...\n');
 
 % Initialize output
 results = struct;
 handles.fig = gobjects;
 
 % If there's no data to plot, exit early
-if isempty(sniffStartWinTableToAverage) || ~ismember('whiskLogDecrements', sniffStartWinTableToAverage.Properties.VariableNames)
-    fprintf('No sniff start windows to average. Skipping jitter plot.\n');
+if isempty(T) || ~ismember('whiskLogDecrements', T.Properties.VariableNames)
+    fprintf('No whisk log decrements to average. Skipping jitter plot!\n');
     return;
 end
 
 % Extract the necessary columns from the combined table
-whiskLogDecrementsCell = sniffStartWinTableToAverage.whiskLogDecrements;
-fileNumbersEachWin = sniffStartWinTableToAverage.fileNumber;
+whiskLogDecrementsCell = T.whiskLogDecrements;
+fileNumbers = T.fileNumber;
 
 % Check if there is anything to average after unpacking
 if isempty(whiskLogDecrementsCell) || all(cellfun(@isempty, whiskLogDecrementsCell))
@@ -1608,26 +1644,33 @@ if isempty(whiskLogDecrementsCell) || all(cellfun(@isempty, whiskLogDecrementsCe
     return;
 end
 
-% Convert cell array to a matrix, with each column being a decrement number
-%   and each row being an sniff start window
-allLogDecrementsMatrix = transpose(horzcat(whiskLogDecrementsCell{:}));
+% Convert cell array to a matrix, with each column being a decrement order
+%   and each row being an analysis window
+allLogDecrementsMatrix = transpose(force_matrix(whiskLogDecrementsCell, 'CombineMethod', 'leftAdjustPad'));
 
-% Count the number of sniff start windows
-nSniffStartWin = size(allLogDecrementsMatrix, 1);
+% Count the number of analysis windows
+nAnalysisWindows = size(allLogDecrementsMatrix, 1);
 
 % Count the number of log decrements
 nWhiskLogDecrements = size(allLogDecrementsMatrix, 2);
 
-% Create matching decrement numbers and file numbers
-allDecrementNumbersMatrix = repmat((1:nWhiskLogDecrements), nSniffStartWin, 1);
-allFileNumbersMatrix = repmat(fileNumbersEachWin, 1, nWhiskLogDecrements);
+% Restrict to maxDecrementsToAnalyze
+if nWhiskLogDecrements > maxDecrementsToAnalyze; 
+    nDecrementsToAnalyze = maxDecrementsToAnalyze;
+    allLogDecrementsMatrix = allLogDecrementsMatrix(:, 1:nDecrementsToAnalyze);
+else
+    nDecrementsToAnalyze = nWhiskLogDecrements;
+end
+
+% Create matching decrement orders and file numbers
+allDecrementOrdersMatrix = repmat((1:nDecrementsToAnalyze), nAnalysisWindows, 1);
+allFileNumbersMatrix = repmat(fileNumbers, 1, nDecrementsToAnalyze);
 
 %% Compute statistics
 % Calculate mean and 95% confidence intervals
-meanWhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'mean');
-stderrWhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'stderr');
-lower95WhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'lower95');
-upper95WhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'upper95');
+[meanWhiskLogDecrements, stderrWhiskLogDecrements, ...
+    lower95WhiskLogDecrements, upper95WhiskLogDecrements] = ...
+    compute_stats_for_cellnumeric(allLogDecrementsMatrix');
 
 % Perform significance tests for each decrement
 stats = vecfun(@test_difference, allLogDecrementsMatrix);
@@ -1642,9 +1685,11 @@ avgWhiskAmpRatios = exp(meanWhiskLogDecrements);
 
 %% Save results
 results.allLogDecrements = allLogDecrementsMatrix;
-results.allDecrementNumbers = allDecrementNumbersMatrix;
+results.allDecrementOrders = allDecrementOrdersMatrix;
 results.allFileNumbers = allFileNumbersMatrix;
-results.nSniffStartWin = nSniffStartWin;
+results.nAnalysisWindows = nAnalysisWindows;
+results.nWhiskLogDecrements = nWhiskLogDecrements;
+results.nDecrementsToAnalyze = nDecrementsToAnalyze;
 results.meanWhiskLogDecrements = meanWhiskLogDecrements;
 results.stderrWhiskLogDecrements = stderrWhiskLogDecrements;
 results.lower95WhiskLogDecrements = lower95WhiskLogDecrements;
@@ -1656,9 +1701,9 @@ results.avgWhiskAmpRatios = avgWhiskAmpRatios;
 
 %% Prepare data for the jitter plot
 allLogDecrementsVec = allLogDecrementsMatrix(:);
-allDecrementNumbersVec = allDecrementNumbersMatrix(:);
+allDecrementOrdersVec = allDecrementOrdersMatrix(:);
 allFileNumbersVec = allFileNumbersMatrix(:);
-xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nWhiskLogDecrements, 'UniformOutput', false);
+xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nDecrementsToAnalyze, 'UniformOutput', false);
 
 %% Plot the jitter plot and overlay stats
 % Set up figure properties
@@ -1666,7 +1711,7 @@ fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
 figPath = fullfile(pathOutDir, figName);
 
 % 1. Generate the base jitter plot, ensuring it doesn't plot its own stats
-handles = plot_grouped_jitter(allLogDecrementsVec, allFileNumbersVec, allDecrementNumbersVec, ...
+handles = plot_grouped_jitter(allLogDecrementsVec, allFileNumbersVec, allDecrementOrdersVec, ...
     'XTickLabels', xTickLabels, ...
     'YLabel', 'Log Decrement (ln(A_{n+1}/A_{n}))', ...
     'LegendLocation', 'suppress', ...
@@ -1677,7 +1722,7 @@ handles = plot_grouped_jitter(allLogDecrementsVec, allFileNumbersVec, allDecreme
 hold on;
 
 % 3. Plot the mean and 95% CI error bars with a distinct style
-xValues = 1:nWhiskLogDecrements;
+xValues = (1:nDecrementsToAnalyze)';
 errLower = meanWhiskLogDecrements - lower95WhiskLogDecrements;
 errUpper = upper95WhiskLogDecrements - meanWhiskLogDecrements;
 
@@ -1718,145 +1763,115 @@ save_all_figtypes(fig, figPath, figTypes);
 % 9. Return in handles
 handles.fig = fig;
 
-fprintf('Finished plotting jitter plot with mean/CI overlay.\n\n');
-
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [results, handles] = average_basalresp_log_decrement_jitter(basalRespCycleTableToAverage, pathOutDir, figTypes, figTitle, figName)
-%% Averages and plots whisk logarithmic decrements for basal cycles as a grouped jitter plot,
-%  with mean, 95% CI, and statistical test results overlaid.
+function [results, handles] = ...
+    correlate_successive_whiskamp(T, nCorrToAnalyze, pathOutDir, ...
+                            figTypes, figTitle, figName, ...
+                            markerTypeScatter, markerSizeScatter, markerLineWidthScatter)
+%% This function correlates the amplitude of successive whisks 
+% (e.g., A1 vs A2, A2 vs A3, etc.) and plots these correlations in 
+% separate subplots, with points colored by fileNumber.
 
-fprintf('Plotting aggregated basal-cycle whisk log decrements jitter plot...\n');
-
+%% Preparation
 % Initialize output
 results = struct;
 handles.fig = gobjects;
 
 % If there's no data to plot, exit early
-if isempty(basalRespCycleTableToAverage) || ~ismember('whiskLogDecrements', basalRespCycleTableToAverage.Properties.VariableNames)
-    fprintf('No basal respiration cycles to average. Skipping jitter plot.\n');
+if isempty(T) || ~ismember('whiskPeakAmplitudes', T.Properties.VariableNames)
+    fprintf('No whisk peak amplitudes to correlate. Skipping scatter plot!\n');
     return;
 end
 
 % Extract the necessary columns from the combined table
-whiskLogDecrementsCell = basalRespCycleTableToAverage.whiskLogDecrements;
-fileNumbersEachWin = basalRespCycleTableToAverage.fileNumber;
+whiskPeakAmplitudesCell = T.whiskPeakAmplitudes;
+fileNumbers = T.fileNumber;
 
 % Check if there is anything to average after unpacking
-if isempty(whiskLogDecrementsCell) || all(cellfun(@isempty, whiskLogDecrementsCell))
-    fprintf('No log decrement data found to plot.\n');
+if isempty(whiskPeakAmplitudesCell) || all(cellfun(@isempty, whiskPeakAmplitudesCell))
+    fprintf('No whisk peak amplitudes data found to plot.\n');
     return;
 end
 
-% Convert cell array to a matrix, with each column being a decrement number
-%   and each row being a cycle
-allLogDecrementsMatrix = transpose(force_matrix(whiskLogDecrementsCell, 'CombineMethod', 'leftAdjustPad'));
+% Convert cell array to a matrix, with each column being a peak order
+%   and each row being an analysis window
+whiskAmplitudesMatrix = transpose(force_matrix(whiskPeakAmplitudesCell, 'CombineMethod', 'leftAdjustPad'));
 
-% Count the number of cycles
-nCycles = size(allLogDecrementsMatrix, 1);
+% Count the number of analysis windows
+nAnalysisWindows = size(whiskAmplitudesMatrix, 1);
 
-% Count the number of log decrements
-nWhiskLogDecrements = size(allLogDecrementsMatrix, 2);
+% Count the number of whisk peak orders per window
+nWhiskPeakOrders = size(whiskAmplitudesMatrix, 2);
 
-% Create matching decrement numbers and file numbers
-allDecrementNumbersMatrix = repmat((1:nWhiskLogDecrements), nCycles, 1);
-allFileNumbersMatrix = repmat(fileNumbersEachWin, 1, nWhiskLogDecrements);
+% Determine the number of correlations to compute
+if nCorrToAnalyze > nWhiskPeakOrders - 1
+    disp('Not enough whisk data to correlate successive amplitudes.');
+    return;
+end
 
-%% Compute statistics
-% Calculate mean and 95% confidence intervals
-meanWhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'mean');
-stderrWhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'stderr');
-lower95WhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'lower95');
-upper95WhiskLogDecrements = compute_combined_trace(allLogDecrementsMatrix', 'upper95');
-
-% Perform significance tests for each decrement
-stats = vecfun(@test_difference, allLogDecrementsMatrix);
-
-% Extract results
-pValues = extract_fields(stats, 'pValue');
-testFunctions = extract_fields(stats, 'testFunction');
-symbols = extract_fields(stats, 'symbol');
-
-% Get the geometric mean of amplitude ratios
-avgWhiskAmpRatios = exp(meanWhiskLogDecrements);
-
-%% Save results
-results.allLogDecrements = allLogDecrementsMatrix;
-results.allDecrementNumbers = allDecrementNumbersMatrix;
-results.allFileNumbers = allFileNumbersMatrix;
-results.nCycles = nCycles;
-results.meanWhiskLogDecrements = meanWhiskLogDecrements;
-results.stderrWhiskLogDecrements = stderrWhiskLogDecrements;
-results.lower95WhiskLogDecrements = lower95WhiskLogDecrements;
-results.upper95WhiskLogDecrements = upper95WhiskLogDecrements;
-results.pValues = pValues;
-results.testFunctions = testFunctions;
-results.symbols = symbols;
-results.avgWhiskAmpRatios = avgWhiskAmpRatios;
-
-%% Prepare data for the jitter plot
-allLogDecrementsVec = allLogDecrementsMatrix(:);
-allDecrementNumbersVec = allDecrementNumbersMatrix(:);
-allFileNumbersVec = allFileNumbersMatrix(:);
-xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nWhiskLogDecrements, 'UniformOutput', false);
-
-%% Plot the jitter plot and overlay stats
-% Set up figure properties
-fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
+%% Plot scatter plots and compute correlations
+% Create a figure with as many subplots as correlations
+[fig, ax] = create_subplots(nCorrToAnalyze, 'AlwaysNew', true, ...
+                        'ClearFigure', true, 'FigExpansion', [1, 1]);
 figPath = fullfile(pathOutDir, figName);
 
-% 1. Generate the base jitter plot
-handles = plot_grouped_jitter(allLogDecrementsVec, allFileNumbersVec, allDecrementNumbersVec, ...
-    'XTickLabels', xTickLabels, ...
-    'YLabel', 'Log Decrement (ln(A_{n+1}/A_{n}))', ...
-    'LegendLocation', 'suppress', ...
-    'PlotMeanValues', false, 'PlotErrorBars', false, ...
-    'RunTTest', false, 'RunRankTest', false);
+% Plot and compute each correlation and plot for each successive pair
+isSignificant = nan(nCorrToAnalyze, 1);
+corrCoeffs = nan(nCorrToAnalyze, 1);
+pValues = nan(nCorrToAnalyze, 1);
+for iCorr = 1:nCorrToAnalyze
+    % Select the current subplot axes
+    axes(ax(iCorr));
 
-% 2. Hold the plot to overlay new elements
-hold on;
+    % Extract amplitude data for whisk iCorr and whisk iCorr+1
+    ampCurrent = whiskAmplitudesMatrix(:, iCorr);
+    ampNext = whiskAmplitudesMatrix(:, iCorr + 1);
 
-% 3. Plot the mean and 95% CI error bars
-xValues = 1:nWhiskLogDecrements;
-errLower = meanWhiskLogDecrements - lower95WhiskLogDecrements;
-errUpper = upper95WhiskLogDecrements - meanWhiskLogDecrements;
+    % Set labels
+    xLabel = ['Amplitude of Whisk Peak #', num2str(iCorr), ' (deg)'];
+    yLabel = ['Amplitude of Whisk Peak #', num2str(iCorr + 1), ' (deg)'];
 
-handles.errorbar = ...
-    errorbar(xValues, meanWhiskLogDecrements, errLower, errUpper, '_', ...
-         'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
-handles.mean = ...
-    plot(xValues, meanWhiskLogDecrements, 'o', 'MarkerEdgeColor', 'k', ...
-     'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
+    % Plot the amplitudes against each other, colored by fileNumber
+    handles = plot_grouped_scatter(ampCurrent, ampNext, fileNumbers, ...
+                        'PlotEllipse', false, 'MarkerType', markerTypeScatter, ...
+                        'MarkerSize', markerSizeScatter, ...
+                        'MarkerLineWidth', markerLineWidthScatter, ...
+                        'XLabel', xLabel, 'YLabel', yLabel, ...
+                        'FigTitle', 'suppress', 'LegendLocation', 'suppress');
 
-% 4. Add a horizontal line at y=0
-handles.null = yline(0, '--k', 'LineWidth', 1);
+    % Compute and plot the correlation coefficient, ignoring NaN values
+    [textObjects, isSignificant(iCorr), corrCoeffs(iCorr), pValues(iCorr)] = ...
+        plot_correlation_coefficient('XData', ampCurrent, 'YData', ampNext);
 
-% 5. Annotate plot with significance
-handles.testResult = ...
-    plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...        
-                 'XLocText', xValues, 'YLocTextRel', 0.90, 'YLocStarRel', 0.95);
+    % Improve aesthetics
+    grid on;
+    hold off;
+end
 
-% 6. Add geometric mean of amplitude ratios
-yLimits = ylim;
-yPosText = yLimits(1) + 0.85 * diff(yLimits); 
-ratioLabels = arrayfun(@(x) sprintf('Ratio: %.2f', x), avgWhiskAmpRatios, 'UniformOutput', false);
-handles.ratioText = text(xValues, repmat(yPosText, size(xValues)), ratioLabels, ...
-                          'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
+% Finalize plot
+[supAx, ax] = resize_subplots_for_labels('FigTitle', figTitle);
 
-% 7. Finalize plot
-title(figTitle);
-grid on;
-hold off;
-
-% 8. Save the figure
+% Save the figure
 save_all_figtypes(fig, figPath, figTypes);
 
 % 9. Return in handles
 handles.fig = fig;
+handles.ax = ax;
+handles.supAx = supAx;
+handles.textObjects = textObjects;
 
-fprintf('Finished plotting jitter plot with mean/CI overlay.\n\n');
+%% Save results
+results.whiskAmplitudesMatrix = whiskAmplitudesMatrix;
+results.fileNumbers = fileNumbers;
+results.nAnalysisWindows = nAnalysisWindows;
+results.nWhiskPeakOrders = nWhiskPeakOrders;
+results.nCorrToAnalyze = nCorrToAnalyze;
+results.corrCoeffs = corrCoeffs;
+results.pValues = pValues;
+results.isSignificant = isSignificant;
 
 end
 

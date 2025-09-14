@@ -30,7 +30,6 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %                   - 'PlotEllipse': whether to plot 95% condifence ellipses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%       TODO
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -117,6 +116,7 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_relative_events.m
+%       cd/virt_analyze_sniff_whisk.m
 %
 
 % File History:
@@ -157,9 +157,9 @@ figNumberDefault = [];              % no figure number by default
 outFolderDefault = '';              % default directory to save figure
 figNameDefault = '';                % don't save figure by default
 figTypesDefault = 'png';            % save as png file by default
-markerSizeDefault = [];
-markerTypeDefault = 'o';
-markerLineWidthDefault = 0.5;
+markerSizeDefault = [];             % set in gscatter
+markerTypeDefault = 'o';            % circle by default
+markerLineWidthDefault = 0.5;       % 0.5 by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -379,15 +379,10 @@ wasHold = hold_on;
 
 % Plot grouped scatter plot
 dots = gscatter(xValues, yValues, grouping, ...
-                colorMap, markerType, otherArguments{:});
+                colorMap, markerType, markerSize, 'off', otherArguments{:});
 
 % Set the legend labels for each Line object
 arrayfun(@(x) set(dots(x), 'DisplayName', groupingLabels{x}), 1:nGroups);
-
-% Update marker size
-if ~isempty(markerSize)
-    set(dots, 'MarkerSize', markerSize);
-end
 
 % Update marker line width
 if ~isempty(markerLineWidth)

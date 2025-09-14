@@ -1,6 +1,6 @@
-function [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
+function [textObjects, isSignificant, corrValue, pValue] = plot_correlation_coefficient (varargin)
 %% Plots the correlation coefficient between x and y data
-% Usage: [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
+% Usage: [textObjects, isSignificant, corrValue, pValue] = plot_correlation_coefficient (varargin)
 % Explanation:
 %       TODO
 %
@@ -15,6 +15,10 @@ function [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
 %                       specified as an array of Text objects
 %       isSignificant   - whether correlation is deemed significant
 %                       specified as a logical scalar
+%       corrValue       - correlation coefficient value
+%                       specified as a numeric scalar
+%       pValue          - p value
+%                       specified as a numeric scalar
 %
 % Arguments:
 %       varargin    - 'XData': x data values
@@ -36,10 +40,12 @@ function [textObjects, isSignificant] = plot_correlation_coefficient (varargin)
 % Used by:
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/plot_relative_events.m
+%       cd/virt_analyze_sniff_whisk.m
 
 % File History:
 % 2020-08-04 Adapted from m3ha_simulation_population.m
 % 2020-08-19 Now computes and shows p values
+% 2025-09-13 Now ignores NaN values
 
 %% Hard-coded parameters
 
@@ -89,6 +95,13 @@ if isempty(yData)
     yData = apply_over_cells(@vertcat, yData);
 end
 
+% If there are NaN values, remove from each
+if any(isnan(xData)) || any(isnan(yData))
+    toRemove = isnan(xData) | isnan(yData);
+    xData(toRemove) = [];
+    yData(toRemove) = [];
+end
+
 %% Compute
 % Compute the 2D correlation coefficient
 corrValue = corr2(xData, yData);
@@ -117,14 +130,12 @@ wasHold = hold_on;
 
 % Plot the correlation coefficient
 textObjects(1, 1) = ...
-    text(0.1, 0.95, ...
-        ['Correlation coefficient: ', num2str(corrValue, 3)], ...
+    text(0.1, 0.95, sprintf('Correlation coefficient: %.2f', corrValue), ...
         'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
 % Plot the p value
 textObjects(2, 1) = ...
-    text(0.1, 0.9, ...
-        ['p value = ', num2str(pValue, 3)], ...
+    text(0.1, 0.9, sprintf('p value = %.2g', pValue), ...
         'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
 % Hold off
@@ -147,7 +158,8 @@ degreeFreedom = (nPoints - 2);
 tStatistic = corrValue * sqrt(degreeFreedom / (1 - corrValue^2));
 
 % Compute a p value
-pValue = (1 - tcdf(abs(tStatistic), degreeFreedom)) * 2;
+%   Note: 1 - tcdf(x, nu) is inaccurate when tcdf(x, nu) is too close to 1
+pValue = tcdf(abs(tStatistic), degreeFreedom, 'upper') * 2;
 
 % Decide whether the correlation coefficient is significant
 isSignificant = pValue < sigLevel;

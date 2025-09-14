@@ -300,12 +300,12 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/match_format_vector_sets.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_window_boundaries.m
+%       cd/resize_subplots_for_labels.m
 %       cd/save_all_figtypes.m
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
 %       cd/struct2arglist.m
-%       cd/suptitle_custom.m
 %       cd/transform_vectors.m
 %
 % Used by:
@@ -378,6 +378,7 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2025-09-01 Removed dependency on suplabel.m
 % 2025-09-02 Added 'XBoundaries' and 'YBoundaries' as optional arguments
 % 2025-09-02 Made boundary style parameters optional arguments
+% 2025-09-13 Moved code to resize_subplots_for_labels.m
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -1690,60 +1691,21 @@ case 'parallel'
 
     % Manually resize all subplots to make room for overarching labels
     if xLabelNeeded || yLabelNeeded || titleNeeded
-        % Define how much normalized space to reserve for each label
-        xMarginToUse = 0;
-        if xLabelNeeded, xMarginToUse = xMargin; end
-        yMarginToUse = 0;
-        if yLabelNeeded, yMarginToUse = yMargin; end
-        tMarginToUse = 0;
-        if titleNeeded, tMarginToUse = tMargin; end
-
-        % Define the new total area available for plots after margins
-        newPlotArea = [yMarginToUse, xMarginToUse, 1 - yMarginToUse, 1 - (xMarginToUse + tMarginToUse)];
-
-        % Get the handles for all the subplots
-        allAxes = ax;
-
-        for i = 1:numel(allAxes)
-            % Get the original outer position of the subplot
-            pos = get(allAxes(i), 'OuterPosition'); % [left, bottom, width, height]
-
-            % Calculate the new outer position by scaling and shifting the 
-            %  original outer position to fit inside the new plot area.
-            newPos = [newPlotArea(1) + pos(1) * newPlotArea(3), ...  % New Left
-                      newPlotArea(2) + pos(2) * newPlotArea(4), ...  % New Bottom
-                      pos(3) * newPlotArea(3), ...                   % New Width
-                      pos(4) * newPlotArea(4)];                      % New Height
-            
-            % Apply the new outer position to the subplot
-            set(allAxes(i), 'OuterPosition', newPos);
-
-            % If using a single overarching Y-label, remove the space
-            %   for individual y-labels on all subplots
-            if yLabelNeeded
-                % TODO: The following doesn't work well
-                % set(allAxes(i), 'YAxisLocation', 'right'); 
-            end
-        end
-
-        % Create a new, invisible axes that covers the entire plotting area
-        supAx = axes('Position', newPlotArea, 'Visible', 'off', ...
-                     'Units', 'normalized', 'Tag', 'super_axis');
-        set(supAx, 'XTick', [], 'YTick', []); % Remove x and y ticks
-
-        % Add the required labels to this new axes and make them visible
+        % Create arguments for resize_subplots_for_labels
+        resizeArgs = {'AxesHandles', ax, 'XMargin', xMargin, ...
+                      'YMargin', yMargin, 'TMargin', tMargin};
         if xLabelNeeded
-            xlabel(supAx, xLabel, 'Visible', 'on');
+            resizeArgs = [resizeArgs, {'XLabel', xLabel}];
         end
         if yLabelNeeded
-            ylabel(supAx, yLabel, 'Visible', 'on');
+            resizeArgs = [resizeArgs, {'YLabel', yLabel}];
         end
         if titleNeeded
-            title(supAx, figTitle, 'Visible', 'on');
+            resizeArgs = [resizeArgs, {'FigTitle', figTitle}];
         end
         
-        % Bring the new axes to the front to ensure it is not hidden
-        % uistack(supAx, 'top');
+        % Resize subplots and create overarching labels
+        supAx = resize_subplots_for_labels(resizeArgs{:});
     end
 
     % Handle the title for the simple, single-plot case separately.
@@ -1815,9 +1777,10 @@ if ~isempty(figName)
                     xlim(xLimitsThis);
                 end
 
-                % Create an overarching title
+                % Replace the current overarching title
                 if ~strcmpi(figTitleThis, 'suppress') && nColumns > 1
-                    suptitle_custom(figTitleThis);
+                    axes(supAx);
+                    title(figTitleThis);
                 end
             end
 
