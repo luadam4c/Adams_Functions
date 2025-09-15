@@ -77,6 +77,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %                       'bycolor' - by the color map if it is provided
 %                       'square'  - as square as possible
 %                       'list'    - one column
+%                       'twoCols' - two columns
 %                   default == 'auto'
 %                   - 'ColorMode': how to map colors
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -256,9 +257,17 @@ function handles = plot_traces (tVecs, data, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
-%                   - 'FigExpansion': expansion factor for figure position
-%                   must be a positive scalar or 2-element vector
-%                   default == []
+%                   - 'FigExpansion': expansion factors for figure position
+%                       Note: This occurs AFTER position is set
+%                   must be a must be a positive scalar or 2-element vector
+%                   default == 'auto': expands according to nPlotsOrNRows and nColumns
+%                   - 'CenterPosition': position for the center subplot
+%                   must be a 4-element positive integer vector
+%                   default == set in create_subplots.m
+%                   - 'TightInset': whether to remove margins outside axis
+%                                       ticks
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == set in create_subplots.m
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -379,12 +388,13 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2025-09-02 Added 'XBoundaries' and 'YBoundaries' as optional arguments
 % 2025-09-02 Made boundary style parameters optional arguments
 % 2025-09-13 Moved code to resize_subplots_for_labels.m
+% 2025-09-15 Added 'TightInset' and 'CenterPosition' as optional arguments
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'staggered', 'averaged'};
-validSubplotOrders = {'bycolor', 'square', 'list', 'auto'};
+validSubplotOrders = {'bycolor', 'square', 'list', 'twoCols', 'auto'};
 validColorModes = {'byPlot', 'byRow', 'byTraceInPlot', 'auto'};
 validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
 validXBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
@@ -455,6 +465,8 @@ figSubTitlesDefault = {};       % set later
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
+centerPositionDefault = [];     % set in create_subplots.m
+tightInsetDefault = [];         % set in create_subplots.m
 figNameDefault = '';            % don't save figure by default
 figTypesDefault = {'png', 'epsc'};  % save as both epsc and png by default
 axHandlesDefault = [];          % gca by default
@@ -595,7 +607,13 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive'}));
+    @(x) assert(ischar(x) || isempty(x) || isnumericvector(x), ...
+                'FigExpansion must be ''auto'', an empty or a numeric vector!'));
+addParameter(iP, 'CenterPosition', centerPositionDefault, ...
+    @(x) assert(isempty(x) || isnumericvector(x), ...
+                'Position must be a empty or a numeric vector!'));
+addParameter(iP, 'TightInset', tightInsetDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -655,6 +673,8 @@ figSubTitles = iP.Results.FigSubTitles;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
+centerPosition = iP.Results.CenterPosition;
+tightInset = iP.Results.TightInset;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 axHandles = iP.Results.AxesHandles;
@@ -956,7 +976,7 @@ if iscell(xLimits)
                         xLabel, yLabel, yLabelProvided, traceLabels, traceLabelsToCompare, ...
                         yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                         legendLocation, figTitleThis, figSubTitles, ...
-                        figHandle, figExpansion, figNumber, ...
+                        figHandle, figExpansion, centerPosition, tightInset, figNumber, ...
                         figNameThis, figTypes, axHandles, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
                         maxNPlotsForAnnotations, maxNYLabels, ...
@@ -995,7 +1015,7 @@ else
                         xLabel, yLabel, yLabelProvided, traceLabels, traceLabelsToCompare, ...
                         yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                         legendLocation, figTitle, figSubTitles, ...
-                        figHandle, figExpansion, figNumber, ...
+                        figHandle, figExpansion, centerPosition, tightInset, figNumber, ...
                         figName, figTypes, axHandles, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
                         maxNPlotsForAnnotations, maxNYLabels, ...
@@ -1030,7 +1050,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     xLabel, yLabel, yLabelProvided, traceLabels, traceLabelsToCompare, ...
                     yTickLocs, yTickLabels, colorMap, colorMapToCompare, ...
                     legendLocation, figTitle, figSubTitles, ...
-                    figHandle, figExpansion, figNumber, figName, figTypes, ...
+                    figHandle, figExpansion, centerPosition, tightInset, ...
+                    figNumber, figName, figTypes, ...
                     axHandles, nPlots, nRows, nColumns, nTracesPerPlot, ...
                     maxNPlotsForAnnotations, maxNYLabels, ...
                     maxNColsForTicks, maxNColsForXTickLabels, ...
@@ -1060,16 +1081,19 @@ switch plotMode
 case {'overlapped', 'staggered', 'averaged'}
     % Decide on the figure to plot on
     fig = set_figure_properties('FigHandle', figHandle, ...
-                    'FigNumber', figNumber, 'FigExpansion', figExpansion);
+                    'FigNumber', figNumber, 'FigExpansion', figExpansion, ...
+                    'CenterPosition', centerPosition, 'TightInset', tightInset);
 
     % Decide on the axes to plot on
     ax = set_axes_properties('AxesHandle', axHandles);
 case 'parallel'
     % Decide on whether to remove margins outside axes ticks
-    if ischar(yLabel) && ~strcmpi(yLabel, 'suppress') && nRows <= maxNPlotsForAnnotations
-        tightInset = true;
-    else
-        tightInset = false;
+    if isempty(tightInset)
+        if ischar(yLabel) && ~strcmpi(yLabel, 'suppress') && nRows <= maxNPlotsForAnnotations
+            tightInset = true;
+        else
+            tightInset = false;
+        end
     end
 
     if numel(axHandles) == nRows * nColumns
@@ -1079,8 +1103,9 @@ case 'parallel'
     else
         % Create subplots
         [fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
-                        'ClearFigure', false, 'TightInset', tightInset, ...
-                        'FigNumber', figNumber, 'FigExpansion', figExpansion);
+                        'ClearFigure', false, ...
+                        'FigNumber', figNumber, 'FigExpansion', figExpansion, ...
+                        'CenterPosition', centerPosition, 'TightInset', tightInset);
     end
 otherwise
 end
@@ -1833,6 +1858,8 @@ switch subplotOrder
         nRows = ceil(sqrt(nPlots));
     case 'list'
         nRows = nPlots;
+    case 'twoCols'
+        nRows = ceil(nPlots / 2);
     otherwise
         error('subplotOrder unrecognized!');
 end

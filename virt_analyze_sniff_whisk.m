@@ -62,7 +62,9 @@
 % 2025-09-12 Changed promThresholdPerc from 10 to 5
 % 2025-09-13 Added analysis of amplitude correlations
 % 2025-09-13 Changed minPeakPromWhisk to 5 and Added maxWhiskDurationMs at 250 ms
-%               and force nalysis windows to have whisks without NaN amplitudes
+%               and force analysis windows to have whisks without NaN amplitudes
+% 2025-09-15 Attempted new first whisk in analysis window definition: first
+%               prevalley (protraction) after 30 ms before the resp prevalley
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -78,6 +80,7 @@ fileNameMetaData = 'sniff_whisk_metadata.csv';               % File name of the 
 fileNameSniffStartWinTable = 'sniff_start_window_table.csv'; % File name of the sniff start window table file
 fileNameBasalRespCycleTable = 'basal_resp_cycle_table.csv';  % File name of the basal respiration cycle table file
 fileNameAnalysisResults = 'sniff_whisk_analysis.mat';        % File name of the analysis results mat file
+fileNameAlgorithmDiffs = 'sniff_whisk_algorithm_differences.txt'; % File name for algorithm differences log
 
 % Detection parameters
 ammoniaPuffString = 'ammpuff';
@@ -99,6 +102,7 @@ minPeakPromWhisk = 5;       % Minimum whisk angle change (degrees) to detect as 
 maxWhiskDurationMs = 250;   % Maximum whisk inter-valley interval (ms) (Moore et al 2013 used whisk duration < 250 ms)
 minPeakDistanceMsResp = 30;     % Minimum peak distance (ms) for resp peaks
 minPeakDistanceMsWhisk = 30;    % Minimum peak distance (ms) for whisk peaks
+breathOnsetLatencyMs = 30;    % Presumed latency (ms) for from PB neuron activation to breath onset 
 sniffFreqThreshold = 4;     % Frequency threshold for sniffing in Hz
 basalFreqThreshold = 3;     % Frequency threshold for basal respiration in Hz
 nWhisksSniffStartToAnalyze = 5; % Number of whisks at the start of a sniff period to be analyzed
@@ -110,7 +114,7 @@ nCorrToAnalyze = 4;         % Number of whisk amplitude correlations to analyze
 excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
 
 % Plotting parameters
-%fileNumsToPlot = 7;                    % The file number(s) to plot (max 38)
+%fileNumsToPlot = 10;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
 fileNumsToPlot = (1:38)';               % The file number(s) to plot (max 38)
@@ -143,7 +147,7 @@ markerTypeScatter = '.';
 markerSizeScatter = 4;
 markerLineWidthScatter = 0.5;
 whiskAngleLabel = 'Whisk Angle (degrees)';
-respToWhiskRangeRatio = 0.8;           % Sniff amplitude to whisk amplitude ratios for plotting
+respToWhiskRangeRatio = 0.8;            % Sniff amplitude to whisk amplitude ratios for plotting
 timeLabel = 'Time (s)';
 whiskLabel = 'Whisking';
 respLabel = 'Breathing';
@@ -151,6 +155,8 @@ legendLocation1 = 'suppress'; %'northeast';
 legendLocation2 = 'suppress';
 legendLocation3 = 'suppress';
 legendLocation4 = 'suppress';
+subplotOrder1 = 'twoCols';              % Plot subplots as two columns in all traces plot
+centerPosition1 = [400, 200, 1000, 160];% Center position for center subplot in all traces plot
 figTitlePrefix1 = 'Whisking (blue) and breathing (red) data';
 figTitlePrefix2 = 'Stimulation (Puff) data';
 figTitlePrefix3 = 'Sniff Start Windows';
@@ -163,10 +169,10 @@ figPrefix1 = 'sniff_whisk_all_traces_';
 figPrefix2 = 'sniff_whisk_all_stims_';
 figPrefix3 = 'sniff_whisk_sniffstart_windows_';
 figPrefix4 = 'sniff_whisk_basalresp_cycles_';
-figName5 = 'sniff_whisk_log_decrements_jitter';
-figName6 = 'basal_whisk_log_decrements_jitter';
-figName7 = 'sniff_whisk_amplitudes_scatter';
-figName8 = 'basal_whisk_amplitudes_scatter';
+figName5 = 'sniffstart_whisk_log_decrements_jitter';
+figName6 = 'basalresp_whisk_log_decrements_jitter';
+figName7 = 'sniffstart_whisk_amplitudes_scatter';
+figName8 = 'basalresp_whisk_amplitudes_scatter';
 figTypes = {'png'}; % {'eps', 'png'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -192,6 +198,13 @@ fprintf('Data directory found.\n\n');
 pathOutDir = fullfile(pathParentDir, nameOutDir);
 check_dir(pathOutDir);
 
+% Open the log file for writing algorithm differences
+pathAlgorithmDiffs = fullfile(pathOutDir, fileNameAlgorithmDiffs);
+fileIDDiffs = fopen(pathAlgorithmDiffs, 'w');
+if fileIDDiffs == -1
+    error('Could not open log file for writing: %s', pathAlgorithmDiffs);
+end
+
 %% Find and Match Files
 % Get a list of all data files in the data directory
 fprintf('Searching for data and parameter files...\n');
@@ -215,6 +228,9 @@ fprintf('\nFinished searching.\n\n');
 
 % Count files
 nFiles = numel(trialNames);
+
+% Get all file numbers
+fileNumbers = (1:nFiles)';
 
 % Check if any matching pairs were found
 if nFiles == 0
@@ -302,11 +318,11 @@ fprintf('Finished detecting sniff transitions and basal respiration peaks.\n\n')
 fprintf('Detecting whisk peaks and valleys and defining analysis windows ...\n');
 [whiskPeakTablesAll, whiskValleyTablesAll, whiskFreqsFundamentalAll, ...
     sniffStartWinTablesAll, basalRespCycleTablesAll] = ...
-    array_fun(@(a, b, c, d, e, f) parse_whisk_vecs(a, b, c, d, e, f, ...
-                    amplitudeDefinition, fundFreqRange, fCutoffWhisk, fCutoffRelToFund, filterOrderWhisk, ...
+    array_fun(@(a, b, c, d, e, f, g) parse_whisk_vecs(a, b, c, d, e, f, g, ...
+                    fileIDDiffs, amplitudeDefinition, fundFreqRange, fCutoffWhisk, fCutoffRelToFund, filterOrderWhisk, ...
                     promThresholdPercWhisk, minPeakDistanceMsWhisk, minPeakPromWhisk, maxWhiskDurationMs, ...
-                    nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze), ...
-                whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
+                    breathOnsetLatencyMs, nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze), ...
+                num2cell(fileNumbers), whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
                 sniffStartTimesAll, sniffEndTimesAll, basalRespPeakTablesAll, ...
                 'UniformOutput', false, 'UseParpool', false);
 fprintf('Finished detecting whisk peaks and valleys and defining analysis windows.\n\n');
@@ -336,6 +352,7 @@ fprintf('Finished augmenting sniff start windows.\n\n');
         markerSizeForSample, markerSizeForAnalysis, ...
         pathOutDir, timeLabel, whiskAngleLimits, whiskAngleLabel, piezoLimits, ...
         legendLocation1, legendLocation2, legendLocation3, legendLocation4, ...
+        subplotOrder1, centerPosition1, ...
         figTitlePrefix1, figTitlePrefix2, figTitlePrefix3, figTitlePrefix4, ...
         figPrefix1, figPrefix2, figPrefix3, figPrefix4, figTypes, toSpeedUp), ...
         fileNumsToPlot, 'UseParpool', toSpeedUp);
@@ -455,6 +472,9 @@ save(pathMatFile, 'metaDataTable', 'sniffStartWinTableToAverage', ...
      'respValleyTablesAll', 'whiskPeakTablesAll', 'whiskValleyTablesAll');
 fprintf('Analysis results saved to %s!\n', pathMatFile);
 
+% Close the log file
+fclose(fileIDDiffs);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [handles1, handles2, handles3, handles4] = ...
@@ -473,6 +493,7 @@ function [handles1, handles2, handles3, handles4] = ...
         markerSizeForSample, markerSizeForAnalysis, ...
         pathOutDir, timeLabel, whiskAngleLimits, whiskAngleLabel, piezoLimits, ...
         legendLocation1, legendLocation2, legendLocation3, legendLocation4, ...
+        subplotOrder1, centerPosition1, ...
         figTitlePrefix1, figTitlePrefix2, figTitlePrefix3, figTitlePrefix4, ...
         figPrefix1, figPrefix2, figPrefix3, figPrefix4, figTypes, toSpeedUp)
 
@@ -532,8 +553,8 @@ figPath2 = fullfile(pathOutDir, figName2);
 figPath3 = fullfile(pathOutDir, figName3);
 figPath4 = fullfile(pathOutDir, figName4);
 
-% Create sample traces plot
-fprintf('Plotting sample traces for file %d ...\n', sampleFileNum);
+% Create all traces plot
+fprintf('Plotting all traces for file %d ...\n', sampleFileNum);
 if toSpeedUp
     set_figure_properties('AlwaysNew', true, 'Visible', 'off');
 else
@@ -546,6 +567,8 @@ if ~isempty(respVecsThis)
                 'XBoundaryColor', puffWindowColor, ...
                 'TraceLabels', whiskLabels, 'TraceLabelsToCompare', sniffLabels, ...
                 'PlotMode', 'parallel', 'FigTitle', figTitle1, ...
+                'TightInset', true, 'FigExpansion', 'auto', ...
+                'SubPlotOrder', subplotOrder1, 'CenterPosition', centerPosition1, ...
                 'XLabel', timeLabel, 'LegendLocation', legendLocation1, ...
                 'YLimits', whiskAngleLimits, 'YLabel', whiskAngleLabel, ...
                 'LineWidth', lineWidthForSample);
@@ -1115,12 +1138,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [whiskPeakTables, whiskValleyTables, whiskFreqFundamental, sniffStartWinTable, basalRespCycleTable] = ...
-    parse_whisk_vecs(whiskVecsThisFile, tVecsThisFile, nSweeps, ...
+    parse_whisk_vecs(fileNumber, whiskVecsThisFile, tVecsThisFile, nSweeps, ...
                     sniffStartTimesThisFile, sniffEndTimesThisFile, basalRespPeakTableThisFile, ...
-                    amplitudeDefinition, fundFreqRange, fCutoff, fCutoffRelToFund, filterOrder, ...
+                    fileID, amplitudeDefinition, fundFreqRange, fCutoff, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, minPeakProm, maxWhiskDurationMs, ...
-                    nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze)
+                    breathOnsetLatencyMs, nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze)
 %% Parses whisk vectors for a single file and generates sniff start window and basal resp cycle tables
+
+% Convert to seconds
+breathOnsetLatency = breathOnsetLatencyMs / 1000;
 
 % Initialize cell arrays to store results for each sweep in this file.
 whiskPeakTables = cell(nSweeps, 1);
@@ -1194,6 +1220,7 @@ for iSwp = 1:nSweeps
 
     % Obtain whisk peak times and sniff period start and end times
     peakTimes = whiskPeakTable.peakTime;
+    preValleyTimes = whiskPeakTable.preValleyTime;
     sniffStartTimes = sniffStartTimesThisFile{iSwp};
     sniffEndTimes = sniffEndTimesThisFile{iSwp};
     valleyTimes = whiskValleyTable.valleyTime;
@@ -1223,20 +1250,49 @@ for iSwp = 1:nSweeps
         currentSniffEnd = sniffEndTimes(iSniff);
 
         % Find all peaks within the sniff period
-        isInSniffPeriod = peakTimes >= currentSniffStart & ...
+        isPeakInSniffPeriod = peakTimes >= currentSniffStart & ...
                             peakTimes <= currentSniffEnd;
+
+        % Moore et al 2013 definition: Find all peaks with prevalley times 
+        %   after breathOnsetLatency before sniff start time
+        %   but peaks before sniff end time
+        isPreValleyInSniffPeriod = ...
+            preValleyTimes >= currentSniffStart - breathOnsetLatency & ...
+            peakTimes <= currentSniffEnd;
+
+        % If these definitions do not match, print warning
+        peakNumInSniffPeriod = find(isPeakInSniffPeriod);
+        preValleyNumInSniffPeriod = find(isPreValleyInSniffPeriod);
+        preValleyTooEarly = setdiff(peakNumInSniffPeriod, preValleyNumInSniffPeriod);
+        peakToLate = setdiff(preValleyNumInSniffPeriod, peakNumInSniffPeriod);
+        if ~isempty(preValleyTooEarly)
+            fprintf(fileID, ['Whisk protraction for first whisk peak after sniff start occurred ', ...
+                     'too early for sniffing period #%d in sweep %d of file %d ', ...
+                     ' for peak numbers (for the sweep): %s!!\n\n'], ...
+                     iSniff, iSwp, fileNumber, num2str(preValleyTooEarly));
+        end
+
+        % Define wether a whisk is in a sniff period
+        isInSniffPeriod = isPeakInSniffPeriod;
+%        isInSniffPeriod = isPreValleyInSniffPeriod;
+
+        % Restrict whisk peak table to those in the sniff period
         whiskPeaksInSniffPeriod = whiskPeakTable(isInSniffPeriod, :);
 
         % If there are at least nWhisksSniffStartToAnalyze peaks
-        %   within this sniff period with all valid amplitudes, 
+        %   within this sniff period and the first of those have all valid amplitudes, 
         %   add to sniff start window with appropriate boundaries
-        if height(whiskPeaksInSniffPeriod) >= nWhisksSniffStartToAnalyze && ...
-                all(~isnan(whiskPeaksInSniffPeriod.amplitude))
-            % Increment window count
-            iWindow = iWindow + 1;
-
+        if height(whiskPeaksInSniffPeriod) >= nWhisksSniffStartToAnalyze
             % Extract whisk peaks to analyze
             whiskPeaksToAnalyze = whiskPeaksInSniffPeriod(1:nWhisksSniffStartToAnalyze, :);
+
+            % Skip this window if some amplitudes not valid
+            if any(isnan(whiskPeaksToAnalyze.amplitude))
+                continue;
+            end
+
+            % Increment window count
+            iWindow = iWindow + 1;
 
             % Start of sniff start window is the pre-valley time of the 
             %   1st peak to analyze, or if doesn't exist, the sniff start time 
@@ -1309,6 +1365,7 @@ for iSwp = 1:nSweeps
     whiskPeaks = whiskPeakTables{iSwp};
     whiskValleys = whiskValleyTables{iSwp};
     whiskPeakTimesThisSwp = whiskPeaks.peakTime;
+    whiskPreValleyTimesThisSwp = whiskPeaks.preValleyTime;
     whiskValleyTimesThisSwp = whiskValleys.valleyTime;
 
     % Skip this sweep if no whisks or basal respiration peaks
@@ -1330,21 +1387,40 @@ for iSwp = 1:nSweeps
         if isnan(respPostValley)
             respPostValley = tVecsThisFile(end, iSwp);
         end
+
+        % Moore et al 2013 definition: Find the first whisk peak with pre-valley 
+        %   after breathOnsetLatency before respiration pre-valley and
+        %   before respiration peak
+        firstPreValleyNumber = ...
+            find(whiskPreValleyTimesThisSwp >= respPreValley - breathOnsetLatency & ...
+                    whiskPreValleyTimesThisSwp < respPeakTime, 1 , 'first');
         
         % Find whisk peaks within the respiration valley-to-valley window
         possibleWhiskPeakNumbers = ...
-            find(whiskPeakTimesThisSwp > respPreValley & ...
+            find(whiskPeakTimesThisSwp >= respPreValley & ...
                     whiskPeakTimesThisSwp < respPostValley);
-        
+    
+        % Find the whisk peak closest to the basal respiration peak
+        [~, closestIdxInPossible] = min(abs(whiskPeakTimesThisSwp(possibleWhiskPeakNumbers) - respPeakTime));
+        closestWhiskPeakNumber = possibleWhiskPeakNumbers(closestIdxInPossible);
+
+        % If the closest whisk peak is different from the one with 
+        %   the first prevalley, print message
+        if firstPreValleyNumber ~= closestWhiskPeakNumber
+            fprintf(fileID, ['First whisk protraction (peak number %d) within basal respiration is different ', ...
+                     'from closest peak (peak number %d) for basal respiration cycle #%d in sweep %d of file %d!!\n\n'], ...
+                     firstPreValleyNumber, closestWhiskPeakNumber, iResp, iSwp, fileNumber);
+        end
+
         % Skip this respiration if no whisks within the basal respiration peak
-        if isempty(possibleWhiskPeakNumbers)
+        if isempty(closestWhiskPeakNumber)
+%        if isempty(firstPreValleyNumber)
             continue;
         end
 
-        % Find the whisk peak closest to the basal respiration peak
-        %   and set as 'inspiratory whisk'
-        [~, closestIdxInPossible] = min(abs(whiskPeakTimesThisSwp(possibleWhiskPeakNumbers) - respPeakTime));
-        whiskPeakNumber(iResp) = possibleWhiskPeakNumbers(closestIdxInPossible);
+        % Set first whisk peak as 'inspiratory whisk'
+        whiskPeakNumber(iResp) = closestWhiskPeakNumber;
+%        whiskPeakNumber(iResp) = firstPreValleyNumber;
     end
 
     % Add inspiratory whisk peak number to basal respiratory peak table for this sweep

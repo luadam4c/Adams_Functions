@@ -43,12 +43,11 @@ function [fig, ax] = create_subplots (varargin)
 %                   - 'FigExpansion': expansion factors for figure position
 %                       Note: This occurs AFTER position is set
 %                   must be a must be a positive scalar or 2-element vector
-%                   default == []
+%                   default == 'auto': expands according to nPlotsOrNRows and nColumns
 %                   - 'ExpandFromDefault': whether to expand from figure 
-%                                           position default
+%                                           position default, consider using 'CenterPosition' instead
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true except when 'Position', 'Width' or 'Height'
-%                               are set
+%                   default == set in set_figure_properties.m
 %                   - 'FigPosition': figure position
 %                   must be a 4-element positive integer vector
 %                   default == same as CenterPosition
@@ -139,7 +138,7 @@ clearFigureDefault = true;      % clear figure by default
 alwaysNewDefault = false;       % don't always create new figure by default
 centerPositionDefault = [];     % set later
 adjustPositionDefault = true;   % adjust position to fit window by default
-tightInsetDefault = false;      % remove margins outside labels by default
+tightInsetDefault = [];         % do not remove margins outside labels by default (but set later)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -167,8 +166,8 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
-    @(x) assert(isempty(x) || isnumericvector(x), ...
-                'FigExpansion must be a empty or a numeric vector!'));
+    @(x) assert(ischar(x) || isempty(x) || isnumericvector(x), ...
+                'FigExpansion must be ''auto'', an empty or a numeric vector!'));
 addParameter(iP, 'ExpandFromDefault', expandFromDefaultDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigPosition', figPositionDefault, ...
@@ -243,11 +242,14 @@ if isempty(centerPosition)
     centerPosition = get(0, 'defaultfigureposition');
 end
 
-% Set default figure position and figure expansion factors
-if isempty(figExpansion) && isempty(figPosition) && isempty(figHandle)
+% Set default figure position
+if isempty(figPosition) && isempty(figHandle)
     % Start with the initial figure position
     figPosition = centerPosition;
+end
 
+% Set default figure expansion factors
+if isempty(figExpansion) || ischar(figExpansion) && strcmp(figExpansion, 'auto')
     % Compute the horizontal expansion factor
     horizontalExpandFactor = (nColumns - (nColumns - 1) * horizontalDeadSpace);
 
@@ -263,6 +265,11 @@ if isempty(gridPositions)
     gridPositions = num2cell(transpose(1:nGrids));
 else
     gridPositions = force_column_cell(gridPositions);
+end
+
+% Decide on whether to remove margins outside labels
+if isempty(tightInset)
+    tightInset = false;
 end
 
 % Decide on the figure to plot on and set figure position
