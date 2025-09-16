@@ -65,6 +65,7 @@
 %               and force analysis windows to have whisks without NaN amplitudes
 % 2025-09-15 Attempted new first whisk in analysis window definition: first
 %               prevalley (protraction) after 30 ms before the resp prevalley
+% 2025-09-16 Changed definition of first whisk in analysis window back
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -102,7 +103,7 @@ minPeakPromWhisk = 5;       % Minimum whisk angle change (degrees) to detect as 
 maxWhiskDurationMs = 250;   % Maximum whisk inter-valley interval (ms) (Moore et al 2013 used whisk duration < 250 ms)
 minPeakDistanceMsResp = 30;     % Minimum peak distance (ms) for resp peaks
 minPeakDistanceMsWhisk = 30;    % Minimum peak distance (ms) for whisk peaks
-breathOnsetLatencyMs = 30;    % Presumed latency (ms) for from PB neuron activation to breath onset 
+breathOnsetLatencyMs = 30;    % Presumed latency (ms) for from PB neuron activation to breath onset (NOT used anymore)
 sniffFreqThreshold = 4;     % Frequency threshold for sniffing in Hz
 basalFreqThreshold = 3;     % Frequency threshold for basal respiration in Hz
 nWhisksSniffStartToAnalyze = 5; % Number of whisks at the start of a sniff period to be analyzed
@@ -1267,14 +1268,13 @@ for iSwp = 1:nSweeps
         peakToLate = setdiff(preValleyNumInSniffPeriod, peakNumInSniffPeriod);
         if ~isempty(preValleyTooEarly)
             fprintf(fileID, ['Whisk protraction for first whisk peak after sniff start occurred ', ...
-                     'too early for sniffing period #%d in sweep %d of file %d ', ...
+                     'earlier than %g ms for sniffing period #%d in sweep %d of file %d ', ...
                      ' for peak numbers (for the sweep): %s!!\n\n'], ...
-                     iSniff, iSwp, fileNumber, num2str(preValleyTooEarly));
+                     breathOnsetLatencyMs, iSniff, iSwp, fileNumber, num2str(preValleyTooEarly));
         end
 
-        % Define wether a whisk is in a sniff period
+        % Define whether a whisk is in a sniff period by the peak
         isInSniffPeriod = isPeakInSniffPeriod;
-%        isInSniffPeriod = isPreValleyInSniffPeriod;
 
         % Restrict whisk peak table to those in the sniff period
         whiskPeaksInSniffPeriod = whiskPeakTable(isInSniffPeriod, :);
@@ -1414,13 +1414,11 @@ for iSwp = 1:nSweeps
 
         % Skip this respiration if no whisks within the basal respiration peak
         if isempty(closestWhiskPeakNumber)
-%        if isempty(firstPreValleyNumber)
             continue;
         end
 
-        % Set first whisk peak as 'inspiratory whisk'
+        % Set the closest whisk peak as the 'inspiratory whisk'
         whiskPeakNumber(iResp) = closestWhiskPeakNumber;
-%        whiskPeakNumber(iResp) = firstPreValleyNumber;
     end
 
     % Add inspiratory whisk peak number to basal respiratory peak table for this sweep
