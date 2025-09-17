@@ -94,6 +94,7 @@ function fig = set_figure_properties (varargin)
 %       cd/update_figure_for_corel.m
 %       cd/virt_analyze_sniff_whisk.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2019-05-10 Created by Adam Lu

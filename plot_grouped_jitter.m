@@ -12,6 +12,7 @@ function handles = plot_grouped_jitter (data, varargin)
 %       plot_grouped_jitter(data)
 %       plot_grouped_jitter(data, 'UsePlotSpread', true)
 %       plot_grouped_jitter(data, 'UsePlotSpread', false)
+%       plot_grouped_jitter(data, 'UsePlotSpread', false, 'JitterWidth', 0.5)
 %
 %       data = [randn(50,1);randn(50,1)+3.5]*[1 1];
 %       grouping = [[ones(50,1);zeros(50,1)],[randi([0,1],[100,1])]];
@@ -51,6 +52,9 @@ function handles = plot_grouped_jitter (data, varargin)
 %       varargin    - 'UsePlotSpread': whether to use plotSpread.m
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == [] (true if plotSpread.m is found)
+%                   - 'JitterWidth': width of the jitter
+%                   must be a non-negative scalar
+%                   default == [] (plotSpread default) or 0.3 (manual plot)
 %                   - 'PlotMeanValues': whether to plot the mean values
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -97,26 +101,31 @@ function handles = plot_grouped_jitter (data, varargin)
 %                   default == 'suppress' if nGroups == 1 
 %                               'northeast' if nGroups is 2~9
 %                               'eastoutside' if nGroups is 10+
-%                   - Any other parameter-value pair for plotSpread()
+%                   - 'AxesHandle': axes handle to plot on
+%                   must be a empty or an axes object handle
+%                   default == set in set_axes_properties.m
+%                   - Any other parameter-value pair for plotSpread() or plot()
 %
 % Requires:
-%       ~/Adams_Functions/addpath_custom.m
-%       ~/Adams_Functions/create_default_grouping.m
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/create_labels_from_numbers.m
-%       ~/Adams_Functions/decide_on_colormap.m
-%       ~/Adams_Functions/hold_on.m
-%       ~/Adams_Functions/hold_off.m
-%       ~/Adams_Functions/locate_functionsdir.m
-%       ~/Adams_Functions/plot_test_result.m
-%       ~/Adams_Functions/struct2arglist.m
-%       ~/Adams_Functions/test_normality.m
+%       cd/addpath_custom.m
+%       cd/create_default_grouping.m
+%       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
+%       cd/decide_on_colormap.m
+%       cd/hold_on.m
+%       cd/hold_off.m
+%       cd/locate_functionsdir.m
+%       cd/plot_test_result.m
+%       cd/set_axes_properties.m
+%       cd/struct2arglist.m
+%       cd/test_normality.m
 %       ~/Downloaded_Functions/plotSpread/plotSpread.m
 %
 % Used by:
-%       ~/Adams_Functions/m3ha_plot_figure08.m
-%       ~/Adams_Functions/m3ha_simulate_population.m
-%       ~/Adams_Functions/virt_analyze_sniff_whisk.m
+%       cd/m3ha_plot_figure08.m
+%       cd/m3ha_simulate_population.m
+%       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2020-04-13 Modified from plot_violin.m
@@ -125,14 +134,16 @@ function handles = plot_grouped_jitter (data, varargin)
 % 2025-08-28 Added 'UsePlotSpread' as an optional argument
 % 2025-08-28 Implemented stats plotting by Gemini
 % 2025-08-29 Implemented normality testing from plot_tuning_curve.m by Gemini
+% 2025-09-16 Now outputs distributions in handles for manual case
+% 2025-09-17 Made 'JitterWidth' an optional argument by Gemini
+% 2025-09-17 Added 'AxesHandle' as an optional argument
 % TODO: Implement cell array input
 
 %% Hard-coded parameters
 maxNGroupsForInnerLegend = 8;
 maxNGroupsForOuterLegends = 25;
 forceVectorInput = true;       % Consider making this into an optional argument
-jitterWidthDefaultNotPlotSpread = 0.3;
-jitterWidthDefault = [];       % TODO: Make this an optional argument
+defaultJitterWidthNotPlotSpread = 0.3;
 markerDefault = '.';           % TODO: Make this an optional argument
 meanMarker = 'o';              % TODO: Make this an optional argument
 meanMarkerSize = 10;           % TODO: Make this an optional argument
@@ -144,6 +155,7 @@ sigLevel = 0.05;               % Significance level for tests
 groupingDefault = [];           % set later
 distributionDefault = [];       % set later
 usePlotSpreadDefault = [];      % set later
+jitterWidthDefault = [];        % set later
 plotMeanValuesDefault = true;
 plotErrorBarsDefault = true;
 runTTestDefault = true;
@@ -156,18 +168,9 @@ xTickAngleDefault = [];         % set later
 yLabelDefault = '';             % no y label by default
 colorMapDefault = [];           % set later
 legendLocationDefault = 'auto'; % set later
+axHandleDefault = [];           % axHandle by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if exist('plotSpread.m', 'file') ~= 2 && ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for plotSpread()
-    addpath_custom(fullfile(functionsDirectory, ...
-                            'Downloaded_Functions', 'plotSpread'));
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -195,6 +198,8 @@ addOptional(iP, 'condition', distributionDefault, ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'UsePlotSpread', usePlotSpreadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'JitterWidth', jitterWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'PlotMeanValues', plotMeanValuesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotErrorBars', plotErrorBarsDefault, ...
@@ -220,12 +225,14 @@ addParameter(iP, 'YLabel', yLabelDefault, ...
 addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
 grouping = iP.Results.grouping;
 condition = iP.Results.condition;
 usePlotSpread = iP.Results.UsePlotSpread;
+jitterWidth = iP.Results.JitterWidth;
 plotMeanValues = iP.Results.PlotMeanValues;
 plotErrorBars = iP.Results.PlotErrorBars;
 runTTest = iP.Results.RunTTest;
@@ -239,6 +246,7 @@ yLabel = iP.Results.YLabel;
 colorMap = iP.Results.ColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
+axHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the plotSpread() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -253,14 +261,30 @@ if isempty(usePlotSpread)
     end
 end
 
-% Decide on jitter width
-if isempty(jitterWidthDefault)
+%% If not compiled, add directories to search path for required functions
+if usePlotSpread && exist('plotSpread.m', 'file') ~= 2 && ~isdeployed
+    try
+        % Locate the functions directory
+        functionsDirectory = locate_functionsdir;
+
+        % Add path for plotSpread()
+        addpath_custom(fullfile(functionsDirectory, ...
+                                'Downloaded_Functions', 'plotSpread'));
+    catch ME
+        disp('An error occurred when looking for plotSpread.m:');
+        disp(ME.message);
+        disp('plotSpread.m will not be used!');
+    end
+end
+
+% Decide on jitter width if not provided by user
+if isempty(jitterWidth)
     if usePlotSpread
-        % Use plotSpread.m default
-        jitterWidthDefault = [];
+        % Let plotSpread.m use its default
+        jitterWidth = [];
     else
-        % Set default
-        jitterWidthDefault = jitterWidthDefaultNotPlotSpread;
+        % Set default for manual plot
+        jitterWidth = defaultJitterWidthNotPlotSpread;
     end
 end
 
@@ -336,6 +360,9 @@ if strcmpi(legendLocation, 'auto')
     end
 end
 
+% Decide on the axes to plot on
+axHandle = set_axes_properties('AxesHandle', axHandle);
+
 %% Do the job
 % Return if there is no data
 if isempty(data)
@@ -353,11 +380,11 @@ if usePlotSpread
         otherArguments = [otherArguments, {'showMM', 0}];
     end
 
-    output = plotSpread(data, 'distributionIdx', condition, ...
+    output = plotSpread(axHandle, data, 'distributionIdx', condition, ...
                             'categoryIdx', grouping, ...
                             'categoryLabels', groupingLabels, ...
                             'categoryColors', colorMap, ...
-                            'spreadWidth', jitterWidthDefault, ...
+                            'spreadWidth', jitterWidth, ...
                             otherArguments{:});
 
     % Reformat handles outputs
@@ -369,10 +396,10 @@ if usePlotSpread
     handles.ax = ax;
 else
     % Give each condition index some jitter for plotting
-    conditionWithJitter = condition + (jitterWidthDefault * (rand(nPoints, 1) - 0.5));
+    conditionWithJitter = condition + (jitterWidth * (rand(nPoints, 1) - 0.5));
 
     % Pre-allocate a graphics object array for plot handles
-    plotHandles = gobjects(nGroups, 1);
+    distributions = gobjects(nGroups, 1);
     
     % Use the built-in plot() function to plot each group with 
     %   marker set by markerDefault and the desired color map
@@ -392,16 +419,15 @@ else
         groupLabel = groupingLabels{iGroup};
 
         % Plot this group's data, ensuring no lines connect markers
-        plotHandles(iGroup) = plot(xCoords, yCoords, markerDefault, ...
-                                   'Color', groupColor, ...
-                                   'DisplayName', groupLabel, ...
-                                   'LineStyle', 'none', ...
-                                   otherArguments{:});
+        distributions(iGroup) = ...
+            plot(axHandle, xCoords, yCoords, markerDefault, ...
+                    'Color', groupColor, 'DisplayName', groupLabel, ...
+                    'LineStyle', 'none', otherArguments{:});
     end
 
     % Export handles
-    handles.ax = gca;
-    handles.distributions = plotHandles;
+    handles.ax = axHandle;
+    handles.distributions = distributions;
     handles.stats = []; % No stats are calculated in this manual version
 end
 

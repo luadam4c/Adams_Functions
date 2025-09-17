@@ -42,6 +42,7 @@ function varargout = vecfun (myFunction, inVecs, varargin)
 %       cd/movingaveragefilter.m
 %       cd/parse_ipsc.m
 %       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2019-08-29 Created by Adam Lu

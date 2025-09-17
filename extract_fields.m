@@ -50,6 +50,7 @@ function varargout = extract_fields (structs, varargin)
 %       cd/plot_correlation_coefficient.m
 %       cd/update_figure_for_corel.m
 %       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu

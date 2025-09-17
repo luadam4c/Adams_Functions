@@ -11,6 +11,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'std')
 %       compute_stats(data, 'stderr')
 %       compute_stats(data, 'err')
+%       compute_stats(data, 'err95')
 %       compute_stats(data, 'lower95')
 %       compute_stats(data, 'upper95')
 %       compute_stats(data, 'cov')
@@ -30,7 +31,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %                       'average' or 'mean' - mean
 %                       'std'       - standard deviation
 %                       'stderr'    - standard error
-%                       'err'       - error margin
+%                       'err' or 'err95' - error margin for the 95% confidence interval
 %                       'lower95'   - lower bound of the 95% confidence interval
 %                       'upper95'   - upper bound of the 95% confidence interval
 %                       'cov'       - coefficient of variation
@@ -112,7 +113,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % 
 
 %% Hard-coded parameters
-validStatNames = {'average', 'mean', 'std', 'stderr', 'err', ...
+validStatNames = {'average', 'mean', 'std', 'stderr', 'err', 'err95', ...
                     'lower95', 'upper95', ...
                     'cov', 'zscore', 'max', 'min', 'range', 'range2mean'};
 
@@ -215,7 +216,7 @@ switch statName
         else
             func = @(x) stderr(x, dim);
         end
-    case {'err', 'lower95', 'upper95'}
+    case {'err', 'err95', 'lower95', 'upper95'}
         % Compute the number of samples along the dimension
         if ignoreNan
             nFunc = @(x) sum(ones(size(x)), dim) - sum(isnan(x), dim);
@@ -228,7 +229,7 @@ switch statName
         tFunc = @(x) arrayfun(@(y) tinv(0.975, y), nFunc(x));
 
         switch statName
-        case 'err'
+        case {'err', 'err95'}
             if ignoreNan
                 func = @(x) tFunc(x) .* nanstderr(x, dim);
             else

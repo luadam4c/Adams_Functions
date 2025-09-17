@@ -96,6 +96,9 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - 'AxesHandle': axes handle to plot on
+%                   must be a empty or an axes object handle
+%                   default == set in set_axes_properties.m
 %                   - Any other parameter-value pair for the gscatter() function
 %
 % Requires:
@@ -110,6 +113,7 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       cd/ispositiveintegerscalar.m
 %       cd/isfigtype.m
 %       cd/save_all_figtypes.m
+%       cd/set_axes_properties.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -117,13 +121,14 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       cd/m3ha_simulate_population.m
 %       cd/plot_relative_events.m
 %       cd/virt_analyze_sniff_whisk.m
-%
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2017-12-13 Modified from plot_grouped_histogram.m
 % 2018-05-27 Fixed the case when nGroups is NaN or 0
 % 2020-05-14 Added many optional arguments
 % 2020-08-02 Fixed bug with x and y limits
+% 2025-09-17 Added 'AxesHandle' as an optional argument
 % TODO: Merge with plot_correlation
 
 %% Hard-coded parameters
@@ -160,6 +165,7 @@ figTypesDefault = 'png';            % save as png file by default
 markerSizeDefault = [];             % set in gscatter
 markerTypeDefault = 'o';            % circle by default
 markerLineWidthDefault = 0.5;       % 0.5 by default
+axHandleDefault = [];               % axHandle by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -230,6 +236,7 @@ addParameter(iP, 'MarkerType', markerTypeDefault, ...
                                 '^', 'v', '>', '<', 'p', 'fig'})));
 addParameter(iP, 'MarkerLineWidth', markerLineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, xValues, yValues, varargin{:});
@@ -258,6 +265,7 @@ figName = iP.Results.FigName;
 markerSize = iP.Results.MarkerSize;
 markerType = iP.Results.MarkerType;
 markerLineWidth = iP.Results.MarkerLineWidth;
+axHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the gscatter() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -349,6 +357,9 @@ if strcmpi(legendLocation, 'auto')
     end
 end
 
+% Decide on the axes to plot on
+axHandle = set_axes_properties('AxesHandle', axHandle);
+
 %% Compute confidence ellipses
 if plotEllipse
     % Compute all confidence ellipses
@@ -378,7 +389,7 @@ fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 wasHold = hold_on;
 
 % Plot grouped scatter plot
-dots = gscatter(xValues, yValues, grouping, ...
+dots = gscatter(axHandle, xValues, yValues, grouping, ...
                 colorMap, markerType, markerSize, 'off', otherArguments{:});
 
 % Set the legend labels for each Line object
@@ -400,7 +411,7 @@ if plotEllipse
 
     % Plot ellipses
     ellipses = ...
-        cellfun(@(x, y, c, d) plot(x, y, 'Color', c, ...
+        cellfun(@(x, y, c, d) plot(axHandle, x, y, 'Color', c, ...
                                 'LineStyle', ellipseLineStyle, ...
                                 'LineWidth', ellipseLineWidth, ...
                                 'DisplayName', d), ...
@@ -411,7 +422,7 @@ else
 end
 
 % Update x and y axis scales
-set(gca, 'XScale', xScale, 'YScale', yScale);
+set(axHandle, 'XScale', xScale, 'YScale', yScale);
 
 % Set x axis limits
 if ~isempty(xLimits) && ~isequaln(xLimits(1), xLimits(2)) && ...

@@ -91,25 +91,25 @@ minPulseAmplitude = 2;                  % Minimum pulse amplitude for piezo trac
 % Analysis parameters
 %   Note: Keep this consistent with virt_moore.m
 amplitudeDefinition = 'peak-to-avgvalley';
-fundFreqRange = [0.5, 20];  % range of possible fundamental frequencies to be detected
-fCutoffResp = [1, 15];      % bandpass filter cutoff for resp trace (Moore et al 2013 used [1, 15] Hz)
-fCutoffWhisk = [3, 25];     % bandpass filter cutoff for whisk trace (Moore et al 2013 used [3, 25] Hz)
-fCutoffRelToFund = [];      % don't use this
-filterOrderResp = 3;        % Butterworth filter order for resp trace (Moore et al 2013 used 3)
-filterOrderWhisk = 3;       % Butterworth filter order for whisk trace (Moore et al 2013 used 3)
-promThresholdPercResp = 5;  % Percentage of amplitude range for minimum peak prominence for resp peaks
-promThresholdPercWhisk = 5; % Percentage of amplitude range for minimum peak prominence for whisk peaks
-minPeakPromWhisk = 5;       % Minimum whisk angle change (degrees) to detect as a peak (Moore et al 2013 used 5 degrees)
-maxWhiskDurationMs = 250;   % Maximum whisk inter-valley interval (ms) (Moore et al 2013 used whisk duration < 250 ms)
-minPeakDistanceMsResp = 30;     % Minimum peak distance (ms) for resp peaks
-minPeakDistanceMsWhisk = 30;    % Minimum peak distance (ms) for whisk peaks
-breathOnsetLatencyMs = 30;    % Presumed latency (ms) for from PB neuron activation to breath onset (NOT used anymore)
-sniffFreqThreshold = 4;     % Frequency threshold for sniffing in Hz
-basalFreqThreshold = 3;     % Frequency threshold for basal respiration in Hz
-nWhisksSniffStartToAnalyze = 5; % Number of whisks at the start of a sniff period to be analyzed
-minWhisksBasalRespToAnalyze = 3;  % Minimum number of whisks at the start of a basal respiration cycle to be analyzed
-maxWhisksBasalRespToAnalyze = 7;  % Maximum number of whisks at the start of a basal respiration cycle to be analyzed
-nCorrToAnalyze = 4;         % Number of whisk amplitude correlations to analyze
+fundFreqRange = [0.5, 20];          % range of possible fundamental frequencies to be detected
+fCutoffResp = [1, 15];              % bandpass filter cutoff for resp trace (Moore et al 2013 used [1, 15] Hz)
+fCutoffWhisk = [3, 25];             % bandpass filter cutoff for whisk trace (Moore et al 2013 used [3, 25] Hz)
+fCutoffRelToFund = [];              % don't use this
+filterOrderResp = 3;                % Butterworth filter order for resp trace (Moore et al 2013 used 3)
+filterOrderWhisk = 3;               % Butterworth filter order for whisk trace (Moore et al 2013 used 3)
+promThresholdPercResp = 5;          % Percentage of amplitude range for minimum peak prominence for resp peaks
+promThresholdPercWhisk = 5;         % Percentage of amplitude range for minimum peak prominence for whisk peaks
+minPeakPromWhisk = 5;               % Minimum whisk angle change (degrees) to detect as a peak (Moore et al 2013 used 5 degrees)
+maxWhiskDurationMs = 250;           % Maximum whisk inter-valley interval (ms) (Moore et al 2013 used whisk duration < 250 ms)
+minPeakDistanceMsResp = 30;         % Minimum peak distance (ms) for resp peaks
+minPeakDistanceMsWhisk = 30;        % Minimum peak distance (ms) for whisk peaks
+breathOnsetLatencyMs = 30;          % Presumed latency (ms) for from PB neuron activation to breath onset (NOT used anymore)
+sniffFreqThreshold = 4;             % Frequency threshold for sniffing in Hz
+basalFreqThreshold = 3;             % Frequency threshold for basal respiration in Hz
+nWhisksSniffStartToAnalyze = 5;     % Number of whisks at the start of a sniff period to be analyzed
+minWhisksBasalRespToAnalyze = 3;    % Minimum number of whisks at the start of a basal respiration cycle to be analyzed
+maxWhisksBasalRespToAnalyze = 7;    % Maximum number of whisks at the start of a basal respiration cycle to be analyzed
+nCorrToAnalyze = 4;                 % Number of whisk amplitude correlations to analyze
 
 % Hard-coded strings in file names to exclude from averaging
 excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
@@ -1377,7 +1377,7 @@ for iSwp = 1:nSweeps
     nBasalRespThisSwp = height(basalRespPeaks);
 
     % 1. Find inspiratory whisks within each basal respiration peak
-    whiskPeakNumber = nan(nBasalRespThisSwp, 1);
+    whiskPeakNumbers = nan(nBasalRespThisSwp, 1);
     for iResp = 1:nBasalRespThisSwp
         respPeakTime = basalRespPeaks.basalRespPeakTimes(iResp);
         respPreValley = basalRespPeaks.basalRespPreValleyTimes(iResp);
@@ -1418,28 +1418,28 @@ for iSwp = 1:nSweeps
         end
 
         % Set the closest whisk peak as the 'inspiratory whisk'
-        whiskPeakNumber(iResp) = closestWhiskPeakNumber;
+        whiskPeakNumbers(iResp) = closestWhiskPeakNumber;
     end
 
     % Add inspiratory whisk peak number to basal respiratory peak table for this sweep
-    basalRespPeaks.whiskPeakNumber = whiskPeakNumber;
+    basalRespPeaks.whiskPeakNumber = whiskPeakNumbers;
 
     % Check if inspiratory whisk found for each row
-    hasInspiratoryWhisk = ~isnan(whiskPeakNumber);
+    hasInspiratoryWhisk = ~isnan(whiskPeakNumbers);
 
     % Skip this sweep if no inspiratory whisk found
     if ~any(hasInspiratoryWhisk)
         continue;
     end
 
-    % Get the valid whisk peak numbers
-    whiskPeakNumberFound = whiskPeakNumber(hasInspiratoryWhisk);
+    % Get the peak numbers for inspiratory whisks found
+    peakNumbersInspWhisk = whiskPeakNumbers(hasInspiratoryWhisk);
 
     % Remove rows with no inspiratory whisk found)
     inspWhiskTableTemp = basalRespPeaks(hasInspiratoryWhisk, :);
 
     % Add associated whisk peak information
-    inspWhiskTable = horzcat(inspWhiskTableTemp, whiskPeaks(whiskPeakNumberFound, :));
+    inspWhiskTable = horzcat(inspWhiskTableTemp, whiskPeaks(peakNumbersInspWhisk, :));
 
     % Count the number of inspiratory whisks
     nInspWhisk = height(inspWhiskTable);
@@ -1910,6 +1910,9 @@ figPath = fullfile(pathOutDir, figName);
 isSignificant = nan(nCorrToAnalyze, 1);
 corrCoeffs = nan(nCorrToAnalyze, 1);
 pValues = nan(nCorrToAnalyze, 1);
+hScatters = gobjects(nCorrToAnalyze, 1));
+hCorrCoeffs = gobjects(nCorrToAnalyze, 1);
+hPValues = gobjects(nCorrToAnalyze, 1);
 for iCorr = 1:nCorrToAnalyze
     % Select the current subplot axes
     axes(ax(iCorr));
@@ -1923,16 +1926,19 @@ for iCorr = 1:nCorrToAnalyze
     yLabel = ['Amplitude of Whisk Peak #', num2str(iCorr + 1), ' (deg)'];
 
     % Plot the amplitudes against each other, colored by fileNumber
-    handles = plot_grouped_scatter(ampCurrent, ampNext, fileNumbers, ...
+    hOut = plot_grouped_scatter(ampCurrent, ampNext, fileNumbers, ...
                         'PlotEllipse', false, 'MarkerType', markerTypeScatter, ...
                         'MarkerSize', markerSizeScatter, ...
                         'MarkerLineWidth', markerLineWidthScatter, ...
                         'XLabel', xLabel, 'YLabel', yLabel, ...
                         'FigTitle', 'suppress', 'LegendLocation', 'suppress');
+    hScatters(iCorr) = hOut.dots;
 
     % Compute and plot the correlation coefficient, ignoring NaN values
     [textObjects, isSignificant(iCorr), corrCoeffs(iCorr), pValues(iCorr)] = ...
         plot_correlation_coefficient('XData', ampCurrent, 'YData', ampNext);
+    hCorrCoeffs(iCorr) = textObjects(1, 1);
+    hPValues(iCorr) = textObjects(2, 1);
 
     % Improve aesthetics
     grid on;
@@ -1949,7 +1955,9 @@ save_all_figtypes(fig, figPath, figTypes);
 handles.fig = fig;
 handles.ax = ax;
 handles.supAx = supAx;
-handles.textObjects = textObjects;
+handles.hScatters = hScatters;
+handles.hCorrCoeffs = hCorrCoeffs;
+handles.hPValues = hPValues;
 
 %% Save results
 results.whiskAmplitudesMatrix = whiskAmplitudesMatrix;

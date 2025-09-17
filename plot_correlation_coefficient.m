@@ -27,6 +27,9 @@ function [textObjects, isSignificant, corrValue, pValue] = plot_correlation_coef
 %                   - 'YData': ydata values
 %                   must be a a numeric vector
 %                   default == detected from current axes
+%                   - 'AxesHandle': axes handle to plot on
+%                   must be a empty or an axes object handle
+%                   default == set in set_axes_properties.m
 %                   - Any other parameter-value pair for text()
 %
 % Requires:
@@ -36,22 +39,27 @@ function [textObjects, isSignificant, corrValue, pValue] = plot_correlation_coef
 %       cd/hold_off.m
 %       cd/hold_on.m
 %       cd/struct2arglist.m
+%       cd/set_axes_properties.m
 %
 % Used by:
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/plot_relative_events.m
 %       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2020-08-04 Adapted from m3ha_simulation_population.m
 % 2020-08-19 Now computes and shows p values
 % 2025-09-13 Now ignores NaN values
+% 2025-09-17 Added 'AxesHandle' as an optional argument
+% TODO: Add regression line
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 xDataDefault = [];
 yDataDefault = [];
+axHandleDefault = [];           % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -66,11 +74,13 @@ addParameter(iP, 'XData', xDataDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'YData', yDataDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 xData = iP.Results.XData;
 yData = iP.Results.YData;
+axHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the text() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -102,6 +112,9 @@ if any(isnan(xData)) || any(isnan(yData))
     yData(toRemove) = [];
 end
 
+% Decide on the axes to plot on
+axHandle = set_axes_properties('AxesHandle', axHandle);
+
 %% Compute
 % Compute the 2D correlation coefficient
 corrValue = corr2(xData, yData);
@@ -130,12 +143,12 @@ wasHold = hold_on;
 
 % Plot the correlation coefficient
 textObjects(1, 1) = ...
-    text(0.1, 0.95, sprintf('Correlation coefficient: %.2f', corrValue), ...
+    text(axHandle, 0.1, 0.95, sprintf('Correlation coefficient: %.2f', corrValue), ...
         'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
 % Plot the p value
 textObjects(2, 1) = ...
-    text(0.1, 0.9, sprintf('p value = %.2g', pValue), ...
+    text(axHandle, 0.1, 0.9, sprintf('p value = %.2g', pValue), ...
         'Units', 'normalized', 'Color', textColor, otherArguments{:}); 
 
 % Hold off

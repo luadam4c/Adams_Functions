@@ -41,6 +41,9 @@ function h = plot_vertical_shade (varargin)
 %                   must be empty or a string/character vector
 %                       or an n-by-3 numeric array
 %                   default == LightGray
+%                   - 'AxesHandle': axes handle to plot on
+%                   must be a empty or a axes object handle
+%                   default == gca
 %                   - Any other parameter-value pair for the fill() function
 %
 % Requires:
@@ -50,6 +53,7 @@ function h = plot_vertical_shade (varargin)
 %       cd/islinestyle.m
 %       cd/match_format_vectors.m
 %       cd/match_format_vector_sets.m
+%       cd/set_axes_properties.m
 %       cd/set_default_flag.m
 %       cd/struct2arglist.m
 %
@@ -68,7 +72,7 @@ function h = plot_vertical_shade (varargin)
 % 2019-08-30 Now accepts a 2 x n or n x 2 arrays as input
 % 2025-08-24 Updated conditional use of uistack
 % 2025-08-24 Fixed bug for the case plot_vertical_shade({[10, 20], [30, 40]}, 1, 2)
-% 
+% 2025-09-16 Added 'AxesHandle' as an optional argument
 
 %% Hard-coded parameters
 
@@ -79,6 +83,7 @@ yHighDefault = [];
 horizontalInsteadDefault = false;
 lineStyleDefault = 'none';
 colorMapDefault = 'LightGray';
+axHandleDefault = [];           % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -99,6 +104,7 @@ addParameter(iP, 'HorizontalInstead', horizontalInsteadDefault, ...
 addParameter(iP, 'LineStyle', lineStyleDefault, ...
     @(x) all(islinestyle(x, 'ValidateMode', true)));
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -108,11 +114,15 @@ yHigh = iP.Results.yHigh;
 horizontalInstead = iP.Results.HorizontalInstead;
 [~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 colorMap = iP.Results.ColorMap;
+axHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the fill() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Decide on the axes to plot on
+axHandle = set_axes_properties('AxesHandle', axHandle);
+
 % Match the vectors if any input is a cell array
 if isnumeric(x) && min(size(x)) > 1 || ...
         iscell(x) || iscell(yLow) || iscell(yHigh)
@@ -129,19 +139,19 @@ if isnumeric(x) && min(size(x)) > 1 || ...
     [x, yHigh] = match_format_vector_sets(x, yHigh);
 
     % Plot many vertical shades
-    h = cellfun(@(x, y, z) plot_vertical_shade_helper(x, y, z, ...
+    h = cellfun(@(x, y, z) plot_vertical_shade_helper(axHandle, x, y, z, ...
                             horizontalInstead, lineStyle, colorMap, ...
                             otherArguments), ...
                 x, yLow, yHigh);
 else
     % Plot one vertical shade
-    h = plot_vertical_shade_helper(x, yLow, yHigh, ...
+    h = plot_vertical_shade_helper(axHandle, x, yLow, yHigh, ...
         horizontalInstead, lineStyle, colorMap, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function h = plot_vertical_shade_helper(x, yLow, yHigh, ...
+function h = plot_vertical_shade_helper(axHandle, x, yLow, yHigh, ...
                         horizontalInstead, lineStyle, colorMap, otherArguments)
 %% Plots one vertical shade
 
@@ -170,9 +180,9 @@ if isempty(x)
         x = transpose(1:nXToPlot);
     else
         if horizontalInstead
-            x = get(gca, 'XLim');
+            x = get(axHandle, 'XLim');
         else
-            x = get(gca, 'YLim');
+            x = get(axHandle, 'YLim');
         end
     end
 end
@@ -180,9 +190,9 @@ end
 % Get current y limits
 if isempty(yLow) || isempty(yHigh)
     if horizontalInstead
-        yLimits = get(gca, 'XLim');
+        yLimits = get(axHandle, 'XLim');
     else
-        yLimits = get(gca, 'YLim');
+        yLimits = get(axHandle, 'YLim');
     end
 end
 
@@ -212,9 +222,9 @@ yValues = [yHigh; flipud(yLow)];
 
 % Fill the area between xValues and yValues
 if horizontalInstead
-    h = fill_helper(yValues, xValues, colorMap, lineStyle, otherArguments);
+    h = fill_helper(axHandle, yValues, xValues, colorMap, lineStyle, otherArguments);
 else
-    h = fill_helper(xValues, yValues, colorMap, lineStyle, otherArguments);
+    h = fill_helper(axHandle, xValues, yValues, colorMap, lineStyle, otherArguments);
 end
 
 % Hold off
@@ -222,21 +232,18 @@ if ~wasHold
     hold off
 end
 
-% Get the current axes handle
-ax = gca;
-
 % Only call uistack if yyaxis is NOT active (i.e., there is only one Y-axis)
 % This prevents the "permutation of itself" error.
-if isscalar(ax.YAxis)
+if isscalar(axHandle.YAxis)
     % Move it to the bottom of the figure stack
     uistack(h, 'bottom');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function h = fill_helper (x, y, colorMap, lineStyle, otherArguments)
+function h = fill_helper (axHandle, x, y, colorMap, lineStyle, otherArguments)
 
-h = fill(x, y, colorMap, 'LineStyle', lineStyle, otherArguments{:});
+h = fill(axHandle, x, y, colorMap, 'LineStyle', lineStyle, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

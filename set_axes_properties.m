@@ -53,11 +53,16 @@ function ax = set_axes_properties (varargin)
 %       cd/fill_markers.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_chevron.m
+%       cd/plot_correlation_coefficient.m
 %       cd/plot_frame.m
+%       cd/plot_grouped_jitter.m
+%       cd/plot_grouped_scatter.m
 %       cd/plot_raster.m
 %       cd/plot_traces.m
+%       cd/plot_test_result.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_vertical_line.m
+%       cd/plot_vertical_shade.m
 
 % File History:
 % 2019-09-04 Adaped from set_figure_properties.m

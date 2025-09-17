@@ -81,7 +81,10 @@ function handles = plot_test_result (testPValues, varargin)
 %                   - 'IsAppropriate': Whether the test was appropriate for the data
 %                   must be a logical vector of the same size as testPValues
 %                   default == true for all values
-%
+%                   - 'AxesHandle': axes handle to plot on
+%                   must be a empty or an axes object handle
+%                   default == set in set_axes_properties.m
+%                   
 % Requires:
 %       cd/create_error_for_nargin.m
 %
@@ -89,6 +92,7 @@ function handles = plot_test_result (testPValues, varargin)
 %       cd/plot_grouped_jitter.m
 %       cd/plot_tuning_curve.m
 %       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2025-08-29 Created by Gemini by extracting from plot_tuning_curve.m
@@ -96,6 +100,7 @@ function handles = plot_test_result (testPValues, varargin)
 % 2025-09-11 Added 'TestFunction' optional argument by Gemini
 % 2025-09-11 Allowed 'PString' and 'TestFunction' to be vectors by Gemini
 % 2025-09-11 Added 'Symbol' optional argument by Gemini
+% 2025-09-17 Added 'AxesHandle' as an optional argument
 %
 
 %% Default values for optional arguments
@@ -111,6 +116,7 @@ xLocStarRelDefault = 0.5;
 xValuesAllDefault = [];         % set later
 sigLevelDefault = 0.05;
 isAppropriateDefault = [];      % set later
+axHandleDefault = [];           % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -149,6 +155,7 @@ addParameter(iP, 'XValuesAll', xValuesAllDefault, @isnumeric);
 addParameter(iP, 'SigLevel', sigLevelDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
 addParameter(iP, 'IsAppropriate', isAppropriateDefault, @islogical);
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, testPValues, varargin{:});
@@ -164,8 +171,12 @@ xLocStarRel = iP.Results.XLocStarRel;
 xValuesAll = iP.Results.XValuesAll;
 sigLevel = iP.Results.SigLevel;
 isAppropriate = iP.Results.IsAppropriate;
+axHandle = iP.Results.AxesHandle;
 
 %% Preparation
+% Decide on the axes to plot on
+axHandle = set_axes_properties('AxesHandle', axHandle);
+
 % Get the number of p-values to plot
 nValues = numel(testPValues);
 
@@ -209,7 +220,7 @@ end
 % If both xLocText and xLocStar are provided, they are used as is.
 
 % Get current y axis limits to determine absolute y positions
-yLimitsNow = get(gca, 'YLim');
+yLimitsNow = get(axHandle, 'YLim');
 yRange = yLimitsNow(2) - yLimitsNow(1);
 
 % Decide on the absolute y location for texts and stars
@@ -221,6 +232,9 @@ pTextHandles = gobjects(nValues, 1);
 sigMarkerHandles = gobjects(nValues, 1);
 
 %% Do the job
+% Hold on
+wasHold = hold_on;
+
 % Plot texts and markers for each p-value
 for iValue = 1:nValues
     % Get the current values for this iteration
@@ -287,25 +301,28 @@ for iValue = 1:nValues
     end
 
     % Plot the p-value text
-    pTextHandles(iValue) = text(xLocTextThis, yLocText, pValueString, ...
-                                'Color', pColor, ...
+    pTextHandles(iValue) = text(axHandle, xLocTextThis, yLocText, ...
+                                pValueString, 'Color', pColor, ...
                                 'HorizontalAlignment', 'center');
 
     % Plot the specified symbol or text
     switch symbolToUse
     case {'*', '**', '***'}
         % Use text() with larger, bold font for star symbols
-        sigMarkerHandles(iValue) = text(xLocStarThis, yLocStar, symbolToUse, ...
-                                        'Color', pColor, ...
+        sigMarkerHandles(iValue) = text(axHandle, xLocStarThis, yLocStar, ...
+                                        symbolToUse, 'Color', pColor, ...
                                         'HorizontalAlignment', 'center', ...
                                         'FontSize', 14, 'FontWeight', 'bold');
     otherwise
         % Use text() for 'NS' or other custom symbols
-        sigMarkerHandles(iValue) = text(xLocStarThis, yLocStar, symbolToUse, ...
-                                        'Color', pColor, ...
+        sigMarkerHandles(iValue) = text(axHandle, xLocStarThis, yLocStar, ...
+                                        symbolToUse, 'Color', pColor, ...
                                         'HorizontalAlignment', 'center');
     end
 end
+
+% Hold off
+hold_off(wasHold);
 
 %% Output results
 handles.pText = pTextHandles;
