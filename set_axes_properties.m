@@ -50,6 +50,7 @@ function ax = set_axes_properties (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/extract_data_from_lines.m
 %       cd/fill_markers.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_chevron.m

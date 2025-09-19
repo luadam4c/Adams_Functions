@@ -112,8 +112,8 @@ function handles = plot_grouped_jitter (data, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
-%       cd/hold_on.m
 %       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/locate_functionsdir.m
 %       cd/plot_test_result.m
 %       cd/set_axes_properties.m
@@ -371,7 +371,7 @@ if isempty(data)
 end
 
 % Hold on
-wasHold = hold_on;
+wasHold = hold_on(axHandle);
 
 % Plot the data points
 if usePlotSpread
@@ -575,7 +575,7 @@ if ~strcmpi(legendLocation, 'suppress')
 end
 
 % Hold off
-hold_off(wasHold);
+hold_off(wasHold, axHandle);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

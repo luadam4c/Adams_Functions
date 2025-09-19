@@ -121,7 +121,7 @@ colorMapCell = decide_on_colormap(colorMap, nRows, 'ForceCellOutput', true);
 
 %% Do the job
 % Hold on
-wasHold = hold_on;
+wasHold = hold_on(gca);
 
 % Plot selected
 selected = cellfun(@(a, b, c, d) plot_selected_helper(a, b, c, d, ...
@@ -130,7 +130,7 @@ selected = cellfun(@(a, b, c, d) plot_selected_helper(a, b, c, d, ...
                     'UniformOutput', false);
 
 % Hold off
-hold_off(wasHold);
+hold_off(wasHold, gca);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

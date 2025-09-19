@@ -9,8 +9,11 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       xVec = randi(10, 10, 1);
 %       yVec = randi(10, 10, 1) + 10;
 %       grouping = [ones(5, 1); zeros(5, 1)];
-%       plot_grouped_scatter(xVec, yVec)
-%       plot_grouped_scatter(xVec, yVec, grouping)
+%       figure; plot_grouped_scatter(xVec, yVec)
+%       figure; plot_grouped_scatter(xVec, yVec, grouping)
+%       figure; plot_grouped_scatter(xVec, yVec, grouping, 'LinkXY', true)
+%       figure; plot_grouped_scatter(xVec, yVec, grouping, 'PlotEllipse', false)
+%       figure; plot_grouped_scatter(xVec, yVec, grouping, 'PlotEllipse', false, 'LinkXY', true)
 %
 % Outputs:
 %       handles     - handles to TODO
@@ -30,6 +33,12 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %                   - 'PlotEllipse': whether to plot 95% condifence ellipses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'LinkXY': whether to sync x-axis and y-axis limits
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'GridOn': whether to turn on the grid
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -129,11 +138,13 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 % 2020-05-14 Added many optional arguments
 % 2020-08-02 Fixed bug with x and y limits
 % 2025-09-17 Added 'AxesHandle' as an optional argument
+% 2025-09-17 Added 'LinkXY' as an optional argument
 % TODO: Merge with plot_correlation
 
 %% Hard-coded parameters
 maxInFigure = 8;                % maximum number of groups to keep the legend
                                 %   inside the figure
+axisCoveragePerc = 90;          % 90% coverage by default
 
 %% TODO: make the following optional arguments with given default
 ellipseNPoints = 1000;              % 1000 points
@@ -144,6 +155,8 @@ ellipseLineWidth = 1;
 groupingDefault = [];           % set later
 plotOnlyDefault = false;            % setup default labels by default
 plotEllipseDefault = true;          % whether to plot ellipses by default
+linkXYDefault = false;              % whether to link x and y axes by default
+gridOnDefault = false;              % whether to turn the grid on by default
 confidenceLevelDefault = 95;        % default confidence level (%)
 xScaleDefault = 'linear';
 yScaleDefault = 'linear';
@@ -191,6 +204,10 @@ addOptional(iP, 'grouping', groupingDefault);
 addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotEllipse', plotEllipseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'LinkXY', linkXYDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'GridOn', gridOnDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ConfidenceLevel', confidenceLevelDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
@@ -243,6 +260,8 @@ parse(iP, xValues, yValues, varargin{:});
 grouping = iP.Results.grouping;
 plotOnly = iP.Results.PlotOnly;
 plotEllipse = iP.Results.PlotEllipse;
+linkXY = iP.Results.LinkXY;
+gridOn = iP.Results.GridOn;
 confidenceLevel = iP.Results.ConfidenceLevel;
 xScale = iP.Results.XScale;
 yScale = iP.Results.YScale;
@@ -369,16 +388,41 @@ if plotEllipse
     % Extract from table
     xEllipses = ellipseTable.xEllipses;
     yEllipses = ellipseTable.yEllipses;
+else
+    xEllipses = [];
+    yEllipses = [];
+end
 
-    % Compute default axis limits
-    if isempty(xLimits)
-        xLimits = compute_axis_limits({xValues, xEllipses}, ...
-                                        'x', 'Coverage', 90);
+% Compute x-axis limits if not provided but requested, using data points
+% If x and y axis limits are linked, use both data
+if isempty(xLimits) && ~strcmpi(xLimits, 'suppress')
+    if linkXY
+        xDataForLimits = {xValues, xEllipses, yValues, yEllipses};
+    else
+        xDataForLimits = {xValues, xEllipses};
     end
-    if isempty(yLimits)
-        yLimits = compute_axis_limits({yValues, yEllipses}, ...
-                                        'y', 'Coverage', 90);
+    xLimits = compute_axis_limits(xDataForLimits, 'x', 'Coverage', axisCoveragePerc);
+end
+
+% Compute y-axis limits if not provided but requested, using data points
+if isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
+    if linkXY
+        yDataForLimits = {xValues, xEllipses, yValues, yEllipses};
+    else
+        yDataForLimits = {yValues, yEllipses};
     end
+    yLimits = compute_axis_limits(yDataForLimits, 'y', 'Coverage', axisCoveragePerc);
+end
+
+%% Link X and Y axis limits
+if linkXY && isnumeric(xLimits) && isnumeric(yLimits)
+    % Find the combined range
+    combinedMin = min([xLimits(1), yLimits(1)]);
+    combinedMax = max([xLimits(2), yLimits(2)]);
+
+    % Update both limits to the new range
+    xLimits = [combinedMin, combinedMax];
+    yLimits = [combinedMin, combinedMax];
 end
 
 %% Plot and save scatter plot
@@ -386,7 +430,7 @@ end
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
 % Store hold status and hold on
-wasHold = hold_on;
+wasHold = hold_on(axHandle);
 
 % Plot grouped scatter plot
 dots = gscatter(axHandle, xValues, yValues, grouping, ...
@@ -458,8 +502,13 @@ if ~strcmpi(figTitle, 'suppress')
     title(figTitle);
 end
 
+% Turn on grid if requested
+if gridOn
+    grid on;
+end
+
 % Hold off if it was originally so
-hold_off(wasHold);
+hold_off(wasHold, axHandle);
 
 % Save the figure if requested
 if ~isempty(figName)
@@ -541,18 +590,18 @@ xScaled = xScaled(:);
 yScaled = yScaled(:);
 
 % Remove NaN or Inf values
-toRemove = isnan(xScaled) | isnan(yScaled) | isinf(xScaled) | isinf(yScaled);
-xScaled(toRemove) = [];
-yScaled(toRemove) = [];
+toKeep = ~isnan(xScaled) & ~isnan(yScaled) & ~isinf(xScaled) & ~isinf(yScaled);
+xScaledValid = xScaled(toKeep);
+yScaledValid = yScaled(toKeep);
 
 % Place data in two columns
-twoColumns = [xScaled, yScaled];
+twoColumns = [xScaledValid, yScaledValid];
 
 % Compute the sample mean for non-NaN data
-sampleMeans = nanmean(twoColumns);
+sampleMeans = mean(twoColumns);
 
 % Compute the sample covariance for non-NaN data
-sampleCovariances = nancov(twoColumns);
+sampleCovariances = cov(twoColumns);
 
 % Return if any covariance data is NaN
 if any(isnan(sampleCovariances))

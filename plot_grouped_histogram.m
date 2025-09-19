@@ -374,7 +374,7 @@ end
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
 % Store hold status and hold on
-wasHold = hold_on;
+wasHold = hold_on(gca);
 
 % Plot bars
 if strcmpi(style, 'overlapped')
@@ -468,7 +468,7 @@ end
 set(gca, 'box', 'off');
 
 % Hold off if it was originally so
-hold_off(wasHold);
+hold_off(wasHold, gca);
 
 % Save the figure
 if ~isempty(figName)

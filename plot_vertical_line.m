@@ -168,7 +168,7 @@ colorMapExpanded = vertcat(colorMapCell{:});
 
 %% Do the job
 % Hold on
-wasHold = hold_on;
+wasHold = hold_on(ax);
 
 % Plot all lines
 if horizontalInstead
@@ -186,7 +186,7 @@ else
 end
 
 % Hold off
-hold_off(wasHold);
+hold_off(wasHold, ax);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

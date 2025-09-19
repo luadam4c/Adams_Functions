@@ -1,6 +1,6 @@
-function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varargin)
+function [limits, axisRange] = compute_axis_limits (dataOrRange, varargin)
 %% Computes x or y axis limits from data (works also for a range [min(data), max(data)])
-% Usage: [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varargin)
+% Usage: [limits, axisRange] = compute_axis_limits (dataOrRange, axisType (opt), varargin)
 % Explanation:
 %       Computes axis limits from data by using the entire range 
 %           for the x axis and expanding by 10% on each side for the y axis
@@ -28,10 +28,11 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 % Arguments:
 %       dataOrRange - data for this axis or range along this axis
 %                   must be a numeric array or a cell array of numeric arrays
-%       axisType    - axis type
+%       axisType    - (opt) axis type
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'x'- x axis
 %                       'y'- y axis
+%                   default = 'x'
 %       varargin    - 'Coverage': percent coverage of axis
 %                   must be empty or a numeric scalar between 0 and 100
 %                   default == 100% for x axis and 80% for y axis
@@ -62,10 +63,12 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_traces.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2018-12-19 Combined compute_xlimits.m and compute_ylimits.m
 % 2019-04-24 Added 'AutoZoom' as an optional argument
+% 2025-09-17 Made axisType an optional argument with default == 'x'
 
 %% Hard-coded parameters
 validAxisTypes = {'x', 'y'};
@@ -76,6 +79,7 @@ maxNStdBeyondMean = 5;      % maximum number of standard deviations
 
 %% Default values for optional arguments
 coverageDefault = [];       % set later
+axisTypeDefault = 'x';      % default x axis (100% coverage)
 separatelyDefault = false;  % compute a single set of axis limits by default
 autoZoomDefault = false;    % don't zoom in on axis by default
 
@@ -83,7 +87,7 @@ autoZoomDefault = false;    % don't zoom in on axis by default
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -95,7 +99,9 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'dataOrRange', ...
     @(x) assert(isnum(x) || iscell(x), ...
                 'dataOrRange must be either a numeric array or a cell array!'));
-addRequired(iP, 'axisType', ...
+
+% Add optional inputs to the Input Parser
+addOptional(iP, 'axisType', axisTypeDefault, ...
     @(x) any(validatestring(x, validAxisTypes)));
 
 % Add parameter-value pairs to the Input Parser
@@ -107,13 +113,11 @@ addParameter(iP, 'AutoZoom', autoZoomDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, dataOrRange, axisType, varargin{:});
+parse(iP, dataOrRange, varargin{:});
+axisType = validatestring(iP.Results.axisType, validAxisTypes);
 coverage = iP.Results.Coverage;
 separately = iP.Results.Separately;
 autoZoom = iP.Results.AutoZoom;
-
-% Validate axisType
-axisType = validatestring(axisType, validAxisTypes);
 
 %% Preparation
 % Set default coverage

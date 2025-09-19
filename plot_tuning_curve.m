@@ -925,7 +925,7 @@ if ~isempty(lowerCI) || ~isempty(upperCI)
 end
 
 % Hold on
-wasHold = hold_on;
+wasHold = hold_on(axHandle);
 
 % Plot readout values against parameter values
 for iPlot = 1:nColumnsToPlot
@@ -958,11 +958,11 @@ for iPlot = 1:nColumnsToPlot
 
         % Plot readout vector for all phases
         curves(iPlot, 1:nPhasesThis) = ...
-            cellfun(@(x) plot_one_line(pValuesThis(x), readoutThis(x), ...
+            cellfun(@(x) plot_one_line(axHandle, pValuesThis(x), readoutThis(x), ...
                                     lineSpec, lineWidth, otherArguments), ...
                     phaseIndices);
     else
-        curves(iPlot, 1) = plot_one_line(pValuesThis, readoutThis, ...
+        curves(iPlot, 1) = plot_one_line(axHandle, pValuesThis, readoutThis, ...
                                     lineSpec, lineWidth, otherArguments);
     end
 
@@ -991,7 +991,7 @@ for iPlot = 1:nColumnsToPlot
             %TODO
             % minY = apply_iteratively(@min, {yLimits, readoutLimits});
 
-            % TODO: use plot_vertical_shade
+            % TODO: use plot_vertical_shade.m
             % Remove tuning curve
             delete(curves(iPlot, 1));
 
@@ -1001,18 +1001,18 @@ for iPlot = 1:nColumnsToPlot
 
             % Fill the area between lowerCIThis and upperCIThis 
             %   with confIntColorMap
-            confInts(iPlot, 1) = fill(confIntXValues, confIntYValues, ...
+            confInts(iPlot, 1) = fill(axHandle, confIntXValues, confIntYValues, ...
                                         confIntColorMap(iPlot, :), ...
                                         'LineStyle', confIntLineStyle, ...
                                         'FaceAlpha', confIntFaceAlpha, ...
                                         'EdgeAlpha', confIntEdgeAlpha);
 
             % Plot tuning curve again
-            curves(iPlot, 1) = plot_one_line(pValuesThis, readoutThis, ...
+            curves(iPlot, 1) = plot_one_line(axHandle, pValuesThis, readoutThis, ...
                                         lineSpec, lineWidth, otherArguments);
 
             % Display tick marks and grid lines over graphics objects.
-            set(gca, 'Layer', 'top');
+            set(axHandle, 'Layer', 'top');
         end
     end
 
@@ -1240,7 +1240,7 @@ if ~isempty(rankTestPValues)
 end
 
 % Hold off
-hold_off(wasHold);
+hold_off(wasHold, axHandle);
 
 % Modify axes scale if requested
 %   Note: this must occur after holding off
@@ -1301,10 +1301,10 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function p = plot_one_line(pValues, readout, lineSpec, ...
+function p = plot_one_line(axHandle, pValues, readout, lineSpec, ...
                             lineWidth, otherArguments)
 
-p = plot(pValues, readout, lineSpec, ...
+p = plot(axHandle, pValues, readout, lineSpec, ...
                 'LineWidth', lineWidth, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

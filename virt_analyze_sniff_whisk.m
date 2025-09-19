@@ -26,9 +26,9 @@
 %       cd/find_matching_files.m
 %       cd/force_matrix.m
 %       cd/parse_oscillation.m
-%       cd/plot_correlation_coefficient.m
 %       cd/plot_grouped_jitter.m
 %       cd/plot_grouped_scatter.m
+%       cd/plot_regression_line.m
 %       cd/plot_test_result.m
 %       cd/plot_traces.m
 %       cd/plot_vertical_line.m
@@ -66,6 +66,8 @@
 % 2025-09-15 Attempted new first whisk in analysis window definition: first
 %               prevalley (protraction) after 30 ms before the resp prevalley
 % 2025-09-16 Changed definition of first whisk in analysis window back
+% 2025-09-18 Now plots regression lines
+% 2025-09-18 Now plots phase response detections and phase response curves
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -90,6 +92,8 @@ minPulseAmplitude = 2;                  % Minimum pulse amplitude for piezo trac
 
 % Analysis parameters
 %   Note: Keep this consistent with virt_moore.m
+invertThermSignal = true;
+invertWhiskSignal = true;
 amplitudeDefinition = 'peak-to-avgvalley';
 fundFreqRange = [0.5, 20];          % range of possible fundamental frequencies to be detected
 fCutoffResp = [1, 15];              % bandpass filter cutoff for resp trace (Moore et al 2013 used [1, 15] Hz)
@@ -116,9 +120,9 @@ excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
 
 % Plotting parameters
 %fileNumsToPlot = 10;                    % The file number(s) to plot (max 38)
-%fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
+fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
-fileNumsToPlot = (1:38)';               % The file number(s) to plot (max 38)
+%fileNumsToPlot = (1:38)';               % The file number(s) to plot (max 38)
 toSpeedUp = false;                      % Whether to use parpool and hide figures
 %toSpeedUp = true;                      % Whether to use parpool and hide figures
 whiskAngleLimits = [-75, 75];           % Whisk angle limits to be plotted
@@ -144,9 +148,18 @@ lineWidthForSample = 0.5;               % Line width for sample traces plots
 lineWidthForAnalysis = 1;               % Line width for sniff start window plots
 markerSizeForSample = 6;                % Marker size for sample traces plots
 markerSizeForAnalysis = 12;             % Marker size for sniff start window plots
+colorScatter = 'b';
 markerTypeScatter = '.';
 markerSizeScatter = 4;
 markerLineWidthScatter = 0.5;
+colorBestFit = [];              % Use default: if significant 'r', otherwise 'k'
+lineStyleBestFit = '--';
+lineWidthBestFit = 1;
+textLocBestFit = 'topleft';
+colorThrOrig = [1, 1, 1] * 0.5; % Gray
+lineStyleThrOrig = '--';
+lineWidthThrOrig = 0.5;
+textLocThrOrig = 'bottomright';
 whiskAngleLabel = 'Whisk Angle (degrees)';
 respToWhiskRangeRatio = 0.8;            % Sniff amplitude to whisk amplitude ratios for plotting
 timeLabel = 'Time (s)';
@@ -166,6 +179,7 @@ figTitle5 = 'Sniff Start Whisk Logarithmic Decrements';
 figTitle6 = 'Basal Respiration Whisk Logarithmic Decrements';
 figTitle7 = 'Sniff Start Whisk Amplitude Correlations';
 figTitle8 = 'Basal Respiration Whisk Amplitude Correlations';
+figTitle9 = 'Phase Response Curve';
 figPrefix1 = 'sniff_whisk_all_traces_';
 figPrefix2 = 'sniff_whisk_all_stims_';
 figPrefix3 = 'sniff_whisk_sniffstart_windows_';
@@ -174,6 +188,7 @@ figName5 = 'sniffstart_whisk_log_decrements_jitter';
 figName6 = 'basalresp_whisk_log_decrements_jitter';
 figName7 = 'sniffstart_whisk_amplitudes_scatter';
 figName8 = 'basalresp_whisk_amplitudes_scatter';
+figName9 = 'phase_response_scatter';
 figTypes = {'png'}; % {'eps', 'png'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -272,8 +287,12 @@ isAirPuff = contains(trialNames, airPuffString);
 
 %% Reformat data for ease of plotting
 % Invert whisk angle vectors and thermocouple vectors
-thermVecs = cellfun(@(x) -x, thermVecs, 'UniformOutput', false);
-whiskVecs = cellfun(@(x) -x, whiskVecs, 'UniformOutput', false);
+if invertThermSignal
+    thermVecs = cellfun(@(x) -x, thermVecs, 'UniformOutput', false);
+end
+if invertWhiskSignal
+    whiskVecs = cellfun(@(x) -x, whiskVecs, 'UniformOutput', false);
+end
 
 % Find the maximum and minimum whisk angles
 maxWhiskAngle = apply_iteratively(@max, whiskVecs); % == 71.9
@@ -373,7 +392,7 @@ nBasalRespCyclesPerFile = cellfun(@height, basalRespCycleTablesAll);
 [meanBasalWhiskLogDecrementsPerFile, stderrBasalWhiskLogDecrementsPerFile, ...
     lower95BasalWhiskLogDecrementsPerFile, upper95BasalWhiskLogDecrementsPerFile] = ...
     array_fun(@(x) compute_stats_for_cellnumeric(x.whiskLogDecrements), ...
-            sniffStartWinTablesAll, 'UniformOutput', false);
+            basalRespCycleTablesAll, 'UniformOutput', false);
 
 fprintf('Finished calculating statistics for each file.\n\n');
 
@@ -408,15 +427,26 @@ fprintf('Finished plotting aggregated basal-cycle whisk log decrements jitter pl
 %   other and compute the correlation coefficients
 [sniffWhiskAmpCorrelationResults, handles7] = ...
     correlate_successive_whiskamp(sniffStartWinTableToAverage, nCorrToAnalyze, ...
-                                pathOutDir, figTypes, figTitle7, figName7, ...
-                                markerTypeScatter, markerSizeScatter, markerLineWidthScatter);
+                                pathOutDir, figTypes, figTitle7, figName7, colorScatter, ...
+                                markerTypeScatter, markerSizeScatter, markerLineWidthScatter, ...
+                                colorBestFit, lineStyleBestFit, lineWidthBestFit, textLocBestFit, ...
+                                colorThrOrig, lineStyleThrOrig, lineWidthThrOrig, textLocThrOrig);
 
 % Plot successive whisk amplitudes in basal respiration cycles against each
 %   other and compute the correlation coefficients
 [basalWhiskAmpCorrelationResults, handles8] = ...
     correlate_successive_whiskamp(basalRespCycleTableToAverage, nCorrToAnalyze, ...
-                                pathOutDir, figTypes, figTitle8, figName8, ...
-                                markerTypeScatter, markerSizeScatter, markerLineWidthScatter);
+                                pathOutDir, figTypes, figTitle8, figName8, colorScatter, ...
+                                markerTypeScatter, markerSizeScatter, markerLineWidthScatter, ...
+                                colorBestFit, lineStyleBestFit, lineWidthBestFit, textLocBestFit, ...
+                                colorThrOrig, lineStyleThrOrig, lineWidthThrOrig, textLocThrOrig);
+
+% Plot the phase response curve from aggregate data
+fprintf('Plotting aggregated phase response curve...\n');
+[phaseResponseResults, handles9] = ...
+    plot_phase_response_curve(basalRespCycleTableToAverage, ...
+                                pathOutDir, figTypes, figTitle9, figName9);
+fprintf('Finished plotting aggregated phase response curve.\n\n');
 
 %% Put all metadata together
 
@@ -875,15 +905,23 @@ if ~isempty(basalRespCycleTableForFile)
     whiskValleyTimesForCycle = basalRespCycleTableForFile.whiskValleyTimes;
     whiskValleyValuesForCycle = basalRespCycleTableForFile.whiskValleyValues;
     whiskLogDecrementsForCycle = basalRespCycleTableForFile.whiskLogDecrements;
+    peakTimeWhiskBeforeForCycle = basalRespCycleTableForFile.peakTimeWhiskBefore;
+    peakTimeTwoWhisksBeforeForCycle = basalRespCycleTableForFile.peakTimeTwoWhisksBefore;
+    preIPIWhiskAfterForCycle = basalRespCycleTableForFile.preIPIWhiskAfter;
     
-    % Compute cycle durations
-    cycleDurations = cycleEnds - cycleStarts;
+    % Compute window starts to plot
+    %   This is the earlier of two whisk peaks before repiration peak 
+    %       and the pre-valley of the inspiratory whisk
+    winStartsToPlot = min([peakTimeTwoWhisksBeforeForCycle, cycleStarts], [], 2);
 
-    % Compute maximum cycle duration
-    maxCycleDuration = max(cycleDurations);    
+    % Compute required window durations
+    windowDurations = cycleEnds - winStartsToPlot;
 
-    % Compute cycle ends to plot
-    winEndsToPlot = cycleStarts + maxCycleDuration;
+    % Compute maximum window duration
+    maxWinDuration = max(windowDurations);    
+
+    % Compute window ends to plot
+    winEndsToPlot = cycleStarts + maxWinDuration;
 
     % Loop through each cycle to extract data segments
     tVecsForCycle = cell(nCycles, 1);
@@ -892,8 +930,8 @@ if ~isempty(basalRespCycleTableForFile)
     for iCycle = 1:nCycles
         % Get info for the current cycle
         swpNum = sweepNums(iCycle);
-        winStart = cycleStarts(iCycle);
-        winEnd = cycleEnds(iCycle);
+        winStart = winStartsToPlot(iCycle);
+        winEnd = winEndsToPlot(iCycle);
         
         % Get the full traces for the corresponding sweep
         tFull = tVecsThis(:, swpNum);
@@ -927,7 +965,7 @@ if ~isempty(basalRespCycleTableForFile)
     % Overlay detections on each basal respiration cycle subplot
     for iCycle = 1:nCycles
         % Get info for the current cycle
-        winStart = cycleStarts(iCycle);
+        winStart = winStartsToPlot(iCycle);
         winEndToPlot = winEndsToPlot(iCycle);
         respPeakTime = respPeakTimesForCycle(iCycle);
         respPreValleyTime = respPreValleyTimesForCycle(iCycle);
@@ -938,14 +976,63 @@ if ~isempty(basalRespCycleTableForFile)
         whiskValleyTimes = whiskValleyTimesForCycle{iCycle};
         whiskValleyValues = whiskValleyValuesForCycle{iCycle};
         whiskLogDecrements = whiskLogDecrementsForCycle{iCycle};
+        peakTimeWhiskBefore = peakTimeWhiskBeforeForCycle(iCycle);
+        peakTimeTwoWhisksBefore = peakTimeTwoWhisksBeforeForCycle(iCycle);
+        preIPIWhiskAfter = preIPIWhiskAfterForCycle(iCycle);
 
         % Select the correct subplot
-        subplot(handles4.subPlots(iCycle));
+        ax = handles4.subPlots(iCycle);
+        subplot(ax);
         hold on;
 
         % Restrict x-axis limits
         xlim([winStart, winEndToPlot]);
         
+        % Plot phase response detection with double arrows
+        % Check if the necessary data for phase response is available (not NaN)
+        if ~isnan(peakTimeWhiskBefore) && ~isnan(peakTimeTwoWhisksBefore) && ...
+           ~isnan(preIPIWhiskAfter) && ~isnan(respPreValleyTime)
+
+            % Define the y-position for the arrows in data units
+            arrowY = -50;
+            
+            % Get axes limits and position to convert data coordinates to
+            % normalized figure units for the annotation function.
+            xlims = get(ax, 'XLim');
+            ylims = get(ax, 'YLim');
+            axpos = get(ax, 'Position'); % [left bottom width height]
+            
+            % Create anonymous functions for coordinate conversion
+            x_nfu = @(x_data) axpos(1) + ((x_data - xlims(1)) / (xlims(2) - xlims(1))) * axpos(3);
+            y_nfu = @(y_data) axpos(2) + ((y_data - ylims(1)) / (ylims(2) - ylims(1))) * axpos(4);
+            
+            % Proceed only if the arrow position is within the y-axis limits
+            if arrowY >= ylims(1) && arrowY <= ylims(2)
+                % Convert the y-position to normalized figure units
+                yNorm = y_nfu(arrowY);
+                yArrowNorm = [yNorm, yNorm];
+            
+                % 1. Plot preIPIWhiskBefore with colorWhisk
+                % This is the unperturbed inter-whisk-interval (T0)
+                xT0Data = [peakTimeTwoWhisksBefore, peakTimeWhiskBefore];
+                xT0Norm = x_nfu(xT0Data);
+                annotation(handles4.fig, 'doublearrow', xT0Norm, yArrowNorm, 'Color', colorWhisk);
+
+                % 2. Plot preIPIWhiskAfter with colorWhisk
+                % This is the perturbed inter-whisk-interval (T1)
+                peakTimeAfter = peakTimeWhiskBefore + preIPIWhiskAfter;
+                xT1Data = [peakTimeWhiskBefore, peakTimeAfter];
+                xT1Norm = x_nfu(xT1Data);
+                annotation(handles4.fig, 'doublearrow', xT1Norm, yArrowNorm, 'Color', colorWhisk);
+                
+                % 3. Plot relativeResetTime with colorResp
+                % This represents the timing of the breath onset within the unperturbed cycle
+                xResetData = [peakTimeWhiskBefore, respPreValleyTime];
+                xResetNorm = x_nfu(xResetData);
+                annotation(handles4.fig, 'doublearrow', xResetNorm, yArrowNorm, 'Color', colorResp);
+            end
+        end
+
         % Plot resp peaks and valley times used for analysis
         if ~isempty(respPeakTime)
             plot_vertical_line(respPeakTime, 'Color', colorRespPeaksValleys, ...
@@ -1080,23 +1167,35 @@ for iSwp = 1:nSweeps
     % with a succeeding inter-peak interval >= basalIpiThresholdSec.
     succeedingIPIs = interPeakIntervals; % for peaks 1 to end-1
     isBasalRespPeak = succeedingIPIs >= basalIpiThresholdSec;
-    basalRespPeakIndices = find(isBasalRespPeak);
+    peakNumBasalResp = find(isBasalRespPeak);
     basalRespSucceedingIPIs = succeedingIPIs(isBasalRespPeak);
 
-    if ~isempty(basalRespPeakIndices)
+    if ~isempty(peakNumBasalResp)
         % Get the corresponding peak and valley info from respPeakTable
-        basalRespPeaksData = respPeakTable(basalRespPeakIndices, :);
+        basalRespPeaksData = respPeakTable(peakNumBasalResp, :);
+
+        % Count the number of basal respiration peaks
+        nBasalRespPeaks = height(basalRespPeaksData);
 
         % Create the basalRespPeakTable for this sweep
-        sweepNumber = repmat(iSwp, height(basalRespPeaksData), 1);
-        basalRespPeakNumber = (1:height(basalRespPeaksData))';
+        sweepNumber = repmat(iSwp, nBasalRespPeaks, 1);
+        basalRespPeakNumber = (1:nBasalRespPeaks)';
         basalRespPeakTimes = basalRespPeaksData.peakTime;
         basalRespPreValleyTimes = basalRespPeaksData.preValleyTime;
         basalRespPostValleyTimes = basalRespPeaksData.postValleyTime;
 
+        % Determine whether each basal respiration peak is 
+        %   preceded by a basal respiration peak
+        isWithinBasal = false(nBasalRespPeaks, 1);
+        if nBasalRespPeaks > 1
+            % The current peak number must be exact 1 more than the previous peak number
+            isWithinBasal(2:end) = (diff(peakNumBasalResp) == 1);
+        end
+
         basalRespPeakTablesPerSweep{iSwp} = table(sweepNumber, basalRespPeakNumber, ...
                                     basalRespPeakTimes, basalRespPreValleyTimes, ...
-                                    basalRespPostValleyTimes, basalRespSucceedingIPIs);
+                                    basalRespPostValleyTimes, basalRespSucceedingIPIs, ...
+                                    isWithinBasal);
     else
         basalRespPeakTablesPerSweep{iSwp} = table(); % No basal peaks found
     end
@@ -1165,13 +1264,17 @@ emptySniffTable = table('Size', [0, 14], 'VariableTypes', ...
                       'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
 
 % Define empty table structure for basal respiration cycles
-emptyBasalTable = table('Size', [0, 17], 'VariableTypes', ...
+emptyBasalTable = table('Size', [0, 28], 'VariableTypes', ...
     {'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+     'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
      'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
     'VariableNames', {'sweepNumber', 'basalRespCycleNumber', 'basalRespPeakNumber', ...
                       'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
                       'basalRespPeakTime', 'basalRespPreValleyTime', ...
                       'basalRespPostValleyTime', 'basalRespSucceedingIPI', ...
+                      'isWithinBasal', 'inspWhiskPeakNum', 'inspWhiskPeakTime', 'inspWhiskPreValleyTime', ...
+                      'peakTimeWhiskBefore', 'peakTimeTwoWhisksBefore', 'preIPIWhiskBefore', ...
+                      'preIPIWhiskAfter', 'phaseReset', 'phaseChangeWhisk', 'relativeResetTime', ...
                       'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
                       'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
                       'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
@@ -1265,7 +1368,6 @@ for iSwp = 1:nSweeps
         peakNumInSniffPeriod = find(isPeakInSniffPeriod);
         preValleyNumInSniffPeriod = find(isPreValleyInSniffPeriod);
         preValleyTooEarly = setdiff(peakNumInSniffPeriod, preValleyNumInSniffPeriod);
-        peakToLate = setdiff(preValleyNumInSniffPeriod, peakNumInSniffPeriod);
         if ~isempty(preValleyTooEarly)
             fprintf(fileID, ['Whisk protraction for first whisk peak after sniff start occurred ', ...
                      'earlier than %g ms for sniffing period #%d in sweep %d of file %d ', ...
@@ -1460,6 +1562,7 @@ for iSwp = 1:nSweeps
         basalRespPreValleyTime = currentInspWhisk.basalRespPreValleyTimes;
         basalRespPostValleyTime = currentInspWhisk.basalRespPostValleyTimes;
         basalRespSucceedingIPI = currentInspWhisk.basalRespSucceedingIPIs;
+        isWithinBasal = currentInspWhisk.isWithinBasal;
 
         % Find the next inspiratory whisk time
         if iInsp < nInspWhisk
@@ -1527,19 +1630,33 @@ for iSwp = 1:nSweeps
                 logDecrements = [];
             end
                        
+            % Compute phase response if the current basal respiration peak
+            %       is preceded by a basal respiration peak
+            %   phase reset: the phase of breath onset within the peak-to-peak cycle
+            %   delta phase whisk: the change in whisk phase associated with the breath
+            [phaseReset, phaseChangeWhisk, relativeResetTime, preIPIWhiskBefore, ...
+                preIPIWhiskAfter, peakTimeWhiskBefore, peakTimeTwoWhisksBefore] = ...
+                compute_phase_response(whiskPeakTimesThisSwp, basalRespPreValleyTime, isWithinBasal);
+
             % Create a one-row table for this cycle
             newCycle = table(iSwp, iCycle, basalRespPeakNumber, ...
                 basalRespCycleStartTime, basalRespCycleEndTime, ...
                 basalRespPeakTime, basalRespPreValleyTime, basalRespPostValleyTime, basalRespSucceedingIPI, ...
+                isWithinBasal, inspWhiskPeakNum, inspWhiskPeakTime, inspWhiskPreValleyTime, ...
+                peakTimeWhiskBefore, peakTimeTwoWhisksBefore, preIPIWhiskBefore, ...
+                preIPIWhiskAfter, phaseReset, phaseChangeWhisk, relativeResetTime, ...
                 {whiskPeaksToAnalyze.peakTime}, {whiskPeaksToAnalyze.peakValue}, ...
                 {peakAmplitudes}, {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
                 {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, {logDecrements}, ...
                 'VariableNames', {'sweepNumber', 'basalRespCycleNumber', 'basalRespPeakNumber', ...
-                      'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
-                      'basalRespPeakTime', 'basalRespPreValleyTime', 'basalRespPostValleyTime', 'basalRespSucceedingIPI', ...
-                      'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
-                      'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
-                      'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+                    'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
+                    'basalRespPeakTime', 'basalRespPreValleyTime', 'basalRespPostValleyTime', 'basalRespSucceedingIPI', ...
+                    'isWithinBasal', 'inspWhiskPeakNum', 'inspWhiskPeakTime', 'inspWhiskPreValleyTime', ...
+                    'peakTimeWhiskBefore', 'peakTimeTwoWhisksBefore', 'preIPIWhiskBefore', ...
+                    'preIPIWhiskAfter', 'phaseReset', 'phaseChangeWhisk', 'relativeResetTime' ...
+                    'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                    'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                    'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
 
             allCyclesCell{end+1} = newCycle;
         end
@@ -1743,7 +1860,7 @@ nAnalysisWindows = size(allLogDecrementsMatrix, 1);
 nWhiskLogDecrements = size(allLogDecrementsMatrix, 2);
 
 % Restrict to maxDecrementsToAnalyze
-if nWhiskLogDecrements > maxDecrementsToAnalyze; 
+if nWhiskLogDecrements > maxDecrementsToAnalyze 
     nDecrementsToAnalyze = maxDecrementsToAnalyze;
     allLogDecrementsMatrix = allLogDecrementsMatrix(:, 1:nDecrementsToAnalyze);
 else
@@ -1857,8 +1974,10 @@ end
 
 function [results, handles] = ...
     correlate_successive_whiskamp(T, nCorrToAnalyze, pathOutDir, ...
-                            figTypes, figTitle, figName, ...
-                            markerTypeScatter, markerSizeScatter, markerLineWidthScatter)
+                            figTypes, figTitle, figName, colorScatter, ...
+                            markerTypeScatter, markerSizeScatter, markerLineWidthScatter, ...
+                            colorBestFit, lineStyleBestFit, lineWidthBestFit, textLocBestFit, ...
+                            colorThrOrig, lineStyleThrOrig, lineWidthThrOrig, textLocThrOrig)
 %% This function correlates the amplitude of successive whisks 
 % (e.g., A1 vs A2, A2 vs A3, etc.) and plots these correlations in 
 % separate subplots, with points colored by fileNumber.
@@ -1910,13 +2029,12 @@ figPath = fullfile(pathOutDir, figName);
 isSignificant = nan(nCorrToAnalyze, 1);
 corrCoeffs = nan(nCorrToAnalyze, 1);
 pValues = nan(nCorrToAnalyze, 1);
-hScatters = gobjects(nCorrToAnalyze, 1));
-hCorrCoeffs = gobjects(nCorrToAnalyze, 1);
-hPValues = gobjects(nCorrToAnalyze, 1);
+hScatters = cell(nCorrToAnalyze, 1);
+hBestFits = gobjects(nCorrToAnalyze, 1);
+hTextBestFit = gobjects(nCorrToAnalyze, 1);
+hThrOrigs = gobjects(nCorrToAnalyze, 1);
+hTextThrOrig = gobjects(nCorrToAnalyze, 1);
 for iCorr = 1:nCorrToAnalyze
-    % Select the current subplot axes
-    axes(ax(iCorr));
-
     % Extract amplitude data for whisk iCorr and whisk iCorr+1
     ampCurrent = whiskAmplitudesMatrix(:, iCorr);
     ampNext = whiskAmplitudesMatrix(:, iCorr + 1);
@@ -1927,22 +2045,42 @@ for iCorr = 1:nCorrToAnalyze
 
     % Plot the amplitudes against each other, colored by fileNumber
     hOut = plot_grouped_scatter(ampCurrent, ampNext, fileNumbers, ...
-                        'PlotEllipse', false, 'MarkerType', markerTypeScatter, ...
+                        'PlotEllipse', false, 'LinkXY', true, 'GridOn', true, ...
+                        'Color', colorScatter, ...
+                        'MarkerType', markerTypeScatter, ...
                         'MarkerSize', markerSizeScatter, ...
                         'MarkerLineWidth', markerLineWidthScatter, ...
                         'XLabel', xLabel, 'YLabel', yLabel, ...
-                        'FigTitle', 'suppress', 'LegendLocation', 'suppress');
-    hScatters(iCorr) = hOut.dots;
+                        'FigTitle', 'suppress', 'LegendLocation', 'suppress', ...
+                        'AxesHandle', ax(iCorr));
+    hScatters{iCorr} = hOut.dots;
 
-    % Compute and plot the correlation coefficient, ignoring NaN values
-    [textObjects, isSignificant(iCorr), corrCoeffs(iCorr), pValues(iCorr)] = ...
-        plot_correlation_coefficient('XData', ampCurrent, 'YData', ampNext);
-    hCorrCoeffs(iCorr) = textObjects(1, 1);
-    hPValues(iCorr) = textObjects(2, 1);
+    % Compute and plot the regression line in red
+    [hBestFits(iCorr), hTextBestFit(iCorr), ~, results] = ...
+        plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
+                            'ThroughOrigin', false, 'Color', colorBestFit, ...
+                            'LineStyle', lineStyleBestFit, ...
+                            'LineWidth', lineWidthBestFit, ...
+                            'AxesHandle', ax(iCorr), ...
+                            'TextLocation', textLocBestFit, ...
+                            'ShowEquation', true, 'ShowRSquared', true, ...
+                            'ShowCorrCoeff', true);
 
-    % Improve aesthetics
-    grid on;
-    hold off;
+    % Extract the computed correlation coefficients
+    isSignificant(iCorr) = results.isSignificant;
+    corrCoeffs(iCorr) = results.corrCoeff;
+    pValues(iCorr) = results.pValue;
+
+    % Compute and plot the regression through the origin in blue
+    [hThrOrigs(iCorr), hTextThrOrig(iCorr)] = ...
+        plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
+                            'ThroughOrigin', true, 'Color', colorThrOrig, ...
+                            'LineStyle', lineStyleThrOrig, ...
+                            'LineWidth', lineWidthThrOrig, ...
+                            'AxesHandle', ax(iCorr), ...
+                            'TextLocation', textLocThrOrig, ...
+                            'ShowEquation', true, 'ShowRSquared', true, ...
+                            'ShowCorrCoeff', false);
 end
 
 % Finalize plot
@@ -1956,8 +2094,10 @@ handles.fig = fig;
 handles.ax = ax;
 handles.supAx = supAx;
 handles.hScatters = hScatters;
-handles.hCorrCoeffs = hCorrCoeffs;
-handles.hPValues = hPValues;
+handles.hBestFits = hBestFits;
+handles.hTextBestFit = hTextBestFit;
+handles.hThrOrigs = hThrOrigs;
+handles.hTextThrOrig = hTextThrOrig;
 
 %% Save results
 results.whiskAmplitudesMatrix = whiskAmplitudesMatrix;
@@ -1968,6 +2108,134 @@ results.nCorrToAnalyze = nCorrToAnalyze;
 results.corrCoeffs = corrCoeffs;
 results.pValues = pValues;
 results.isSignificant = isSignificant;
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [phaseReset, phaseChange, relativeResetTime, T0, T1, peakTimeBefore, peakTimeBeforeBefore] = ...
+    compute_phase_response (peakTimes, resetTime, toCompute)
+%% Compute phase response from peak times and a reset time
+
+% Initialize output to NaN
+peakTimeBefore = NaN;
+peakTimeBeforeBefore = NaN;
+T0 = NaN;
+T1 = NaN;
+relativeResetTime = NaN;
+phaseReset = NaN;
+phaseChange = NaN;
+
+% Only compute if desired (may not be valid)
+if toCompute
+    % Find indices of all peaks before the reset time
+    peakNumsBefore = find(peakTimes < resetTime);
+
+    % Find index of the peak right after the reset time
+    peakNumAfter = find(peakTimes >= resetTime, 1, 'first');
+
+    % We need at least two peaks before and one peak after to compute the phase response
+    if numel(peakNumsBefore) >= 2 && ~isempty(peakNumAfter)
+        % Get the peak times of the last two peaks before reset
+        peakTimeBefore = peakTimes(peakNumsBefore(end));
+        peakTimeBeforeBefore = peakTimes(peakNumsBefore(end-1));
+
+        % Get the peak time of the first peaks after reset
+        peakTimeAfter = peakTimes(peakNumAfter);        
+
+        % Compute the first inter-peak-interval (T0)
+        T0 = peakTimeBefore - peakTimeBeforeBefore;
+
+        % Compute the second inter-peak-interval (T1)
+        T1 = peakTimeAfter - peakTimeBefore;
+
+        % Compute the difference between reset time and peak before
+        relativeResetTime = resetTime - peakTimeBefore;
+
+        % Compute the phase of reset within the peak-to-peak cycle (phase reset)
+        phaseReset = 2*pi * relativeResetTime / T0;
+
+        % Compute the change in peak phase associated with the reset (delta phase)
+        phaseChange = 2*pi * (T1 - T0) / T0;
+    end
+end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [results, handles] = ...
+    plot_phase_response_curve(T, pathOutDir, figTypes, figTitle, figName)
+%% Plots a phase response curve from aggregate data.
+%  Plots phaseReset vs. phaseChangeWhisk, grouped by fileNumber.
+%  Also plots a regression line with statistics.
+
+%% Preparation
+% Initialize output
+results = struct;
+handles.fig = gobjects;
+handles.ax = gobjects;
+
+% If there's no data to plot, exit early
+if isempty(T) || ~ismember('phaseReset', T.Properties.VariableNames) || ...
+   ~ismember('phaseChangeWhisk', T.Properties.VariableNames)
+    fprintf('No phase response data to plot. Skipping PRC plot!\n');
+    return;
+end
+
+% Extract the necessary columns from the combined table
+phaseReset = T.phaseReset;
+phaseChangeWhisk = T.phaseChangeWhisk;
+fileNumbers = T.fileNumber;
+
+% Filter out rows with NaN values in the data to be plotted
+toKeep = ~isnan(phaseReset) & ~isnan(phaseChangeWhisk);
+phaseReset = phaseReset(toKeep);
+phaseChangeWhisk = phaseChangeWhisk(toKeep);
+fileNumbers = fileNumbers(toKeep);
+
+% Check if there is anything to plot after filtering
+if isempty(phaseReset)
+    fprintf('No valid phase response data found to plot.\n');
+    return;
+end
+
+%% Plot scatter plot and regression
+% Create a new figure
+fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
+figPath = fullfile(pathOutDir, figName);
+
+% Plot the phase response data as a grouped scatter plot
+ax = gca;
+handles = plot_grouped_scatter(phaseReset, phaseChangeWhisk, fileNumbers, ...
+                    'PlotEllipse', false, 'LinkXY', false, 'GridOn', true, ...
+                    'XLabel', 'Phase of breath onset in whisk peak cycle (radians)', ...
+                    'YLabel', 'Phase change of following whisk peak (radians)', ...
+                    'XLimits', [0, 2*pi], 'YLimits', [-2*pi, 2*pi], ...
+                    'FigTitle', figTitle, 'LegendLocation', 'suppress', ...
+                    'AxesHandle', ax);
+
+% Plot the regression line and show statistics
+[hRegression, hText, ~, regResults] = ...
+    plot_regression_line('AxesHandle', ax, ...
+                        'ShowEquation', true, 'ShowRSquared', true, ...
+                        'ShowCorrCoeff', true);
+
+% Finalize plot
+hold off;
+
+% Save the figure
+save_all_figtypes(fig, figPath, figTypes);
+
+% Store handles and results
+handles.fig = fig;
+handles.ax = ax;
+handles.regressionLine = hRegression;
+handles.regressionText = hText;
+results = regResults;
+results.phaseReset = phaseReset;
+results.phaseChangeWhisk = phaseChangeWhisk;
+results.fileNumbers = fileNumbers;
 
 end
 

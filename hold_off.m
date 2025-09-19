@@ -1,6 +1,6 @@
-function hold_off (wasHold)
+function hold_off (wasHold, varargin)
 %% Holds off based on previous status
-% Usage: hold_off (wasHold)
+% Usage: hold_off (wasHold, axHandle (opt))
 % Explanation:
 %       TODO
 %
@@ -11,6 +11,9 @@ function hold_off (wasHold)
 % Arguments:
 %       wasHold     - whether the current axes was held on
 %                   must be numeric/logical 1 (true) or 0 (false)
+%       axHandle    - (opt) axes handle to work with
+%                   must be a empty or a axes object handle
+%                   default == gca
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -31,9 +34,14 @@ function hold_off (wasHold)
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_vertical_line.m
+%       cd/plot_vertical_shade.m
 
 % File History:
 % 2019-10-02 Created by Adam Lu
+% 2025-09-17 Added axHandle as an optional argument
+
+% Default values for optional arguments
+axHandleDefault = gca;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,8 +59,17 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'wasHold', ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
+% Add optional inputs to the Input Parser
+addOptional(iP, 'axHandle', axHandleDefault);
+
 % Read from the Input Parser
-parse(iP, wasHold);
+parse(iP, wasHold, varargin{:});
+axHandle = iP.Results.axHandle;
+
+%% Preparation
+if ~isempty(axHandle)
+    axes(axHandle);
+end
 
 %% Do the job
 if ~wasHold

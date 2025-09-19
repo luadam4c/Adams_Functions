@@ -87,6 +87,8 @@ function handles = plot_test_result (testPValues, varargin)
 %                   
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %
 % Used by:
 %       cd/plot_grouped_jitter.m
@@ -233,7 +235,7 @@ sigMarkerHandles = gobjects(nValues, 1);
 
 %% Do the job
 % Hold on
-wasHold = hold_on;
+wasHold = hold_on(axHandle);
 
 % Plot texts and markers for each p-value
 for iValue = 1:nValues
@@ -322,7 +324,7 @@ for iValue = 1:nValues
 end
 
 % Hold off
-hold_off(wasHold);
+hold_off(wasHold, axHandle);
 
 %% Output results
 handles.pText = pTextHandles;

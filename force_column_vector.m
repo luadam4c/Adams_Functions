@@ -72,7 +72,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/compute_running_windows.m
 %       cd/compute_sampling_interval.m
 %       cd/create_shifted_vectors.m
-%       cd/plot_correlation_coefficient.m
+%       cd/extract_data_from_lines.m
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
 %       cd/adjust_edges.m

@@ -167,7 +167,7 @@ end
 
 %% Do the job
 % Hold on
-wasHold = hold_on;
+wasHold = hold_on(ax);
 
 % Set the colormap
 colormap(ax, colorMap);
@@ -205,7 +205,7 @@ if plotColorBar
 end
 
 % Hold off
-hold_off(wasHold);
+hold_off(wasHold, ax);
 
 %% Outputs
 handles.im = im;

@@ -361,18 +361,12 @@ if plotMeanDifference && nGroups == 2
     [meanValues, lower95Values, upper95Values] = ...
         argfun(@(x) baseMean + [0; x], diffMean, diffLower95, diffUpper95);
 
-    % Hold on
-    wasHold = hold_on;
-
     % Plot mean and confidence intervals
     handlesMean = plot_tuning_curve(pValues, meanValues, 'PlotOnly', true, ...
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
                     'LineStyle', meanLineStyle, ...
                     'Marker', 'none', 'AxesHandle', axHandle);
-
-    % Hold off
-    hold_off(wasHold);
 else
     handlesMean = struct;
 end
@@ -386,14 +380,14 @@ if plotErrorBars
                 'lower95', 'upper95');
 
     % Hold on
-    wasHold = hold_on;
+    wasHold = hold_on(axHandle);
 
     % Plot error bars
     plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
                     'LineWidth', meanLineWidth, 'AxesHandle', axHandle);
 
     % Hold off
-    hold_off(wasHold);
+    hold_off(wasHold, axHandle);
 end
 
 % Plot mean circles if requested
@@ -402,7 +396,7 @@ if plotMeanValues
     means = compute_stats(dataValues, 'mean', 'IgnoreNan', true);
 
     % Hold on
-    wasHold = hold_on;
+    wasHold = hold_on(axHandle);
 
     % Plot the means with circles with transparency
     %   Note: Use scatter to set MarkerFaceAlpha
@@ -420,7 +414,7 @@ if plotMeanValues
             'MarkerFaceColor', 'none');
 
     % Hold off
-    hold_off(wasHold);
+    hold_off(wasHold, axHandle);
 end
 
 % Change the y tick locations and labels if data is log 2 ratio

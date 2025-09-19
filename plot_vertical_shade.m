@@ -50,6 +50,8 @@ function h = plot_vertical_shade (varargin)
 %       cd/argfun.m
 %       cd/decide_on_colormap.m
 %       cd/force_column_cell.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/islinestyle.m
 %       cd/match_format_vectors.m
 %       cd/match_format_vector_sets.m
@@ -211,10 +213,7 @@ colorMap = decide_on_colormap(colorMap, 1);
 
 %% Do the job
 % Save whether was hold
-wasHold = set_default_flag([], ishold);
-
-% Hold on
-hold on
+wasHold = hold_on(axHandle);
 
 % The x and y values for the confidence intervals
 xValues = [x; flipud(x)];
@@ -228,9 +227,7 @@ else
 end
 
 % Hold off
-if ~wasHold
-    hold off
-end
+hold_off(wasHold, axHandle);
 
 % Only call uistack if yyaxis is NOT active (i.e., there is only one Y-axis)
 % This prevents the "permutation of itself" error.
