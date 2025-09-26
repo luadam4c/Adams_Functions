@@ -125,7 +125,7 @@ function handles = plot_grouped_jitter (data, varargin)
 %       cd/m3ha_plot_figure08.m
 %       cd/m3ha_simulate_population.m
 %       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2020-04-13 Modified from plot_violin.m

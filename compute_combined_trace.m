@@ -101,7 +101,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/minEASE.m
 %       cd/parse_ipsc.m
 %       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_analyze_whisk.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace

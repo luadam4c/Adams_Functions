@@ -122,7 +122,7 @@ function [hRegression, hText, textStr, results] = plot_regression_line (varargin
 % Used by:
 %       cd/plot_correlation_coefficient.m
 %       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2025-09-17 - Extracted from plot_correlation_coefficient.m

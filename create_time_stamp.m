@@ -34,7 +34,8 @@ function timeStamp = create_time_stamp (varargin)
 %       cd/plot_psth.m
 %       cd/save_params.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting54.m
-%       vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2018-10-21 Created by Adam Lu

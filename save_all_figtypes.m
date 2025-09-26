@@ -62,6 +62,8 @@ function save_all_figtypes (fig, filename, varargin)
 %       ~/RTCl/tuning_curves.m
 %       ~/RTCl/tuning_maps.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
+%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2017-05-09 Created by Adam Lu

@@ -140,7 +140,7 @@ function statsStruct = test_difference (data, varargin)
 %       cd/m3ha_simulate_population.m
 %       cd/test_var_difference.m
 %       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2020-02-14 Moved from test_var_difference.m

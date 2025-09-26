@@ -48,7 +48,7 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 % Used by:
 %       cd/plot_traces.m
 %       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2025-09-13 Created by Gemini using prompt by Adam Lu

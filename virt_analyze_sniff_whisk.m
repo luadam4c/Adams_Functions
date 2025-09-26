@@ -17,6 +17,7 @@
 %       cd/array_fun.m
 %       cd/check_dir.m
 %       cd/compute_combined_trace.m
+%       cd/compute_phase_response.m
 %       cd/count_vectors.m
 %       cd/create_subplots.m
 %       cd/create_labels_from_numbers.m
@@ -125,7 +126,9 @@ excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
 % Plotting parameters
 %fileNumsToPlot = 10;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
-fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
+%fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
+%fileNumsToPlot = 13;                    % The file number(s) to plot (max 38)
+fileNumsToPlot = (14:38)';               % The file number(s) to plot (max 38)
 %fileNumsToPlot = (1:38)';               % The file number(s) to plot (max 38)
 toSpeedUp = false;                      % Whether to use parpool and hide figures
 %toSpeedUp = true;                      % Whether to use parpool and hide figures
@@ -1640,7 +1643,7 @@ for iSwp = 1:nSweeps
 
             % Compute phase response if the current basal respiration cycle
             %       is preceded by a basal respiration cycle (so that both resp cycles and whisk cycles are stable)
-            %   phase reset: the phase of breath onset within the valley-to-valley cycle
+            %   phase reset: the phase of breath onset within the whisking cycle
             %   delta phase whisk: the change in whisk phase associated with the breath
             isStableBasalWhisks = respPeakNumber == lastRespPeakNum + 1;
             [phaseReset, phaseChangeWhisk, relativeResetTime, preIEIWhiskBefore, ...
@@ -2126,58 +2129,6 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [phaseReset, phaseChange, relativeResetTime, T0, T1, eventTimeBefore, eventTimeBeforeBefore] = ...
-    compute_phase_response (eventTimes, resetTime, toCompute)
-%% Compute phase response from event times and a reset time
-
-% Initialize output to NaN
-eventTimeBefore = NaN;
-eventTimeBeforeBefore = NaN;
-T0 = NaN;
-T1 = NaN;
-relativeResetTime = NaN;
-phaseReset = NaN;
-phaseChange = NaN;
-
-% Only compute if desired (may not be valid)
-if toCompute
-    % Find indices of all events before the reset time
-    eventNumsBefore = find(eventTimes < resetTime);
-
-    % Find index of the event right after the reset time
-    eventNumAfter = find(eventTimes >= resetTime, 1, 'first');
-
-    % We need at least two events before and one event after to compute the phase response
-    if numel(eventNumsBefore) >= 2 && ~isempty(eventNumAfter)
-        % Get the event times of the last two events before reset
-        eventTimeBefore = eventTimes(eventNumsBefore(end));
-        eventTimeBeforeBefore = eventTimes(eventNumsBefore(end-1));
-
-        % Get the event time of the first events after reset
-        eventTimeAfter = eventTimes(eventNumAfter);        
-
-        % Compute the first inter-event-interval (T0)
-        T0 = eventTimeBefore - eventTimeBeforeBefore;
-
-        % Compute the second inter-event-interval (T1)
-        T1 = eventTimeAfter - eventTimeBefore;
-
-        % Compute the difference between reset time and event before
-        relativeResetTime = resetTime - eventTimeBefore;
-
-        % Compute the phase of reset within the valley-to-valley cycle (phase reset)
-        %   This is always between 0 and 2*pi
-        phaseReset = 2*pi * mod(relativeResetTime / T0, 1);
-
-        % Compute the change in event phase associated with the reset (delta phase)
-        phaseChange = 2*pi * (T1 - T0) / T0;
-    end
-end
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function [results, handles] = ...
     plot_phase_response_curve(T, whiskDirForPhase, pathOutDir, figTypes, figTitle, figName)
 %% Plots a phase response curve from aggregate data.
@@ -2221,11 +2172,11 @@ figPath = fullfile(pathOutDir, figName);
 
 % Set x and y limits, x and y tick locations and labels
 xLimits = pi * [0, 2];
-xTickLocs = pi * [0:0.5:2];
+xTickLocs = pi * (0:0.5:2);
 xTickLabels = {'0', '\pi/2', '\pi', '3\pi/2', '2\pi'};
 yLimits = pi * [-2, 2];
 yLowLimits = pi * [-2, 0];
-yTickLocs = pi * [-2:2];
+yTickLocs = pi * (-2:2);
 yTickLabels = {'-2\pi', '-\pi', '0', '\pi', '2\pi'};
 
 % Plot the phase response data as a grouped scatter plot

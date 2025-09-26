@@ -87,7 +87,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/resize_subplots_for_labels.m
 %       cd/select_similar_values.m
 %       cd/update_figure_for_corel.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_analyze_whisk.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu

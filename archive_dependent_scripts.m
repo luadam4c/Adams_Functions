@@ -56,6 +56,7 @@ function varargout = archive_dependent_scripts (mScriptName, varargin)
 %       cd/m3ha_plot_figure08.m
 %       cd/m3ha_rank_neurons.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting103.m
+%       \Shared\Code\vIRt\virt_moore.m
 
 % File History:
 % 2019-08-11 Created by Adam Lu

@@ -53,8 +53,7 @@ function filteredData = freqfilter (data, fc, varargin)
 %       cd/minEASE.m
 %           many others; apply this command in a LINUX terminal to find them:
 %             grep --include=*.m -rlw '/home/Matlab/' -e "freqfilter"
-%       \Shared\Code\vIRt\virt_moore.m
-%
+
 % File History:
 % 2018-08-03 AL - Adapted from /home/Matlab/Marks_Functions/zof_mark.m
 % 2018-08-03 Made npoles an optional parameter 'FilterOrder'

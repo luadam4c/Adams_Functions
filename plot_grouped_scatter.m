@@ -39,6 +39,9 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %                   - 'GridOn': whether to turn on the grid
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'AxisCoveragePerc': percent coverage of axis
+%                   must be empty or a numeric scalar between 0 and 100
+%                   default == 90%
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -130,7 +133,7 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       cd/m3ha_simulate_population.m
 %       cd/plot_relative_events.m
 %       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2017-12-13 Modified from plot_grouped_histogram.m
@@ -139,12 +142,12 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 % 2020-08-02 Fixed bug with x and y limits
 % 2025-09-17 Added 'AxesHandle' as an optional argument
 % 2025-09-17 Added 'LinkXY' as an optional argument
+% 2025-09-25 Made 'AxisCoveragePerc' an optional argument
 % TODO: Merge with plot_correlation
 
 %% Hard-coded parameters
 maxInFigure = 8;                % maximum number of groups to keep the legend
                                 %   inside the figure
-axisCoveragePerc = 90;          % 90% coverage by default
 
 %% TODO: make the following optional arguments with given default
 ellipseNPoints = 1000;              % 1000 points
@@ -160,6 +163,7 @@ gridOnDefault = false;              % whether to turn the grid on by default
 confidenceLevelDefault = 95;        % default confidence level (%)
 xScaleDefault = 'linear';
 yScaleDefault = 'linear';
+axisCoveragePercDefault = 90;       % 90% coverage by default
 xLimitsDefault = [];
 yLimitsDefault = [];
 xUnitsDefault = 'unit';             % the default x-axis units
@@ -215,6 +219,8 @@ addParameter(iP, 'XScale', xScaleDefault, ...
     @(x) any(validatestring(x, {'linear', 'log'})));
 addParameter(iP, 'YScale', yScaleDefault, ...
     @(x) any(validatestring(x, {'linear', 'log'})));
+addParameter(iP, 'AxisCoveragePerc', axisCoveragePercDefault, ...
+    @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0 && x <= 100);
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isvector(x) && length(x) == 2);
@@ -265,6 +271,7 @@ gridOn = iP.Results.GridOn;
 confidenceLevel = iP.Results.ConfidenceLevel;
 xScale = iP.Results.XScale;
 yScale = iP.Results.YScale;
+axisCoveragePerc = iP.Results.AxisCoveragePerc;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 xUnits = iP.Results.XUnits;
