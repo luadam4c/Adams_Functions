@@ -40,7 +40,7 @@ function [phaseReset, phaseChange, relativeResetTime, T0, T1, eventTimeBefore, e
 
 % File History:
 % 2025-09-24 Pulled code from virt_analyze_sniff_whisk.m
-%
+% 2025-10-02 Now returns empty if reset time is empty
 
 %% Hard-coded parameters
 
@@ -51,14 +51,34 @@ function [phaseReset, phaseChange, relativeResetTime, T0, T1, eventTimeBefore, e
 %% Deal with arguments
 % No optional arguments to deal with
 
-% Initialize output to NaN
-eventTimeBefore = NaN;
-eventTimeBeforeBefore = NaN;
-T0 = NaN;
-T1 = NaN;
-relativeResetTime = NaN;
-phaseReset = NaN;
-phaseChange = NaN;
+% Initialize outputs
+if isempty(resetTime)
+    % Return empty if resetTime is empty
+    warning('Cannot compute phase response if reset time is empty!');
+    eventTimeBefore = [];
+    eventTimeBeforeBefore = [];
+    T0 = [];
+    T1 = [];
+    relativeResetTime = [];
+    phaseReset = [];
+    phaseChange = [];
+    return
+else
+    % Return NaN if resetTime is not empty
+    eventTimeBefore = NaN;
+    eventTimeBeforeBefore = NaN;
+    T0 = NaN;
+    T1 = NaN;
+    relativeResetTime = NaN;
+    phaseReset = NaN;
+    phaseChange = NaN;
+
+    % Display warning
+    if numel(eventTimes) < 3
+        warning('Not enough events to compute phase response. Will return NaN');
+    end
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
