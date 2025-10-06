@@ -37,6 +37,9 @@ function [results, handles] = virt_plot_log_decrement_jitter (dataTable, plotPar
 %                   default == pwd
 %                   - 'FigTypes': Figure type(s) for saving.
 %                   default == {'png'}
+%                   - 'ToSaveOutput': Whether to save the figure.
+%                   must be a logical scalar
+%                   default == true
 %
 % Requires:
 %       cd/compute_combined_trace.m
@@ -71,10 +74,16 @@ figTitleDefault = 'Whisk Logarithmic Decrements'; % Default figure title
 figNameDefault = 'whisk_log_decrements_jitter';   % Default file name for saving
 outDirDefault = pwd;                        % Default output directory
 figTypesDefault = {'png'};                  % Default figure save format
+toSaveOutputDefault = true;                 % Default to save the output figure
 
-%% Set up Input Parser
-iP = inputParser; % Create an input parser object
-iP.FunctionName = mfilename; % Set the function name for error messages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add parameter-value pairs to the Input Parser
 addRequired(iP, 'dataTable', @istable); % The input data must be a table
 addRequired(iP, 'plotParams', @isstruct); % Plotting parameters must be a structure
 addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar); % Add optional grouping column
@@ -84,6 +93,7 @@ addParameter(iP, 'FigTitle', figTitleDefault, @ischar); % Add optional figure ti
 addParameter(iP, 'FigName', figNameDefault, @ischar); % Add optional figure name
 addParameter(iP, 'OutDir', outDirDefault, @ischar); % Add optional output directory
 addParameter(iP, 'FigTypes', figTypesDefault); % Add optional figure types
+addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical); % Add save flag parameter
 
 % Parse the inputs
 parse(iP, dataTable, plotParams, varargin{:});
@@ -94,8 +104,7 @@ figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
 figTypes = iP.Results.FigTypes;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+toSaveOutput = iP.Results.ToSaveOutput;
 
 %% Preparation
 % Initialize output structures
@@ -104,8 +113,8 @@ handles = struct;
 
 % Exit early if the table is empty or the required data column doesn't exist
 if isempty(dataTable) || ~ismember(dataColumn, dataTable.Properties.VariableNames)
-    fprintf('No data in column "%s" to plot. Skipping jitter plot!\n', dataColumn); % Inform user
-    return; % Stop execution
+    fprintf('No data in column "%s" to plot. Skipping jitter plot!\n', dataColumn);
+    return;
 end
 
 % Extract the necessary columns from the input table
@@ -114,8 +123,8 @@ groupingData = dataTable.(groupingColumn); % Get grouping data (e.g., repetition
 
 % Exit if there is no data to average
 if isempty(logDecrementsCell) || all(cellfun(@isempty, logDecrementsCell))
-    fprintf('No log decrement data found to plot.\n'); % Inform user
-    return; % Stop execution
+    fprintf('No log decrement data found to plot.\n');
+    return;
 end
 
 % Convert the cell array of log decrements into a matrix
@@ -154,6 +163,10 @@ results.pValues = pValues;
 results.avgWhiskAmpRatios = avgWhiskAmpRatios;
 
 %% Plotting
+% Extract plotting parameters
+jitterWidth = plotParams.jitterWidth;
+markerSizeJitter = plotParams.markerSizeJitter;
+
 % Prepare data vectors for the plot_grouped_jitter function
 allLogDecrementsVec = allLogDecrementsMatrix(:); % Flatten data matrix into a single vector
 allDecrementOrdersVec = allDecrementOrdersMatrix(:); % Flatten order matrix
@@ -163,14 +176,18 @@ allGroupsVec = allGroupsMatrix(:); % Flatten group matrix
 xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nDecrementsToAnalyze, 'UniformOutput', false);
 
 % Set up figure properties
-handles.fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
+fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
 figPath = fullfile(pathOutDir, figName); % Construct full path for saving the figure
+
+% Set up axes properties
+axJitter = set_axes_properties;
 
 % Generate the base jitter plot without its own statistics
 plot_grouped_jitter(allLogDecrementsVec, allGroupsVec, allDecrementOrdersVec, ...
+    'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
     'XTickLabels', xTickLabels, 'YLabel', 'Log Decrement (ln(A_{n+1}/A_{n}))', ...
     'LegendLocation', 'suppress', 'PlotMeanValues', false, 'PlotErrorBars', false, ...
-    'RunTTest', false, 'RunRankTest', false, 'MarkerSize', plotParams.markerSizeJitter);
+    'RunTTest', false, 'RunRankTest', false, 'MarkerSize', markerSizeJitter);
 
 hold on; % Hold the current axes to overlay statistical information
 
@@ -202,8 +219,14 @@ title(figTitle); % Set the figure title
 grid on; % Turn on the grid
 hold off; % Release the axes hold
 
-% Save the figure to file
-save_all_figtypes(handles.fig, figPath, figTypes);
+% Save the figure to file if requested
+if toSaveOutput
+    save_all_figtypes(fig, figPath, figTypes);
+end
+
+% Store handles and results for output
+handles.fig = fig;
+handles.axJitter = axJitter;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

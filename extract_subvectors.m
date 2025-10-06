@@ -180,6 +180,7 @@ function [subVecs, indices] = extract_subvectors (vecs, varargin)
 %       cd/plot_traces_spike2_mat.m
 %       cd/select_similar_values.m
 %       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt\virt_analyze_whisk.m
 
 % File History:
 % 2018-10-28 Created by Adam Lu

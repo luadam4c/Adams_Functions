@@ -37,6 +37,9 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 %                   default == pwd
 %                   - 'FigTypes': Figure type(s) for saving.
 %                   default == {'png'}
+%                   - 'ToSaveOutput': Whether to save the figure.
+%                   must be a logical scalar
+%                   default == true
 %
 % Requires:
 %       /Shared/Code/Adams_Functions/create_subplots.m
@@ -67,19 +70,26 @@ figTitleDefault = 'Successive Whisk Amplitude Correlations';
 figNameDefault = 'whisk_amplitude_scatter';
 outDirDefault = pwd;
 figTypesDefault = {'png'};
+toSaveOutputDefault = true;                 % Default to save the output figure
 
-%% Set up Input Parser
-iP = inputParser; % Create an input parser object
-iP.FunctionName = mfilename; % Set function name for error messages
-addRequired(iP, 'dataTable', @istable); % Require a table as the first input
-addRequired(iP, 'plotParams', @isstruct); % Require a plot parameter struct
-addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar); % Optional grouping column
-addParameter(iP, 'DataColumn', dataColumnDefault, @ischar); % Optional data column
-addParameter(iP, 'NCorrelations', nCorrelationsDefault, @isnumeric); % Optional number of correlations
-addParameter(iP, 'FigTitle', figTitleDefault, @ischar); % Optional figure title
-addParameter(iP, 'FigName', figNameDefault, @ischar); % Optional figure name for saving
-addParameter(iP, 'OutDir', outDirDefault, @ischar); % Optional output directory
-addParameter(iP, 'FigTypes', figTypesDefault); % Optional figure save formats
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add parameter-value pairs to the Input Parser
+addRequired(iP, 'dataTable', @istable);
+addRequired(iP, 'plotParams', @isstruct);
+addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
+addParameter(iP, 'DataColumn', dataColumnDefault, @ischar);
+addParameter(iP, 'NCorrelations', nCorrelationsDefault, @isnumeric);
+addParameter(iP, 'FigTitle', figTitleDefault, @ischar);
+addParameter(iP, 'FigName', figNameDefault, @ischar);
+addParameter(iP, 'OutDir', outDirDefault, @ischar);
+addParameter(iP, 'FigTypes', figTypesDefault);
+addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
 
 % Parse the inputs
 parse(iP, dataTable, plotParams, varargin{:});
@@ -90,8 +100,7 @@ figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
 figTypes = iP.Results.FigTypes;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+toSaveOutput = iP.Results.ToSaveOutput;
 
 %% Preparation
 % Initialize output structures
@@ -166,8 +175,10 @@ end
 % Add an overall title to the figure
 resize_subplots_for_labels('FigTitle', figTitle);
 
-% Save the figure to file
-save_all_figtypes(fig, figPath, figTypes);
+% Save the figure to file if requested
+if toSaveOutput
+    save_all_figtypes(fig, figPath, figTypes);
+end
 
 % Store handles and results for output
 handles.fig = fig;

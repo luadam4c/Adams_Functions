@@ -31,6 +31,9 @@ function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 %                   default == pwd
 %                   - 'FigTypes': Figure type(s) for saving.
 %                   default == {'png'}
+%                   - 'ToSaveOutput': Whether to save the figure.
+%                   must be a logical scalar
+%                   default == true
 %
 % Requires:
 %       /Shared/Code/Adams_Functions/plot_grouped_scatter.m
@@ -54,10 +57,16 @@ figTitleDefault = 'Whisk Phase Response Curve';
 figNameDefault = 'phase_response_scatter';
 outDirDefault = pwd;
 figTypesDefault = {'png'};
+toSaveOutputDefault = true;                 % Default to save the output figure
 
-%% Set up Input Parser Scheme
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+
+% Add parameter-value pairs to the Input Parser
 addRequired(iP, 'T', @istable);
 addRequired(iP, 'pPlot', @isstruct);
 addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
@@ -66,6 +75,7 @@ addParameter(iP, 'FigTitle', figTitleDefault, @ischar);
 addParameter(iP, 'FigName', figNameDefault, @ischar);
 addParameter(iP, 'OutDir', outDirDefault, @ischar);
 addParameter(iP, 'FigTypes', figTypesDefault);
+addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
 
 % Read from the Input Parser
 parse(iP, T, pPlot, varargin{:});
@@ -75,8 +85,7 @@ figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
 figTypes = iP.Results.FigTypes;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+toSaveOutput = iP.Results.ToSaveOutput;
 
 %% Preparation
 results = struct;
@@ -105,6 +114,9 @@ end
 fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
 figPath = fullfile(pathOutDir, figName);
 
+% Set up axes properties
+ax = set_axes_properties;
+
 plot_grouped_scatter(phaseReset, phaseChangeWhisk, groupingData, ...
     'PlotEllipse', false, 'LinkXY', false, 'GridOn', true, ...
     'XLabel', ['Phase of breath onset in whisk ', whiskDirForPhase, ' cycle (radians)'], ...
@@ -112,7 +124,6 @@ plot_grouped_scatter(phaseReset, phaseChangeWhisk, groupingData, ...
     'XLimits', [0, 2*pi], 'YLimits', [-2*pi, 2*pi], ...
     'FigTitle', figTitle, 'LegendLocation', 'suppress');
 
-ax = gca;
 xticks(pi * (0:0.5:2));
 xticklabels({'0', '\pi/2', '\pi', '3\pi/2', '2\pi'});
 yticks(pi * (-2:1:2));
@@ -124,9 +135,14 @@ yline(0, '--g', 'LineWidth', 1);
 [~, ~, ~, regResults] = plot_regression_line('AxesHandle', ax, ...
     'ShowEquation', true, 'ShowRSquared', true, 'ShowCorrCoeff', true);
 
-save_all_figtypes(fig, figPath, figTypes);
+% Save the figure to file if requested
+if toSaveOutput
+    save_all_figtypes(fig, figPath, figTypes);
+end
 
+% Store handles and results for output
 handles.fig = fig;
+handles.ax = ax;
 results = regResults;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
