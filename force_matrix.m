@@ -103,7 +103,8 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/spike2Mat2Text.m
 %       cd/transform_vectors.m
 %       cd/vecfun.m
-%       cd/virt_analyze_sniff_whisk.m
+%       cd/virt_plot_amplitude_correlation.m
+%       cd/virt_plot_log_decrement_jitter.m
 %       \Shared\Code\vIRt\virt_analyze_whisk.m
 
 % File History:

@@ -17,6 +17,7 @@
 %       cd/array_fun.m
 %       cd/check_dir.m
 %       cd/compute_combined_trace.m
+%       cd/compute_phase_response.m
 %       cd/count_vectors.m
 %       cd/create_labels_from_numbers.m
 %       cd/extract_fields.m
@@ -33,7 +34,6 @@
 %       cd/virt_plot_log_decrement_jitter.m
 %       cd/virt_plot_phase_response.m
 %       cd/write_table.m
-%       cd/virt_detect_whisk_analysis_windows.m
 %
 % Used by:
 
@@ -65,7 +65,7 @@
 % 2025-09-19 Changed promThresholdPercResp from 5 to 15
 % 2025-09-19 Changed phase detection to use whisk valleys (protraction) and breathOnsetLatencyMs
 % 2025-10-06 Refactored to use virt_plot_* functions for aggregate plots
-% 2025-10-06 Refactored to use virt_detect_whisk_analysis_windows.m by Gemini
+%
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -366,8 +366,7 @@ fprintf('Detecting whisk peaks and valleys and defining analysis windows ...\n')
     array_fun(@(a, b, c, d, e, f, g) parse_whisk_vecs(a, b, c, d, e, f, g, ...
                     amplitudeDefinition, whiskDirForPhase, fundFreqRange, fCutoffWhisk, fCutoffRelToFund, filterOrderWhisk, ...
                     promThresholdPercWhisk, minPeakDistanceMsWhisk, minPeakPromWhisk, maxWhiskDurationMs, ...
-                    breathOnsetLatencyMs, nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze, ...
-                    sniffFreqThreshold, basalFreqThreshold, maxWhisksBasalRespToAnalyze, fileIDDiffs), ...
+                    breathOnsetLatencyMs, nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze), ...
                 num2cell(fileNumbers), whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
                 sniffStartTimesAll, sniffEndTimesAll, basalRespPeakTablesAll, ...
                 'UniformOutput', false, 'UseParpool', false);
@@ -1265,14 +1264,49 @@ function [whiskPeakTables, whiskValleyTables, whiskFreqFundamental, sniffStartWi
                     sniffStartTimesThisFile, sniffEndTimesThisFile, basalRespPeakTableThisFile, ...
                     amplitudeDefinition, whiskDirForPhase, fundFreqRange, fCutoff, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, minPeakProm, maxWhiskDurationMs, ...
-                    breathOnsetLatencyMs, nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze, ...
-                    sniffFreqThreshold, basalFreqThreshold, maxWhisksBasalRespToAnalyze, fileIDDiffs)
+                    breathOnsetLatencyMs, nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze)
 %% Parses whisk vectors for a single file and generates sniff start window and basal resp cycle tables
+
+% Convert to seconds
+breathOnsetLatency = breathOnsetLatencyMs / 1000;
 
 % Initialize cell arrays to store results for each sweep in this file.
 whiskPeakTables = cell(nSweeps, 1);
 whiskValleyTables = cell(nSweeps, 1);
 whiskFreqFundamental = cell(nSweeps, 1);
+
+% Define empty table structure for sniff start windows
+emptySniffTable = table('Size', [0, 14], 'VariableTypes', ...
+    {'double', 'double', 'double', 'double', 'double', 'double', ...
+     'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
+    'VariableNames', {'sweepNumber', 'windowNumber', 'sniffStartWinStartTime', ...
+                      'sniffStartWinEndTime', 'sniffStartTime', 'sniffEndTime', ...
+                      'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                      'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                      'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+
+% Define empty table structure for basal respiration cycles
+emptyBasalTable = table('Size', [0, 31], 'VariableTypes', ...
+    {'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+     'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+     'double', 'double', 'double', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
+    'VariableNames', {'sweepNumber', 'basalRespCycleNumber', 'basalRespPeakNumber', ...
+                      'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
+                      'basalRespPeakTime', 'basalRespPeakValue', 'basalRespPreValleyTime', ...
+                      'basalRespPostValleyTime', 'basalRespSucceedingIPI', ...
+                      'isWithinBasal', 'inspWhiskPeakNum', 'inspWhiskPeakTime', 'inspWhiskPreValleyTime', ...
+                      'breathOnsetTime', 'isStableBasalWhisks', 'eventTimeWhiskBefore', 'eventTimeTwoWhisksBefore', 'preIEIWhiskBefore', ...
+                      'preIEIWhiskAfter', 'phaseReset', 'phaseChangeWhisk', 'relativeResetTime', ...
+                      'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                      'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                      'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+
+% If whisk vector is empty, return empty results
+if isempty(whiskVecsThisFile)
+    sniffStartWinTable = emptySniffTable;
+    basalRespCycleTable = emptyBasalTable;
+    return
+end
 
 % Detect whisk peaks in parallel
 parfor iSwp = 1:nSweeps
@@ -1303,32 +1337,375 @@ parfor iSwp = 1:nSweeps
     end
 end
 
-% Package analysis parameters into a structure
-analysisParams.nWhisksSniffStartToAnalyze = nWhisksSniffStartToAnalyze;
-analysisParams.sniffFreqThreshold = sniffFreqThreshold;
-analysisParams.basalFreqThreshold = basalFreqThreshold;
-analysisParams.minWhisksBasalRespToAnalyze = minWhisksBasalRespToAnalyze;
-analysisParams.maxWhisksBasalRespToAnalyze = maxWhisksBasalRespToAnalyze;
-analysisParams.whiskDirForPhase = whiskDirForPhase;
-analysisParams.breathOnsetLatencyMs = breathOnsetLatencyMs;
+% Now, process sweeps serially to build the sniff start window table
+allWindowsCell = {};
+for iSwp = 1:nSweeps
+    % Obtain whisk peak and valley tables for this sweep
+    whiskPeakTable = whiskPeakTables{iSwp};
+    whiskValleyTable = whiskValleyTables{iSwp};
 
-% Detect Sniff and Basal Analysis Windows using the modular function
-% Note: Pass empty tables for peakTable and valleyTable as they are not used
-%       in 'transitionTimes' or 'peakTable' modes.
-[sniffStartWinTable, basalRespCycleTable] = ...
-    virt_detect_whisk_analysis_windows(table(), table(), analysisParams, ...
-        'SniffDefinitionMode', 'transitionTimes', ...
-        'BasalDefinitionMode', 'peakTable', ...
-        'TVecs', tVecsThisFile, ...
-        'SniffStartTimes', sniffStartTimesThisFile, ...
-        'SniffEndTimes', sniffEndTimesThisFile, ...
-        'NSweeps', nSweeps, ...
-        'WhiskPeakTables', whiskPeakTables, ...
-        'WhiskValleyTables', whiskValleyTables, ...
-        'BasalRespPeakTable', basalRespPeakTableThisFile, ...
-        'FileNumber', fileNumber, ...
-        'FileIDDiffs', fileIDDiffs, ...
-        'ToPostMessage', false); % Suppress messages as this is in a loop
+    % Obtain whisk peak times and sniff period start and end times
+    peakTimes = whiskPeakTable.peakTime;
+    preValleyTimes = whiskPeakTable.preValleyTime;
+    sniffStartTimes = sniffStartTimesThisFile{iSwp};
+    sniffEndTimes = sniffEndTimesThisFile{iSwp};
+    valleyTimes = whiskValleyTable.valleyTime;
+
+    % If there are no sniff periods or no whisks, skip this sweep
+    if isempty(sniffStartTimes) || isempty(whiskPeakTable)
+        continue;
+    end
+    
+    % If the first sniff period end time is before
+    %   the first sniff period start time, remove that first end time
+    if ~isempty(sniffEndTimes) && sniffEndTimes(1) < sniffStartTimes (1)
+        sniffEndTimes(1) = [];
+    end
+
+    % If there are more sniff period start times then end times, 
+    %   add the end of time vector as an sniff end time
+    if numel(sniffStartTimes) > numel(sniffEndTimes)
+        sniffEndTimes(end+1) = tVecsThisFile(end, iSwp);
+    end
+
+    % Loop through all sniff periods for this sweep
+    iWindow = 0;            % Counter for sniff start windows for this sweep
+    for iSniff = 1:numel(sniffStartTimes)
+        % Get current sniff period start and end times
+        currentSniffStart = sniffStartTimes(iSniff);
+        currentSniffEnd = sniffEndTimes(iSniff);
+
+        % Find all peaks within the sniff period
+        isPeakInSniffPeriod = peakTimes >= currentSniffStart & ...
+                            peakTimes <= currentSniffEnd;
+
+        % Moore et al 2013 definition: Find all peaks with prevalley times 
+        %   after breathOnsetLatency before sniff start time
+        %   but peaks before sniff end time
+        isPreValleyInSniffPeriod = ...
+            preValleyTimes >= currentSniffStart - breathOnsetLatency & ...
+            peakTimes <= currentSniffEnd;
+
+        % If these definitions do not match, print warning
+        peakNumInSniffPeriod = find(isPeakInSniffPeriod);
+        preValleyNumInSniffPeriod = find(isPreValleyInSniffPeriod);
+        preValleyTooEarly = setdiff(peakNumInSniffPeriod, preValleyNumInSniffPeriod);
+        if ~isempty(preValleyTooEarly)
+            fprintf(fileID, ['Whisk protraction for first whisk peak after sniff start occurred ', ...
+                     'earlier than %g ms for sniffing period #%d in sweep %d of file %d ', ...
+                     ' for peak numbers (for the sweep): %s!!\n\n'], ...
+                     breathOnsetLatencyMs, iSniff, iSwp, fileNumber, num2str(preValleyTooEarly));
+        end
+
+        % Define whether a whisk is in a sniff period by the peak
+        isInSniffPeriod = isPeakInSniffPeriod;
+
+        % Restrict whisk peak table to those in the sniff period
+        whiskPeaksInSniffPeriod = whiskPeakTable(isInSniffPeriod, :);
+
+        % If there are at least nWhisksSniffStartToAnalyze peaks
+        %   within this sniff period and the first of those have all valid amplitudes, 
+        %   add to sniff start window with appropriate boundaries
+        if height(whiskPeaksInSniffPeriod) >= nWhisksSniffStartToAnalyze
+            % Extract whisk peaks to analyze
+            whiskPeaksToAnalyze = whiskPeaksInSniffPeriod(1:nWhisksSniffStartToAnalyze, :);
+
+            % Skip this window if some amplitudes not valid
+            if any(isnan(whiskPeaksToAnalyze.amplitude))
+                continue;
+            end
+
+            % Increment window count
+            iWindow = iWindow + 1;
+
+            % Start of sniff start window is the pre-valley time of the 
+            %   1st peak to analyze, or if doesn't exist, the sniff start time 
+            firstPeakToAnalyze = whiskPeaksToAnalyze(1, :);
+            firstPreValleyTime = firstPeakToAnalyze.preValleyTime;
+            if ~isnan(firstPreValleyTime)
+                sniffStartWinStartTime = firstPreValleyTime;
+            else
+                sniffStartWinStartTime = currentSniffStart;
+            end
+
+            % End of sniff start window is the post-valley time of the 
+            %   last peak to analyze, or if doesn't exist, the sniff end time
+            lastPeakToAnalyze = whiskPeaksToAnalyze(end, :);
+            lastPostValleyTime = lastPeakToAnalyze.postValleyTime;
+            if ~isnan(lastPostValleyTime)
+                sniffStartWinEndTime = lastPostValleyTime;
+            else
+                sniffStartWinEndTime = currentSniffEnd;
+            end
+
+            % Find all valleys within the sniff start window
+            isValleyInWin = valleyTimes >= sniffStartWinStartTime & ...
+                          valleyTimes <= sniffStartWinEndTime;
+            whiskValleysToAnalyze = whiskValleyTable(isValleyInWin, :);
+
+            % Compute the logarithmic decrements of successive whisk peak amplitudes
+            peakAmplitudes = whiskPeaksToAnalyze.amplitude;
+            if numel(peakAmplitudes) > 1
+                logDecrementsSniff = log(peakAmplitudes(2:end) ./ peakAmplitudes(1:end-1));
+            else
+                logDecrementsSniff = nan(size(nWhisksSniffStartToAnalyze - 1, 1));
+            end
+                        
+            % Create a one-row table for this window
+            newWindow = table(iSwp, iWindow, sniffStartWinStartTime, sniffStartWinEndTime, ...
+                currentSniffStart, currentSniffEnd, ...
+                {whiskPeaksToAnalyze.peakTime}, {whiskPeaksToAnalyze.peakValue}, {peakAmplitudes}, ...
+                {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
+                {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, {logDecrementsSniff}, ...
+                'VariableNames', {'sweepNumber', 'windowNumber', 'sniffStartWinStartTime', 'sniffStartWinEndTime', ...
+                                  'sniffStartTime', 'sniffEndTime', ...
+                                  'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                                  'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                                  'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+
+            allWindowsCell{end+1} = newWindow;
+        end
+    end
+end
+
+% Vertically concatenate all found windows into a single table
+if ~isempty(allWindowsCell)
+    sniffStartWinTable = vertcat(allWindowsCell{:});
+else
+    sniffStartWinTable = emptySniffTable;
+end
+
+% Find basal respiration cycles
+allCyclesCell = {};
+for iSwp = 1:nSweeps
+    % Filter the file-level basal peak table for the current sweep
+    if ~isempty(basalRespPeakTableThisFile)
+        basalRespPeaks = basalRespPeakTableThisFile(basalRespPeakTableThisFile.sweepNumber == iSwp, :);
+    else
+        basalRespPeaks = table();
+    end
+    
+    % Extract whisk data for this sweep
+    whiskPeaks = whiskPeakTables{iSwp};
+    whiskValleys = whiskValleyTables{iSwp};
+    whiskPeakTimesThisSwp = whiskPeaks.peakTime;
+    whiskPreValleyTimesThisSwp = whiskPeaks.preValleyTime;
+    whiskValleyTimesThisSwp = whiskValleys.valleyTime;
+
+    % Skip this sweep if no whisks or basal respiration peaks
+    if isempty(basalRespPeaks) || isempty(whiskPeaks)
+        continue;
+    end
+
+    % Count the number of basal respiration peaks for this sweep
+    nBasalRespThisSwp = height(basalRespPeaks);
+
+    % 1. Find inspiratory whisks within each basal respiration peak
+    whiskPeakNumbers = nan(nBasalRespThisSwp, 1);
+    for iResp = 1:nBasalRespThisSwp
+        respPeakTime = basalRespPeaks.basalRespPeakTimes(iResp);
+        respPreValley = basalRespPeaks.basalRespPreValleyTimes(iResp);
+        respPostValley = basalRespPeaks.basalRespPostValleyTimes(iResp);
+
+        % Handle NaN in postValleyTime
+        if isnan(respPostValley)
+            respPostValley = tVecsThisFile(end, iSwp);
+        end
+
+        % Moore et al 2013 definition: Find the first whisk peak with pre-valley 
+        %   after breathOnsetLatency before respiration pre-valley and
+        %   before respiration peak
+        firstPreValleyNumber = ...
+            find(whiskPreValleyTimesThisSwp >= respPreValley - breathOnsetLatency & ...
+                    whiskPreValleyTimesThisSwp < respPeakTime, 1 , 'first');
+        
+        % Find whisk peaks within the respiration valley-to-valley window
+        possibleWhiskPeakNumbers = ...
+            find(whiskPeakTimesThisSwp >= respPreValley & ...
+                    whiskPeakTimesThisSwp < respPostValley);
+    
+        % Find the whisk peak closest to the basal respiration peak
+        [~, closestIdxInPossible] = min(abs(whiskPeakTimesThisSwp(possibleWhiskPeakNumbers) - respPeakTime));
+        closestWhiskPeakNumber = possibleWhiskPeakNumbers(closestIdxInPossible);
+
+        % If the closest whisk peak is different from the one with 
+        %   the first prevalley, print message
+        if firstPreValleyNumber ~= closestWhiskPeakNumber
+            fprintf(fileID, ['First whisk protraction (peak number %d) within basal respiration is different ', ...
+                     'from closest peak (peak number %d) for basal respiration cycle #%d in sweep %d of file %d!!\n\n'], ...
+                     firstPreValleyNumber, closestWhiskPeakNumber, iResp, iSwp, fileNumber);
+        end
+
+        % Skip this respiration if no whisks within the basal respiration peak
+        if isempty(closestWhiskPeakNumber)
+            continue;
+        end
+
+        % Set the closest whisk peak as the 'inspiratory whisk'
+        whiskPeakNumbers(iResp) = closestWhiskPeakNumber;
+    end
+
+    % Add inspiratory whisk peak number to basal respiratory peak table for this sweep
+    basalRespPeaks.whiskPeakNumber = whiskPeakNumbers;
+
+    % Check if inspiratory whisk found for each row
+    hasInspiratoryWhisk = ~isnan(whiskPeakNumbers);
+
+    % Skip this sweep if no inspiratory whisk found
+    if ~any(hasInspiratoryWhisk)
+        continue;
+    end
+
+    % Get the peak numbers for inspiratory whisks found
+    peakNumbersInspWhisk = whiskPeakNumbers(hasInspiratoryWhisk);
+
+    % Remove rows with no inspiratory whisk found)
+    inspWhiskTableTemp = basalRespPeaks(hasInspiratoryWhisk, :);
+
+    % Add associated whisk peak information
+    inspWhiskTable = horzcat(inspWhiskTableTemp, whiskPeaks(peakNumbersInspWhisk, :));
+
+    % Count the number of inspiratory whisks
+    nInspWhisk = height(inspWhiskTable);
+
+    % Get all inspiratory whisk times this sweep
+    inspWhiskTimesThisSwp = inspWhiskTable.peakTime;
+
+    % 2. Define basal respiration cycles
+    iCycle = 0;             % Counter for basal respiration cycles for this sweep
+    lastRespPeakNum = NaN;  % Last respiration peak number for this sweep
+    for iInsp = 1:nInspWhisk       
+        % Get the current inspiratory whisk info
+        currentInspWhisk = inspWhiskTable(iInsp, :);
+        inspWhiskPeakNum = currentInspWhisk.whiskPeakNumber;
+        inspWhiskPeakTime = currentInspWhisk.peakTime;
+        inspWhiskPreValleyTime = currentInspWhisk.preValleyTime;
+        respPeakNumber = currentInspWhisk.respPeakNumber;
+        basalRespPeakNumber = currentInspWhisk.basalRespPeakNumber;
+        basalRespPeakTime = currentInspWhisk.basalRespPeakTimes;
+        basalRespPeakValue = currentInspWhisk.basalRespPeakValues;
+        basalRespPreValleyTime = currentInspWhisk.basalRespPreValleyTimes;
+        basalRespPostValleyTime = currentInspWhisk.basalRespPostValleyTimes;
+        basalRespSucceedingIPI = currentInspWhisk.basalRespSucceedingIPIs;
+        isWithinBasal = currentInspWhisk.isWithinBasal;
+
+        % Find the next inspiratory whisk time
+        if iInsp < nInspWhisk
+            nextInspWhiskTime = inspWhiskTimesThisSwp(iInsp + 1);
+        else
+            % No next inspiratory whisk, set at end of sweep
+            nextInspWhiskTime = tVecsThisFile(end, iSwp);
+        end
+              
+        % The search end time is the earliest of the next insp whisk or 
+        %   the end of the current respiration (the succeeding valley)
+        searchEndTime = min(nextInspWhiskTime, basalRespPostValleyTime);
+        
+        % Find intervening whisks after the current inspiratory whisk
+        %   and before the search end time
+        interWhiskPeakNumbers = ...
+            find(whiskPeakTimesThisSwp > inspWhiskPeakTime & ...
+                whiskPeakTimesThisSwp < searchEndTime);
+
+        % Define a basal respiration cycle to be analyzed as 
+        %   one in which there are enough intervening whisk for a cycle
+        %   and that all whisk peaks have valid amplitudes
+        if numel(interWhiskPeakNumbers) >= minWhisksBasalRespToAnalyze - 1
+            % Collect all whisks for this cycle (inspiratory + all intervening)
+            whiskIndicesForCycle = [inspWhiskPeakNum; interWhiskPeakNumbers];
+            whiskPeaksToAnalyze = whiskPeaks(whiskIndicesForCycle, :);
+
+            % Skip this inspiratory whisk if some whisk peak
+            %   does not have a valid amplitude
+            if any(isnan(whiskPeaksToAnalyze.amplitude))
+                continue;
+            end
+
+            % Increment cycle number and save 
+            iCycle = iCycle + 1;
+
+            % Cycle start time is the preceding valley of the inspiratory whisk
+            %   or if not present, the preceding valley of the basal respiration
+            if ~isnan(inspWhiskPreValleyTime)
+                basalRespCycleStartTime = inspWhiskPreValleyTime;
+            else
+                basalRespCycleStartTime = basalRespPreValleyTime;
+            end
+
+            % Cycle end time is the succeeding valley of the last intervening whisk
+            %   or if not present, the search end time
+            lastWhiskInCycle = whiskPeaksToAnalyze(end, :);
+            lastWhiskPostValleyTime = lastWhiskInCycle.postValleyTime;
+            if ~isnan(lastWhiskPostValleyTime)
+                basalRespCycleEndTime = lastWhiskPostValleyTime;
+            else
+                basalRespCycleEndTime = searchEndTime;
+            end
+            
+            % Find valleys within the cycle
+            isValleyInCycle = whiskValleyTimesThisSwp >= basalRespCycleStartTime & ...
+                              whiskValleyTimesThisSwp <= basalRespCycleEndTime;
+            whiskValleysToAnalyze = whiskValleys(isValleyInCycle, :);
+
+            % Compute log decrements
+            %   diff(log([A1, A2])) == log(A2) - log(A1) == log(A2/A1)
+            logDecrements = diff(log(whiskPeaksToAnalyze.amplitude));
+            
+            % Compute the breath onset time
+            breathOnsetTime = basalRespPreValleyTime - breathOnsetLatency;
+
+            % Decide on whisk direction used for phase response
+            switch whiskDirForPhase
+            case 'protraction'
+                whiskEventTimes = whiskValleyTimesThisSwp;
+            case 'retraction'
+                whiskEventTimes = whiskPeakTimesThisSwp;
+            end
+
+            % Compute phase response if the current basal respiration cycle
+            %       is preceded by a basal respiration cycle (so that both resp cycles and whisk cycles are stable)
+            %   phase reset: the phase of breath onset within the whisking cycle
+            %   delta phase whisk: the change in whisk phase associated with the breath
+            isStableBasalWhisks = respPeakNumber == lastRespPeakNum + 1;
+            [phaseReset, phaseChangeWhisk, relativeResetTime, preIEIWhiskBefore, ...
+                preIEIWhiskAfter, eventTimeWhiskBefore, eventTimeTwoWhisksBefore] = ...
+                compute_phase_response(whiskEventTimes, breathOnsetTime, isStableBasalWhisks);
+
+            % Create a one-row table for this cycle
+            newCycle = table(iSwp, iCycle, basalRespPeakNumber, ...
+                basalRespCycleStartTime, basalRespCycleEndTime, ...
+                basalRespPeakTime, basalRespPeakValue, basalRespPreValleyTime, basalRespPostValleyTime, basalRespSucceedingIPI, ...
+                isWithinBasal, inspWhiskPeakNum, inspWhiskPeakTime, inspWhiskPreValleyTime, ...
+                breathOnsetTime, isStableBasalWhisks, eventTimeWhiskBefore, eventTimeTwoWhisksBefore, preIEIWhiskBefore, ...
+                preIEIWhiskAfter, phaseReset, phaseChangeWhisk, relativeResetTime, ...
+                {whiskPeaksToAnalyze.peakTime}, {whiskPeaksToAnalyze.peakValue}, ...
+                {whiskPeaksToAnalyze.amplitude}, {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
+                {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, {logDecrements}, ...
+                'VariableNames', {'sweepNumber', 'basalRespCycleNumber', 'basalRespPeakNumber', ...
+                    'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
+                    'basalRespPeakTime', 'basalRespPeakValue', 'basalRespPreValleyTime', 'basalRespPostValleyTime', 'basalRespSucceedingIPI', ...
+                    'isWithinBasal', 'inspWhiskPeakNum', 'inspWhiskPeakTime', 'inspWhiskPreValleyTime', ...
+                    'breathOnsetTime', 'isStableBasalWhisks', 'eventTimeWhiskBefore', 'eventTimeTwoWhisksBefore', 'preIEIWhiskBefore', ...
+                    'preIEIWhiskAfter', 'phaseReset', 'phaseChangeWhisk', 'relativeResetTime' ...
+                    'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                    'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                    'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+
+            allCyclesCell{end+1} = newCycle;
+
+            % Save current resp peak number as last basal cycle respiratory peak number
+            lastRespPeakNum = respPeakNumber;
+        end
+
+    end
+end
+
+% Vertically concatenate all found cycles into a single table
+if ~isempty(allCyclesCell)
+    basalRespCycleTable = vertcat(allCyclesCell{:});
+else
+    basalRespCycleTable = emptyBasalTable;
+end
 
 end
 

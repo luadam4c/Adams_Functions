@@ -63,7 +63,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, varargin)
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_traces.m
-%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
+%       cd/virt_plot_amplitude_correlation.m
 
 % File History:
 % 2018-12-19 Combined compute_xlimits.m and compute_ylimits.m

@@ -78,7 +78,6 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/print_or_show_message.m
 %       cd/print_and_show_message.m
 %       cd/print_structure.m
-%       cd/virt_analyze_sniff_whisk.m
 %       cd/write_data_atf.m
 %       cd/write_table.m
 

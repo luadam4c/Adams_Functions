@@ -132,8 +132,8 @@ function handles = plot_grouped_scatter (xValues, yValues, varargin)
 %       cd/m3ha_plot_grouped_scatter.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_relative_events.m
-%       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
+%       cd/virt_plot_amplitude_correlation.m
+%       cd/virt_plot_phase_response.m
 
 % File History:
 % 2017-12-13 Modified from plot_grouped_histogram.m

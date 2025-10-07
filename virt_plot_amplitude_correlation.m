@@ -5,6 +5,8 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 %       This function correlates the amplitude of successive whisks
 %       (e.g., A1 vs A2, A2 vs A3) and plots these correlations in
 %       separate subplots, with points colored by a grouping variable.
+%       It can create a new figure or update an existing one if a handles 
+%       structure is provided.
 %
 % Outputs:
 %       results     - A structure containing correlation coefficients and p-values.
@@ -26,6 +28,9 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 %                   - 'NCorrelations': The number of successive correlations to plot.
 %                   must be a positive integer scalar
 %                   default == 4
+%                   - 'Handles': A structure of graphics handles to update.
+%                   must be a structure
+%                   default == []
 %                   - 'FigTitle': The title for the figure.
 %                   must be a string scalar or a character vector
 %                   default == 'Successive Whisk Amplitude Correlations'
@@ -42,30 +47,35 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 %                   default == true
 %
 % Requires:
-%       /Shared/Code/Adams_Functions/create_subplots.m
-%       /Shared/Code/Adams_Functions/force_matrix.m
-%       /Shared/Code/Adams_Functions/plot_grouped_scatter.m
-%       /Shared/Code/Adams_Functions/plot_regression_line.m
-%       /Shared/Code/Adams_Functions/resize_subplots_for_labels.m
-%       /Shared/Code/Adams_Functions/save_all_figtypes.m
+%       cd/compute_axis_limits.m
+%       cd/create_subplots.m
+%       cd/force_matrix.m
+%       cd/plot_grouped_scatter.m
+%       cd/plot_regression_line.m
+%       cd/resize_subplots_for_labels.m
+%       cd/save_all_figtypes.m
 %
 % Used by:
-%       TODO: cd/virt_analyze_sniff_whisk.m
-%       TODO: \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
+%       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
 %       \Shared\Code\vIRt-Moore\virt_moore_monte_carlo.m
 
 % File History:
-% 2025-10-02 - Created by Gemini.
-%
+% 2025-10-02 Created by Gemini by pulling code from virt_analyze_sniff_whisk.m
+% 2025-10-06 Modified by Gemini to accept axes handles and return detailed plot handles.
+% 2025-10-06 Modified by Gemini to include update logic from virt_plot_whisk_analysis.m
+% 2025-10-06 Fixed by Gemini to handle more than one group.
 
 %% Hard-coded parameters
-textLocBestFit = 'topleft';     % Location for the best-fit line equation text
-textLocThrOrig = 'bottomright'; % Location for the through-origin line equation text
+textLocBestFitDefault = 'topleft';     % Location for the best-fit line equation text
+textLocThrOrigDefault = 'bottomright'; % Location for the through-origin line equation text
+axisCoveragePercScatter = 90;          % Coverage for compute_axis_limits
 
 %% Default values for optional arguments
 groupingColumnDefault = 'repetitionNumber';
 dataColumnDefault = 'whiskPeakAmplitudes';
 nCorrelationsDefault = 4;
+handlesDefault = [];
 figTitleDefault = 'Successive Whisk Amplitude Correlations';
 figNameDefault = 'whisk_amplitude_scatter';
 outDirDefault = pwd;
@@ -85,6 +95,7 @@ addRequired(iP, 'plotParams', @isstruct);
 addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
 addParameter(iP, 'DataColumn', dataColumnDefault, @ischar);
 addParameter(iP, 'NCorrelations', nCorrelationsDefault, @isnumeric);
+addParameter(iP, 'Handles', handlesDefault);
 addParameter(iP, 'FigTitle', figTitleDefault, @ischar);
 addParameter(iP, 'FigName', figNameDefault, @ischar);
 addParameter(iP, 'OutDir', outDirDefault, @ischar);
@@ -96,6 +107,7 @@ parse(iP, dataTable, plotParams, varargin{:});
 groupingColumn = iP.Results.GroupingColumn;
 dataColumn = iP.Results.DataColumn;
 nCorrToAnalyze = iP.Results.NCorrelations;
+handlesIn = iP.Results.Handles;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
@@ -106,6 +118,18 @@ toSaveOutput = iP.Results.ToSaveOutput;
 % Initialize output structures
 results = struct;
 handles.fig = gobjects; % Initialize figure handle as invalid graphics object
+
+% Set text locations for regression lines, with defaults
+if isfield(plotParams, 'textLocBestFit')
+    textLocBestFit = plotParams.textLocBestFit;
+else
+    textLocBestFit = textLocBestFitDefault;
+end
+if isfield(plotParams, 'textLocThrOrig')
+    textLocThrOrig = plotParams.textLocThrOrig;
+else
+    textLocThrOrig = textLocThrOrigDefault;
+end
 
 % Exit if the table is empty or the data column is missing
 if isempty(dataTable) || ~ismember(dataColumn, dataTable.Properties.VariableNames)
@@ -131,59 +155,170 @@ if nCorrToAnalyze < 1
 end
 
 %% Plotting
-% Create a figure with subplots for each correlation pair
-[fig, ax] = create_subplots(nCorrToAnalyze, 'AlwaysNew', true, ...
-                        'ClearFigure', true, 'FigExpansion', [1, 1]);
-figPath = fullfile(pathOutDir, figName); % Construct full path for saving the figure
+% Check if we are updating an existing plot or creating a new one
+if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig) && ...
+   isfield(handlesIn, 'hScatters') && numel(handlesIn.hScatters) == nCorrToAnalyze
+    % --- UPDATE EXISTING PLOT ---
+    handles = handlesIn;
+    fig = handles.fig;
 
-% Initialize storage for correlation results
-corrCoeffs = nan(nCorrToAnalyze, 1);
-pValues = nan(nCorrToAnalyze, 1);
+    % Delete old regression lines and text
+    delete(handles.hBestFits);
+    delete(handles.hTextBestFit);
+    delete(handles.hThrOrigs);
+    delete(handles.hTextThrOrig);
 
-% Loop through each successive pair of whisk amplitudes
-for iCorr = 1:nCorrToAnalyze
-    % Extract amplitude data for the current pair (e.g., A1 and A2)
-    ampCurrent = whiskAmplitudesMatrix(:, iCorr);
-    ampNext = whiskAmplitudesMatrix(:, iCorr + 1);
+    % Run through all scatter plots to update them
+    hBestFits = gobjects(nCorrToAnalyze, 1);
+    hTextBestFit = gobjects(nCorrToAnalyze, 1);
+    hThrOrigs = gobjects(nCorrToAnalyze, 1);
+    hTextThrOrig = gobjects(nCorrToAnalyze, 1);
+    for iCorr = 1:nCorrToAnalyze
+        % Get the data for this pair
+        ampCurrent = whiskAmplitudesMatrix(:, iCorr);
+        ampNext = whiskAmplitudesMatrix(:, iCorr + 1);
 
-    % Plot the amplitudes against each other, grouped by the specified column
-    plot_grouped_scatter(ampCurrent, ampNext, groupingData, ...
-        'PlotEllipse', false, 'LinkXY', true, 'GridOn', true, ...
-        'Color', plotParams.colorScatter, 'MarkerType', plotParams.markerTypeScatter, ...
-        'MarkerSize', plotParams.markerSizeScatter, 'MarkerLineWidth', plotParams.markerLineWidthScatter, ...
-        'XLabel', sprintf('Amplitude of Whisk #%d (deg)', iCorr), ...
-        'YLabel', sprintf('Amplitude of Whisk #%d (deg)', iCorr + 1), ...
-        'FigTitle', 'suppress', 'LegendLocation', 'suppress', 'AxesHandle', ax(iCorr));
+        % Update scatter data for each group
+        uniqueGroups = unique(groupingData);
+        nGroups = numel(uniqueGroups);
+        currentScatterHandles = handles.hScatters{iCorr};
 
-    % Compute and plot the standard linear regression line
-    [~, ~, ~, regResults] = plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
-        'ThroughOrigin', false, 'Color', plotParams.colorBestFit, 'LineStyle', plotParams.lineStyleBestFit, ...
-        'LineWidth', plotParams.lineWidthBestFit, 'AxesHandle', ax(iCorr), ...
-        'TextLocation', textLocBestFit, 'ShowEquation', true, 'ShowRSquared', true, 'ShowCorrCoeff', true);
+        if nGroups == numel(currentScatterHandles)
+            for iGroup = 1:nGroups
+                groupValue = uniqueGroups(iGroup);
+                groupMask = (groupingData == groupValue);
+                set(currentScatterHandles(iGroup), ...
+                    'XData', ampCurrent(groupMask), 'YData', ampNext(groupMask));
+            end
+        else
+            % Fallback if number of groups changes
+            delete(currentScatterHandles);
+            axScatter = handles.axScatter(iCorr);
+            hOutScatter = plot_grouped_scatter(ampCurrent, ampNext, groupingData, ...
+                'PlotEllipse', false, 'LinkXY', true, 'GridOn', true, ...
+                'Color', plotParams.colorScatter, 'MarkerType', plotParams.markerTypeScatter, ...
+                'MarkerSize', plotParams.markerSizeScatter, 'MarkerLineWidth', plotParams.markerLineWidthScatter, ...
+                'FigTitle', 'suppress', 'LegendLocation', 'suppress', 'AxesHandle', axScatter);
+            handles.hScatters{iCorr} = hOutScatter.dots;
+        end
+        
+        % Get the current subplot handle
+        axScatter = handles.axScatter(iCorr);
+
+        % Update axis limits
+        axisLimits = compute_axis_limits({ampCurrent, ampNext}, 'Coverage', axisCoveragePercScatter);
+        axScatter.XLim = axisLimits;
+        axScatter.YLim = axisLimits;
+        
+        % Update regression lines
+        if numel(ampCurrent) > 2
+            [hBestFits(iCorr), hTextBestFit(iCorr)] = ...
+                plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
+                                    'ThroughOrigin', false, 'Color', plotParams.colorBestFit, ...
+                                    'LineStyle', plotParams.lineStyleBestFit, ...
+                                    'LineWidth', plotParams.lineWidthBestFit, ...
+                                    'AxesHandle', axScatter, ...
+                                    'TextLocation', textLocBestFit, ...
+                                    'ShowEquation', true, 'ShowRSquared', true, ...
+                                    'ShowCorrCoeff', true);
+            [hThrOrigs(iCorr), hTextThrOrig(iCorr)] = ...
+                plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
+                                    'ThroughOrigin', true, 'Color', plotParams.colorThrOrig, ...
+                                    'LineStyle', plotParams.lineStyleThrOrig, ...
+                                    'LineWidth', plotParams.lineWidthThrOrig, ...
+                                    'AxesHandle', axScatter, ...
+                                    'TextLocation', textLocThrOrig, ...
+                                    'ShowEquation', true, 'ShowRSquared', true, ...
+                                    'ShowCorrCoeff', false);
+        end
+    end
+
+    % Store new handles
+    handles.hBestFits = hBestFits;
+    handles.hTextBestFit = hTextBestFit;
+    handles.hThrOrigs = hThrOrigs;
+    handles.hTextThrOrig = hTextThrOrig;
+
+else
+    % --- CREATE NEW PLOT ---
+    [fig, ax] = create_subplots(nCorrToAnalyze, 'AlwaysNew', true, ...
+                            'ClearFigure', true, 'FigExpansion', [1, 1]);
     
-    % Store the correlation results
-    corrCoeffs(iCorr) = regResults.corrCoeff;
-    pValues(iCorr) = regResults.pValue;
+    % Initialize storage for plot handles
+    % hScatters changed to a cell array to support multiple groups
+    hScatters = cell(nCorrToAnalyze, 1);
+    hBestFits = gobjects(nCorrToAnalyze, 1);
+    hTextBestFit = gobjects(nCorrToAnalyze, 1);
+    hThrOrigs = gobjects(nCorrToAnalyze, 1);
+    hTextThrOrig = gobjects(nCorrToAnalyze, 1);
 
-    % Compute and plot a regression line forced through the origin
-    plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
-        'ThroughOrigin', true, 'Color', plotParams.colorThrOrig, 'LineStyle', plotParams.lineStyleThrOrig, ...
-        'LineWidth', plotParams.lineWidthThrOrig, 'AxesHandle', ax(iCorr), ...
-        'TextLocation', textLocThrOrig, 'ShowEquation', true, 'ShowRSquared', true, 'ShowCorrCoeff', false);
+    % Loop through each successive pair of whisk amplitudes
+    for iCorr = 1:nCorrToAnalyze
+        % Extract amplitude data for the current pair (e.g., A1 and A2)
+        ampCurrent = whiskAmplitudesMatrix(:, iCorr);
+        ampNext = whiskAmplitudesMatrix(:, iCorr + 1);
+
+        % Plot the amplitudes against each other, grouped by the specified column
+        hOutScatter = plot_grouped_scatter(ampCurrent, ampNext, groupingData, ...
+            'PlotEllipse', false, 'LinkXY', true, 'GridOn', true, ...
+            'Color', plotParams.colorScatter, 'MarkerType', plotParams.markerTypeScatter, ...
+            'MarkerSize', plotParams.markerSizeScatter, 'MarkerLineWidth', plotParams.markerLineWidthScatter, ...
+            'XLabel', sprintf('Amplitude of Whisk #%d (deg)', iCorr), ...
+            'YLabel', sprintf('Amplitude of Whisk #%d (deg)', iCorr + 1), ...
+            'FigTitle', 'suppress', 'LegendLocation', 'suppress', 'AxesHandle', ax(iCorr));
+        % Store the returned handle(s) in a cell array
+        hScatters{iCorr} = hOutScatter.dots;
+
+        % Compute and plot the standard linear regression line
+        [hBestFits(iCorr), hTextBestFit(iCorr), ~, ~] = ...
+            plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
+            'ThroughOrigin', false, 'Color', plotParams.colorBestFit, 'LineStyle', plotParams.lineStyleBestFit, ...
+            'LineWidth', plotParams.lineWidthBestFit, 'AxesHandle', ax(iCorr), ...
+            'TextLocation', textLocBestFit, 'ShowEquation', true, 'ShowRSquared', true, 'ShowCorrCoeff', true);
+        
+        % Compute and plot a regression line forced through the origin
+        [hThrOrigs(iCorr), hTextThrOrig(iCorr)] = ...
+            plot_regression_line('XData', ampCurrent, 'YData', ampNext, ...
+            'ThroughOrigin', true, 'Color', plotParams.colorThrOrig, 'LineStyle', plotParams.lineStyleThrOrig, ...
+            'LineWidth', plotParams.lineWidthThrOrig, 'AxesHandle', ax(iCorr), ...
+            'TextLocation', textLocThrOrig, 'ShowEquation', true, 'ShowRSquared', true, 'ShowCorrCoeff', false);
+    end
+    
+    % Add an overall title to the figure
+    resize_subplots_for_labels('FigTitle', figTitle);
+
+    % Store handles for output
+    handles.fig = fig;
+    handles.axScatter = ax;
+    handles.hScatters = hScatters;
+    handles.hBestFits = hBestFits;
+    handles.hTextBestFit = hTextBestFit;
+    handles.hThrOrigs = hThrOrigs;
+    handles.hTextThrOrig = hTextThrOrig;
 end
 
-% Add an overall title to the figure
-resize_subplots_for_labels('FigTitle', figTitle);
+% Compute correlation coefficients for results output
+corrCoeffs = nan(nCorrToAnalyze, 1);
+pValues = nan(nCorrToAnalyze, 1);
+for iCorr = 1:nCorrToAnalyze
+    ampCurrent = whiskAmplitudesMatrix(:, iCorr);
+    ampNext = whiskAmplitudesMatrix(:, iCorr + 1);
+    toKeep = ~isnan(ampCurrent) & ~isnan(ampNext);
+    if sum(toKeep) > 2
+        [R, P] = corrcoef(ampCurrent(toKeep), ampNext(toKeep));
+        corrCoeffs(iCorr) = R(1,2);
+        pValues(iCorr) = P(1,2);
+    end
+end
+results.corrCoeffs = corrCoeffs;
+results.pValues = pValues;
+
 
 % Save the figure to file if requested
 if toSaveOutput
+    figPath = fullfile(pathOutDir, figName); % Construct full path for saving the figure
     save_all_figtypes(fig, figPath, figTypes);
 end
-
-% Store handles and results for output
-handles.fig = fig;
-results.corrCoeffs = corrCoeffs;
-results.pValues = pValues;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

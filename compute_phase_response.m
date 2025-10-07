@@ -35,8 +35,7 @@ function [phaseReset, phaseChange, relativeResetTime, T0, T1, eventTimeBefore, e
 %       None
 %
 % Used by:
-%       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_analyze_whisk.m
+%       cd/virt_detect_whisk_analysis_windows.m
 
 % File History:
 % 2025-09-24 Pulled code from virt_analyze_sniff_whisk.m

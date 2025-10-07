@@ -54,6 +54,9 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/plot_tuning_map.m
 %       cd/save_all_zooms.m
 %       cd/virt_analyze_sniff_whisk.m
+%       cd/virt_plot_amplitude_correlation.m
+%       cd/virt_plot_log_decrement_jitter.m
+%       cd/virt_plot_phase_response.m
 %       cd/virt_golomb_generate_output.m
 %       ~/minEASE/minEASE_compute_plot_average_psc.m
 %       ~/minEASE/minEASE_detect_gapfree_events.m

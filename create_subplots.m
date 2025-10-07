@@ -103,10 +103,9 @@ function [fig, ax] = create_subplots (varargin)
 %       cd/plot_spectrogram_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
-%       cd/virt_analyze_sniff_whisk.m
+%       cd/virt_plot_amplitude_correlation.m
 %       cd/virt_golomb_generate_output.m
 %       \Shared\Code\vIRt\virt_moore.m
-%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2018-08-04 Created by Adam Lu

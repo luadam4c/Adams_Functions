@@ -4,7 +4,8 @@ function [results, handles] = virt_plot_log_decrement_jitter (dataTable, plotPar
 % Explanation:
 %       This function takes a table of whisk analysis data and generates a
 %       grouped jitter plot of logarithmic decrements, with mean, 95% CI,
-%       and statistical test results overlaid.
+%       and statistical test results overlaid. It can create a new figure
+%       or update an existing one if a handles structure is provided.
 %
 % Outputs:
 %       results     - A structure containing computed statistics and data used for plotting.
@@ -26,6 +27,9 @@ function [results, handles] = virt_plot_log_decrement_jitter (dataTable, plotPar
 %                   - 'MaxDecrements': The maximum number of decrements to analyze.
 %                   must be a positive integer scalar
 %                   default == Inf
+%                   - 'Handles': A structure of graphics handles to update.
+%                   must be a structure
+%                   default == []
 %                   - 'FigTitle': The title for the figure.
 %                   must be a string scalar or a character vector
 %                   default == 'Whisk Logarithmic Decrements'
@@ -53,23 +57,27 @@ function [results, handles] = virt_plot_log_decrement_jitter (dataTable, plotPar
 %       cd/vecfun.m
 %
 % Used by:
-%       TODO: cd/virt_analyze_sniff_whisk.m
-%       TODO: \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
+%       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
 %       \Shared\Code\vIRt-Moore\virt_moore_monte_carlo.m
 
 % File History:
-% 2025-10-02 - Created by Gemini.
+% 2025-10-02 Created by Gemini by pulling code from virt_analyze_sniff_whisk.m
+% 2025-10-06 Modified by Gemini to accept an axes handle and return detailed plot handles.
+% 2025-10-06 Modified by Gemini to include update logic from virt_plot_whisk_analysis.m
+% 2025-10-06 Fixed by Gemini to handle more than one group.
 %
 
 %% Hard-coded parameters
-yLocRelStar = 0.95;         % Relative y-location for significance stars
-yLocRelPValue = 0.90;       % Relative y-location for p-value text
-yLocRelRatioLabel = 0.85;   % Relative y-location for ratio text
+yLocStarRel = 0.95;         % Relative y-location for significance stars
+yLocPValueRel = 0.90;       % Relative y-location for p-value text
+yLocRatioLabelRel = 0.85;   % Relative y-location for ratio text
 
 %% Default values for optional arguments
 groupingColumnDefault = 'repetitionNumber'; % Default column for grouping data points
 dataColumnDefault = 'whiskLogDecrements';   % Default column containing the data
 maxDecrementsDefault = Inf;                 % Default to analyzing all available decrements
+handlesDefault = [];                        % Default is to create a new plot
 figTitleDefault = 'Whisk Logarithmic Decrements'; % Default figure title
 figNameDefault = 'whisk_log_decrements_jitter';   % Default file name for saving
 outDirDefault = pwd;                        % Default output directory
@@ -84,22 +92,24 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
-addRequired(iP, 'dataTable', @istable); % The input data must be a table
-addRequired(iP, 'plotParams', @isstruct); % Plotting parameters must be a structure
-addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar); % Add optional grouping column
-addParameter(iP, 'DataColumn', dataColumnDefault, @ischar); % Add optional data column
-addParameter(iP, 'MaxDecrements', maxDecrementsDefault, @isnumeric); % Add optional max decrements
-addParameter(iP, 'FigTitle', figTitleDefault, @ischar); % Add optional figure title
-addParameter(iP, 'FigName', figNameDefault, @ischar); % Add optional figure name
-addParameter(iP, 'OutDir', outDirDefault, @ischar); % Add optional output directory
-addParameter(iP, 'FigTypes', figTypesDefault); % Add optional figure types
-addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical); % Add save flag parameter
+addRequired(iP, 'dataTable', @istable);
+addRequired(iP, 'plotParams', @isstruct);
+addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
+addParameter(iP, 'DataColumn', dataColumnDefault, @ischar);
+addParameter(iP, 'MaxDecrements', maxDecrementsDefault, @isnumeric);
+addParameter(iP, 'Handles', handlesDefault);
+addParameter(iP, 'FigTitle', figTitleDefault, @ischar);
+addParameter(iP, 'FigName', figNameDefault, @ischar);
+addParameter(iP, 'OutDir', outDirDefault, @ischar);
+addParameter(iP, 'FigTypes', figTypesDefault);
+addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
 
 % Parse the inputs
 parse(iP, dataTable, plotParams, varargin{:});
 groupingColumn = iP.Results.GroupingColumn;
 dataColumn = iP.Results.DataColumn;
 maxDecrementsToAnalyze = iP.Results.MaxDecrements;
+handlesIn = iP.Results.Handles;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
@@ -135,11 +145,6 @@ nDecrementsTotal = size(allLogDecrementsMatrix, 2); % Get total number of decrem
 nDecrementsToAnalyze = min(nDecrementsTotal, maxDecrementsToAnalyze); % Determine how many to plot
 allLogDecrementsMatrix = allLogDecrementsMatrix(:, 1:nDecrementsToAnalyze); % Trim matrix
 
-% Create matrices for decrement order and grouping, matching the data matrix size
-nAnalysisWindows = size(allLogDecrementsMatrix, 1); % Number of rows (trials/cycles)
-allDecrementOrdersMatrix = repmat(1:nDecrementsToAnalyze, nAnalysisWindows, 1); % Matrix of decrement orders (1, 2, 3...)
-allGroupsMatrix = repmat(groupingData, 1, nDecrementsToAnalyze); % Matrix of group IDs
-
 %% Compute Statistics
 % Calculate mean and 95% confidence intervals for each decrement order
 [meanLogDecrements, ~, lower95, upper95] = compute_stats_for_cellnumeric(allLogDecrementsMatrix');
@@ -167,66 +172,154 @@ results.avgWhiskAmpRatios = avgWhiskAmpRatios;
 jitterWidth = plotParams.jitterWidth;
 markerSizeJitter = plotParams.markerSizeJitter;
 
-% Prepare data vectors for the plot_grouped_jitter function
-allLogDecrementsVec = allLogDecrementsMatrix(:); % Flatten data matrix into a single vector
-allDecrementOrdersVec = allDecrementOrdersMatrix(:); % Flatten order matrix
-allGroupsVec = allGroupsMatrix(:); % Flatten group matrix
+% Check if we are updating an existing plot or creating a new one
+if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
+    % --- UPDATE EXISTING PLOT ---
+    handles = handlesIn; % Use the passed-in handles struct
+    axJitter = handles.axJitter;
+    
+    nAnalysisWindows = size(allLogDecrementsMatrix, 1);
+    decrementOrdersMatrix = repmat(1:nDecrementsToAnalyze, nAnalysisWindows, 1);
+    decrementOrdersVec = decrementOrdersMatrix(:);
+    xValues = (1:nDecrementsToAnalyze)';
+    errLower = meanLogDecrements - lower95;
+    errUpper = upper95 - meanLogDecrements;
 
-% Create x-axis tick labels (e.g., "ln(A2/A1)")
-xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nDecrementsToAnalyze, 'UniformOutput', false);
+    % Update x limits
+    xlim(axJitter, [min(decrementOrdersVec) - 0.5, max(decrementOrdersVec) + 0.5]);
 
-% Set up figure properties
-fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
-figPath = fullfile(pathOutDir, figName); % Construct full path for saving the figure
+    % Update jitter data for each group separately
+    allLogDecrementsVec = allLogDecrementsMatrix(:);
+    allGroupsVec = repmat(groupingData, 1, nDecrementsToAnalyze);
+    allGroupsVec = allGroupsVec(:);
 
-% Set up axes properties
-axJitter = set_axes_properties;
+    uniqueGroups = unique(groupingData);
+    nGroups = numel(uniqueGroups);
+    currentJitterHandles = handles.hJitter;
 
-% Generate the base jitter plot without its own statistics
-plot_grouped_jitter(allLogDecrementsVec, allGroupsVec, allDecrementOrdersVec, ...
-    'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
-    'XTickLabels', xTickLabels, 'YLabel', 'Log Decrement (ln(A_{n+1}/A_{n}))', ...
-    'LegendLocation', 'suppress', 'PlotMeanValues', false, 'PlotErrorBars', false, ...
-    'RunTTest', false, 'RunRankTest', false, 'MarkerSize', markerSizeJitter);
+    if nGroups == numel(currentJitterHandles)
+        for iGroup = 1:nGroups
+            groupValue = uniqueGroups(iGroup);
+            groupMask = (allGroupsVec == groupValue);
+            
+            xDataGroup = decrementOrdersVec(groupMask);
+            yDataGroup = allLogDecrementsVec(groupMask);
+            nPointsGroup = sum(groupMask);
+            
+            xDataJittered = xDataGroup + (jitterWidth * (rand(nPointsGroup, 1) - 0.5));
+            
+            set(currentJitterHandles(iGroup), 'XData', xDataJittered, 'YData', yDataGroup);
+        end
+    else
+        % Fallback for safety if number of groups changes
+        delete(currentJitterHandles);
+        hOutJitter = plot_grouped_jitter(allLogDecrementsVec, allGroupsVec, decrementOrdersVec, ...
+            'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
+            'PlotMeanValues', false, 'PlotErrorBars', false, 'RunTTest', false, ...
+            'RunRankTest', false, 'MarkerSize', markerSizeJitter, ...
+            'LegendLocation', 'suppress', 'XTickLabels', get(axJitter, 'XTickLabel'));
+        handles.hJitter = hOutJitter.distributions;
+    end
 
-hold on; % Hold the current axes to overlay statistical information
+    % Update means and error bars
+    handles.hErrorBars.XData = xValues';
+    handles.hErrorBars.YData = meanLogDecrements';
+    handles.hErrorBars.YNegativeDelta = errLower';
+    handles.hErrorBars.YPositiveDelta = errUpper';
+    handles.hMeans.XData = xValues';
+    handles.hMeans.YData = meanLogDecrements';
 
-% Plot the mean and 95% confidence interval error bars
-xValues = (1:nDecrementsToAnalyze)'; % X-coordinates for means/error bars
-errLower = meanLogDecrements - lower95; % Lower error bar length
-errUpper = upper95 - meanLogDecrements; % Upper error bar length
-errorbar(xValues, meanLogDecrements, errLower, errUpper, '_', ...
-         'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
-plot(xValues, meanLogDecrements, 'o', 'MarkerEdgeColor', 'k', ...
-     'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
+    % Remove old annotations that need to be replotted
+    delete(handles.pTextJitter);
+    delete(handles.sigMarkerJitter);
+    delete(handles.ratioLabels);
 
-% Add a horizontal line at y=0 to represent the null hypothesis (no change)
-yline(0, '--k', 'LineWidth', 1);
+    % Update p value texts and significance markers
+    hOut = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...        
+                         'XLocText', xValues, 'YLocTextRel', yLocPValueRel, ...
+                         'YLocStarRel', yLocStarRel, 'AxesHandle', axJitter);
+    handles.pTextJitter = hOut.pText;
+    handles.sigMarkerJitter = hOut.sigMarker;
 
-% Annotate plot with statistical significance symbols and p-values
-plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...
-                 'XLocText', xValues, 'YLocTextRel', yLocRelPValue, 'YLocStarRel', yLocRelStar);
+    % Update ratio labels
+    yLimits = ylim(axJitter);
+    yPosText = yLimits(1) + yLocRatioLabelRel * diff(yLimits);
+    ratioLabels = arrayfun(@(x) sprintf('Ratio: %.2f', x), avgWhiskAmpRatios, 'UniformOutput', false);
+    handles.ratioLabels = text(axJitter, xValues, repmat(yPosText, size(xValues)), ratioLabels, ...
+                         'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
 
-% Add text labels showing the geometric mean of amplitude ratios
-yLimits = ylim; % Get current y-axis limits to position the text
-yPosText = yLimits(1) + yLocRelRatioLabel * diff(yLimits); % Calculate y-position for the text
-ratioLabels = arrayfun(@(x) sprintf('Ratio: %.2f', x), avgWhiskAmpRatios, 'UniformOutput', false); % Create labels
-text(xValues, repmat(yPosText, size(xValues)), ratioLabels, ...
-     'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom'); % Add text to plot
+    fig = handles.fig; % Get figure handle for saving
+else
+    % --- CREATE NEW PLOT ---
+    % Prepare data vectors for the plot_grouped_jitter function
+    allLogDecrementsVec = allLogDecrementsMatrix(:); % Flatten data matrix into a single vector
+    allDecrementOrdersVec = repmat(1:nDecrementsToAnalyze, size(allLogDecrementsMatrix, 1), 1);
+    allDecrementOrdersVec = allDecrementOrdersVec(:); % Flatten order matrix
+    allGroupsVec = repmat(groupingData, 1, nDecrementsToAnalyze); % Matrix of group IDs
+    allGroupsVec = allGroupsVec(:); % Flatten group matrix
 
-% Finalize plot
-title(figTitle); % Set the figure title
-grid on; % Turn on the grid
-hold off; % Release the axes hold
+    % Create x-axis tick labels (e.g., "ln(A2/A1)")
+    xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nDecrementsToAnalyze, 'UniformOutput', false);
+
+    % Set up figure and axes
+    fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
+    axJitter = gca;
+    figPath = fullfile(pathOutDir, figName); % Construct full path for saving the figure
+
+    % Generate the base jitter plot without its own statistics
+    hOutJitter = plot_grouped_jitter(allLogDecrementsVec, allGroupsVec, allDecrementOrdersVec, ...
+        'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
+        'XTickLabels', xTickLabels, 'YLabel', 'Log Decrement (ln(A_{n+1}/A_{n}))', ...
+        'LegendLocation', 'suppress', 'PlotMeanValues', false, 'PlotErrorBars', false, ...
+        'RunTTest', false, 'RunRankTest', false, 'MarkerSize', markerSizeJitter);
+
+    hold on; % Hold the current axes to overlay statistical information
+
+    % Plot the mean and 95% confidence interval error bars
+    xValues = (1:nDecrementsToAnalyze)'; % X-coordinates for means/error bars
+    errLower = meanLogDecrements - lower95; % Lower error bar length
+    errUpper = upper95 - meanLogDecrements; % Upper error bar length
+    hErrorBars = errorbar(xValues, meanLogDecrements, errLower, errUpper, '_', ...
+             'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
+    hMeans = plot(xValues, meanLogDecrements, 'o', 'MarkerEdgeColor', 'k', ...
+         'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
+
+    % Add a horizontal line at y=0 to represent the null hypothesis (no change)
+    hNull = yline(0, '--k', 'LineWidth', 1);
+
+    % Annotate plot with statistical significance symbols and p-values
+    hOutTest = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...
+                     'XLocText', xValues, 'YLocTextRel', yLocPValueRel, 'YLocStarRel', yLocStarRel, 'AxesHandle', axJitter);
+
+    % Add text labels showing the geometric mean of amplitude ratios
+    yLimits = ylim; % Get current y-axis limits to position the text
+    yPosText = yLimits(1) + yLocRatioLabelRel * diff(yLimits); % Calculate y-position for the text
+    ratioLabels = arrayfun(@(x) sprintf('Ratio: %.2f', x), avgWhiskAmpRatios, 'UniformOutput', false); % Create labels
+    hRatioLabels = text(xValues, repmat(yPosText, size(xValues)), ratioLabels, ...
+         'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom'); % Add text to plot
+
+    % Finalize plot
+    title(figTitle); % Set the figure title
+    grid on; % Turn on the grid
+    hold off; % Release the axes hold
+
+    % Store handles for output
+    handles.fig = fig;
+    handles.axJitter = axJitter;
+    handles.hJitter = hOutJitter.distributions;
+    handles.hErrorBars = hErrorBars;
+    handles.hMeans = hMeans;
+    handles.hNull = hNull;
+    handles.pTextJitter = hOutTest.pText;
+    handles.sigMarkerJitter = hOutTest.sigMarker;
+    handles.ratioLabels = hRatioLabels;
+end
 
 % Save the figure to file if requested
 if toSaveOutput
+    figPath = fullfile(pathOutDir, figName); % Construct full path for saving
     save_all_figtypes(fig, figPath, figTypes);
 end
-
-% Store handles and results for output
-handles.fig = fig;
-handles.axJitter = axJitter;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

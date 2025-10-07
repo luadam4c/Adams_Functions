@@ -93,8 +93,7 @@ function handles = plot_test_result (testPValues, varargin)
 % Used by:
 %       cd/plot_grouped_jitter.m
 %       cd/plot_tuning_curve.m
-%       cd/virt_analyze_sniff_whisk.m
-%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
+%       cd/virt_plot_log_decrement_jitter.m
 
 % File History:
 % 2025-08-29 Created by Gemini by extracting from plot_tuning_curve.m

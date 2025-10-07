@@ -93,9 +93,10 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_tuning_curve.m
 %       cd/update_figure_for_corel.m
 %       cd/virt_analyze_sniff_whisk.m
+%       cd/virt_plot_log_decrement_jitter.m
+%       cd/virt_plot_phase_response.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting.m
 %       \Shared\Code\vIRt\virt_moore.m
-%       \Shared\Code\vIRt\virt_plot_whisk_analysis.m
 
 % File History:
 % 2019-05-10 Created by Adam Lu

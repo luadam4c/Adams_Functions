@@ -3,7 +3,8 @@ function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 % Usage: [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 % Explanation:
 %       Plots phaseReset vs. phaseChangeWhisk, grouped by a specified
-%       column. Also plots a regression line with statistics.
+%       column. Also plots a regression line with statistics. It can create
+%       a new figure or update an existing one.
 %
 % Outputs:
 %       results     - A structure containing regression analysis results.
@@ -20,6 +21,9 @@ function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 %                   - 'WhiskDir': Direction of whisk used for phase calculations.
 %                   must be a string scalar or character vector
 %                   default == 'retraction'
+%                   - 'Handles': A structure of graphics handles to update.
+%                   must be a structure
+%                   default == []
 %                   - 'FigTitle': The title for the figure.
 %                   must be a string scalar or a character vector
 %                   default == 'Whisk Phase Response Curve'
@@ -36,23 +40,27 @@ function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 %                   default == true
 %
 % Requires:
-%       /Shared/Code/Adams_Functions/plot_grouped_scatter.m
-%       /Shared/Code/Adams_Functions/plot_regression_line.m
-%       /Shared/Code/Adams_Functions/save_all_figtypes.m
-%       /Shared/Code/Adams_Functions/set_figure_properties.m
+%       cd/plot_grouped_scatter.m
+%       cd/plot_regression_line.m
+%       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
 %
 % Used by:
-%       TODO: cd/virt_analyze_sniff_whisk.m
-%       TODO: \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
+%       cd/virt_analyze_sniff_whisk.m
+%       \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
 %       \Shared\Code\vIRt-Moore\virt_moore_monte_carlo.m
 
 % File History:
-% 2025-10-02 Created by Gemini
+% 2025-10-02 Created by Gemini by pulling code from virt_analyze_sniff_whisk.m
+% 2025-10-06 Modified by Gemini to accept an axes handle and return detailed plot handles.
+% 2025-10-06 Modified by Gemini to include update logic from virt_plot_whisk_analysis.m
+% 2025-10-06 Fixed by Gemini to handle more than one group.
 %
 
 %% Default values for optional arguments
 groupingColumnDefault = 'fileNumber';
 whiskDirDefault = 'retraction';
+handlesDefault = [];
 figTitleDefault = 'Whisk Phase Response Curve';
 figNameDefault = 'phase_response_scatter';
 outDirDefault = pwd;
@@ -71,6 +79,7 @@ addRequired(iP, 'T', @istable);
 addRequired(iP, 'pPlot', @isstruct);
 addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
 addParameter(iP, 'WhiskDir', whiskDirDefault, @ischar);
+addParameter(iP, 'Handles', handlesDefault);
 addParameter(iP, 'FigTitle', figTitleDefault, @ischar);
 addParameter(iP, 'FigName', figNameDefault, @ischar);
 addParameter(iP, 'OutDir', outDirDefault, @ischar);
@@ -81,6 +90,7 @@ addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
 parse(iP, T, pPlot, varargin{:});
 groupingColumn = iP.Results.GroupingColumn;
 whiskDirForPhase = iP.Results.WhiskDir;
+handlesIn = iP.Results.Handles;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
@@ -111,38 +121,107 @@ if isempty(phaseReset)
 end
 
 %% Plot scatter plot and regression
-fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
-figPath = fullfile(pathOutDir, figName);
+if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
+    % --- UPDATE EXISTING PLOT ---
+    handles = handlesIn;
+    fig = handles.fig;
+    axPRC = handles.axPRC;
+    
+    % Update scatter data for each group
+    uniqueGroups = unique(groupingData);
+    nGroups = numel(uniqueGroups);
+    currentScatterHandles = handles.hPRCScatter;
 
-% Set up axes properties
-ax = set_axes_properties;
+    if nGroups == numel(currentScatterHandles)
+        for iGroup = 1:nGroups
+            groupValue = uniqueGroups(iGroup);
+            groupMask = (groupingData == groupValue);
+            set(currentScatterHandles(iGroup), ...
+                'XData', phaseReset(groupMask), ...
+                'YData', phaseChangeWhisk(groupMask));
+        end
+    else
+        % Fallback if number of groups changes
+        delete(currentScatterHandles);
+        hOutScatter = plot_grouped_scatter(phaseReset, phaseChangeWhisk, groupingData, ...
+            'AxesHandle', axPRC, 'PlotEllipse', false, 'LinkXY', false, 'GridOn', true, ...
+            'XLabel', get(get(axPRC, 'XLabel'), 'String'), 'YLabel', get(get(axPRC, 'YLabel'), 'String'), ...
+            'LegendLocation', 'suppress');
+        handles.hPRCScatter = hOutScatter.dots;
+    end
 
-plot_grouped_scatter(phaseReset, phaseChangeWhisk, groupingData, ...
-    'PlotEllipse', false, 'LinkXY', false, 'GridOn', true, ...
-    'XLabel', ['Phase of breath onset in whisk ', whiskDirForPhase, ' cycle (radians)'], ...
-    'YLabel', ['Phase change of following whisk ', whiskDirForPhase, ' (radians)'], ...
-    'XLimits', [0, 2*pi], 'YLimits', [-2*pi, 2*pi], ...
-    'FigTitle', figTitle, 'LegendLocation', 'suppress');
+    % Delete and replot regression line
+    delete(handles.hPRCRegLine);
+    delete(handles.hPRCRegText);
+    if sum(toKeep) > 2
+        [handles.hPRCRegLine, handles.hPRCRegText, ~, regResults] = ...
+            plot_regression_line('XData', phaseReset, 'YData', phaseChangeWhisk, ...
+                             'AxesHandle', axPRC, 'ShowEquation', true, ...
+                             'ShowRSquared', true, 'ShowCorrCoeff', true);
+    else
+        handles.hPRCRegLine = gobjects;
+        handles.hPRCRegText = gobjects;
+        regResults = struct;
+    end
+else
+    % --- CREATE NEW PLOT ---
+    fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
+    ax = gca;
 
-xticks(pi * (0:0.5:2));
-xticklabels({'0', '\pi/2', '\pi', '3\pi/2', '2\pi'});
-yticks(pi * (-2:1:2));
-yticklabels({'-2\pi', '-\pi', '0', '\pi', '2\pi'});
+    % Generate the scatter plot
+    hOutScatter = plot_grouped_scatter(phaseReset, phaseChangeWhisk, groupingData, ...
+        'AxesHandle', ax, 'PlotEllipse', false, 'LinkXY', false, 'GridOn', true, ...
+        'XLabel', ['Phase of breath onset in whisk ', whiskDirForPhase, ' cycle (radians)'], ...
+        'YLabel', ['Phase change of following whisk ', whiskDirForPhase, ' (radians)'], ...
+        'XLimits', [0, 2*pi], 'YLimits', [-2*pi, 2*pi], ...
+        'FigTitle', figTitle, 'LegendLocation', 'suppress');
+    hPRCScatter = hOutScatter.dots;
+    hold(ax, 'on');
 
-line([0, 2*pi], [-2*pi, 0], 'Color', 'green', 'LineStyle', '-', 'LineWidth', 1);
-yline(0, '--g', 'LineWidth', 1);
+    % Set up tick marks and labels
+    xticks(pi * (0:0.5:2));
+    xticklabels({'0', '\pi/2', '\pi', '3\pi/2', '2\pi'});
+    yticks(pi * (-2:1:2));
+    yticklabels({'-2\pi', '-\pi', '0', '\pi', '2\pi'});
 
-[~, ~, ~, regResults] = plot_regression_line('AxesHandle', ax, ...
-    'ShowEquation', true, 'ShowRSquared', true, 'ShowCorrCoeff', true);
+    % Plot reference lines
+    line([0, 2*pi], [-2*pi, 0], 'Color', 'green', 'LineStyle', '-', 'LineWidth', 1);
+    yline(0, '--g', 'LineWidth', 1);
+
+    % Plot regression and get results
+    if numel(phaseReset) > 2
+        [hPRCRegLine, hPRCRegText, ~, regResults] = plot_regression_line('AxesHandle', ax, ...
+            'ShowEquation', true, 'ShowRSquared', true, 'ShowCorrCoeff', true);
+    else
+        hPRCRegLine = gobjects;
+        hPRCRegText = gobjects;
+        regResults = struct;
+    end
+    hold(ax, 'off');
+
+    % Store handles for output
+    handles.fig = fig;
+    handles.axPRC = ax;
+    handles.hPRCScatter = hPRCScatter;
+    handles.hPRCRegLine = hPRCRegLine;
+    handles.hPRCRegText = hPRCRegText;
+end
+
 
 % Save the figure to file if requested
 if toSaveOutput
+    figPath = fullfile(pathOutDir, figName);
     save_all_figtypes(fig, figPath, figTypes);
 end
 
-% Store handles and results for output
-handles.fig = fig;
-handles.ax = ax;
+% Re-compute regression for results output if not done
+if ~exist('regResults', 'var')
+    if numel(phaseReset) > 2
+        [~, ~, ~, regResults] = plot_regression_line('XData', phaseReset, 'YData', phaseChangeWhisk, 'ToPlot', false);
+    else
+        regResults = struct;
+    end
+end
 results = regResults;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
