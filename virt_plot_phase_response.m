@@ -58,7 +58,7 @@ function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 %
 
 %% Default values for optional arguments
-groupingColumnDefault = 'fileNumber';
+groupingColumnDefault = 'repetitionNumber';
 whiskDirDefault = 'retraction';
 handlesDefault = [];
 figTitleDefault = 'Whisk Phase Response Curve';

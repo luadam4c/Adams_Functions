@@ -31,7 +31,7 @@ function handles = plot_table_parallel (myTable, varargin)
 %                   - 'SubplotDimensions': subplot dimensions
 %                   must be empty or a numeric vector
 %                   default == []
-%                   - 'XValues': x axis values corresponding to 
+%                   - 'RowValues': x axis values corresponding to 
 %                               each row of the table
 %                   must be empty or a numeric vector
 %                   default == rowsToPlot
@@ -40,23 +40,26 @@ function handles = plot_table_parallel (myTable, varargin)
 %                   must be a cell array or a numeric array of 
 %                       logical/numeric binaries
 %                   default == all false
-%                   - 'XLimits': x axis limits
+%                   - 'RowLimits': x axis limits
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == [min(xValues) - 1, max(xValues) + 1]
-%                   - 'YLimits': y axis limits
+%                   default == [min(rowValues) - 1, max(rowValues) + 1]
+%                   - 'ReadoutLimits': y axis limits
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                       or a cell array of them
 %                   default == set in plot_tuning_curve.m
-%                   - 'XTicks': x tick values
+%                   - 'RowTickLocs': x tick values
 %                   must be a numeric vector
 %                   default == all x values
-%                   - 'XLabel': label for the x axis, 
+%                   - 'RowTickLabels': x tick labels
+%                   must be a cell array of character vectors/strings
+%                   default == row names or times if provided
+%                   - 'RowLabel': label for the x axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
 %                   default == 'Row Number'
-%                   - 'YLabel': label(s) for the y axis, 
+%                   - 'ReadoutLabel': label(s) for the y axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
@@ -79,6 +82,14 @@ function handles = plot_table_parallel (myTable, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if 'FigNumber' provided 
+%                               but false otherwise
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -103,6 +114,7 @@ function handles = plot_table_parallel (myTable, varargin)
 %       cd/match_format_vector_sets.m
 %       cd/match_positions.m
 %       cd/plot_tuning_curve.m
+%       cd/resize_subplots_for_labels.m
 %       cd/save_all_figtypes.m
 %
 % Used by:
@@ -113,31 +125,32 @@ function handles = plot_table_parallel (myTable, varargin)
 % 2019-12-29 Moved from m3ha_neuron_choose_best_params.m
 % 2019-12-30 Changed the default x label to 'row number'
 % 2020-02-06 Added 'AxTitles' as an optional argument
+% 2025-10-08 Added 'ClearFigure' and 'AlwaysNew' as optional arguments
 % TODO: Merge with plot_table.m
 % TODO: 
 
 %% Hard-coded parameters
-defaultXLabel = 'Row Number';
-
-% TODO: Make optional argument
-xTickLabels = {};
+defaultRowLabel = 'Row Number';
 
 %% Default values for optional arguments
 varsToPlotDefault = 'all';      % plot all variables by default
 rowsToPlotDefault = 'all';      % plot all rows by default
-subplotDimensionsDefault = [];         % set later
-xValuesDefault = [];            % set later
+subplotDimensionsDefault = [];  % set later
+rowValuesDefault = [];          % set later
 varIsLogDefault = [];           % set later
-xLimitsDefault = [];            % set later
-yLimitsDefault = [];            % set later
-xTicksDefault = [];             % set later
-xLabelDefault = '';             % set later
-yLabelDefault = {};             % set later
+rowLimitsDefault = [];            % set later
+readoutLimitsDefault = [];            % set later
+rowTickLocsDefault = [];        % set later
+rowTickLabelsDefault = {};      % set later
+rowLabelDefault = '';           % set later
+readoutLabelDefault = {};       % set later
 colorMapDefault = [];           % set later
 legendLocationDefault = 'suppress';
 figTitleDefault = '';
 axTitlesDefault = {''};
 figNumberDefault = [];
+clearFigureDefault = [];        % set later
+alwaysNewDefault = false;       % don't always create new figure by default
 figNameDefault = '';
 figTypesDefault = 'png';
 
@@ -171,21 +184,23 @@ addParameter(iP, 'RowsToPlot', rowsToPlotDefault, ...
                     'a string array or a cell array of character arrays!']));
 addParameter(iP, 'SubplotDimensions', subplotDimensionsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'XValues', xValuesDefault, ...
+addParameter(iP, 'RowValues', rowValuesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'VarIsLog', varIsLogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric', 'cell'}, {'vector'}));
-addParameter(iP, 'XLimits', xLimitsDefault, ...
+addParameter(iP, 'RowLimits', rowLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'YLimits', yLimitsDefault, ...
+addParameter(iP, 'ReadoutLimits', readoutLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2 || iscell(x));
-addParameter(iP, 'XTicks', xTicksDefault, ...
+addParameter(iP, 'RowTickLocs', rowTickLocsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'XLabel', xLabelDefault, ...
+addParameter(iP, 'RowTickLabels', rowTickLabelsDefault, ...
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'RowLabel', rowLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'YLabel', yLabelDefault, ...
+addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
@@ -197,6 +212,10 @@ addParameter(iP, 'AxTitles', axTitlesDefault, ...
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'ClearFigure', clearFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -207,19 +226,22 @@ parse(iP, myTable, varargin{:});
 varsToPlot = iP.Results.VarsToPlot;
 rowsToPlot = iP.Results.RowsToPlot;
 subplotDimensions = iP.Results.SubplotDimensions;
-xValues = iP.Results.XValues;
+rowValues = iP.Results.RowValues;
 varIsLog = iP.Results.VarIsLog;
-xLimits = iP.Results.XLimits;
-yLimits = iP.Results.YLimits;
-xTicks = iP.Results.XTicks;
+rowLimits = iP.Results.RowLimits;
+readoutLimits = iP.Results.ReadoutLimits;
+rowTickLocs = iP.Results.RowTickLocs;
+rowTickLabels = iP.Results.RowTickLabels;
 colorMap = iP.Results.ColorMap;
-xLabel = iP.Results.XLabel;
-yLabel = iP.Results.YLabel;
+rowLabel = iP.Results.RowLabel;
+readoutLabel = iP.Results.ReadoutLabel;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
 axTitles = iP.Results.AxTitles;
 figNumber = iP.Results.FigNumber;
+clearFigure = iP.Results.ClearFigure;
+alwaysNew = iP.Results.AlwaysNew;
 figName = iP.Results.FigName;
 figTypes = iP.Results.FigTypes;
 
@@ -234,7 +256,7 @@ nRowsOrig = height(myTable);
 allRowNames = myTable.Properties.RowNames;
 
 % Restrict to rows to plot if requested
-if ischar(rowsToPlot) && strcmp(rowsToPlot, 'all')
+if isempty(rowsToPlot) || ischar(rowsToPlot) && strcmp(rowsToPlot, 'all')
     rowsToPlot = transpose(1:nRowsOrig);
 else
     % Restrict to those rows
@@ -255,8 +277,8 @@ end
 nRows = numel(rowsToPlot);
 
 % Create x values if not provided
-if isempty(xValues)
-    xValues = transpose(1:nRows);
+if isempty(rowValues)
+    rowValues = transpose(1:nRows);
 end
 
 % Decide on the variables to plot
@@ -279,18 +301,18 @@ else
 end
 
 % Decide on axis limits
-if isempty(xLimits)
-    xLimits = [min(xValues) - 1, max(xValues) + 1];
+if isempty(rowLimits)
+    rowLimits = [min(rowValues) - 1, max(rowValues) + 1];
 end
 
 % Decide on the x-axis label
-if isempty(xLabel)
-    xLabel = defaultXLabel;
+if isempty(rowLabel)
+    rowLabel = defaultRowLabel;
 end
 
 % Decide on the y-axis labels
-if isempty(yLabel)
-    yLabel = varsToPlot;
+if isempty(readoutLabel)
+    readoutLabel = varsToPlot;
 end
 
 % Decide on color map
@@ -299,19 +321,22 @@ if isempty(colorMap)
 end
 
 % Decide on tick locations
-if isempty(xTicks)
-    xTicks = force_column_vector(xValues);
+if isempty(rowTickLocs)
+    rowTickLocs = force_column_vector(rowValues);
 end
 
 % Decide on tick labels
-if isempty(xTickLabels)
+if isempty(rowTickLabels)
     if ~isempty(allRowNames)
         rowLabels = allRowNames(rowsToPlot);
     else
         rowLabels = create_labels_from_numbers(rowsToPlot);
     end
-    xTickLabels = match_positions(rowLabels, xValues, xTicks);
-	xTickLabels = {xTickLabels};
+    rowTickLabels = match_positions(rowLabels, rowValues, rowTickLocs);
+	rowTickLabels = {rowTickLabels};
+elseif iscell(rowTickLabels) && ~iscell(rowTickLabels{1})
+    % Ensure rowTickLabels is a cell array of cell arrays
+    rowTickLabels = {rowTickLabels}; 
 end
 
 % Decide on whether to plot on a log scale
@@ -326,22 +351,25 @@ end
 dataToPlot = extract_vars(myTable, varsToPlot);
 
 % Match the number of items with dataToPlot
-[varIsLog, xLimits, yLimits, xTicks, xTickLabels, ...
-        colorMap, yLabel, axTitles] = ...
+[varIsLog, rowLimits, readoutLimits, rowTickLocs, rowTickLabels, ...
+        colorMap, readoutLabel, axTitles] = ...
     argfun(@(x) match_format_vector_sets(x, dataToPlot), ...
-            varIsLog, xLimits, yLimits, xTicks, xTickLabels, ...
-            colorMap, yLabel, axTitles);
+            varIsLog, rowLimits, readoutLimits, rowTickLocs, rowTickLabels, ...
+            colorMap, readoutLabel, axTitles);
 
 % Decide whether to clear figure
-if ~isempty(figName)
-    clearFigure = true;
-else
-    clearFigure = false;
+if isempty(clearFigure)
+    if ~isempty(figName)
+        clearFigure = true;
+    else
+        clearFigure = false;
+    end
 end
 
 % Create subplots
 [fig, ax] = create_subplots(nSubplotRows, nSubplotColumns, ...
                 'FigNumber', figNumber, 'ClearFigure', clearFigure, ...
+                'AlwaysNew', alwaysNew, ...
                 'FigExpansion', [nSubplotColumns / 2, nSubplotRows / 3]);
 
 % Only use as many subplots as needed
@@ -354,15 +382,17 @@ end
             
 % Plot each variable on a separate subplot
 dots = cellfun(@(a, b, c, d, e, f, g, h, i, j) ...
-                update_subplot(a, xValues, b, c, d, e, f, g, ...
-                                xLabel, h, i, j, otherArguments), ...
-                num2cell(axToUse), dataToPlot, varIsLog, xLimits, yLimits, ...
-                xTicks, colorMap, yLabel, xTickLabels, axTitles, ...
+                update_subplot(a, rowValues, b, c, d, e, f, g, ...
+                                rowLabel, h, i, j, otherArguments), ...
+                num2cell(axToUse), dataToPlot, varIsLog, rowLimits, readoutLimits, ...
+                rowTickLocs, colorMap, readoutLabel, rowTickLabels, axTitles, ...
                 'UniformOutput', false);
 
 % Create an overarching title
 if ~isempty(figTitle)
-    suptitle(figTitle);
+    [supAx, ax] = resize_subplots_for_labels('FigTitle', figTitle);
+else
+    supAx = gobjects;
 end
 
 % Generate a legend if requested
@@ -379,13 +409,14 @@ end
 %% Outputs
 handles.fig = fig;
 handles.ax = ax;
+handles.supAx = supAx;
 handles.dots = dots;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function dots = update_subplot(axHandle, iterNumber, vecToPlot, ...
-                                varIsLog, xLimits, yLimits, xTicks, ...
-                                colorMap, xLabel, yLabel, xTickLabels, ...
+                                varIsLog, rowLimits, readoutLimits, rowTickLocs, ...
+                                colorMap, rowLabel, readoutLabel, rowTickLabels, ...
                                 axTitle, otherArguments)
 
 % Put the current subplot in focus
@@ -399,9 +430,9 @@ end
 % Plot each iteration as a different color
 dots = plot_tuning_curve(transpose(iterNumber), transpose(vecToPlot), ...
                         'ReadoutIsLog', varIsLog, ...
-                        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
-                        'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
-                        'PLabel', xLabel, 'ReadoutLabel', yLabel, ...
+                        'PLimits', rowLimits, 'ReadoutLimits', readoutLimits, ...
+                        'PTicks', rowTickLocs, 'PTickLabels', rowTickLabels, ...
+                        'PLabel', rowLabel, 'ReadoutLabel', readoutLabel, ...
                         'ColorMap', colorMap, 'FigTitle', 'suppress', ...
                         'LegendLocation', 'suppress', otherArguments);
 

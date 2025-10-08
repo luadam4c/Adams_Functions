@@ -7,13 +7,14 @@ function handles = plot_table (myTable, varargin)
 % Example(s):
 %       load_examples
 %       plot_table(myTableNumeric)
+%       plot_table(myTableNumeric, 'PlotMode', 'parallel')
 %       plot_table(myTableNumeric, 'PlotMode', 'separate')
-%       TODO: plot_table(myTableNumeric, 'PlotMode', 'parallel')
 %
 % Outputs:
-%       handles     - structure with fields:
+%       handles     - structure(s) with fields:
 %                       fig - figure handle(s) for the created figure(s)
-%                   specified as a scalar structure
+%                       TODO
+%                   specified as a structure array
 %
 % Arguments:
 %       myTable     - a table with variables to plot
@@ -41,6 +42,15 @@ function handles = plot_table (myTable, varargin)
 %                                       or variable labels
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'RowsToPlot': rows to plot
+%                   must be a numeric array,
+%                       a string scalar or a character vector, 
+%                       or a cell array of character vectors
+%                   default == 'all' (no restrictions)
+%                   - 'RowValues': x axis values corresponding to 
+%                               each row of the table
+%                   must be empty or a numeric vector
+%                   default == rowsToPlot
 %                   - 'PhaseVariables': variable (column) names for phases
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
@@ -55,15 +65,26 @@ function handles = plot_table (myTable, varargin)
 %                   must be a string scalar or a character vector
 %                   default == either a common prefix from variable names
 %                               or the input table variable name
-%                   - 'PLabel': label for the parameter
+%                   - 'RowLabel': label for the rows
 %                   must be a string scalar or a character vector
 %                   default == none ('suppress')
-%                   - 'PTicks': x tick values for the parameter values
+%                   - 'RowTickLocs': x tick locations
 %                   must be a numeric vector
-%                   default == 1:numel(pTickLabels)
-%                   - 'PTickLabels': x tick labels
+%                   default == 1:numel(rowTickLabels)
+%                   - 'RowTickLabels': x tick labels
 %                   must be a cell array of character vectors/strings
 %                   default == row names or times if provided
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
+%                   default == none
+%                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if 'FigNumber' provided 
+%                               but false otherwise
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -71,15 +92,18 @@ function handles = plot_table (myTable, varargin)
 %                   must be a string scalar or a character vector
 %                   default == ''
 %                   - Any other parameter-value pair for the plot_struct() 
-%                       or the plot_tuning_curve() function
+%                       or the plot_tuning_curve() 
+%                       or the plot_table_parallel() function
 %
 % Requires:
 %       cd/char2rgb.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_prefix.m
 %       cd/extract_fileparts.m
 %       cd/plot_struct.m
+%       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 %
 % Used by:
@@ -97,10 +121,14 @@ function handles = plot_table (myTable, varargin)
 % 2019-03-17 Added 'PlotSeparately' as an optional argument
 % 2019-03-25 Added 'PhaseVariables' as an optional argument
 % 2019-05-08 Added 'PlotType' as an optional argument
-% 2019-08-07 Added 'PTickLabels' as an optional argument
-% 2019-08-07 Added 'PTicks' as an optional argument
+% 2019-08-07 Added 'RowTickLabels' as an optional argument
+% 2019-08-07 Added 'RowTickLocs' as an optional argument
 % 2019-12-30 Changed 'PlotSeparately' to 'PlotMode'
-% TODO: Merge with plot_table_parallel.m
+% 2025-10-07 Implemented 'parallel' plot mode by calling plot_table_parallel.m
+% 2025-10-07 Now uses create_labels_from_numbers.m
+% 2025-10-08 Added 'ClearFigure' and 'AlwaysNew' as optional arguments
+% TODO: Transfer 'VarIsLog', 'SubplotDimensions', 'FigTypes' from plot_table_parallel.m to plot_table.m
+%           and update m3ha_neuron_choose_best_params.m and m3ha_rank_neurons.m to use plot_table.m
 % TODO: Return handles to plots
 % TODO: Pass in figNames or figNumbers when plotting separately
 % 
@@ -114,10 +142,10 @@ lineWidthOverlapped = 1;
 markerEdgeColorOverlapped = char2rgb('DarkOrchid');
 markerFaceColorOverlapped = char2rgb('LightSkyBlue');
 
-lineSpecParallel = [];
-lineWidthParallel = [];
-markerEdgeColorParallel = [];
-markerFaceColorParallel = [];
+lineSpecParallel = '-';
+lineWidthParallel = 1;
+markerEdgeColorParallel = char2rgb('DarkOrchid');
+markerFaceColorParallel = char2rgb('LightSkyBlue');
 
 lineSpecSeparate = 'o';
 lineWidthSeparate = 1;
@@ -135,13 +163,18 @@ varsToPlotDefault = {};         % plot all variables by default
 varLabelsDefault = {};          % set later
 distinctPartsDefault = true;    % extract distinct parts of variable names
                                 %   by default
+rowsToPlotDefault = {};         % plot all rows by default
+rowValuesDefault = [];          % set later
 phaseVariablesDefault = {};     % no phases by default
 delimiterDefault = '_';         % use '_' as delimiter by default
 readoutLabelDefault = '';       % set later
 tableLabelDefault = '';         % set later
-pLabelDefault = 'suppress';     % No x label by default
-pTicksDefault = [];
-pTickLabelsDefault = {};
+rowLabelDefault = 'suppress';   % No x label by default
+rowTickLocsDefault = [];
+rowTickLabelsDefault = {};
+figTitleDefault = '';
+clearFigureDefault = [];        % set later
+alwaysNewDefault = false;       % don't always create new figure by default
 outFolderDefault = pwd;
 figNameDefault = '';
 
@@ -182,6 +215,13 @@ addParameter(iP, 'VarLabels', varLabelsDefault, ...
             'or cell array of character arrays!']));
 addParameter(iP, 'DistinctParts', distinctPartsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RowsToPlot', rowsToPlotDefault, ...
+    @(x) assert(ispositiveintegervector(x) || ischar(x) || ...
+                    iscellstr(x) || isstring(x), ...
+                ['RowsToPlot must be either a positive integer vector, ', ...
+                    'a string array or a cell array of character arrays!']));
+addParameter(iP, 'RowValues', rowValuesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'PhaseVariables', phaseVariablesDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VarsToPlot must be empty or a character array or a string array ', ...
@@ -192,12 +232,18 @@ addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'TableLabel', tableLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'PLabel', pLabelDefault, ...
+addParameter(iP, 'RowLabel', rowLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'PTicks', pTicksDefault, ...
+addParameter(iP, 'RowTickLocs', rowTickLocsDefault, ...
     @(x) isempty(x) || isnumericvector(x));
-addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
+addParameter(iP, 'RowTickLabels', rowTickLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ClearFigure', clearFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -214,17 +260,22 @@ markerFaceColor = iP.Results.MarkerFaceColor;
 varsToPlot = iP.Results.VarsToPlot;
 varLabels = iP.Results.VarLabels;
 distinctParts = iP.Results.DistinctParts;
+rowsToPlot = iP.Results.RowsToPlot;
+rowValues = iP.Results.RowValues;
 phaseVariables = iP.Results.PhaseVariables;
 delimiter = iP.Results.Delimiter;
 readoutLabel = iP.Results.ReadoutLabel;
 tableLabel = iP.Results.TableLabel;
-pLabel = iP.Results.PLabel;
-pTicks = iP.Results.PTicks;
-pTickLabels = iP.Results.PTickLabels;
+rowLabel = iP.Results.RowLabel;
+rowTickLocs = iP.Results.RowTickLocs;
+rowTickLabels = iP.Results.RowTickLabels;
+figTitle = iP.Results.FigTitle;
+clearFigure = iP.Results.ClearFigure;
+alwaysNew = iP.Results.AlwaysNew;
 outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
 
-% Keep unmatched arguments for the line() function
+% Keep unmatched arguments for the plotting function
 otherArguments = iP.Unmatched;
 
 %% Preparation
@@ -236,7 +287,39 @@ if ~isempty(varsToPlot)
     tableToPlot = myTable(:, varsToPlot);
 else
     tableToPlot = myTable;
-    varsToPlot = myTable.Properties.VarsToPlot;
+    varsToPlot = myTable.Properties.VariableNames;
+end
+
+% Count the number of rows
+nRowsOrig = height(myTable);
+
+% Get all row names
+if isprop(myTable.Properties, 'RowNames') && ...
+        iscell(myTable.Properties.RowNames) && ...
+        ~isempty(myTable.Properties.RowNames)
+    % Get the row names
+    allRowNames = myTable.Properties.RowNames;
+else
+    % Else set as empty
+    allRowNames = {};
+end
+
+% Restrict to rows to plot if requested
+if isempty(rowsToPlot) || ischar(rowsToPlot) && strcmp(rowsToPlot, 'all')
+    rowsToPlot = transpose(1:nRowsOrig);
+else
+    % Restrict to those rows
+    myTable = myTable(rowsToPlot, :);
+
+    % Convert rowsToPlot to numeric values
+    if ~isnumeric(rowsToPlot)
+        if ~isempty(allRowNames)
+            rowsToPlot = find_first_match(rowsToPlot, allRowNames, ...
+                                'MatchMode', 'exact', 'IgnoreCase', false);
+        else
+            error('rowsToPlot can''t be text if row names are not present!');
+        end
+    end
 end
 
 % If provided, make sure there are an equal number of phase variables
@@ -256,10 +339,12 @@ else
 end
 
 % Extract distinct parts if requested
-if distinctParts
-    varLabels = extract_fileparts(varsToPlot, 'distinct', 'Delimiter', delimiter);
-else
-    varLabels = varsToPlot;
+if isempty(varLabels)
+    if distinctParts
+        varLabels = extract_fileparts(varsToPlot, 'distinct', 'Delimiter', delimiter);
+    else
+        varLabels = varsToPlot;
+    end
 end
 
 % Decide on table label
@@ -273,34 +358,56 @@ if isempty(tableLabel)
     end
 end
 
-% Decide on pTickLabels
-if isempty(pTickLabels)
-    if isfield(myTable.Properties, 'RowNames') && ...
-            iscell(myTable.Properties.RowNames)
-        % Get the row names
-        rowNames = myTable.Properties.RowNames;
+% Decide on x values
+if isempty(rowValues)
+    if istimetable(tableToPlot)
+        % Extract time
+        rowValues = tableToPlot.Properties.RowTimes;
+    else
+        % Count rows
+        nRows = height(tableToPlot);
 
+        % Use row numbers
+        rowValues = transpose(1:nRows);
+    end
+end
+
+% Decide on rowTickLabels
+if isempty(rowTickLabels)
+    if ~isempty(allRowNames)
         % If all row names are file names, process them
         %   Otherwise, just use the row names as the x tick labels
-        if all(isfile(rowNames))
+        if all(isfile(allRowNames))
             % Extract the distinct file bases
-            pTickLabels = extract_fileparts(rowNames, 'distinct');
+            rowTickLabels = extract_fileparts(allRowNames, 'distinct');
 
             % Replace all instances of '_' with '\_'
-            pTickLabels = replace(pTickLabels, '_', '\_');
+            rowTickLabels = replace(rowTickLabels, '_', '\_');
         else
             % Just use the row names
-            pTickLabels = rowNames;
+            rowTickLabels = allRowNames;
         end
+    elseif istimetable(myTable)
+        rowTickLabels = {};
     else
         % Use default x tick labels
-        pTickLabels = {};
+        if isempty(rowLabel)
+            rowTickLabels = create_labels_from_numbers(rowsToPlot, 'Prefix', 'Row #');
+        else
+            rowTickLabels = create_labels_from_numbers(rowsToPlot);
+        end
     end
 end
 
 % Decide on lineSpec
 if isempty(lineSpec)
     switch plotMode
+    case 'overlapped'
+        lineSpec = lineSpecOverlapped;
+    case 'parallel'
+        lineSpec = lineSpecParallel;
+    case 'separate'
+        lineSpec = lineSpecSeparate;
     end
 end
 
@@ -340,14 +447,33 @@ if isempty(markerFaceColor)
     end
 end
 
+% Decide on figure title
+if isempty(figTitle)
+    switch plotMode
+    case {'overlapped', 'parallel'}
+        if istimetable(tableToPlot)
+            figTitle = replace([tableLabel, ' over time'], '_', ' ');
+        else
+            figTitle = '';
+        end
+    case 'separate'
+        figTitle = varLabels;
+    end
+end
+
+% Decide on figure name(s)
+if isempty(figName)
+    switch plotMode
+    case {'overlapped', 'parallel'}
+        figName = fullfile(outFolder, [tableLabel, '.png']);
+    case 'separate'
+        figName = fullfile(outFolder, strcat(varLabels, '.png'));
+    end
+end
+
 %% Do the job
 switch plotMode
 case 'overlapped'
-    % Create a figure name if empty
-    if isempty(figName)
-        figName = fullfile(outFolder, [tableLabel, '.png']);
-    end
-
     % Convert to an array
     if istimetable(tableToPlot)
         % Extract variables
@@ -357,43 +483,25 @@ case 'overlapped'
         myArray = table2array(tableToPlot);
     end
 
-    % Decide on x values
-    if istimetable(tableToPlot)
-        % Extract time
-        xValues = tableToPlot.Properties.RowTimes;
-    else
-        % Count rows
-        nRows = height(tableToPlot);
-
-        % Use row numbers
-        xValues = transpose(1:nRows);
-    end
-
     % Decide on readout label
     if isempty(readoutLabel)
         readoutLabel = replace(tableLabel, '_', ' ');
     end
 
-    % Decide on figure title
-    if istimetable(tableToPlot)
-        figTitle = replace([tableLabel, ' over time'], '_', ' ');
-    else
-        figTitle = '';
-    end
+    % Decide on the figure handle
+    set_figure_properties('ClearFigure', clearFigure, 'AlwaysNew', alwaysNew);
 
-    % Clear the current figure
-    clf;
-
-    % Plot a tuning curve
+    % Plot tuning curve(s)
     switch plotType
     case 'tuning'
-        handles = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
+        handles = plot_tuning_curve(rowValues, myArray, ...
                         'PhaseVectors', phaseVectors, ...
-                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
-                        'PLabel', pLabel, ...
+                        'PTicks', rowTickLocs, 'PTickLabels', rowTickLabels, ...
+                        'PLabel', rowLabel, ...
                         'ReadoutLabel', readoutLabel, ...
                         'ColumnLabels', varLabels, ...
                         'FigTitle', figTitle, ...
+                        'FigName', figName, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
@@ -404,23 +512,46 @@ case 'overlapped'
         error('plotType unrecognized!')
     end
 case 'parallel'
-    % TODO: Use plot_table_parallel.m
+    % Decide on readout label
+    if isempty(readoutLabel)
+        readoutLabel = varLabels;
+    end
+
+    % Plot variables in parallel subplots
+    handles = plot_table_parallel(tableToPlot, ...
+                    'RowValues', rowValues, ...
+                    'RowTickLocs', rowTickLocs, ...
+                    'RowTickLabels', rowTickLabels, ...
+                    'RowLabel', rowLabel, ...
+                    'ReadoutLabel', readoutLabel, ...
+                    'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                    'MarkerEdgeColor', markerEdgeColor, ...
+                    'MarkerFaceColor', markerFaceColor, ...
+                    'FigTitle', figTitle, ...
+                    'AxTitles', varLabels, ...
+                    'FigName', figName, ...
+                    'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
+                    otherArguments);
 case 'separate'
     % Convert to a structure array
     myStruct = table2struct(tableToPlot);
 
     % Plot fields
-    fig = plot_struct(myStruct, 'OutFolder', outFolder, ...
+    handles = plot_struct(myStruct, ...
+                        'PValues', rowValues, ...
                         'PhaseVectors', phaseVectors, ...
                         'PlotType', plotType, ...
                         'FieldLabels', varLabels, ...
-                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
-                        'PLabel', pLabel, ...
+                        'PTicks', rowTickLocs, 'PTickLabels', rowTickLabels, ...
+                        'PLabel', rowLabel, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
+                        'OutFolder', outFolder, ...
+                        'FigTitles', figTitle, ...
+                        'FigNames', figName, ...
+                        'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
                          otherArguments);
-    handles.fig = fig;
 otherwise
     error('plotMode unrecognized!');
 end
@@ -437,21 +568,21 @@ OLD CODE:
     cellfun(@(x) fileparts(x), newPaths, 'UniformOutput', false);
 
 % Create x tick labels
-pTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
+rowTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
                         'UniformOutput', false);
 
 % Will not work for durations data
-if isempty(pTicks) && ~isempty(pTickLabels)
-    pTicks = (1:numel(pTickLabels))';
+if isempty(rowTickLocs) && ~isempty(rowTickLabels)
+    rowTickLocs = (1:numel(rowTickLabels))';
 end
 
-% Does not work if pTicks is not also set
+% Does not work if rowTickLocs is not also set
 elseif isfield(myTable.Properties, 'RowTimes')
     % Convert time to minutes
     timeVec = minutes(myTable.Properties.RowTimes);
 
     % Convert to a cell array of character vectors
-    pTickLabels = convert_to_char(timeVec);
+    rowTickLabels = convert_to_char(timeVec);
 
 %                   - 'PlotSeparately': whether to plot each column separately
 %                   must be numeric/logical 1 (true) or 0 (false)

@@ -46,6 +46,7 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/plot_table_parallel.m
 %       cd/plot_traces.m
 %       cd/virt_plot_amplitude_correlation.m
 

@@ -1,4 +1,4 @@
-function figs = plot_struct (structArray, varargin)
+function handles = plot_struct (structArray, varargin)
 %% Plot all fields in a structure array as tuning curves
 % Usage: figs = plot_struct (structArray, varargin)
 % Explanation:
@@ -8,8 +8,8 @@ function figs = plot_struct (structArray, varargin)
 %       TODO
 %
 % Outputs:
-%       figs        - figure handle(s) for the created figure(s)
-%                   specified as a figure object handle column vector
+%       handles     - object handles returned by plot_tuning_curve() or plot_bar()
+%                   specified as a structure
 %
 % Arguments:    
 %       structArray - a structure array containing scalar fields
@@ -22,6 +22,9 @@ function figs = plot_struct (structArray, varargin)
 %                   - 'LineSpec': line specification
 %                   must be a character array
 %                   default == '-'
+%                   - 'PValues': x axis values
+%                   must be empty or a numeric vector
+%                   default == transpose(1:nEntries)
 %                   - 'PIsLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -50,6 +53,14 @@ function figs = plot_struct (structArray, varargin)
 %                   - 'FigNumber': figure number for creating figure(s)
 %                   must be a positive integer vector
 %                   default == []
+%                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if 'FigNumber' provided 
+%                               but false otherwise
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -75,7 +86,6 @@ function figs = plot_struct (structArray, varargin)
 %       cd/match_row_count.m
 %       cd/plot_bar.m
 %       cd/plot_tuning_curve.m
-%       cd/save_all_figtypes.m
 %
 % Used by:    
 %       cd/plot_table.m
@@ -91,8 +101,8 @@ function figs = plot_struct (structArray, varargin)
 % 2019-05-11 Added 'RBoundaries' as an optional argument
 % 2019-06-11 Moved boundary plotting code to plot_bar.m and plot_tuning_curve.m
 % 2019-11-24 Moved phase average computing code to plot_bar.m
-% TODO: Return handles to plots
-% TODO: Pass in figNames or figNumbers when plotting separately
+% 2025-10-07 Added 'PValues' as an optional argument
+% 2025-10-08 Added 'ClearFigure' and 'AlwaysNew' as optional arguments
 % 
 
 %% Hard-coded parameters
@@ -107,6 +117,7 @@ lineSpecDefault = 'o';
 lineWidthDefault = [];
 markerEdgeColorDefault = [];
 markerFaceColorDefault = [];
+pValuesDefault = [];            % set later
 pIsLogDefault = false;
 pTicksDefault = [];
 pTickLabelsDefault = {};
@@ -116,6 +127,8 @@ fieldLabelsDefault = {};
 colorMapDefault = [];           % set later
 figTitlesDefault = {};          % set later
 figNumberDefault = [];          % use current figure by default
+clearFigureDefault = [];        % set later
+alwaysNewDefault = false;       % don't always create new figure by default
 outFolderDefault = pwd;
 figNamesDefault = {};
 figTypesDefault = 'png';
@@ -145,6 +158,8 @@ addParameter(iP, 'LineSpec', lineSpecDefault, ...
 addParameter(iP, 'LineWidth', lineWidthDefault);
 addParameter(iP, 'MarkerEdgeColor', markerEdgeColorDefault);
 addParameter(iP, 'MarkerFaceColor', markerFaceColorDefault);
+addParameter(iP, 'PValues', pValuesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'PIsLog', pIsLogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PTicks', pTicksDefault, ...
@@ -163,6 +178,10 @@ addParameter(iP, 'FigTitles', figTitlesDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) isempty(x) || ispositiveintegervector(x));
+addParameter(iP, 'ClearFigure', clearFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigNames', figNamesDefault, ...
@@ -177,6 +196,7 @@ lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
 markerFaceColor = iP.Results.MarkerFaceColor;
+pValues = iP.Results.PValues;
 pIsLog = iP.Results.PIsLog;
 pTicks = iP.Results.PTicks;
 pTickLabels = iP.Results.PTickLabels;
@@ -187,6 +207,8 @@ colorMap = iP.Results.ColorMap;
 figTitles = iP.Results.FigTitles;
 figNumber = iP.Results.FigNumber;
 outFolder = iP.Results.OutFolder;
+clearFigure = iP.Results.ClearFigure;
+alwaysNew = iP.Results.AlwaysNew;
 figNames = iP.Results.FigNames;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
@@ -198,7 +220,7 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
     numel(pTicks) ~= numel(pTickLabels)
     fprintf(['PTicks and PTickLabels must have ', ...
                 'the same number of elements!\n']);
-    figs = gobjects(0);
+    handles = struct;
     return
 end
 
@@ -208,12 +230,14 @@ nEntries = length(structArray);
 
 % Return if there are no entries
 if nEntries == 0
-    figs = gobjects(0);
+    handles = struct;
     return;
 end
 
 % Create a vector for the parameter values
-pValues = transpose(1:nEntries);
+if isempty(pValues)
+    pValues = transpose(1:nEntries);
+end
 
 % Decide on the number of parameter values to actually show
 if isempty(pTicks)
@@ -274,9 +298,11 @@ allScalarFields = fieldnames(scalarStructArray);
 % Count the number of fields
 nFields = numel(allScalarFields);
 
+% Initiate output
+handles = struct(nFields, 1);
+
 % Return if there are no more fields
 if nFields == 0
-    figs = gobjects(0);
     return;
 end
 
@@ -284,7 +310,6 @@ end
 fieldData = table2array(struct2table(scalarStructArray));
 
 %% Plot all fields
-figs = gobjects(nFields, 1);
 for iField = 1:nFields
     % Get the field value vector for this field
     fieldVals = fieldData(:, iField);
@@ -321,31 +346,29 @@ for iField = 1:nFields
     end
     
     % Create a new figure
-    figThis = set_figure_properties('FigNumber', figNumber);
-
-    % Clear the figure
-    clf(figThis);
+    figThis = set_figure_properties('FigNumber', figNumber, ...
+                        'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew);
 
     switch plotType
     case 'tuning'
         % Plot the tuning curve
-        handles = ...
+        handles(iField) = ...
             plot_tuning_curve(pValues, fieldVals, 'PIsLog', pIsLog, ...
                         'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                         'PTickAngle', pTickAngle, ...
                         'PLabel', pLabel, 'ReadoutLabel', fieldLabel, ...
                         'ColorMap', colorMap, ...
-                        'FigTitle', figTitle, 'FigHandle', figThis, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
+                        'FigTitle', figTitle, 'FigHandle', figThis, ...
+                        'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);
-        figThis = handles.fig;
     case 'bar'
         % Plot horizontal bars
         % TODO: Deal with pIsLog
         % TODO: Implement singlecolor
-        handles = ...
+        handles(iField) = ...
             plot_bar(fieldVals, 'ForceVectorAsRow', false, ...
                         'ReverseOrder', barReverseOrder, ...
                         'BarDirection', barDirection, ...
@@ -354,17 +377,11 @@ for iField = 1:nFields
                         'PTickAngle', pTickAngle, ...
                         'PLabel', pLabel, 'ReadoutLabel', fieldLabel, ...
                         'FigTitle', figTitle, 'FigHandle', figThis, ...
+                        'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);
-        figThis = handles.fig;
     otherwise
         error('plotType unrecognized!')
     end
-
-    if ~isempty(figName)
-        save_all_figtypes(figThis, figName, figTypes);
-    end
-
-    figs(iField, 1) = figThis;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

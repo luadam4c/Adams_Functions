@@ -15,6 +15,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       readoutAll = [readout1, readout2];
 %       upperCIAll = [upperCI1, upperCI2];
 %       lowerCIAll = [lowerCI1, lowerCI2];
+%
+%       pValues = transpose(20:-2:2);
 %       
 %       plot_tuning_curve(pValues, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
 %       plot_tuning_curve(pValues, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
@@ -330,6 +332,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2020-02-17 Added normality tests
 % 2020-02-19 Added 'PlotForCorel' as an optional argument
 % 2025-08-29 Updated to use plot_test_result.m by Gemini
+% 2025-10-07 Fixed bug in axHandle usage
 % TODO: Allow inputs to be cell arrays (use force_matrix.m)
 % TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
@@ -613,7 +616,7 @@ figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot() function
-otherArguments = iP.Unmatched;
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Prepare for tuning curve
 % Initialize a handles structure
@@ -624,6 +627,14 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
         numel(pTicks) ~= numel(pTickLabels)
     fprintf('PTicks and PTickLabels must have the same number of elements!\n');
     return
+end
+
+% Reorder pTicks if not increasing and update pTickLabels accordingly
+if ~isempty(pTicks) && ~issorted(pTicks)
+    [pTicks, sortOrder] = sort(pTicks);
+    if ~isempty(pTickLabels)
+        pTickLabels = pTickLabels(sortOrder);
+    end
 end
 
 % Display 
@@ -916,7 +927,7 @@ fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                     'FigExpansion', figExpansion, 'ClearFigure', clearFigure);
 
 % Decide on the axes to plot on and set properties
-ax = set_axes_properties('AxesHandle', axHandle);
+axHandle = set_axes_properties('AxesHandle', axHandle);
 
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);
@@ -1281,7 +1292,7 @@ end
 
 %% Output handles
 handles.fig = fig;
-handles.ax = ax;
+handles.ax = axHandle;
 handles.curves = curves;
 if ~isempty(lowerCI) || ~isempty(upperCI)
     handles.confInts = confInts;
@@ -1305,7 +1316,7 @@ function p = plot_one_line(axHandle, pValues, readout, lineSpec, ...
                             lineWidth, otherArguments)
 
 p = plot(axHandle, pValues, readout, lineSpec, ...
-                'LineWidth', lineWidth, otherArguments);
+                'LineWidth', lineWidth, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

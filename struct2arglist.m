@@ -43,6 +43,8 @@ function argList = struct2arglist (structure, varargin)
 %       cd/plot_grouped_jitter.m
 %       cd/plot_grouped_scatter.m
 %       cd/plot_histogram.m
+%       cd/plot_traces.m
+%       cd/plot_tuning_curve.m
 %       cd/plot_violin.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/solve_function_at_value.m
