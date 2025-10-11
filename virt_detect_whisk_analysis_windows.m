@@ -10,7 +10,7 @@ function [sniffStartWinTable, basalRespCycleTable] = virt_detect_whisk_analysis_
 %       operate in different modes to accommodate data from simulations (driven
 %       by pulse cycles) or experimental recordings (driven by detected
 %       respiratory events). It also computes phase-response data when in
-%       'pulseCycle' or 'peakTable' mode for basal respiration.
+%       'pulseCycle' or 'respPeak' mode for basal respiration.
 %
 % Outputs:
 %       sniffStartWinTable  - A table where each row represents a detected
@@ -33,7 +33,7 @@ function [sniffStartWinTable, basalRespCycleTable] = virt_detect_whisk_analysis_
 %                           must be one of 'pulseCycle', 'transitionTimes'
 %                           default == 'pulseCycle'
 %                           - 'BasalDefinitionMode': Method to define basal respiration cycles.
-%                           must be one of 'pulseCycle', 'peakTable'
+%                           must be one of 'pulseCycle', 'respPeak'
 %                           default == 'pulseCycle'
 %                           - 'PulseCycleStartTimes': Vector of start times for each pulse cycle.
 %                           must be a numeric vector
@@ -44,6 +44,12 @@ function [sniffStartWinTable, basalRespCycleTable] = virt_detect_whisk_analysis_
 %                           - 'PulseNumbers': Vector of identifiers for each pulse cycle.
 %                           must be a numeric vector
 %                           default == []
+%                           - 'SeedNumber': The seed number for the simulation.
+%                           must be a numeric scalar
+%                           default == 0
+%                           - 'TrialName': The trial name for the experiment.
+%                           must be a string scalar or a character vector
+%                           default == ''
 %                           - 'TVecMs': The full time vector of the recording in ms (for 'pulseCycle').
 %                           must be a numeric vector
 %                           default == []
@@ -94,20 +100,21 @@ function [sniffStartWinTable, basalRespCycleTable] = virt_detect_whisk_analysis_
 %       cd/compute_phase_response.m
 %
 % Used by:
+%       cd/virt_analyze_sniff_whisk.m
 %       \Shared\Code\vIRt-Moore\virt_analyze_whisk.m
-%       \Shared\Code\vIRt-Moore\virt_analyze_sniff_whisk.m
 %
 
 % File History:
 % 2025-10-06 Created by Gemini to modularize window detection logic.
 % 2025-10-06 Fixed by Gemini to include messaging, phase response, and annotations.
 % 2025-10-06 Updated by Gemini to support experimental data from virt_analyze_sniff_whisk.m
-% 2025-10-06 Restored original annotations by Gemini.
-%
+% 2025-10-09 Modified by Gemini to add seedNumber/fileNumber as first column
+%               and create mode-specific empty tables to remove unused columns.
+% 2025-10-09 Modified by Gemini to also pass in and add trialName for experiments.
 
 %% Hard-coded parameters
 validSniffDefinitions = {'pulseCycle', 'transitionTimes'};
-validBasalDefinitions = {'pulseCycle', 'peakTable'};
+validBasalDefinitions = {'pulseCycle', 'respPeak'};
 
 %% Default values for optional arguments
 sniffDefinitionModeDefault = 'pulseCycle';
@@ -115,6 +122,8 @@ basalDefinitionModeDefault = 'pulseCycle';
 pulseCycleStartTimesDefault = [];
 pulseCycleEndTimesDefault = [];
 pulseNumbersDefault = [];
+seedNumberDefault = 0;
+trialNameDefault = '';
 tVecMsDefault = [];
 tVecsDefault = [];
 sniffStartTimesDefault = [];
@@ -176,6 +185,8 @@ addParameter(iP, 'BasalDefinitionMode', basalDefinitionModeDefault, ...
 addParameter(iP, 'PulseCycleStartTimes', pulseCycleStartTimesDefault, @isnumeric);
 addParameter(iP, 'PulseCycleEndTimes', pulseCycleEndTimesDefault, @isnumeric);
 addParameter(iP, 'PulseNumbers', pulseNumbersDefault, @isnumeric);
+addParameter(iP, 'SeedNumber', seedNumberDefault, @isnumeric);
+addParameter(iP, 'TrialName', trialNameDefault, @(x) ischar(x) || isstring(x));
 addParameter(iP, 'TVecMs', tVecMsDefault, @isnumeric);
 addParameter(iP, 'TVecs', tVecsDefault, @isnumeric);
 addParameter(iP, 'SniffStartTimes', sniffStartTimesDefault);
@@ -200,6 +211,8 @@ basalDefinitionMode = iP.Results.BasalDefinitionMode;
 pulseCycleStartTimes = iP.Results.PulseCycleStartTimes;
 pulseCycleEndTimes = iP.Results.PulseCycleEndTimes;
 pulseNumbers = iP.Results.PulseNumbers;
+seedNumber = iP.Results.SeedNumber;
+trialName = iP.Results.TrialName;
 tVecMs = iP.Results.TVecMs;
 tVecs = iP.Results.TVecs;
 sniffStartTimes = iP.Results.SniffStartTimes;
@@ -236,37 +249,22 @@ if ~isempty(valleyTable)
     allValleyValues = valleyTable.valleyValue;
 end
 
-% Define empty table structures for consistent output
-emptySniffTable = table('Size', [0, 15], 'VariableTypes', ...
-    {'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
-     'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
-    'VariableNames', {'pulseNumber', 'sweepNumber', 'windowNumber', 'sniffStartWinStartTime', ...
-                      'sniffStartWinEndTime', 'sniffStartTime', 'sniffEndTime', ...
-                      'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
-                      'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
-                      'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
-
-emptyBasalTable = table('Size', [0, 32], 'VariableTypes', ...
-    {'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
-     'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
-     'double', 'double', 'double', 'double', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
-    'VariableNames', {'pulseNumber', 'sweepNumber', 'basalRespCycleNumber', 'basalRespPeakNumber', ...
-                      'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
-                      'basalRespPeakTime', 'basalRespPeakValue', 'basalRespPreValleyTime', ...
-                      'basalRespPostValleyTime', 'basalRespSucceedingIPI', ...
-                      'isWithinBasal', 'inspWhiskPeakNum', 'inspWhiskPeakTime', 'inspWhiskPreValleyTime', ...
-                      'breathOnsetTime', 'isStableBasalWhisks', 'eventTimeWhiskBefore', 'eventTimeTwoWhisksBefore', 'preIEIWhiskBefore', ...
-                      'preIEIWhiskAfter', 'phaseReset', 'phaseChangeWhisk', 'relativeResetTime', ...
-                      'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
-                      'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
-                      'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
-
-
 %% --- SNIFF START WINDOW DETECTION ---
+% Starting message
 post_message('Starting Sniff Start Window Detection ...');
 
 switch sniffDefinitionMode
 case 'pulseCycle'
+    % Define empty table structure for consistent output (Simulation)
+    emptySniffTable = table('Size', [0, 15], 'VariableTypes', ...
+        {'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+         'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
+        'VariableNames', {'seedNumber', 'pulseNumber', 'windowNumber', 'sniffStartWinStartTime', ...
+                          'sniffStartWinEndTime', 'sniffStartTime', 'sniffEndTime', ...
+                          'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                          'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                          'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+
     % For simulation data: define sniff periods based on pulse cycle durations
     
     % Compute the sniff cycle duration threshold in ms
@@ -296,14 +294,16 @@ case 'pulseCycle'
         sniffEndTimes(end+1) = tVecMs(end);
     end
     pulseNumbersForSniff = pulseNumbers(sniffStartIndices);
+
+    % Count the number of complete sniff periods
+    nSniffPeriods = numel(sniffStartTimes);
     
     % Loop through each complete sniff period
-    nSniffPeriods = numel(sniffStartTimes);
-    sniffWinRows = cell(nSniffPeriods, 1);
-    iSniffStart = 0;
-    for i = 1:nSniffPeriods
-        currentSniffStart = sniffStartTimes(i);
-        currentSniffEnd = sniffEndTimes(i);
+    sniffWinRows = {};
+    iSniffStartWin = 0;
+    for iSniffPeriod = 1:nSniffPeriods
+        currentSniffStart = sniffStartTimes(iSniffPeriod);
+        currentSniffEnd = sniffEndTimes(iSniffPeriod);
         
         % Find all peaks that occurred within this entire sniff period
         peaksInPeriod = peakTable(peakTable.peakTime >= currentSniffStart & ...
@@ -316,8 +316,8 @@ case 'pulseCycle'
             
             % Check if all required peaks have valid amplitudes
             if all(~isnan(peaksToAnalyze.amplitude))
-                % Increment counter
-                iSniffStart = iSniffStart + 1;
+                % Increment window count
+                iSniffStartWin = iSniffStartWin + 1;
 
                 % Define window start as the pre-valley of the first whisk
                 winStart = peaksToAnalyze.preValleyTime(1);
@@ -340,28 +340,32 @@ case 'pulseCycle'
                 end
                 
                 % Package the data for this window into a one-row table
-                row = table(pulseNumbersForSniff(i), NaN, iSniffStart, winStart, winEnd, ...
+                newWindow = table(seedNumber, pulseNumbersForSniff(iSniffPeriod), iSniffStartWin, winStart, winEnd, ...
                             currentSniffStart, currentSniffEnd, ...
                             {peaksToAnalyze.peakTime}, {peaksToAnalyze.peakValue}, {peakAmplitudes}, ...
                             {peaksToAnalyze.preValleyTime}, {peaksToAnalyze.postValleyTime}, ...
                             {valleysToAnalyze.valleyTime}, {valleysToAnalyze.valleyValue}, {logDecrements}, ...
                             'VariableNames', emptySniffTable.Properties.VariableNames);
-                sniffWinRows{i} = row;
+
+                % Add to sniff start window rows
+                sniffWinRows{end + 1} = newWindow;
             end
         end
     end
 
-    % Combine all valid window rows into a single table
-    if iSniffStart > 0
-        % Filter out any empty cell entries before concatenating
-        sniffStartWinTable = vertcat(sniffWinRows{~cellfun('isempty', sniffWinRows)});
-    else
-        sniffStartWinTable = emptySniffTable;
-    end
-
 case 'transitionTimes'
+    % Define empty table structure for consistent output (Experiment)
+    emptySniffTable = table('Size', [0, 16], 'VariableTypes', ...
+        {'double', 'cellstr', 'double', 'double', 'double', 'double', 'double', 'double', ...
+         'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
+        'VariableNames', {'fileNumber', 'trialName', 'sweepNumber', 'windowNumber', 'sniffStartWinStartTime', ...
+                          'sniffStartWinEndTime', 'sniffStartTime', 'sniffEndTime', ...
+                          'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                          'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                          'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+
     % For experimental data: use pre-detected sniff start/end times per sweep
-    allWindowsCell = {};
+    sniffWinRows = {};
     breathOnsetLatency = breathOnsetLatencyMs / 1000; % Convert to seconds
 
     for iSwp = 1:nSweeps
@@ -391,11 +395,14 @@ case 'transitionTimes'
             sniffEndTimesThisSweep(end+1) = tVecs(end, iSwp);
         end
 
+        % Count the number of complete sniff periods
+        nSniffPeriods = numel(sniffStartTimesThisSweep);
+
         % Loop through all sniff periods for this sweep
-        iWindow = 0; % Counter for sniff start windows for this sweep
-        for iSniff = 1:numel(sniffStartTimesThisSweep)
-            currentSniffStart = sniffStartTimesThisSweep(iSniff);
-            currentSniffEnd = sniffEndTimesThisSweep(iSniff);
+        iSniffStartWin = 0; % Counter for sniff start windows for this sweep
+        for iSniffPeriod = 1:nSniffPeriods
+            currentSniffStart = sniffStartTimesThisSweep(iSniffPeriod);
+            currentSniffEnd = sniffEndTimesThisSweep(iSniffPeriod);
             
             % Find all peaks within the sniff period
             isPeakInSniffPeriod = peakTimes >= currentSniffStart & peakTimes <= currentSniffEnd;
@@ -413,7 +420,7 @@ case 'transitionTimes'
                 fprintf(fileIDDiffs, ['Whisk protraction for first whisk peak after sniff start occurred ', ...
                          'earlier than %g ms for sniffing period #%d in sweep %d of file %d ', ...
                          ' for peak numbers (for the sweep): %s!!\n\n'], ...
-                         breathOnsetLatencyMs, iSniff, iSwp, fileNumber, num2str(preValleyTooEarly'));
+                         breathOnsetLatencyMs, iSniffPeriod, iSwp, fileNumber, num2str(preValleyTooEarly'));
             end
 
             % Define whether a whisk is in a sniff period by the peak
@@ -432,7 +439,7 @@ case 'transitionTimes'
                 end
 
                 % Increment window count
-                iWindow = iWindow + 1;
+                iSniffStartWin = iSniffStartWin + 1;
 
                 % Start of sniff start window is the pre-valley time of the 
                 %   1st peak to analyze, or if doesn't exist, the sniff start time 
@@ -467,33 +474,52 @@ case 'transitionTimes'
                 end
                                     
                 % Create a one-row table for this window
-                newWindow = table(NaN, iSwp, iWindow, sniffStartWinStartTime, sniffStartWinEndTime, ...
+                newWindow = table(fileNumber, {trialName}, iSwp, iSniffStartWin, sniffStartWinStartTime, sniffStartWinEndTime, ...
                     currentSniffStart, currentSniffEnd, ...
                     {whiskPeaksToAnalyze.peakTime}, {whiskPeaksToAnalyze.peakValue}, {peakAmplitudes}, ...
                     {whiskPeaksToAnalyze.preValleyTime}, {whiskPeaksToAnalyze.postValleyTime}, ...
                     {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, {logDecrementsSniff}, ...
                     'VariableNames', emptySniffTable.Properties.VariableNames);
 
-                allWindowsCell{end+1} = newWindow;
+                % Add to sniff start window rows
+                sniffWinRows{end + 1} = newWindow;
             end
         end
     end
-
-    % Vertically concatenate all found windows into a single table
-    if ~isempty(allWindowsCell)
-        sniffStartWinTable = vertcat(allWindowsCell{:});
-    else
-        sniffStartWinTable = emptySniffTable;
-    end
 end
+
+% Vertically concatenate all found windows into a single table
+if iSniffStartWin > 0
+    sniffStartWinTable = vertcat(sniffWinRows{:});
+else
+    sniffStartWinTable = emptySniffTable;
+end
+
+% Ending message
 post_message('Sniff Start Window Detection complete!');
 
 
 %% --- BASAL RESPIRATION CYCLE DETECTION ---
+% Starting message
 post_message('Starting Basal Respiration Cycle Detection ...');
 
 switch basalDefinitionMode
 case 'pulseCycle'
+    % Define empty table structure for consistent output (Simulation)
+    emptyBasalTable = table('Size', [0, 22], 'VariableTypes', ...
+        {'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+         'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+         'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
+        'VariableNames', {'seedNumber', 'pulseNumber', 'basalRespCycleNumber', ...
+                          'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
+                          'breathOnsetTime', 'isStableBasalWhisks', ...
+                          'eventTimeWhiskBefore', 'eventTimeTwoWhisksBefore', ...
+                          'preIEIWhiskBefore', 'preIEIWhiskAfter', ...
+                          'phaseReset', 'phaseChangeWhisk', 'relativeResetTime', ...
+                          'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                          'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                          'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
+
     % For simulation data: define basal respiration cycles based on pulse cycle durations
     
     % Compute the basal respiration cycle duration threshold in ms
@@ -528,15 +554,17 @@ case 'pulseCycle'
         case 'retraction'
             whiskEventTimes = allPeakTimes;
     end
-    % Get the breath onset times (ms) and stability for each basal cycle
-    breathOnsetTimes = pulseCycleStartTimes(isBasalCycle) + breathOnsetLatencyMs;
+    % Get the breath onset times (ms)
+    breathOnsetTimes = cycleStartsForBasal + breathOnsetLatencyMs;
+
+    % Get stability for each basal cycle
     if nBasals > 0
         isStableBasalWhisks = [false; diff(pulseNumbersBasal) == 1];
     else
         isStableBasalWhisks = false(size(breathOnsetTimes));
     end
 
-    % Process the identified basal cycles
+    % Process the identified basal respiration cycles
     basalCycleRows = cell(nBasals, 1);
     for iBasal = 1:nBasals
         % Get peaks for this basal respiration cycle
@@ -582,50 +610,57 @@ case 'pulseCycle'
             compute_phase_response(whiskEventTimes, breathOnsetTimes(iBasal), ...
                                    isStableBasalWhisks(iBasal));
 
-        % Package the data for this cycle into a one-row table, adding NaNs for unused columns
-        row = table(pulseNumbersBasal(iBasal), ...       % pulseNumber
-                    NaN, ...                             % sweepNumber
-                    iBasal, ...                          % basalRespCycleNumber
-                    NaN, ...                             % basalRespPeakNumber
-                    startTime, ...                       % basalRespCycleStartTime
-                    endTime, ...                         % basalRespCycleEndTime
-                    NaN, NaN, NaN, NaN, NaN, NaN, ...    % basalRespPeak info (not applicable)
-                    NaN, NaN, NaN, ...                   % inspWhisk info (not applicable)
-                    breathOnsetTimes(iBasal), ...        % breathOnsetTime
-                    isStableBasalWhisks(iBasal), ...     % isStableBasalWhisks
-                    eventTimeWhiskBefore, ...            % eventTimeWhiskBefore
-                    eventTimeTwoWhisksBefore, ...        % eventTimeTwoWhisksBefore
-                    preIEIWhiskBefore, ...               % preIEIWhiskBefore
-                    preIEIWhiskAfter, ...                % preIEIWhiskAfter
-                    phaseReset, ...                      % phaseReset
-                    phaseChangeWhisk, ...                % phaseChangeWhisk
-                    relativeResetTime, ...               % relativeResetTime
-                    {whiskPeakTimes}, ...                % whiskPeakTimes
-                    {whiskPeakValues}, ...               % whiskPeakValues
-                    {whiskPeakAmplitudes}, ...           % whiskPeakAmplitudes
-                    {whiskPreValleyTimes}, ...           % whiskPreValleyTimes
-                    {whiskPostValleyTimes}, ...          % whiskPostValleyTimes
-                    {whiskValleyTimes}, ...              % whiskValleyTimes
-                    {whiskValleyValues}, ...             % whiskValleyValues
-                    {whiskLogDecrements}, ...            % whiskLogDecrements
+        % Package the data for this cycle into a one-row table
+        newCycle = table(seedNumber, ...                % seedNumber
+                    pulseNumbersBasal(iBasal), ...      % pulseNumber
+                    iBasal, ...                         % basalRespCycleNumber
+                    startTime, ...                      % basalRespCycleStartTime
+                    endTime, ...                        % basalRespCycleEndTime
+                    breathOnsetTimes(iBasal), ...       % breathOnsetTime
+                    isStableBasalWhisks(iBasal), ...    % isStableBasalWhisks
+                    eventTimeWhiskBefore, ...           % eventTimeWhiskBefore
+                    eventTimeTwoWhisksBefore, ...       % eventTimeTwoWhisksBefore
+                    preIEIWhiskBefore, ...              % preIEIWhiskBefore
+                    preIEIWhiskAfter, ...               % preIEIWhiskAfter
+                    phaseReset, ...                     % phaseReset
+                    phaseChangeWhisk, ...               % phaseChangeWhisk
+                    relativeResetTime, ...              % relativeResetTime
+                    {whiskPeakTimes}, ...               % whiskPeakTimes
+                    {whiskPeakValues}, ...              % whiskPeakValues
+                    {whiskPeakAmplitudes}, ...          % whiskPeakAmplitudes
+                    {whiskPreValleyTimes}, ...          % whiskPreValleyTimes
+                    {whiskPostValleyTimes}, ...         % whiskPostValleyTimes
+                    {whiskValleyTimes}, ...             % whiskValleyTimes
+                    {whiskValleyValues}, ...            % whiskValleyValues
+                    {whiskLogDecrements}, ...           % whiskLogDecrements
                     'VariableNames', emptyBasalTable.Properties.VariableNames);
 
-        basalCycleRows{iBasal} = row;
+        basalCycleRows{iBasal} = newCycle;
     end
 
-    % Combine all valid cycle rows into a single table
-    if ~isempty(basalCycleRows)
-        basalRespCycleTable = vertcat(basalCycleRows{:});
-    else
-        basalRespCycleTable = emptyBasalTable;
-    end
+case 'respPeak'
+    % Define empty table structure for consistent output (Experiment)
+    emptyBasalTable = table('Size', [0, 33], 'VariableTypes', ...
+        {'double', 'cellstr', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+         'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'double', ...
+         'double', 'double', 'double', 'double', 'double', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'}, ...
+        'VariableNames', {'fileNumber', 'trialName', 'sweepNumber', 'basalRespCycleNumber', 'basalRespPeakNumber', ...
+                          'basalRespCycleStartTime', 'basalRespCycleEndTime', ...
+                          'basalRespPeakTime', 'basalRespPeakValue', 'basalRespPreValleyTime', ...
+                          'basalRespPostValleyTime', 'basalRespSucceedingIPI', ...
+                          'isWithinBasal', 'inspWhiskPeakNum', 'inspWhiskPeakTime', 'inspWhiskPreValleyTime', ...
+                          'breathOnsetTime', 'isStableBasalWhisks', 'eventTimeWhiskBefore', 'eventTimeTwoWhisksBefore', 'preIEIWhiskBefore', ...
+                          'preIEIWhiskAfter', 'phaseReset', 'phaseChangeWhisk', 'relativeResetTime', ...
+                          'whiskPeakTimes', 'whiskPeakValues', 'whiskPeakAmplitudes', ...
+                          'whiskPreValleyTimes', 'whiskPostValleyTimes', ...
+                          'whiskValleyTimes', 'whiskValleyValues', 'whiskLogDecrements'});
 
-case 'peakTable'
     % For experimental data: use pre-computed basal respiration peak table
+
     % Convert to seconds
     breathOnsetLatency = breathOnsetLatencyMs / 1000;
 
-    allCyclesCell = {};
+    basalCycleRows = {};
     for iSwp = 1:nSweeps
         % Filter the file-level basal peak table for the current sweep
         if ~isempty(basalRespPeakTable)
@@ -826,7 +861,7 @@ case 'peakTable'
                     compute_phase_response(whiskEventTimes, breathOnsetTime, isStableBasalWhisks);
 
                 % Create a one-row table for this cycle
-                newCycle = table(NaN, iSwp, iCycle, basalRespPeakNumber, ...
+                newCycle = table(fileNumber, {trialName}, iSwp, iCycle, basalRespPeakNumber, ...
                     basalRespCycleStartTime, basalRespCycleEndTime, ...
                     basalRespPeakTime, basalRespPeakValue, basalRespPreValleyTime, basalRespPostValleyTime, basalRespSucceedingIPI, ...
                     isWithinBasal, inspWhiskPeakNum, inspWhiskPeakTime, inspWhiskPreValleyTime, ...
@@ -837,24 +872,19 @@ case 'peakTable'
                     {whiskValleysToAnalyze.valleyTime}, {whiskValleysToAnalyze.valleyValue}, {logDecrements}, ...
                     'VariableNames', emptyBasalTable.Properties.VariableNames);
 
-                allCyclesCell{end+1} = newCycle;
+                basalCycleRows{end + 1} = newCycle;
 
                 % Save current resp peak number as last basal cycle respiratory peak number
                 lastRespPeakNum = respPeakNumber;
             end
         end
     end
-
-    % Vertically concatenate all found cycles into a single table
-    if ~isempty(allCyclesCell)
-        basalRespCycleTable = vertcat(allCyclesCell{:});
-    else
-        basalRespCycleTable = emptyBasalTable;
-    end
 end
 
-% Set as empty table if no cycles found
-if isempty(basalRespCycleTable)
+% Vertically concatenate all found cycles into a single table
+if ~isempty(basalCycleRows)
+    basalRespCycleTable = vertcat(basalCycleRows{:});
+else
     basalRespCycleTable = emptyBasalTable;
 end
 
@@ -871,3 +901,4 @@ OLD CODE:
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

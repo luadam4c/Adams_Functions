@@ -66,6 +66,8 @@
 % 2025-09-19 Changed phase detection to use whisk valleys (protraction) and breathOnsetLatencyMs
 % 2025-10-06 Refactored to use virt_plot_* functions for aggregate plots
 % 2025-10-06 Refactored to use virt_detect_whisk_analysis_windows.m by Gemini
+% 2025-10-09 Modified by Gemini to update combine_tables function.
+% 2025-10-09 Modified by Gemini to pass trialName to parse_whisk_vecs.
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -363,12 +365,12 @@ fprintf('Finished detecting sniff transitions and basal respiration peaks.\n\n')
 fprintf('Detecting whisk peaks and valleys and defining analysis windows ...\n');
 [whiskPeakTablesAll, whiskValleyTablesAll, whiskFreqsFundamentalAll, ...
     sniffStartWinTablesAll, basalRespCycleTablesAll] = ...
-    array_fun(@(a, b, c, d, e, f, g) parse_whisk_vecs(a, b, c, d, e, f, g, ...
+    array_fun(@(a, b, c, d, e, f, g, h) parse_whisk_vecs(a, b, c, d, e, f, g, h, ...
                     amplitudeDefinition, whiskDirForPhase, fundFreqRange, fCutoffWhisk, fCutoffRelToFund, filterOrderWhisk, ...
                     promThresholdPercWhisk, minPeakDistanceMsWhisk, minPeakPromWhisk, maxWhiskDurationMs, ...
                     breathOnsetLatencyMs, nWhisksSniffStartToAnalyze, minWhisksBasalRespToAnalyze, ...
                     sniffFreqThreshold, basalFreqThreshold, maxWhisksBasalRespToAnalyze, fileIDDiffs), ...
-                num2cell(fileNumbers), whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
+                num2cell(fileNumbers), trialNames, whiskVecs, tVecs, num2cell(nSweepsEachFile), ...
                 sniffStartTimesAll, sniffEndTimesAll, basalRespPeakTablesAll, ...
                 'UniformOutput', false, 'UseParpool', false);
 fprintf('Finished detecting whisk peaks and valleys and defining analysis windows.\n\n');
@@ -429,12 +431,10 @@ fprintf('Finished calculating statistics for each file.\n\n');
     identify_files_for_averaging(trialNames, excludeStringsFromAverage);
 
 % Combine sniff start windows from selected files
-sniffStartWinTableToAverage = ...
-    combine_across_files(sniffStartWinTablesAll, fileNumsToAverage, trialNames);
+sniffStartWinTableToAverage = combine_tables(sniffStartWinTablesAll, fileNumsToAverage);
 
 % Combine basal respiration cycles from selected files
-basalRespCycleTableToAverage = ...
-    combine_across_files(basalRespCycleTablesAll, fileNumsToAverage, trialNames);
+basalRespCycleTableToAverage = combine_tables(basalRespCycleTablesAll, fileNumsToAverage);
 
 % Average the whisk logarithmic decrements in sniff start windows and plot as a grouped jitter plot
 fprintf('Plotting aggregated sniff-start whisk log decrements jitter plot...\n');
@@ -775,6 +775,8 @@ if ~isempty(sniffStartWinTableForFile)
 
     % Get the number of sniff start windows
     nWindows = height(sniffStartWinTableForFile);
+
+    % Extract variables from the table
     sweepNums = sniffStartWinTableForFile.sweepNumber;
     winStarts = sniffStartWinTableForFile.sniffStartWinStartTime;
     winEnds = sniffStartWinTableForFile.sniffStartWinEndTime;
@@ -929,6 +931,8 @@ if ~isempty(basalRespCycleTableForFile)
 
     % Get the number of cycles
     nCycles = height(basalRespCycleTableForFile);
+    
+    % Extract variables from the table
     sweepNums = basalRespCycleTableForFile.sweepNumber;
     cycleStarts = basalRespCycleTableForFile.basalRespCycleStartTime;
     cycleEnds = basalRespCycleTableForFile.basalRespCycleEndTime;
@@ -1261,7 +1265,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [whiskPeakTables, whiskValleyTables, whiskFreqFundamental, sniffStartWinTable, basalRespCycleTable] = ...
-    parse_whisk_vecs(fileNumber, whiskVecsThisFile, tVecsThisFile, nSweeps, ...
+    parse_whisk_vecs(fileNumber, trialName, whiskVecsThisFile, tVecsThisFile, nSweeps, ...
                     sniffStartTimesThisFile, sniffEndTimesThisFile, basalRespPeakTableThisFile, ...
                     amplitudeDefinition, whiskDirForPhase, fundFreqRange, fCutoff, fCutoffRelToFund, filterOrder, ...
                     promThresholdPerc, minPeakDistanceMs, minPeakProm, maxWhiskDurationMs, ...
@@ -1314,11 +1318,11 @@ analysisParams.breathOnsetLatencyMs = breathOnsetLatencyMs;
 
 % Detect Sniff and Basal Analysis Windows using the modular function
 % Note: Pass empty tables for peakTable and valleyTable as they are not used
-%       in 'transitionTimes' or 'peakTable' modes.
+%       in 'transitionTimes' or 'respPeak' modes.
 [sniffStartWinTable, basalRespCycleTable] = ...
     virt_detect_whisk_analysis_windows(table(), table(), analysisParams, ...
         'SniffDefinitionMode', 'transitionTimes', ...
-        'BasalDefinitionMode', 'peakTable', ...
+        'BasalDefinitionMode', 'respPeak', ...
         'TVecs', tVecsThisFile, ...
         'SniffStartTimes', sniffStartTimesThisFile, ...
         'SniffEndTimes', sniffEndTimesThisFile, ...
@@ -1327,6 +1331,7 @@ analysisParams.breathOnsetLatencyMs = breathOnsetLatencyMs;
         'WhiskValleyTables', whiskValleyTables, ...
         'BasalRespPeakTable', basalRespPeakTableThisFile, ...
         'FileNumber', fileNumber, ...
+        'TrialName', trialName, ...
         'FileIDDiffs', fileIDDiffs, ...
         'ToPostMessage', false); % Suppress messages as this is in a loop
 
@@ -1421,7 +1426,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [isUsedForAverage, fileNumsToAverage] = ...
-                identify_files_for_averaging(trialNames, excludeStringsFromAverage)
+                identify_files_for_averaging (trialNames, excludeStringsFromAverage)
 %% Identifies files for averaging by excluding specific trial names.
 
 % Initialize as all true
@@ -1439,47 +1444,14 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combinedTable = combine_across_files(tablesAll, ...
-                                        fileNumsToAverage, trialNames)
-%% Combines sniff start window tables from selected files into one large table.
+function combinedTable = combine_tables (tablesAll, tableNumsToCombine)
+%% Combines selected tables into one large table.
 
-% Initialize a cell array to hold tables that will be concatenated
-tablesToCombine = {};
-
-% Loop through each file number selected for averaging
-for i = 1:numel(fileNumsToAverage)
-    fileNum = fileNumsToAverage(i);
-    
-    % Get the sniff start window table for the current file
-    currentTable = tablesAll{fileNum};
-    
-    % Proceed only if the table is not empty
-    if ~isempty(currentTable)
-        % Add new columns for the file number and trial name
-        fileNumColumn = repelem(fileNum, height(currentTable), 1);
-        trialNameColumn = repelem(trialNames(fileNum), height(currentTable), 1);
-        
-        currentTable.fileNumber = fileNumColumn;
-        currentTable.trialName = trialNameColumn;
-        
-        % Add the modified table to our list
-        tablesToCombine{end+1} = currentTable;
-    end
-end
+% Select the tables to be combined
+tablesToCombine = tablesAll(tableNumsToCombine);
 
 % Vertically concatenate all tables in the list into a single table
-if ~isempty(tablesToCombine)
-    combinedTable = vertcat(tablesToCombine{:});
-else
-    % Return an empty table if no data was found
-    combinedTable = table();
-end
-
-% Reorder columns
-if ~isempty(combinedTable)
-    combinedTable = movevars(combinedTable, 'fileNumber', 'Before', 1);
-    combinedTable = movevars(combinedTable, 'trialName', 'Before', 1);
-end
+combinedTable = vertcat(tablesToCombine{:});
 
 end
 
@@ -1514,6 +1486,18 @@ disp(metaDataToPrint);
 fCutoffRelToFund = [0.1, 10];  % ratio of Butterworth bandpass filter cutoff for whisk trace
                                 % relative to the fundamental frequency
 
+% Remove any empty tables from the cell array
+tablesToCombine(cellfun('isempty', tablesToCombine)) = [];
+
+% Vertically concatenate all tables in the list into a single table
+if ~isempty(tablesToCombine)
+    combinedTable = vertcat(tablesToCombine{:});
+else
+    % Return an empty table if no data was found
+    combinedTable = table();
+end
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

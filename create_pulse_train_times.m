@@ -1,6 +1,7 @@
 function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, tMax, perVar, varargin)
 %% Randomly generates start and end times for a square wave pulse train
 % Usage: [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, tMax, perVar, 'TimeFirst', 100, 'TimePreviousStart', 0)
+%
 % Explanation:
 %       This function creates a series of pulse start and end times. The period
 %       between pulses varies randomly around a specified average period.
@@ -15,6 +16,9 @@ function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, 
 %       % Generate a pulse train that must start after t=500, but is
 %       % constrained by a previous pulse train that ended at t=100
 %       [timesStart, timesEnd] = create_pulse_train_times(70, 700, 5000, 150, 'TimeFirst', 500, 'TimePreviousStart', 100);
+%
+%       % Generate one pulse that is allowed to go beyond tMax
+%       [timesStart, timesEnd] = create_pulse_train_times(70, 700, 5000, 150, 'GenerateOneBeyond', true);
 %
 % Outputs:
 %       timesStart  - square pulse start times
@@ -40,6 +44,10 @@ function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, 
 %                         until it is greater than or equal to 'TimeFirst'.
 %                       must be a numeric scalar
 %                       default == NaN
+%                       - 'GenerateOneBeyond': whether to generate one pulse
+%                                               beyond tMax
+%                       must be a logical scalar
+%                       default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -52,6 +60,7 @@ function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, 
 % 2025-09-30 Made 'TimeFirst' an optional argument.
 % 2025-10-01 Added 'TimePreviousStart' as an optional argument.
 % 2025-10-01 Simplified by creating a subfunction for period generation.
+% 2025-10-10 Added 'GenerateOneBeyond' as an optional argument.
 % 
 
 %% Hard-coded parameters
@@ -59,6 +68,7 @@ function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, 
 %% Default values for optional arguments
 timeFirstDefault = 0;           % default initial pulse start time
 timePreviousStartDefault = NaN;   % default end time of a previous pulse train
+generateOneBeyondDefault = false; % default flag for generating one beyond tMax
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,11 +98,14 @@ addParameter(iP, 'TimeFirst', timeFirstDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'TimePreviousStart', timePreviousStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'GenerateOneBeyond', generateOneBeyondDefault, ...
+    @(x) validateattributes(x, {'logical'}, {'scalar'}));
 
 % Read from the Input Parser
 parse(iP, pulseWidth, period, tMax, perVar, varargin{:});
 timeFirst = iP.Results.TimeFirst;
 timePreviousStart = iP.Results.TimePreviousStart;
+generateOneBeyond = iP.Results.GenerateOneBeyond;
 
 %% Preparation
 % Determine the first pulse start time
@@ -112,12 +125,20 @@ end
 %% Do the job
 % Collect start times of square pulses
 timesStart = [];
+
+% Generate pulses as long as the end time is less than tMax
 while tNow + pulseWidth < tMax
     % Add to time start
     timesStart = [timesStart; tNow];
 
     % Generate next time start
     tNow = generate_next_start(tNow, pulseWidth, period, perVar);
+end
+
+% Generate one more pulse if requested
+if generateOneBeyond
+    % Add the tNow that is out of bounds to time start
+    timesStart = [timesStart; tNow];
 end
 
 % Compute end times of square pulses
@@ -144,5 +165,3 @@ end
 OLD CODE:
 
 %}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

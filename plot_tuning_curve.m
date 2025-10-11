@@ -333,6 +333,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2020-02-19 Added 'PlotForCorel' as an optional argument
 % 2025-08-29 Updated to use plot_test_result.m by Gemini
 % 2025-10-07 Fixed bug in axHandle usage
+% 2025-10-09 Updated default p limits to use average spacing
+% TODO: Make 'FillMarkers' an optional argument with default == true
 % TODO: Allow inputs to be cell arrays (use force_matrix.m)
 % TODO: Use test_difference.m?
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
@@ -664,8 +666,11 @@ if size(pValues, 1) ~= nEntries
     error('Number of rows in pValues does not match that of readout!');
 end
 
-% Get all unique parameter values
-pValuesAll = unique(pValues);
+% Get all unique parameter values in original order
+uniquePValuesOrig = unique_custom(pValues, 'stable', 'IgnoreNaN', true);
+
+% Get all unique parameter values in increasing order
+uniquePValuesIncr = unique_custom(pValues, 'sorted', 'IgnoreNaN', true);
 
 % Decide whether to plot phase-related stuff
 [plotPhaseBoundaries, plotPhaseAverages, ...
@@ -1063,14 +1068,17 @@ if ~isempty(pLimits)
     if ~strcmpi(pLimits, 'suppress')
         % Use x limits
         xlim(pLimits);
+    else
+        % Do nothing if user requested 'suppress'
     end
+elseif numel(uniquePValuesIncr) > 1
+    % Compute the average spacing between parameter values
+    avgPSpacing = mean(diff(uniquePValuesIncr));
+
+    % Set the new limits by extending by the average spacing
+    xlim([uniquePValuesIncr(1) - avgPSpacing/2, uniquePValuesIncr(end) + avgPSpacing/2]);
 else
-    if nEntries > 1 && nEntries < 4
-        xlim(compute_axis_limits(pValuesAll, 'x', 'Coverage', 90));
-    elseif nEntries >= 4
-        xlim([pValuesAll(1) - (pValuesAll(2) - pValuesAll(1)), ...
-            pValuesAll(end) + (pValuesAll(end) - pValuesAll(end-1))]);
-    end
+    % Do nothing if there are less than 2 entries
 end
 
 % Restrict y axis if readoutLimits provided
@@ -1229,9 +1237,9 @@ end
 
 % Decide on the x locations for the test results
 if ~isempty(tTestPValues) || ~isempty(rankTestPValues)
-    xIntervals = diff(pValuesAll);
-    xLocText = pValuesAll(1:end-1) + xIntervals .* testXLocRel;
-    xLocStar = pValuesAll(1:end-1) + xIntervals .* starXLocRel;
+    xIntervals = diff(uniquePValuesOrig);
+    xLocText = uniquePValuesOrig(1:end-1) + xIntervals .* testXLocRel;
+    xLocStar = uniquePValuesOrig(1:end-1) + xIntervals .* starXLocRel;
 end
 
 % Plot t-test p values if any
@@ -1508,13 +1516,13 @@ WHITE = [1, 1, 1];
 confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
 
 function plot_test_result (testPValues, pString, yLocTextRel, yLocStarRel, ...
-                            xLocTextRel, xLocStarRel, pValuesAll, ...
+                            xLocTextRel, xLocStarRel, uniquePValuesOrig, ...
                             sigLevel, isAppropriate)
 %% Plots p values and star if significant
 
 % Decide on the x locations
-xLocText = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocTextRel;
-xLocStar = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocStarRel;
+xLocText = uniquePValuesOrig(1:end-1) + (uniquePValuesOrig(2) - uniquePValuesOrig(1)) * xLocTextRel;
+xLocStar = uniquePValuesOrig(1:end-1) + (uniquePValuesOrig(2) - uniquePValuesOrig(1)) * xLocStarRel;
 
 % Get current y axis limits
 yLimitsNow = get(gca, 'YLim');
@@ -1560,6 +1568,24 @@ for iValue =  1:numel(testPValues)
     end
 end
 
+% Restrict x axis if pLimits provided; 
+%   otherwise expand the x axis by a little bit
+if ~isempty(pLimits)
+    if ~strcmpi(pLimits, 'suppress')
+        % Use x limits
+        xlim(pLimits);
+    end
+else
+    if nEntries > 1 && nEntries < 4
+        xlim(compute_axis_limits(uniquePValuesOrig, 'x', 'Coverage', 90));
+    elseif nEntries >= 4
+        % Compute the average spacing between parameter values
+        avgPSpacing = mean(diff(uniquePValuesOrig));
+
+        % Set the new limits by extending by the average spacing
+        xlim([uniquePValuesOrig(1) - avgPSpacing/2, uniquePValuesOrig(end) + avgPSpacing/2]);
+    end
+end
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

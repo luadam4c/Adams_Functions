@@ -43,7 +43,7 @@ function handles = plot_table_parallel (myTable, varargin)
 %                   - 'RowLimits': x axis limits
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == [min(rowValues) - 1, max(rowValues) + 1]
+%                   default == set in plot_tuning_curve.m
 %                   - 'ReadoutLimits': y axis limits
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -126,6 +126,7 @@ function handles = plot_table_parallel (myTable, varargin)
 % 2019-12-30 Changed the default x label to 'row number'
 % 2020-02-06 Added 'AxTitles' as an optional argument
 % 2025-10-08 Added 'ClearFigure' and 'AlwaysNew' as optional arguments
+% 2025-10-09 rowLimits default is now set in plot_tuning_curve.m
 % TODO: Merge with plot_table.m
 % TODO: 
 
@@ -300,11 +301,6 @@ else
     nSubplotColumns = subplotDimensions(2);
 end
 
-% Decide on axis limits
-if isempty(rowLimits)
-    rowLimits = [min(rowValues) - 1, max(rowValues) + 1];
-end
-
 % Decide on the x-axis label
 if isempty(rowLabel)
     rowLabel = defaultRowLabel;
@@ -440,6 +436,11 @@ dots = plot_tuning_curve(transpose(iterNumber), transpose(vecToPlot), ...
 
 %{
 OLD CODE:
+
+% Decide on axis limits
+if isempty(rowLimits)
+    rowLimits = [min(rowValues) - 1, max(rowValues) + 1];
+end
 
 %}
 

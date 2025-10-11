@@ -21,7 +21,7 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 %                   must be a structure
 %       varargin    - 'GroupingColumn': The name of the column to group data by.
 %                   must be a string scalar or a character vector
-%                   default == 'repetitionNumber'
+%                   default == 'seedNumber' or 'fileNumber'
 %                   - 'DataColumn': The name of the column containing the amplitude data.
 %                   must be a string scalar or a character vector
 %                   default == 'whiskPeakAmplitudes'
@@ -72,7 +72,7 @@ textLocThrOrigDefault = 'bottomright'; % Location for the through-origin line eq
 axisCoveragePercScatter = 90;          % Coverage for compute_axis_limits
 
 %% Default values for optional arguments
-groupingColumnDefault = 'repetitionNumber';
+groupingColumnDefault = [];                 % set later
 dataColumnDefault = 'whiskPeakAmplitudes';
 nCorrelationsDefault = 4;
 handlesDefault = [];
@@ -92,7 +92,7 @@ iP.FunctionName = mfilename;
 % Add parameter-value pairs to the Input Parser
 addRequired(iP, 'dataTable', @istable);
 addRequired(iP, 'plotParams', @isstruct);
-addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
+addParameter(iP, 'GroupingColumn', groupingColumnDefault);
 addParameter(iP, 'DataColumn', dataColumnDefault, @ischar);
 addParameter(iP, 'NCorrelations', nCorrelationsDefault, @isnumeric);
 addParameter(iP, 'Handles', handlesDefault);
@@ -135,6 +135,24 @@ end
 if isempty(dataTable) || ~ismember(dataColumn, dataTable.Properties.VariableNames)
     fprintf('No data in column "%s" to plot. Skipping scatter plot!\n', dataColumn);
     return;
+end
+
+% Get the column names
+columnNames = dataTable.Properties.VariableNames;
+
+% Decide on grouping column
+if isempty(groupingColumn)
+    if ismember('seedNumber', columnNames)
+        groupingColumn = 'seedNumber';
+    elseif ismember('fileNumber', columnNames)
+        groupingColumn = 'fileNumber';
+    elseif ismember('repetitionNumber', columnNames)
+        groupingColumn = 'repetitionNumber';
+    else
+        % Create dummy column
+        dataTable.grouping = ones(height(dataTable), 1);
+        groupingColumn = 'grouping';
+    end
 end
 
 % Extract data from the table

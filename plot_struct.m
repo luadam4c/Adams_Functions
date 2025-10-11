@@ -128,7 +128,7 @@ colorMapDefault = [];           % set later
 figTitlesDefault = {};          % set later
 figNumberDefault = [];          % use current figure by default
 clearFigureDefault = [];        % set later
-alwaysNewDefault = false;       % don't always create new figure by default
+alwaysNewDefault = true;        % always create new figure by default
 outFolderDefault = pwd;
 figNamesDefault = {};
 figTypesDefault = 'png';
@@ -298,11 +298,10 @@ allScalarFields = fieldnames(scalarStructArray);
 % Count the number of fields
 nFields = numel(allScalarFields);
 
-% Initiate output
-handles = struct(nFields, 1);
 
 % Return if there are no more fields
 if nFields == 0
+    handles = struct.empty;
     return;
 end
 
@@ -310,6 +309,9 @@ end
 fieldData = table2array(struct2table(scalarStructArray));
 
 %% Plot all fields
+% Initiate output
+handlesCell = cell(nFields, 1);
+
 for iField = 1:nFields
     % Get the field value vector for this field
     fieldVals = fieldData(:, iField);
@@ -352,7 +354,7 @@ for iField = 1:nFields
     switch plotType
     case 'tuning'
         % Plot the tuning curve
-        handles(iField) = ...
+        handlesCell{iField} = ...
             plot_tuning_curve(pValues, fieldVals, 'PIsLog', pIsLog, ...
                         'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                         'PTickAngle', pTickAngle, ...
@@ -368,7 +370,7 @@ for iField = 1:nFields
         % Plot horizontal bars
         % TODO: Deal with pIsLog
         % TODO: Implement singlecolor
-        handles(iField) = ...
+        handlesCell{iField} = ...
             plot_bar(fieldVals, 'ForceVectorAsRow', false, ...
                         'ReverseOrder', barReverseOrder, ...
                         'BarDirection', barDirection, ...
@@ -383,6 +385,9 @@ for iField = 1:nFields
         error('plotType unrecognized!')
     end
 end
+
+% Concatenate into a structure array
+handles = cat(1, handlesCell{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -20,7 +20,7 @@ function [results, handles] = virt_plot_log_decrement_jitter (dataTable, plotPar
 %                   must be a structure
 %       varargin    - 'GroupingColumn': The name of the column to group data by.
 %                   must be a string scalar or a character vector
-%                   default == 'repetitionNumber'
+%                   default == 'seedNumber' or 'fileNumber'
 %                   - 'DataColumn': The name of the column with the log decrement data.
 %                   must be a string scalar or a character vector
 %                   default == 'whiskLogDecrements'
@@ -74,7 +74,7 @@ yLocPValueRel = 0.90;       % Relative y-location for p-value text
 yLocRatioLabelRel = 0.85;   % Relative y-location for ratio text
 
 %% Default values for optional arguments
-groupingColumnDefault = 'repetitionNumber'; % Default column for grouping data points
+groupingColumnDefault = [];                 % set later
 dataColumnDefault = 'whiskLogDecrements';   % Default column containing the data
 maxDecrementsDefault = Inf;                 % Default to analyzing all available decrements
 handlesDefault = [];                        % Default is to create a new plot
@@ -94,7 +94,7 @@ iP.FunctionName = mfilename;
 % Add parameter-value pairs to the Input Parser
 addRequired(iP, 'dataTable', @istable);
 addRequired(iP, 'plotParams', @isstruct);
-addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
+addParameter(iP, 'GroupingColumn', groupingColumnDefault);
 addParameter(iP, 'DataColumn', dataColumnDefault, @ischar);
 addParameter(iP, 'MaxDecrements', maxDecrementsDefault, @isnumeric);
 addParameter(iP, 'Handles', handlesDefault);
@@ -127,9 +127,27 @@ if isempty(dataTable) || ~ismember(dataColumn, dataTable.Properties.VariableName
     return;
 end
 
+% Get the column names
+columnNames = dataTable.Properties.VariableNames;
+
+% Decide on grouping column
+if isempty(groupingColumn)
+    if ismember('seedNumber', columnNames)
+        groupingColumn = 'seedNumber';
+    elseif ismember('fileNumber', columnNames)
+        groupingColumn = 'fileNumber';
+    elseif ismember('repetitionNumber', columnNames)
+        groupingColumn = 'repetitionNumber';
+    else
+        % Create dummy column
+        dataTable.grouping = ones(height(dataTable), 1);
+        groupingColumn = 'grouping';
+    end
+end
+
 % Extract the necessary columns from the input table
 logDecrementsCell = dataTable.(dataColumn); % Get log decrement data (cell array of vectors)
-groupingData = dataTable.(groupingColumn); % Get grouping data (e.g., repetition number)
+groupingData = dataTable.(groupingColumn); % Get grouping data (e.g., seed number)
 
 % Exit if there is no data to average
 if isempty(logDecrementsCell) || all(cellfun(@isempty, logDecrementsCell))
@@ -138,12 +156,18 @@ if isempty(logDecrementsCell) || all(cellfun(@isempty, logDecrementsCell))
 end
 
 % Convert the cell array of log decrements into a matrix
+%   Note: each column is a decrement order
 allLogDecrementsMatrix = force_matrix(logDecrementsCell, 'CombineMethod', 'leftAdjustPad')';
 
-% Restrict the matrix to the maximum number of decrements to analyze
-nDecrementsTotal = size(allLogDecrementsMatrix, 2); % Get total number of decrement orders
-nDecrementsToAnalyze = min(nDecrementsTotal, maxDecrementsToAnalyze); % Determine how many to plot
-allLogDecrementsMatrix = allLogDecrementsMatrix(:, 1:nDecrementsToAnalyze); % Trim matrix
+%% Restrict the matrix to the maximum number of decrements to analyze
+% Get total number of decrement orders
+nDecrementsTotal = size(allLogDecrementsMatrix, 2);
+
+% Determine how many to plot
+nDecrementsToAnalyze = min(nDecrementsTotal, maxDecrementsToAnalyze);
+
+% Trim matrix
+allLogDecrementsMatrix = allLogDecrementsMatrix(:, 1:nDecrementsToAnalyze);
 
 %% Compute Statistics
 % Calculate mean and 95% confidence intervals for each decrement order
@@ -167,6 +191,22 @@ results.upper95 = upper95;
 results.pValues = pValues;
 results.avgWhiskAmpRatios = avgWhiskAmpRatios;
 
+%% Prepare data vectors for the plot_grouped_jitter function
+% Flatten data matrix into a column vector
+allLogDecrementsVec = allLogDecrementsMatrix(:);
+
+% Create decrement order matrix
+allDecrementOrdersVec = repmat(1:nDecrementsToAnalyze, size(allLogDecrementsMatrix, 1), 1);
+
+% Flatten decrement order matrix into a column vector
+allDecrementOrdersVec = allDecrementOrdersVec(:);
+
+% Create grouping matrix
+allGroupsVec = repmat(groupingData, 1, nDecrementsToAnalyze);
+
+% Flatten group matrix into a column vector
+allGroupsVec = allGroupsVec(:);
+
 %% Plotting
 % Extract plotting parameters
 jitterWidth = plotParams.jitterWidth;
@@ -178,6 +218,7 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     handles = handlesIn; % Use the passed-in handles struct
     axJitter = handles.axJitter;
     
+    % Prepare data vectors for the plot_grouped_jitter function
     nAnalysisWindows = size(allLogDecrementsMatrix, 1);
     decrementOrdersMatrix = repmat(1:nDecrementsToAnalyze, nAnalysisWindows, 1);
     decrementOrdersVec = decrementOrdersMatrix(:);
@@ -188,15 +229,14 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     % Update x limits
     xlim(axJitter, [min(decrementOrdersVec) - 0.5, max(decrementOrdersVec) + 0.5]);
 
-    % Update jitter data for each group separately
-    allLogDecrementsVec = allLogDecrementsMatrix(:);
-    allGroupsVec = repmat(groupingData, 1, nDecrementsToAnalyze);
-    allGroupsVec = allGroupsVec(:);
-
+    % Compute the number of unique groups
     uniqueGroups = unique(groupingData);
     nGroups = numel(uniqueGroups);
+
+    % Get the current jitter plot handles
     currentJitterHandles = handles.hJitter;
 
+    % Update or plot jitter plots
     if nGroups == numel(currentJitterHandles)
         for iGroup = 1:nGroups
             groupValue = uniqueGroups(iGroup);
@@ -251,20 +291,12 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     fig = handles.fig; % Get figure handle for saving
 else
     % --- CREATE NEW PLOT ---
-    % Prepare data vectors for the plot_grouped_jitter function
-    allLogDecrementsVec = allLogDecrementsMatrix(:); % Flatten data matrix into a single vector
-    allDecrementOrdersVec = repmat(1:nDecrementsToAnalyze, size(allLogDecrementsMatrix, 1), 1);
-    allDecrementOrdersVec = allDecrementOrdersVec(:); % Flatten order matrix
-    allGroupsVec = repmat(groupingData, 1, nDecrementsToAnalyze); % Matrix of group IDs
-    allGroupsVec = allGroupsVec(:); % Flatten group matrix
-
     % Create x-axis tick labels (e.g., "ln(A2/A1)")
     xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nDecrementsToAnalyze, 'UniformOutput', false);
 
     % Set up figure and axes
     fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
     axJitter = gca;
-    figPath = fullfile(pathOutDir, figName); % Construct full path for saving the figure
 
     % Generate the base jitter plot without its own statistics
     hOutJitter = plot_grouped_jitter(allLogDecrementsVec, allGroupsVec, allDecrementOrdersVec, ...

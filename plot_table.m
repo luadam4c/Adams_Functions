@@ -174,7 +174,7 @@ rowTickLocsDefault = [];
 rowTickLabelsDefault = {};
 figTitleDefault = '';
 clearFigureDefault = [];        % set later
-alwaysNewDefault = false;       % don't always create new figure by default
+alwaysNewDefault = [];          % set later
 outFolderDefault = pwd;
 figNameDefault = '';
 
@@ -445,6 +445,16 @@ if isempty(markerFaceColor)
     case 'separate'
         markerFaceColor = markerFaceColorSeparate;
     end
+end
+
+% Decide on whether to create a new figure
+if isempty(alwaysNew)
+    switch plotMode
+    case {'overlapped', 'parallel'}
+        alwaysNew = false;
+    case 'separate'
+        alwaysNew = true;
+    end    
 end
 
 % Decide on figure title

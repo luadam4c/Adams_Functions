@@ -1,6 +1,6 @@
-function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
+function [results, handles] = virt_plot_phase_response (dataTable, pPlot, varargin)
 %% Plots a phase response curve from aggregated data
-% Usage: [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
+% Usage: [results, handles] = virt_plot_phase_response (dataTable, pPlot, varargin)
 % Explanation:
 %       Plots phaseReset vs. phaseChangeWhisk, grouped by a specified
 %       column. Also plots a regression line with statistics. It can create
@@ -11,13 +11,13 @@ function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 %       handles     - A structure containing handles to the plot objects.
 %
 % Arguments:
-%       T           - A table containing whisk analysis data.
+%       dataTable           - A table containing whisk analysis data.
 %                   must be a table
 %       pPlot       - The plotting parameters structure from virt_moore.m.
 %                   must be a structure
 %       varargin    - 'GroupingColumn': The name of the column to group data by.
 %                   must be a string scalar or a character vector
-%                   default == 'fileNumber'
+%                   default == 'seedNumber' or 'fileNumber'
 %                   - 'WhiskDir': Direction of whisk used for phase calculations.
 %                   must be a string scalar or character vector
 %                   default == 'retraction'
@@ -58,7 +58,7 @@ function [results, handles] = virt_plot_phase_response (T, pPlot, varargin)
 %
 
 %% Default values for optional arguments
-groupingColumnDefault = 'repetitionNumber';
+groupingColumnDefault = [];                 % set later
 whiskDirDefault = 'retraction';
 handlesDefault = [];
 figTitleDefault = 'Whisk Phase Response Curve';
@@ -75,9 +75,9 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
-addRequired(iP, 'T', @istable);
+addRequired(iP, 'dataTable', @istable);
 addRequired(iP, 'pPlot', @isstruct);
-addParameter(iP, 'GroupingColumn', groupingColumnDefault, @ischar);
+addParameter(iP, 'GroupingColumn', groupingColumnDefault);
 addParameter(iP, 'WhiskDir', whiskDirDefault, @ischar);
 addParameter(iP, 'Handles', handlesDefault);
 addParameter(iP, 'FigTitle', figTitleDefault, @ischar);
@@ -87,7 +87,7 @@ addParameter(iP, 'FigTypes', figTypesDefault);
 addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
 
 % Read from the Input Parser
-parse(iP, T, pPlot, varargin{:});
+parse(iP, dataTable, pPlot, varargin{:});
 groupingColumn = iP.Results.GroupingColumn;
 whiskDirForPhase = iP.Results.WhiskDir;
 handlesIn = iP.Results.Handles;
@@ -98,18 +98,38 @@ figTypes = iP.Results.FigTypes;
 toSaveOutput = iP.Results.ToSaveOutput;
 
 %% Preparation
+% Initialize outputs
 results = struct;
 handles.fig = gobjects;
 
-if isempty(T) || ~ismember('phaseReset', T.Properties.VariableNames)
+% Check if phase response data is present
+if isempty(dataTable) || ~ismember('phaseReset', dataTable.Properties.VariableNames)
     fprintf('No phase response data to plot. Skipping PRC plot!\n');
     return;
 end
 
+% Get the column names
+columnNames = dataTable.Properties.VariableNames;
+
+% Decide on grouping column
+if isempty(groupingColumn)
+    if ismember('seedNumber', columnNames)
+        groupingColumn = 'seedNumber';
+    elseif ismember('fileNumber', columnNames)
+        groupingColumn = 'fileNumber';
+    elseif ismember('repetitionNumber', columnNames)
+        groupingColumn = 'repetitionNumber';
+    else
+        % Create dummy column
+        dataTable.grouping = ones(height(dataTable), 1);
+        groupingColumn = 'grouping';
+    end
+end
+
 % Extract data and filter NaNs
-phaseReset = T.phaseReset;
-phaseChangeWhisk = T.phaseChangeWhisk;
-groupingData = T.(groupingColumn);
+phaseReset = dataTable.phaseReset;
+phaseChangeWhisk = dataTable.phaseChangeWhisk;
+groupingData = dataTable.(groupingColumn);
 toKeep = ~isnan(phaseReset) & ~isnan(phaseChangeWhisk);
 phaseReset = phaseReset(toKeep);
 phaseChangeWhisk = phaseChangeWhisk(toKeep);

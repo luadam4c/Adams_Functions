@@ -326,8 +326,8 @@ nArrays = numel(data);
 
 % If there is nothing to plot, return
 if nArrays == 0
-    fprintf('Threre is nothing to plot!!\n');
-    hRaster = [];
+    fprintf('There is nothing to plot!!\n');
+    hRaster = {};
     eventTimes = [];
     yEnds = [];
     yTicksTable = [];
