@@ -50,7 +50,7 @@ function varargout = extract_fields (structs, varargin)
 %       cd/parse_spike2_mat.m
 %       cd/update_figure_for_corel.m
 %       cd/virt_analyze_sniff_whisk.m
-%       cd/virt_plot_log_decrement_jitter.m
+%       cd/virt_plot_jitter.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu

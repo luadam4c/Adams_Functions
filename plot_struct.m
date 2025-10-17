@@ -8,8 +8,26 @@ function handles = plot_struct (structArray, varargin)
 %       TODO
 %
 % Outputs:
-%       handles     - object handles returned by plot_tuning_curve() or plot_bar()
-%                   specified as a structure
+%       handles     - handles structure returned by the plotting function,
+%                     e.g., plot_tuning_curve() or plot_bar(). 
+%                     For plot_tuning_curve(), the fields are:
+%                       fig         - figure handle
+%                       ax          - axes handle
+%                       curves      - handles to the plotted tuning curves
+%                       confInts    - (optional) handles to confidence intervals
+%                       boundaries  - (optional) handles to boundary lines
+%                       selected    - (optional) handles to selected value markers
+%                       averages    - (optional) handles to phase average lines
+%                       avgWindows  - (optional) handles to average window bars
+%                     For plot_bar(), the fields are:
+%                       fig         - figure handle
+%                       bars        - bar objects (bars for each group or 
+%                                           column is one bar object)
+%                       lines       - error bar lines
+%                               1st dim: connecting (1), upper limit (2), lower limit (3)
+%                               2nd dim: sample number
+%                               3rd dim: group number
+%                   specified as a structure array
 %
 % Arguments:    
 %       structArray - a structure array containing scalar fields

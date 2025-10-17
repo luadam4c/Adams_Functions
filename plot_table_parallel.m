@@ -10,9 +10,11 @@ function handles = plot_table_parallel (myTable, varargin)
 %
 % Outputs:
 %       handles     - a structure with fields:
-%                       fig
-%                       ax
-%                       dots
+%                       fig     - figure handle
+%                       ax      - array of subplot axes handles
+%                       supAx   - handle for the super axes for the title
+%                       hTuning - array of handles structures from 
+%                                   plot_tuning_curve()
 %                   specified as a scalar structure
 %
 % Arguments:
@@ -377,12 +379,12 @@ if numel(ax) > nVarsToPlot
 end
             
 % Plot each variable on a separate subplot
-dots = cellfun(@(a, b, c, d, e, f, g, h, i, j) ...
+hTuning = cellfun(@(a, b, c, d, e, f, g, h, i, j) ...
                 update_subplot(a, rowValues, b, c, d, e, f, g, ...
                                 rowLabel, h, i, j, otherArguments), ...
                 num2cell(axToUse), dataToPlot, varIsLog, rowLimits, readoutLimits, ...
                 rowTickLocs, colorMap, readoutLabel, rowTickLabels, axTitles, ...
-                'UniformOutput', false);
+                'UniformOutput', true);
 
 % Create an overarching title
 if ~isempty(figTitle)
@@ -393,7 +395,8 @@ end
 
 % Generate a legend if requested
 if ~strcmpi(legendLocation, 'suppress')
-    % lgd = legend(dots, 'location', legendLocation);
+    % TODO: Create overarching legend
+    % lgd = legend(hTuning, 'location', legendLocation);
     % set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
 end
 
@@ -406,31 +409,29 @@ end
 handles.fig = fig;
 handles.ax = ax;
 handles.supAx = supAx;
-handles.dots = dots;
+handles.hTuning = hTuning;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function dots = update_subplot(axHandle, iterNumber, vecToPlot, ...
+function hTuning = update_subplot(axHandle, iterNumber, vecToPlot, ...
                                 varIsLog, rowLimits, readoutLimits, rowTickLocs, ...
                                 colorMap, rowLabel, readoutLabel, rowTickLabels, ...
                                 axTitle, otherArguments)
 
-% Put the current subplot in focus
-subplot(axHandle);
-
-% Place a title for the axes
+% Place a title for the current subplot
 if ~isempty(axTitle)
-    title(axTitle);
+    title(axHandle, axTitle);
 end
 
 % Plot each iteration as a different color
-dots = plot_tuning_curve(transpose(iterNumber), transpose(vecToPlot), ...
+hTuning = plot_tuning_curve(transpose(iterNumber), transpose(vecToPlot), ...
                         'ReadoutIsLog', varIsLog, ...
                         'PLimits', rowLimits, 'ReadoutLimits', readoutLimits, ...
                         'PTicks', rowTickLocs, 'PTickLabels', rowTickLabels, ...
                         'PLabel', rowLabel, 'ReadoutLabel', readoutLabel, ...
                         'ColorMap', colorMap, 'FigTitle', 'suppress', ...
-                        'LegendLocation', 'suppress', otherArguments);
+                        'LegendLocation', 'suppress', ...
+                        'AxesHandle', axHandle, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

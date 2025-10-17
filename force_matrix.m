@@ -104,8 +104,9 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/transform_vectors.m
 %       cd/vecfun.m
 %       cd/virt_plot_amplitude_correlation.m
-%       cd/virt_plot_log_decrement_jitter.m
-%       \Shared\Code\vIRt\virt_analyze_whisk.m
+%       cd/virt_plot_jitter.m
+%       \Shared\Code\vIRt-Moore\virt_analyze_whisk.m
+%       \Shared\Code\vIRt-Moore\virt_moore_multiple_reps.m
 
 % File History:
 % 2019-01-03 Created by Adam Lu

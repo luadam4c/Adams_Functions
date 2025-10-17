@@ -101,7 +101,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/minEASE.m
 %       cd/parse_ipsc.m
 %       cd/virt_analyze_sniff_whisk.m
-%       cd/virt_plot_log_decrement_jitter.m
+%       cd/virt_plot_jitter.m
 %       \Shared\Code\vIRt\virt_analyze_whisk.m
 
 % File History:

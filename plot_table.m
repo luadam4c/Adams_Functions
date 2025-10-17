@@ -11,10 +11,27 @@ function handles = plot_table (myTable, varargin)
 %       plot_table(myTableNumeric, 'PlotMode', 'separate')
 %
 % Outputs:
-%       handles     - structure(s) with fields:
-%                       fig - figure handle(s) for the created figure(s)
-%                       TODO
-%                   specified as a structure array
+%       handles     - structure with fields dependent on 'PlotMode':
+%                   For 'overlapped' mode (from plot_tuning_curve.m):
+%                       fig         - figure handle
+%                       ax          - axes handle
+%                       curves      - handles to the plotted tuning curves
+%                       confInts    - (optional) handles to confidence intervals
+%                       boundaries  - (optional) handles to boundary lines
+%                       selected    - (optional) handles to selected value markers
+%                       averages    - (optional) handles to phase average lines
+%                       avgWindows  - (optional) handles to average window bars
+%                   For 'parallel' mode (from plot_table_parallel.m):
+%                       fig     - figure handle
+%                       ax      - array of subplot axes handles
+%                       supAx   - handle for the super axes for the title
+%                       hTuning - array of handles structures from 
+%                                   plot_tuning_curve()
+%                   For 'separate' mode (from plot_struct.m):
+%                       A structure array where each element contains the
+%                       handles for a single plot, with fields as described
+%                       for the 'overlapped' mode.
+%                   specified as a structure or structure array
 %
 % Arguments:
 %       myTable     - a table with variables to plot

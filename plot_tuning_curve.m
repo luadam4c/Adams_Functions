@@ -30,13 +30,15 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Outputs:
 %       handles     - handles structure with fields:
-%                       fig         - figure handle for the created figure
-%                       curves      - tuning curves
-%                       confInts    - confidence interval areas
-%                       boundaries  - boundary lines
-%                       selected    - selected values
-%                   specified as a scalar structure
-%
+%                       fig         - figure handle
+%                       ax          - axes handle
+%                       curves      - handles to the plotted tuning curves
+%                       confInts    - (optional) handles to confidence intervals
+%                       boundaries  - (optional) handles to boundary lines
+%                       selected    - (optional) handles to selected value markers
+%                       averages    - (optional) handles to phase average lines
+%                       avgWindows  - (optional) handles to average window bars
+%                   specified as a scalar structure%
 % Arguments:
 %       pValues     - vector(s) of parameter values
 %                   must be a numeric 2-D array

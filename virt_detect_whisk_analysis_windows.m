@@ -111,6 +111,7 @@ function [sniffStartWinTable, basalRespCycleTable] = virt_detect_whisk_analysis_
 % 2025-10-09 Modified by Gemini to add seedNumber/fileNumber as first column
 %               and create mode-specific empty tables to remove unused columns.
 % 2025-10-09 Modified by Gemini to also pass in and add trialName for experiments.
+% 2025-10-12 Fixed sniff transition definition to account for all sniffing
 
 %% Hard-coded parameters
 validSniffDefinitions = {'pulseCycle', 'transitionTimes'};
@@ -277,8 +278,13 @@ case 'pulseCycle'
     isSniffCycle = cycleDurations < sniffDurationThresholdMs;
 
     % Find transitions to identify the start and end of sniffing periods
-    sniffStartIndices = find(diff([false; isSniffCycle]) == 1);
-    sniffEndIndices = find(diff([isSniffCycle; false]) == -1);
+    if all(isSniffCycle) || ~any(isSniffCycle)
+        sniffStartIndices = [];
+        sniffEndIndices = [];
+    else
+        sniffStartIndices = find(diff([false; isSniffCycle]) == 1);
+        sniffEndIndices = find(diff([isSniffCycle; false]) == -1);
+    end
 
     % Get the times for these start and end events
     sniffStartTimes = pulseCycleStartTimes(sniffStartIndices);
@@ -578,10 +584,12 @@ case 'pulseCycle'
         end
         
         % Define basal respiration cycle start as the preceding valley
+        %   of the first peak
         startTime = peakTableThis.preValleyTime(1);
         if isnan(startTime), startTime = cycleStartsForBasal(iBasal); end
         
         % Define basal respiration cycle end as the succeeding valley
+        %   of the last peak
         endTime = peakTableThis.postValleyTime(end);
         if isnan(endTime), endTime = cycleEndsForBasal(iBasal); end
         

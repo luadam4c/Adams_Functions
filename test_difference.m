@@ -139,7 +139,7 @@ function statsStruct = test_difference (data, varargin)
 %       cd/m3ha_plot_figure08.m
 %       cd/m3ha_simulate_population.m
 %       cd/test_var_difference.m
-%       cd/virt_plot_log_decrement_jitter.m
+%       cd/virt_plot_jitter.m
 
 % File History:
 % 2020-02-14 Moved from test_var_difference.m

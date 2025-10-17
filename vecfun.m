@@ -41,7 +41,7 @@ function varargout = vecfun (myFunction, inVecs, varargin)
 %       cd/medianfilter.m
 %       cd/movingaveragefilter.m
 %       cd/parse_ipsc.m
-%       cd/virt_plot_log_decrement_jitter.m
+%       cd/virt_plot_jitter.m
 
 % File History:
 % 2019-08-29 Created by Adam Lu
