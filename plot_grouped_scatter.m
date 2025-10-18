@@ -383,9 +383,6 @@ if strcmpi(legendLocation, 'auto')
     end
 end
 
-% Decide on the axes to plot on
-axHandle = set_axes_properties('AxesHandle', axHandle);
-
 %% Compute confidence ellipses
 if plotEllipse
     % Compute all confidence ellipses
@@ -434,7 +431,10 @@ end
 
 %% Plot and save scatter plot
 % Decide on the figure to plot on
-fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
+fig = set_figure_properties('FigHandle', figHandle, 'AxesHandle', axHandle, 'FigNumber', figNumber);
+
+% Decide on the axes to plot on
+axHandle = set_axes_properties('AxesHandle', axHandle);
 
 % Store hold status and hold on
 wasHold = hold_on(axHandle);
@@ -469,7 +469,7 @@ if plotEllipse
                 xEllipses(toPlot), yEllipses(toPlot), ...
                 colorMapCell(toPlot), ellipseLabels(toPlot));
 else
-    ellipses = plot([], []);
+    ellipses = plot(axHandle, [], []);
 end
 
 % Update x and y axis scales
@@ -478,35 +478,35 @@ set(axHandle, 'XScale', xScale, 'YScale', yScale);
 % Set x axis limits
 if ~isempty(xLimits) && ~isequaln(xLimits(1), xLimits(2)) && ...
         ~strcmpi(xLimits, 'suppress')
-    xlim(xLimits);
+    xlim(axHandle, xLimits);
 end
 
 % Set y axis limits
 if ~isempty(yLimits) && ~isequaln(yLimits(1), yLimits(2)) && ...
         ~strcmpi(yLimits, 'suppress')
-    ylim(yLimits);
+    ylim(axHandle, yLimits);
 end
 
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')
-    lgd = legend(dots, 'Location', legendLocation);
+    lgd = legend(axHandle, dots, 'Location', legendLocation);
     % set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
     set(lgd, 'AutoUpdate', 'off');
 end
 
 % Generate an x-axis label
 if ~strcmpi(xLabel, 'suppress')
-    xlabel(xLabel);
+    xlabel(axHandle, xLabel);
 end
 
 % Generate a y-axis label
 if ~strcmpi(yLabel, 'suppress')
-    ylabel(yLabel);
+    ylabel(axHandle, yLabel);
 end
 
 % Generate a title
 if ~strcmpi(figTitle, 'suppress')
-    title(figTitle);
+    title(axHandle, figTitle);
 end
 
 % Turn on grid if requested

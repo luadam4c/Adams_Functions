@@ -46,6 +46,7 @@ function lines = plot_error_bar (pValue, rLow, rHigh, varargin)
 % File History:
 % 2019-01-24 Created by Adam and Katerina
 % 2019-05-10 Added 'BarDirection' as an optional argument
+% TODO: Add 'AxesHandle' as an optional argument and use it whenever appropriate
 % 
 
 %% Hard-coded parameters

@@ -540,17 +540,17 @@ end
 %% Finalize plot
 % Update x tick locations if desired
 if toUpdateXTicks
-    xticks(xTickLocs);
+    xticks(axHandle, xTickLocs);
 end
 
 % Update x tick labels
 if ~isempty(xTickLabels)
-    xticklabels(xTickLabels);
+    xticklabels(axHandle, xTickLabels);
 end
 
 % Modify x tick angle
 if ~isempty(xTickAngle)
-    xtickangle(xTickAngle);
+    xtickangle(axHandle, xTickAngle);
 end
 
 % Decide on x axis limits based on x tick locations
@@ -560,17 +560,17 @@ end
 
 % Modify x limits
 if ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
-    xlim(xLimits);
+    xlim(axHandle, xLimits);
 end
 
 % Set y label
 if ~isempty(yLabel)
-    ylabel(yLabel);
+    ylabel(axHandle, yLabel);
 end
 
 % Generate a legend if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress')
-    legend('location', legendLocation);
+    legend(axHandle, 'location', legendLocation);
 end
 
 % Hold off

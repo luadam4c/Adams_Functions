@@ -42,7 +42,7 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 % 2017-12-15 Created by Adam Lu
 % 2018-05-16 Now uses islinestyle.m
 % 2018-12-18 Now uses iP.Unmatched
-% 
+% TODO: Add 'AxesHandle' as an optional argument and use it whenever appropriate
 
 %% Default values for optional arguments
 toPlotDefault = true;                   % whether to plot

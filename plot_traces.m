@@ -389,6 +389,7 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2025-09-02 Made boundary style parameters optional arguments
 % 2025-09-13 Moved code to resize_subplots_for_labels.m
 % 2025-09-15 Added 'TightInset' and 'CenterPosition' as optional arguments
+% 2025-10-17 Fixed axes associations
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -1080,7 +1081,7 @@ end
 switch plotMode
 case {'overlapped', 'staggered', 'averaged'}
     % Decide on the figure to plot on
-    fig = set_figure_properties('FigHandle', figHandle, ...
+    fig = set_figure_properties('FigHandle', figHandle, 'AxesHandle', axHandles, ...
                     'FigNumber', figNumber, 'FigExpansion', figExpansion, ...
                     'CenterPosition', centerPosition, 'TightInset', tightInset);
 
@@ -1140,7 +1141,7 @@ end
 switch plotMode
 case {'overlapped', 'staggered', 'averaged'}
     % Store hold on status
-    wasHold = hold_on;
+    wasHold = hold_on(ax);
 
     % Set the default y-axis limits
     if isempty(yLimits)
@@ -1268,7 +1269,8 @@ case {'overlapped', 'staggered', 'averaged'}
                 plot_tuning_curve(tVecAvg, meanDataToCompare, ...
                             'UpperCI', highCIToCompare, 'LowerCI', lowCIToCompare, ...
                             'ColorMap', colorToCompareThis, 'PlotOnly', true, ...
-                            'LineStyle', lineStyleToCompare, otherArguments{:});
+                            'LineStyle', lineStyleToCompare, ...
+                            'AxesHandle', ax, otherArguments{:});
             plotsDataToCompare = handlesToCompare.curves;
         end
 
@@ -1276,7 +1278,8 @@ case {'overlapped', 'staggered', 'averaged'}
         handles = plot_tuning_curve(tVecAvg, meanData, ...
                             'UpperCI', highCI, 'LowerCI', lowCI, ...
                             'ColorMap', colorThis, 'PlotOnly', true, ...
-                            'LineStyle', lineStyle, otherArguments{:});
+                            'LineStyle', lineStyle, 'AxesHandle', ax, ...
+                            otherArguments{:});
         plotsData = handles.curves;
     else
         % Plot all plots together
@@ -1303,16 +1306,16 @@ case {'overlapped', 'staggered', 'averaged'}
             % Plot data to compare against
             if ~isempty(dataToCompareThis)
                 comparePlotted = true;
-                p2 = plot(tVecsThis, dataToCompareThis, 'Color', colorToCompareThis, ...
+                p2 = plot(ax, tVecsThis, dataToCompareThis, 'Color', colorToCompareThis, ...
                             'LineStyle', lineStyleToCompare, otherArguments{:});
             end
             
             % Plot the data using the color map
             if size(colorThis, 1) == 1
-                p1 = plot(tVecsThis, dataThis, 'LineStyle', lineStyle, ...
+                p1 = plot(ax, tVecsThis, dataThis, 'LineStyle', lineStyle, ...
                             'Color', colorThis, otherArguments{:});
             else
-                p1 = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
+                p1 = arrayfun(@(x) plot(ax, tVecsThis(:, x), dataThis(:, x), ...
                                         'LineStyle', lineStyle, ...
                                         'Color', colorThis(x, :), ...
                                         otherArguments{:}), ...
@@ -1353,29 +1356,30 @@ case {'overlapped', 'staggered', 'averaged'}
         yLimitsBar = [yAmountToStagger, yAmountToStagger * 2];
         hold on
         plot_vertical_line(xBar, 'YLimits', yLimitsBar, ...
-                            'Color', 'r', 'LineWidth', 1);
+                            'Color', 'r', 'LineWidth', 1, 'AxesHandle', ax);
         xText = xLimits(1) + (xLimits(2) - xLimits(1)) * 0.91;
         yText = yAmountToStagger * 3 / 2;
-        text(xText, yText, num2str(yAmountToStagger, 3));
+        text(ax, xText, yText, num2str(yAmountToStagger, 3));
     end
 
     % Plot horizontal bars
     if ~isempty(horzBarWindows)
         plot_horizontal_line(horzBarYValues, ...
             'XLimits', horzBarWindows, 'ColorMap', horzBarColorMap, ...
-            'LineStyle', horzBarLineStyle, 'LineWidth', horzBarLineWidth);
+            'LineStyle', horzBarLineStyle, 'LineWidth', horzBarLineWidth, ...
+            'AxesHandle', ax);
     end
 
     % Set x axis limits
     if ~iscell(xLimits) && ...
         ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
-        xlim(xLimits);
+        xlim(ax, xLimits);
     end
 
     % Set y axis limits
     if ~isempty(yLimits) && ...
         ~(ischar(yLimits) && strcmpi(yLimits, 'suppress'))
-        ylim(yLimits);
+        ylim(ax, yLimits);
     end
 
     % Plot x boundaries (must do this after setting y axis limits)
@@ -1384,7 +1388,8 @@ case {'overlapped', 'staggered', 'averaged'}
                                 'BoundaryType', xBoundaryType, ...
                                 'LineWidth', xBoundaryLineWidth, ...
                                 'LineStyle', xBoundaryLineStyle, ...
-                                'ColorMap', xBoundaryColor);
+                                'ColorMap', xBoundaryColor, ...
+                                'AxesHandle', ax);
     end
 
     % Plot y boundaries (must do this after setting x axis limits)
@@ -1393,17 +1398,18 @@ case {'overlapped', 'staggered', 'averaged'}
                                 'BoundaryType', yBoundaryType, ...
                                 'LineWidth', yBoundaryLineWidth, ...
                                 'LineStyle', yBoundaryLineStyle, ...
-                                'ColorMap', yBoundaryColor);
+                                'ColorMap', yBoundaryColor, ...
+                                'AxesHandle', ax);
     end
 
     % Generate an x-axis label
     if ~strcmpi(xLabel, 'suppress')
-        xlabel(xLabel);
+        xlabel(ax, xLabel);
     end
 
     % Generate a y-axis label
     if ~strcmpi(yLabel, 'suppress')
-        ylabel(yLabel);
+        ylabel(ax, yLabel);
     end
 
     % Decide on Y tick values
@@ -1426,7 +1432,7 @@ case {'overlapped', 'staggered', 'averaged'}
 
     % Generate a title
     if ~strcmpi(figTitle, 'suppress')
-        title(figTitle);
+        title(ax, figTitle);
     end
 
     % Generate a legend if there is more than one trace
@@ -1443,7 +1449,7 @@ case {'overlapped', 'staggered', 'averaged'}
                 'AutoUpdate', 'off');
     end
 
-    hold_off(wasHold);
+    hold_off(wasHold, ax);
 case 'parallel'
     if ~strcmpi(legendLocation, 'suppress')
         % Set a legend location differently    
@@ -1543,7 +1549,8 @@ case 'parallel'
         if ~isempty(dataToCompare{iPlot})
             comparePlotted = true;
             pToCompare = ...
-                plot(tVecs{iPlot}, dataToCompare{iPlot}, 'Color', colorToCompareThis, ...
+                plot(axThis, tVecs{iPlot}, dataToCompare{iPlot}, ...
+                        'Color', colorToCompareThis, ...
                         'LineStyle', lineStyleToCompare, otherArguments{:});
         else
             comparePlotted = false;
@@ -1552,10 +1559,11 @@ case 'parallel'
 
         % Plot the data using the color map
         if size(colorThis, 1) == 1
-            p = plot(tVecsThis, dataThis, 'LineStyle', lineStyle, ...
+            p = plot(axThis, tVecsThis, dataThis, ...
+                    'LineStyle', lineStyle, ...
                     'Color', colorThis, otherArguments{:});
         else
-            p = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
+            p = arrayfun(@(x) plot(axThis, tVecsThis(:, x), dataThis(:, x), ...
                                     'LineStyle', lineStyle, ...
                                     'Color', colorThis(x, :), ...
                                     otherArguments{:}), ...
@@ -1566,7 +1574,8 @@ case 'parallel'
         if ~isempty(horzBarWindows)
             plot_horizontal_line(horzBarYValueThis, ...
                     'XLimits', horzBarWindows{iPlot}, 'ColorMap', horzBarColorMap, ...
-                    'LineStyle', horzBarLineStyle, 'LineWidth', horzBarLineWidth);
+                    'LineStyle', horzBarLineStyle, 'LineWidth', horzBarLineWidth, ...
+                    'AxesHandle', axThis);
         end
 
         % Set the legend label as the trace label if provided
@@ -1579,13 +1588,13 @@ case 'parallel'
 
         % Set time axis limits
         if ~iscell(xLimits) && ~strcmpi(xLimits, 'suppress')
-            xlim(xLimits);
+            xlim(axThis, xLimits);
         end
 
         % Set y axis limits
         if ~isempty(yLimitsThis) && ~any(isnan(yLimitsThis)) && ...
                 ~strcmpi(yLimitsThis, 'suppress')
-            ylim(yLimitsThis);
+            ylim(axThis, yLimitsThis);
         end
 
         % Plot x boundaries (must do this after setting y axis limits)
@@ -1602,7 +1611,8 @@ case 'parallel'
                                     'BoundaryType', xBoundaryType, ...
                                     'LineWidth', xBoundaryLineWidth, ...
                                     'LineStyle', xBoundaryLineStyle, ...
-                                    'ColorMap', xBoundaryColor);
+                                    'ColorMap', xBoundaryColor, ...
+                                    'AxesHandle', axThis);
         end
 
         % Plot y boundaries (must do this after setting x axis limits)
@@ -1619,7 +1629,8 @@ case 'parallel'
                                     'BoundaryType', yBoundaryType, ...
                                     'LineWidth', yBoundaryLineWidth, ...
                                     'LineStyle', yBoundaryLineStyle, ...
-                                    'ColorMap', yBoundaryColor);
+                                    'ColorMap', yBoundaryColor, ...
+                                    'AxesHandle', axThis);
         end
 
         % Generate a y-axis label
@@ -1629,7 +1640,7 @@ case 'parallel'
             % if nRows > 3
             %     ylabel(yLabel{iPlot}, 'Rotation', 0);
             % else
-                ylabel(yLabel{iPlot});
+                ylabel(axThis, yLabel{iPlot});
             % end
         end
 
@@ -1693,7 +1704,7 @@ case 'parallel'
         % Create a subtitle for this subplot
         % TODO: Conflict with figTitle?
         if ~isempty(figSubTitles)
-            title(figSubTitles{iPlot});
+            title(axThis, figSubTitles{iPlot});
         end
 
         % Store handles in array
@@ -1735,9 +1746,8 @@ case 'parallel'
 
     % Handle the title for the simple, single-plot case separately.
     if ~strcmpi(figTitle, 'suppress') && nPlots <= 1
-        title(figTitle);
+        title(axThis, figTitle);
     end
-
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end
@@ -1782,7 +1792,7 @@ if ~isempty(figName)
             case {'overlapped', 'staggered'}
                 % Change the figure title
                 if ~strcmpi(figTitleThis, 'suppress')
-                    title(figTitleThis);
+                    title(ax, figTitleThis);
                 end
 
                 % Change the x-axis limits

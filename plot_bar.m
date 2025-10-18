@@ -257,6 +257,7 @@ function handles = plot_bar (val, varargin)
 % 2019-12-18 Added 'LegendLocation' as an optional argument
 % 2019-12-18 Added 'ColumnLabels' as an optional argument
 % 2020-02-07 Added 'BarWidth' as an optional argument
+% TODO: Add 'AxesHandle' as an optional argument and use it whenever appropriate
 % TODO: Make sure there are enough ticks for the labels!
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 % TODO: Finish implementation of 'PhaseVectors' as in plot_tuning_curve
