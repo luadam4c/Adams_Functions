@@ -123,12 +123,12 @@ excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
 % Plotting parameters
 %fileNumsToPlot = 10;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 38;                    % The file number(s) to plot (max 38)
-fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
+%fileNumsToPlot = 4;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = 13;                    % The file number(s) to plot (max 38)
 %fileNumsToPlot = (14:38)';               % The file number(s) to plot (max 38)
-%fileNumsToPlot = (1:38)';               % The file number(s) to plot (max 38)
-toSpeedUp = false;                      % Whether to use parpool and hide figures
-%toSpeedUp = true;                      % Whether to use parpool and hide figures
+fileNumsToPlot = (1:38)';               % The file number(s) to plot (max 38)
+%toSpeedUp = false;                      % Whether to use parpool and hide figures
+toSpeedUp = true;                      % Whether to use parpool and hide figures
 whiskAngleLimits = [-75, 75];           % Whisk angle limits to be plotted
 piezoLimits = [-1, 10];
 colorWhisk = [0, 0, 1];                 % Color for whisk trace (Blue)
@@ -628,7 +628,7 @@ figPath4 = fullfile(pathOutDir, figName4);
 % Create all traces plot
 fprintf('Plotting all traces for file %d ...\n', sampleFileNum);
 if toSpeedUp
-    set_figure_properties('AlwaysNew', true, 'Visible', 'off');
+    set_figure_properties('AlwaysNew', true, 'ShowFigure', false);
 else
     set_figure_properties('FigNumber', 1, 'AlwaysNew', false, 'ClearFigure', true);
 end
@@ -756,7 +756,7 @@ end
 if ~isempty(pulseVecsThis)
     fprintf('Plotting stim traces with detection for file %d ...\n', sampleFileNum);
     if toSpeedUp
-        set_figure_properties('AlwaysNew', true, 'Visible', 'off');
+        set_figure_properties('AlwaysNew', true, 'ShowFigure', false);
     else
         set_figure_properties('FigNumber', 2, 'AlwaysNew', false, 'ClearFigure', true);
     end
@@ -832,7 +832,7 @@ if ~isempty(sniffStartWinTableForFile)
 
     % Set figure properties for the new plot
     if toSpeedUp
-        set_figure_properties('AlwaysNew', true, 'Visible', 'off');
+        set_figure_properties('AlwaysNew', true, 'ShowFigure', false);
     else
         set_figure_properties('FigNumber', 3, 'AlwaysNew', false, 'ClearFigure', true);
     end
@@ -997,7 +997,7 @@ if ~isempty(basalRespCycleTableForFile)
 
     % Set figure properties for the new plot
     if toSpeedUp
-        set_figure_properties('AlwaysNew', true, 'Visible', 'off');
+        set_figure_properties('AlwaysNew', true, 'ShowFigure', false);
     else
         set_figure_properties('FigNumber', 4, 'AlwaysNew', false, 'ClearFigure', true);
     end

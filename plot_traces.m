@@ -1786,26 +1786,22 @@ if ~isempty(figName)
                 end
 
                 % Change the x-axis limits
-                xlim(xLimitsThis);
+                xlim(ax, xLimitsThis);
             case 'parallel'
                 for iPlot = 1:nPlots
-                    % Go to the subplot
-                    subplot(subPlots(iPlot));
-
                     % Create a title for the first subplot
                     if ~strcmpi(figTitleThis, 'suppress') && ...
                         nColumns == 1 && iPlot == 1
-                        title(figTitleThis);
+                        title(subPlots(iPlot), figTitleThis);
                     end
 
                     % Change x-axis limits
-                    xlim(xLimitsThis);
+                    xlim(subPlots(iPlot), xLimitsThis);
                 end
 
                 % Replace the current overarching title
                 if ~strcmpi(figTitleThis, 'suppress') && nColumns > 1
-                    axes(supAx);
-                    title(figTitleThis);
+                    title(supAx, figTitleThis);
                 end
             end
 
