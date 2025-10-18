@@ -1,12 +1,11 @@
-function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
-%% Plot whisk logarithmic decrements or correlation Z-scores as a grouped jitter plot
-% Usage: [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
+function [results, handles] = virt_plot_log_decrement_jitter (dataTable, plotParams, varargin)
+%% Plot whisk logarithmic decrements as a grouped jitter plot
+% Usage: [results, handles] = virt_plot_log_decrement_jitter (dataTable, plotParams, varargin)
 % Explanation:
 %       This function takes a table of whisk analysis data and generates a
-%       grouped jitter plot of either logarithmic decrements or Fisher
-%       Z-scores, with mean, 95% CI, and statistical test results overlaid.
-%       It can create a new figure or update an existing one if a handles
-%       structure is provided.
+%       grouped jitter plot of logarithmic decrements, with mean, 95% CI,
+%       and statistical test results overlaid. It can create a new figure
+%       or update an existing one if a handles structure is provided.
 %
 % Outputs:
 %       results     - A structure containing computed statistics and data used for plotting.
@@ -25,12 +24,7 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 %                   - 'DataColumn': The name of the column with the log decrement data.
 %                   must be a string scalar or a character vector
 %                   default == 'whiskLogDecrements'
-%                   - 'DataMode': The type of data being plotted.
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       'LogDecrement' - Data is logarithmic decrements.
-%                       'FisherZScore' - Data is Fisher-transformed Z-scores.
-%                   default == 'LogDecrement'
-%                   - 'MaxOrders': The maximum number of decrement/correlation orders to analyze.
+%                   - 'MaxDecrements': The maximum number of decrements to analyze.
 %                   must be a positive integer scalar
 %                   default == Inf
 %                   - 'Handles': A structure of graphics handles to update.
@@ -38,10 +32,10 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 %                   default == []
 %                   - 'FigTitle': The title for the figure.
 %                   must be a string scalar or a character vector
-%                   default == set based on DataMode
+%                   default == 'Whisk Logarithmic Decrements'
 %                   - 'FigName': The base file name for saving the figure.
 %                   must be a string scalar or a character vector
-%                   default == set based on DataMode
+%                   default == 'whisk_log_decrements_jitter'
 %                   - 'OutDir': The output directory for saving the figure.
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -49,9 +43,6 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 %                   default == {'png'}
 %                   - 'ToSaveOutput': Whether to save the figure.
 %                   must be a logical scalar
-%                   default == true
-%                   - 'ShowFigure': whether to show figure
-%                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %
 % Requires:
@@ -68,35 +59,32 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 % Used by:
 %       cd/virt_analyze_sniff_whisk.m
 %       \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
-%       \Shared\Code\vIRt-Moore\virt_moore_multiple_reps.m
+%       \Shared\Code\vIRt-Moore\virt_moore_monte_carlo.m
 
 % File History:
 % 2025-10-02 Created by Gemini by pulling code from virt_analyze_sniff_whisk.m
 % 2025-10-06 Modified by Gemini to accept an axes handle and return detailed plot handles.
 % 2025-10-06 Modified by Gemini to include update logic from virt_plot_whisk_analysis.m
 % 2025-10-06 Fixed by Gemini to handle more than one group.
-% 2025-10-15 Renamed to virt_plot_jitter.m by Gemini.
-% 2025-10-15 Added 'DataMode' to handle Fisher Z-scores by Gemini.
-% 2025-10-17 Added 'ShowFigure' as an optional argument.
+% TODO: Rename virt_plot_log_decrement_jitter.m as virt_plot_jitter.m
+% TODO: Add 'DataMode' as an optional argument with possible values 'LogDecrement' and 'FisherZScore'
+%
 
 %% Hard-coded parameters
 yLocStarRel = 0.95;         % Relative y-location for significance stars
 yLocPValueRel = 0.90;       % Relative y-location for p-value text
-yLocTransformedLabelRel = 0.85; % Relative y-location for ratio/corr text
-validDataModes = {'LogDecrement', 'FisherZScore'};
+yLocRatioLabelRel = 0.85;   % Relative y-location for ratio text
 
 %% Default values for optional arguments
-groupingColumnDefault = [];     % set later
-dataColumnDefault = '';         % set later
-dataModeDefault = 'LogDecrement';
-maxOrdersDefault = Inf;         % Default to analyzing all available
-handlesDefault = [];            % Default is to create a new plot
-figTitleDefault = '';           % Default figure title is set based on DataMode
-figNameDefault = '';            % Default file name is set based on DataMode
-outDirDefault = pwd;            % Default output directory
-figTypesDefault = {'png'};      % Default figure save format
-toSaveOutputDefault = true;     % Default to save the output figure
-showFigureDefault = true;       % Default to show the figure
+groupingColumnDefault = [];                 % set later
+dataColumnDefault = 'whiskLogDecrements';   % Default column containing the data
+maxDecrementsDefault = Inf;                 % Default to analyzing all available decrements
+handlesDefault = [];                        % Default is to create a new plot
+figTitleDefault = 'Whisk Logarithmic Decrements'; % Default figure title
+figNameDefault = 'whisk_log_decrements_jitter';   % Default file name for saving
+outDirDefault = pwd;                        % Default output directory
+figTypesDefault = {'png'};                  % Default figure save format
+toSaveOutputDefault = true;                 % Default to save the output figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -110,73 +98,30 @@ addRequired(iP, 'dataTable', @istable);
 addRequired(iP, 'plotParams', @isstruct);
 addParameter(iP, 'GroupingColumn', groupingColumnDefault);
 addParameter(iP, 'DataColumn', dataColumnDefault, @ischar);
-addParameter(iP, 'DataMode', dataModeDefault, ...
-    @(x) any(validatestring(x, validDataModes)));
-addParameter(iP, 'MaxOrders', maxOrdersDefault, @isnumeric);
+addParameter(iP, 'MaxDecrements', maxDecrementsDefault, @isnumeric);
 addParameter(iP, 'Handles', handlesDefault);
 addParameter(iP, 'FigTitle', figTitleDefault, @ischar);
 addParameter(iP, 'FigName', figNameDefault, @ischar);
 addParameter(iP, 'OutDir', outDirDefault, @ischar);
 addParameter(iP, 'FigTypes', figTypesDefault);
 addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
-addParameter(iP, 'ShowFigure', showFigureDefault, @islogical);
 
 % Parse the inputs
 parse(iP, dataTable, plotParams, varargin{:});
 groupingColumn = iP.Results.GroupingColumn;
 dataColumn = iP.Results.DataColumn;
-dataMode = validatestring(iP.Results.DataMode, validDataModes);
-maxOrdersToAnalyze = iP.Results.MaxOrders;
+maxDecrementsToAnalyze = iP.Results.MaxDecrements;
 handlesIn = iP.Results.Handles;
-figTitleUser = iP.Results.FigTitle;
-figNameUser = iP.Results.FigName;
+figTitle = iP.Results.FigTitle;
+figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
 figTypes = iP.Results.FigTypes;
 toSaveOutput = iP.Results.ToSaveOutput;
-showFigure = iP.Results.ShowFigure;
 
 %% Preparation
 % Initialize output structures
 results = struct;
 handles = struct;
-
-% Decide on data column
-if isempty(dataColumn)
-    switch dataMode
-    case 'LogDecrement'
-        dataColumn = 'whiskLogDecrements';
-    case 'FisherZScore'
-        dataColumn = 'whiskAmpCorrZScoresBasal';
-    end
-end
-
-% Configure plot settings based on DataMode
-switch dataMode
-case 'LogDecrement'
-    yLabel = 'Log Decrement (ln(A_{n+1}/A_{n}))';
-    xTickLabelFormat = 'ln(A%d/A%d)';
-    transformFunc = @exp;
-    transformLabel = 'Ratio';
-    figTitleDefault = 'Whisk Logarithmic Decrements';
-    figNameDefault = 'whisk_log_decrements_jitter';
-case 'FisherZScore'
-    yLabel = 'Fisher Z-Score';
-    xTickLabelFormat = 'A%d-A%d';
-    transformFunc = @tanh;
-    transformLabel = 'Corr';
-    figTitleDefault = 'Whisk Amplitude Correlation Z-Scores';
-    figNameDefault = 'whisk_corr_zscores_jitter';
-end
-
-% Use user-provided titles/names if available, otherwise use defaults
-figTitle = figTitleUser;
-if isempty(figTitle)
-    figTitle = figTitleDefault;
-end
-figName = figNameUser;
-if isempty(figName)
-    figName = figNameDefault;
-end
 
 % Exit early if the table is empty or the required data column doesn't exist
 if isempty(dataTable) || ~ismember(dataColumn, dataTable.Properties.VariableNames)
@@ -203,73 +148,63 @@ if isempty(groupingColumn)
 end
 
 % Extract the necessary columns from the input table
-dataCell = dataTable.(dataColumn); % Get data (cell array of vectors)
+logDecrementsCell = dataTable.(dataColumn); % Get log decrement data (cell array of vectors)
 groupingData = dataTable.(groupingColumn); % Get grouping data (e.g., seed number)
 
 % Exit if there is no data to average
-if isempty(dataCell) || all(cellfun(@isempty, dataCell))
-    fprintf('No data found to plot.\n');
+if isempty(logDecrementsCell) || all(cellfun(@isempty, logDecrementsCell))
+    fprintf('No log decrement data found to plot.\n');
     return;
 end
 
-% Convert the cell array of log decrements or z scores into a matrix
-%   Note: each column is a decrement/correlation order
-allDataMatrix = force_matrix(dataCell, 'CombineMethod', 'leftAdjustPad')';
+% Convert the cell array of log decrements into a matrix
+%   Note: each column is a decrement order
+allLogDecrementsMatrix = force_matrix(logDecrementsCell, 'CombineMethod', 'leftAdjustPad')';
 
 %% Restrict the matrix to the maximum number of decrements to analyze
-% Get total number of decrement/correlation orders
-nOrdersTotal = size(allDataMatrix, 2);
+% Get total number of decrement orders
+nDecrementsTotal = size(allLogDecrementsMatrix, 2);
 
 % Determine how many to plot
-nOrdersToAnalyze = min(nOrdersTotal, maxOrdersToAnalyze);
+nDecrementsToAnalyze = min(nDecrementsTotal, maxDecrementsToAnalyze);
 
 % Trim matrix
-allDataMatrix = allDataMatrix(:, 1:nOrdersToAnalyze);
+allLogDecrementsMatrix = allLogDecrementsMatrix(:, 1:nDecrementsToAnalyze);
 
 %% Compute Statistics
 % Calculate mean and 95% confidence intervals for each decrement order
-[meanData, ~, lower95, upper95] = compute_stats_for_cellnumeric(allDataMatrix');
+[meanLogDecrements, ~, lower95, upper95] = compute_stats_for_cellnumeric(allLogDecrementsMatrix');
 
 % Perform significance tests (e.g., t-test) for each decrement order against zero
-stats = vecfun(@test_difference, allDataMatrix);
+stats = vecfun(@test_difference, allLogDecrementsMatrix);
 pValues = extract_fields(stats, 'pValue'); % Extract p-values
 testFunctions = extract_fields(stats, 'testFunction'); % Extract name of statistical test used
 symbols = extract_fields(stats, 'symbol'); % Extract significance symbols (*, **, etc.)
 
-% Apply the inverse transformation (exp for log, tanh for Z-score)
-avgTransformedValues = transformFunc(meanData);
+% Calculate the geometric mean of amplitude ratios from the mean log decrements
+avgWhiskAmpRatios = exp(meanLogDecrements);
 
 %% Save Results
 % Store computed statistics and formatted data in the results structure
-switch dataMode
-case 'LogDecrement'
-    results.allLogDecrements = allDataMatrix;
-    results.meanLogDecrements = meanData;
-    results.lower95LogDecrements = lower95;
-    results.upper95LogDecrements = upper95;
-    results.pValuesLogDecrements = pValues;
-    results.avgWhiskAmpRatios = avgTransformedValues;
-case 'FisherZScore'
-    results.allCorrZScores = allDataMatrix;
-    results.meanCorrZScores = meanData;
-    results.lower95CorrZScores = lower95;
-    results.upper95CorrZScores = upper95;
-    results.pValuesCorrZScores = pValues;
-    results.avgWhiskAmpCorrs = avgTransformedValues;
-end
+results.allLogDecrements = allLogDecrementsMatrix;
+results.meanLogDecrements = meanLogDecrements;
+results.lower95 = lower95;
+results.upper95 = upper95;
+results.pValues = pValues;
+results.avgWhiskAmpRatios = avgWhiskAmpRatios;
 
 %% Prepare data vectors for the plot_grouped_jitter function
 % Flatten data matrix into a column vector
-allDataVec = allDataMatrix(:);
+allLogDecrementsVec = allLogDecrementsMatrix(:);
 
 % Create decrement order matrix
-allOrdersVec = repmat(1:nOrdersToAnalyze, size(allDataMatrix, 1), 1);
+allDecrementOrdersVec = repmat(1:nDecrementsToAnalyze, size(allLogDecrementsMatrix, 1), 1);
 
 % Flatten decrement order matrix into a column vector
-allOrdersVec = allOrdersVec(:);
+allDecrementOrdersVec = allDecrementOrdersVec(:);
 
 % Create grouping matrix
-allGroupsVec = repmat(groupingData, 1, nOrdersToAnalyze);
+allGroupsVec = repmat(groupingData, 1, nDecrementsToAnalyze);
 
 % Flatten group matrix into a column vector
 allGroupsVec = allGroupsVec(:);
@@ -286,15 +221,15 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     axJitter = handles.axJitter;
     
     % Prepare data vectors for the plot_grouped_jitter function
-    nAnalysisWindows = size(allDataMatrix, 1);
-    ordersMatrix = repmat(1:nOrdersToAnalyze, nAnalysisWindows, 1);
-    ordersVec = ordersMatrix(:);
-    xValues = (1:nOrdersToAnalyze)';
-    errLower = meanData - lower95;
-    errUpper = upper95 - meanData;
+    nAnalysisWindows = size(allLogDecrementsMatrix, 1);
+    decrementOrdersMatrix = repmat(1:nDecrementsToAnalyze, nAnalysisWindows, 1);
+    decrementOrdersVec = decrementOrdersMatrix(:);
+    xValues = (1:nDecrementsToAnalyze)';
+    errLower = meanLogDecrements - lower95;
+    errUpper = upper95 - meanLogDecrements;
 
     % Update x limits
-    xlim(axJitter, [min(ordersVec) - 0.5, max(ordersVec) + 0.5]);
+    xlim(axJitter, [min(decrementOrdersVec) - 0.5, max(decrementOrdersVec) + 0.5]);
 
     % Compute the number of unique groups
     uniqueGroups = unique(groupingData);
@@ -309,8 +244,8 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
             groupValue = uniqueGroups(iGroup);
             groupMask = (allGroupsVec == groupValue);
             
-            xDataGroup = ordersVec(groupMask);
-            yDataGroup = allDataVec(groupMask);
+            xDataGroup = decrementOrdersVec(groupMask);
+            yDataGroup = allLogDecrementsVec(groupMask);
             nPointsGroup = sum(groupMask);
             
             xDataJittered = xDataGroup + (jitterWidth * (rand(nPointsGroup, 1) - 0.5));
@@ -320,7 +255,7 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     else
         % Fallback for safety if number of groups changes
         delete(currentJitterHandles);
-        hOutJitter = plot_grouped_jitter(allDataVec, allGroupsVec, ordersVec, ...
+        hOutJitter = plot_grouped_jitter(allLogDecrementsVec, allGroupsVec, decrementOrdersVec, ...
             'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
             'PlotMeanValues', false, 'PlotErrorBars', false, 'RunTTest', false, ...
             'RunRankTest', false, 'MarkerSize', markerSizeJitter, ...
@@ -330,16 +265,16 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
 
     % Update means and error bars
     handles.hErrorBars.XData = xValues';
-    handles.hErrorBars.YData = meanData';
+    handles.hErrorBars.YData = meanLogDecrements';
     handles.hErrorBars.YNegativeDelta = errLower';
     handles.hErrorBars.YPositiveDelta = errUpper';
     handles.hMeans.XData = xValues';
-    handles.hMeans.YData = meanData';
+    handles.hMeans.YData = meanLogDecrements';
 
     % Remove old annotations that need to be replotted
     delete(handles.pTextJitter);
     delete(handles.sigMarkerJitter);
-    delete(handles.transformedLabels);
+    delete(handles.ratioLabels);
 
     % Update p value texts and significance markers
     hOut = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...        
@@ -348,40 +283,39 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     handles.pTextJitter = hOut.pText;
     handles.sigMarkerJitter = hOut.sigMarker;
 
-    % Update transformed value labels
+    % Update ratio labels
     yLimits = ylim(axJitter);
-    yPosText = yLimits(1) + yLocTransformedLabelRel * diff(yLimits);
-    transformedLabels = arrayfun(@(x) sprintf('%s: %.2f', transformLabel, x), avgTransformedValues, 'UniformOutput', false);
-    handles.transformedLabels = text(axJitter, xValues, repmat(yPosText, size(xValues)), transformedLabels, ...
+    yPosText = yLimits(1) + yLocRatioLabelRel * diff(yLimits);
+    ratioLabels = arrayfun(@(x) sprintf('Ratio: %.2f', x), avgWhiskAmpRatios, 'UniformOutput', false);
+    handles.ratioLabels = text(axJitter, xValues, repmat(yPosText, size(xValues)), ratioLabels, ...
                          'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
 
-    % Get figure handle for saving
-    fig = handles.fig; 
+    fig = handles.fig; % Get figure handle for saving
 else
     % --- CREATE NEW PLOT ---
-    % Create x-axis tick labels
-    xTickLabels = arrayfun(@(x) sprintf(xTickLabelFormat, x+1, x), 1:nOrdersToAnalyze, 'UniformOutput', false);
+    % Create x-axis tick labels (e.g., "ln(A2/A1)")
+    xTickLabels = arrayfun(@(x) sprintf('ln(A%d/A%d)', x+1, x), 1:nDecrementsToAnalyze, 'UniformOutput', false);
 
     % Set up figure and axes
-    fig = set_figure_properties('AlwaysNew', true, 'ShowFigure', showFigure);
+    fig = set_figure_properties('AlwaysNew', true, 'ClearFigure', true);
     axJitter = gca;
 
     % Generate the base jitter plot without its own statistics
-    hOutJitter = plot_grouped_jitter(allDataVec, allGroupsVec, allOrdersVec, ...
+    hOutJitter = plot_grouped_jitter(allLogDecrementsVec, allGroupsVec, allDecrementOrdersVec, ...
         'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
-        'XTickLabels', xTickLabels, 'YLabel', yLabel, ...
+        'XTickLabels', xTickLabels, 'YLabel', 'Log Decrement (ln(A_{n+1}/A_{n}))', ...
         'LegendLocation', 'suppress', 'PlotMeanValues', false, 'PlotErrorBars', false, ...
         'RunTTest', false, 'RunRankTest', false, 'MarkerSize', markerSizeJitter);
 
     hold on; % Hold the current axes to overlay statistical information
 
     % Plot the mean and 95% confidence interval error bars
-    xValues = (1:nOrdersToAnalyze)'; % X-coordinates for means/error bars
-    errLower = meanData - lower95; % Lower error bar length
-    errUpper = upper95 - meanData; % Upper error bar length
-    hErrorBars = errorbar(xValues, meanData, errLower, errUpper, '_', ...
+    xValues = (1:nDecrementsToAnalyze)'; % X-coordinates for means/error bars
+    errLower = meanLogDecrements - lower95; % Lower error bar length
+    errUpper = upper95 - meanLogDecrements; % Upper error bar length
+    hErrorBars = errorbar(xValues, meanLogDecrements, errLower, errUpper, '_', ...
              'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
-    hMeans = plot(xValues, meanData, 'o', 'MarkerEdgeColor', 'k', ...
+    hMeans = plot(xValues, meanLogDecrements, 'o', 'MarkerEdgeColor', 'k', ...
          'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
 
     % Add a horizontal line at y=0 to represent the null hypothesis (no change)
@@ -391,11 +325,11 @@ else
     hOutTest = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...
                      'XLocText', xValues, 'YLocTextRel', yLocPValueRel, 'YLocStarRel', yLocStarRel, 'AxesHandle', axJitter);
 
-    % Add text labels showing the transformed values (ratios or correlations)
+    % Add text labels showing the geometric mean of amplitude ratios
     yLimits = ylim; % Get current y-axis limits to position the text
-    yPosText = yLimits(1) + yLocTransformedLabelRel * diff(yLimits); % Calculate y-position for the text
-    transformedLabels = arrayfun(@(x) sprintf('%s: %.2f', transformLabel, x), avgTransformedValues, 'UniformOutput', false); % Create labels
-    hTransformedLabels = text(xValues, repmat(yPosText, size(xValues)), transformedLabels, ...
+    yPosText = yLimits(1) + yLocRatioLabelRel * diff(yLimits); % Calculate y-position for the text
+    ratioLabels = arrayfun(@(x) sprintf('Ratio: %.2f', x), avgWhiskAmpRatios, 'UniformOutput', false); % Create labels
+    hRatioLabels = text(xValues, repmat(yPosText, size(xValues)), ratioLabels, ...
          'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom'); % Add text to plot
 
     % Finalize plot
@@ -412,7 +346,7 @@ else
     handles.hNull = hNull;
     handles.pTextJitter = hOutTest.pText;
     handles.sigMarkerJitter = hOutTest.sigMarker;
-    handles.transformedLabels = hTransformedLabels;
+    handles.ratioLabels = hRatioLabels;
 end
 
 % Save the figure to file if requested

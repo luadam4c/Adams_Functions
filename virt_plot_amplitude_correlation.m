@@ -45,6 +45,9 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 %                   - 'ToSaveOutput': Whether to save the figure.
 %                   must be a logical scalar
 %                   default == true
+%                   - 'ShowFigure': whether to show figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/compute_axis_limits.m
@@ -65,6 +68,7 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 % 2025-10-06 Modified by Gemini to accept axes handles and return detailed plot handles.
 % 2025-10-06 Modified by Gemini to include update logic from virt_plot_whisk_analysis.m
 % 2025-10-06 Fixed by Gemini to handle more than one group.
+% 2025-10-17 Added 'ShowFigure' as an optional argument.
 
 %% Hard-coded parameters
 textLocBestFitDefault = 'topleft';     % Location for the best-fit line equation text
@@ -81,6 +85,7 @@ figNameDefault = 'whisk_amplitude_scatter';
 outDirDefault = pwd;
 figTypesDefault = {'png'};
 toSaveOutputDefault = true;                 % Default to save the output figure
+showFigureDefault = true;                   % Default to show the figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -101,6 +106,7 @@ addParameter(iP, 'FigName', figNameDefault, @ischar);
 addParameter(iP, 'OutDir', outDirDefault, @ischar);
 addParameter(iP, 'FigTypes', figTypesDefault);
 addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
+addParameter(iP, 'ShowFigure', showFigureDefault, @islogical);
 
 % Parse the inputs
 parse(iP, dataTable, plotParams, varargin{:});
@@ -113,6 +119,7 @@ figName = iP.Results.FigName;
 pathOutDir = iP.Results.OutDir;
 figTypes = iP.Results.FigTypes;
 toSaveOutput = iP.Results.ToSaveOutput;
+showFigure = iP.Results.ShowFigure;
 
 %% Preparation
 % Initialize output structures
@@ -260,7 +267,7 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
 else
     % --- CREATE NEW PLOT ---
     [fig, ax] = create_subplots(nCorrToAnalyze, 'AlwaysNew', true, ...
-                            'ClearFigure', true, 'FigExpansion', [1, 1]);
+                            'ShowFigure', showFigure, 'FigExpansion', [1, 1]);
     
     % Initialize storage for plot handles
     % hScatters changed to a cell array to support multiple groups

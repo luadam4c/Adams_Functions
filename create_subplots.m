@@ -6,6 +6,7 @@ function [fig, ax] = create_subplots (varargin)
 %
 % Example(s):
 %       [fig, ax] = create_subplots(4);
+%       [fig, ax] = create_subplots(4, 'ShowFigure', false);
 %       [fig, ax] = create_subplots(2, 2, 'FigExpansion', [0.5, 0.5]);
 %       [fig, ax] = create_subplots(2, 2, 'FigExpansion', [0.5, 0.5], 'TightInset', true);
 %       [fig, ax] = create_subplots(1, 4);
@@ -58,6 +59,9 @@ function [fig, ax] = create_subplots (varargin)
 %                   must be a positive scalar
 %                   default == get(0, 'defaultfigureposition') (4)
 %                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'ShowFigure': whether to show figure
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'AlwaysNew': whether to always create a new figure even if
@@ -117,6 +121,7 @@ function [fig, ax] = create_subplots (varargin)
 % 2020-04-19 Made all arguments optional
 % 2021-05-16 Added 'AdjustPosition' as an optional argument
 % 2025-09-01 Added 'TightInset' as an optional argument with default false
+% 2025-10-17 Added 'ShowFigure' as an optional argument with default true
 % TODO: Added 'TransposeOrder' as an optional argument
 
 %% Hard-coded parameters
@@ -135,6 +140,7 @@ figPositionDefault = [];        % set later
 figWidthDefault = [];           % set later
 figHeightDefault = [];          % set later
 clearFigureDefault = true;      % clear figure by default
+showFigureDefault = true;       % show figure by default
 alwaysNewDefault = false;       % don't always create new figure by default
 centerPositionDefault = [];     % set later
 adjustPositionDefault = true;   % adjust position to fit window by default
@@ -181,6 +187,8 @@ addParameter(iP, 'FigHeight', figHeightDefault, ...
                 'FigHeight must be a empty or a positive scalar!'));
 addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ShowFigure', showFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CenterPosition', centerPositionDefault, ...
@@ -204,6 +212,7 @@ figPosition = iP.Results.FigPosition;
 figWidth = iP.Results.FigWidth;
 figHeight = iP.Results.FigHeight;
 clearFigure = iP.Results.ClearFigure;
+showFigure = iP.Results.ShowFigure;
 alwaysNew = iP.Results.AlwaysNew;
 centerPosition = iP.Results.CenterPosition;
 adjustPosition = iP.Results.AdjustPosition;
@@ -279,7 +288,7 @@ fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                     'Position', figPosition, ...
                     'Width', figWidth, 'Height', figHeight, ...
                     'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
-                    'AdjustPosition', adjustPosition);
+                    'AdjustPosition', adjustPosition, 'ShowFigure', showFigure);
 
 %% Create subplots
 % Count the number of subplots
@@ -295,14 +304,14 @@ if numel(axOld) == nSubPlots
 end
 
 % Create subplots
-ax = arrayfun(@(x) create_one_subplot(x, gridPositions, ...
+ax = arrayfun(@(x) create_one_subplot(x, fig, gridPositions, ...
                                         nRows, nColumns, tightInset, otherArguments), ...
                 transpose(1:nSubPlots));
 
 % If any subplot got deleted, recreate it
 %   Note: For some reason, subplots sometime disappear 
 while any(~isvalid(ax))
-    ax = arrayfun(@(x) create_subplot_again(ax(x), x, gridPositions, ...
+    ax = arrayfun(@(x) create_subplot_again(ax(x), x, fig, gridPositions, ...
                                             nRows, nColumns, tightInset, otherArguments), ...
                     transpose(1:nSubPlots));
 end
@@ -314,7 +323,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function axThis = create_one_subplot (iSubPlot, gridPositions, ...
+function axThis = create_one_subplot (iSubPlot, fig, gridPositions, ...
                         nRows, nColumns, tightInset, otherArguments)
 %% Creates one subplot
 
@@ -341,7 +350,7 @@ outerPositionThis = [(minColumn - 1)/nColumns, ...
 
 % Create subplot
 axThis = subplot(nRows, nColumns, gridPositionsThis, ...
-                otherArguments{:});
+                'Parent', fig, otherArguments{:});
 
 % Modify the outer position
 set(axThis, 'OuterPosition', outerPositionThis);
@@ -363,13 +372,13 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function axThis = create_subplot_again (axThis, iSubPlot, gridPositions, ...
+function axThis = create_subplot_again (axThis, iSubPlot, fig, gridPositions, ...
                                         nRows, nColumns, tightInset, otherArguments)
 %% Creates a subplot again if it is not valid
 
 if ~isvalid(axThis)
     % Recreate and save subplot in array
-    axThis = create_one_subplot(iSubPlot, gridPositions, ...
+    axThis = create_one_subplot(iSubPlot, fig, gridPositions, ...
                                     nRows, nColumns, tightInset, otherArguments);
 end
 

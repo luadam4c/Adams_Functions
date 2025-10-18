@@ -475,12 +475,13 @@ end
 
 %% Plot the event time arrays
 % Decide on the figure to plot on
-set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
+figHandle = set_figure_properties('AxesHandle', axHandle, ...
+                'FigHandle', figHandle, 'FigNumber', figNumber, ...
                 'FigExpansion', figExpansion, 'ClearFigure', clearFigure, ...
                 'AlwaysNew', alwaysNew);
 
 % Decide on the axes to plot on
-ax = set_axes_properties('AxesHandle', axHandle);
+ax = set_axes_properties('AxesHandle', axHandle, 'FigHandle', figHandle);
 
 % Hold on to the axes for plotting
 hold(ax, 'on'); 

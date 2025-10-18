@@ -33,7 +33,7 @@ function h = plot_horizontal_line (yValue, varargin)
 %                   - 'ColorMap' - color map used
 %                   must be a 2-D numeric array with 3 columns
 %                   default == decide_on_colormap([], nLines)
-%                   - Any other parameter-value pair for the line() function
+%                   - Any other parameter-value pair for the plot_vertical_line() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m

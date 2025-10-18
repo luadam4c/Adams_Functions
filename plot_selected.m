@@ -40,6 +40,9 @@ function selected = plot_selected (xValues, yValues, indSelected, varargin)
 %                   must be empty or a string/character vector
 %                       or an n-by-3 numeric array
 %                   default == 'r'
+%                   - 'AxesHandle': axes handle to plot on
+%                   must be a empty or a axes object handle
+%                   default == gca
 %                   - Any other parameter-value pair for plot()
 %
 % Requires:
@@ -66,6 +69,7 @@ markerDefault = 'x';            % plot crosses by default
 lineStyleDefault = 'none';      % no line connecting markers by default
 lineWidthDefault = 3;           % line width of 3 points by default
 colorMapDefault = 'r';          % red markers by default
+axHandleDefault = [];           % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,6 +97,7 @@ addParameter(iP, 'LineStyle', lineStyleDefault, ...
 addParameter(iP, 'LineWidth', lineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, xValues, yValues, indSelected, varargin{:});
@@ -100,6 +105,7 @@ marker = iP.Results.Marker;
 [~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 lineWidth = iP.Results.LineWidth;
 colorMap = iP.Results.ColorMap;
+axHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
@@ -121,23 +127,23 @@ colorMapCell = decide_on_colormap(colorMap, nRows, 'ForceCellOutput', true);
 
 %% Do the job
 % Hold on
-wasHold = hold_on(gca);
+wasHold = hold_on(axHandle);
 
 % Plot selected
 selected = cellfun(@(a, b, c, d) plot_selected_helper(a, b, c, d, ...
-                           	marker, lineStyle, lineWidth, otherArguments), ...
+                           	marker, lineStyle, lineWidth, axHandle, otherArguments), ...
                     xValues, yValues, indSelected, colorMapCell, ...
                     'UniformOutput', false);
 
 % Hold off
-hold_off(wasHold, gca);
+hold_off(wasHold, axHandle);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function selected = plot_selected_helper(xValues, yValues, ...
                                             indSelected, colorMap, ...
                                             marker, lineStyle, lineWidth, ...
-                                            otherArguments)
+                                            axHandle, otherArguments)
 % Plots a set of selected values
 
 %% Preparation
@@ -158,7 +164,7 @@ xLocsSelected = xValues(indSelected);
 yLocsSelected = yValues(indSelected, :);
 
 % Plot values
-selected = plot(xLocsSelected, yLocsSelected, ...
+selected = plot(axHandle, xLocsSelected, yLocsSelected, ...
                 'LineStyle', lineStyle, 'Marker', marker, ...
                 'Color', colorMap, 'LineWidth', lineWidth, otherArguments);
 

@@ -69,6 +69,7 @@ function ax = set_axes_properties (varargin)
 % 2019-09-04 Adaped from set_figure_properties.m
 % 2019-09-19 Now defaults TickDir to 'out'
 % 2019-11-05 Added 'FigHandle' as an optional argument
+% 2025-10-17 Now only calls axes() if figure is visible
 
 %% Hard-coded parameters
 
@@ -126,18 +127,22 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Preparation
 
 %% Do the job
-% Go to the designated figure
-if ~isempty(figHandle)
+% Go to the designated figure if it is shown
+if ~isempty(figHandle) && strcmp(figHandle.Visible, 'on')
     figure(figHandle);
+else
+    figHandle = ancestor(axHandle, 'figure');
 end
 
 % Decide on the axes handle
 if ~isempty(axHandle)
-    % Use the given axes
-    axes(axHandle);
+    % Make given axes current if figure is visible
+    if strcmp(figHandle.Visible, 'on')
+        axes(axHandle);
+    end
 
     % Return the handle
-    ax = gca;
+    ax = axHandle;
 elseif ~isempty(subPlotNumber)
     % Put numbers in a cell array
     subPlotNumberCell = num2cell(subPlotNumber);

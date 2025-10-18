@@ -88,6 +88,9 @@ function handles = plot_table_parallel (myTable, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigNumber' provided 
 %                               but false otherwise
+%                   - 'ShowFigure': whether to show figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'AlwaysNew': whether to always create a new figure even if
 %                                   figNumber is not passed in
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -129,8 +132,8 @@ function handles = plot_table_parallel (myTable, varargin)
 % 2020-02-06 Added 'AxTitles' as an optional argument
 % 2025-10-08 Added 'ClearFigure' and 'AlwaysNew' as optional arguments
 % 2025-10-09 rowLimits default is now set in plot_tuning_curve.m
+% 2025-10-17 Added 'ShowFigure' as an optional argument with default true
 % TODO: Merge with plot_table.m
-% TODO: 
 
 %% Hard-coded parameters
 defaultRowLabel = 'Row Number';
@@ -153,6 +156,7 @@ figTitleDefault = '';
 axTitlesDefault = {''};
 figNumberDefault = [];
 clearFigureDefault = [];        % set later
+showFigureDefault = true;       % show figure by default
 alwaysNewDefault = false;       % don't always create new figure by default
 figNameDefault = '';
 figTypesDefault = 'png';
@@ -217,6 +221,8 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
                 'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ShowFigure', showFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -244,6 +250,7 @@ figTitle = iP.Results.FigTitle;
 axTitles = iP.Results.AxTitles;
 figNumber = iP.Results.FigNumber;
 clearFigure = iP.Results.ClearFigure;
+showFigure = iP.Results.ShowFigure;
 alwaysNew = iP.Results.AlwaysNew;
 figName = iP.Results.FigName;
 figTypes = iP.Results.FigTypes;
@@ -331,7 +338,7 @@ if isempty(rowTickLabels)
         rowLabels = create_labels_from_numbers(rowsToPlot);
     end
     rowTickLabels = match_positions(rowLabels, rowValues, rowTickLocs);
-	rowTickLabels = {rowTickLabels};
+    rowTickLabels = {rowTickLabels};
 elseif iscell(rowTickLabels) && ~iscell(rowTickLabels{1})
     % Ensure rowTickLabels is a cell array of cell arrays
     rowTickLabels = {rowTickLabels}; 
@@ -367,7 +374,7 @@ end
 % Create subplots
 [fig, ax] = create_subplots(nSubplotRows, nSubplotColumns, ...
                 'FigNumber', figNumber, 'ClearFigure', clearFigure, ...
-                'AlwaysNew', alwaysNew, ...
+                'AlwaysNew', alwaysNew, 'ShowFigure', showFigure, ...
                 'FigExpansion', [nSubplotColumns / 2, nSubplotRows / 3]);
 
 % Only use as many subplots as needed

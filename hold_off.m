@@ -67,13 +67,13 @@ parse(iP, wasHold, varargin{:});
 axHandle = iP.Results.axHandle;
 
 %% Preparation
-if ~isempty(axHandle)
-    axes(axHandle);
+if isempty(axHandle)
+    axHandle = gca;
 end
 
 %% Do the job
 if ~wasHold
-    hold off
+    hold(axHandle, 'off');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

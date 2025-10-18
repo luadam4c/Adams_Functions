@@ -57,14 +57,14 @@ parse(iP, varargin{:});
 axHandle = iP.Results.axHandle;
 
 %% Preparation
-if ~isempty(axHandle)
-    axes(axHandle);
+if isempty(axHandle)
+    axHandle = gca;
 end
 
 %% Do the job
-if ~ishold
+if ~ishold(axHandle)
     wasHold = false;
-    hold on
+    hold(axHandle, 'on');
 else
     wasHold = true;
 end

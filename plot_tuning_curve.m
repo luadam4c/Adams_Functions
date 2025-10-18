@@ -930,8 +930,9 @@ end
 
 %% Plot tuning curve
 % Decide on the figure to plot on and set properties
-fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                    'FigExpansion', figExpansion, 'ClearFigure', clearFigure);
+fig = set_figure_properties('FigHandle', figHandle, 'AxesHandle', axHandle, ...
+                    'FigNumber', figNumber, 'FigExpansion', figExpansion, ...
+                    'ClearFigure', clearFigure);
 
 % Decide on the axes to plot on and set properties
 axHandle = set_axes_properties('AxesHandle', axHandle);
@@ -1003,7 +1004,7 @@ for iPlot = 1:nColumnsToPlot
             fprintf('Not Supported Yet!\n');
         else
             % Get the current Y limits
-            % yLimits = get(gca, 'YLim');
+            % yLimits = get(axHandle, 'YLim');
 
             % Compute the minimum y limits
             %TODO
@@ -1069,7 +1070,7 @@ fill_markers('AxesHandle', axHandle);
 if ~isempty(pLimits)
     if ~strcmpi(pLimits, 'suppress')
         % Use x limits
-        xlim(pLimits);
+        xlim(axHandle, pLimits);
     else
         % Do nothing if user requested 'suppress'
     end
@@ -1078,7 +1079,7 @@ elseif numel(uniquePValuesIncr) > 1
     avgPSpacing = mean(diff(uniquePValuesIncr));
 
     % Set the new limits by extending by the average spacing
-    xlim([uniquePValuesIncr(1) - avgPSpacing/2, uniquePValuesIncr(end) + avgPSpacing/2]);
+    xlim(axHandle, [uniquePValuesIncr(1) - avgPSpacing/2, uniquePValuesIncr(end) + avgPSpacing/2]);
 else
     % Do nothing if there are less than 2 entries
 end
@@ -1086,37 +1087,37 @@ end
 % Restrict y axis if readoutLimits provided
 %   otherwise expand the y axis by a little bit
 if ~isempty(readoutLimits) && ~strcmpi(readoutLimits, 'suppress')
-    yLimitsOrig = get(gca, 'YLim');
+    yLimitsOrig = get(axHandle, 'YLim');
     if isinf(readoutLimits(1))
         readoutLimits(1) = yLimitsOrig(1);
     end
     if isinf(readoutLimits(2))
         readoutLimits(2) = yLimitsOrig(2);
     end
-    ylim(readoutLimits);
+    ylim(axHandle, readoutLimits);
 elseif ~strcmpi(readoutLimits, 'suppress')
-    ylim(compute_axis_limits(get(gca, 'YLim'), 'y', 'Coverage', 80));
+    ylim(axHandle, compute_axis_limits(get(axHandle, 'YLim'), 'y', 'Coverage', 80));
 end
 
 % Set title and axes labels
 if ~isempty(pTicks)
-    xticks(pTicks);
+    xticks(axHandle, pTicks);
 end
 if ~isempty(pTickLabels)
-    xticklabels(pTickLabels);
+    xticklabels(axHandle, pTickLabels);
 end
 if ~strcmpi(pLabel, 'suppress')
-    xlabel(pLabel);
+    xlabel(axHandle, pLabel);
 end
 if ~strcmpi(readoutLabel, 'suppress')
-    ylabel(readoutLabel);
+    ylabel(axHandle, readoutLabel);
 end
 if ~strcmpi(figTitle, 'suppress')
-    title(figTitle);
+    title(axHandle, figTitle);
 end
 
 % Set the angle for parameter ticks
-xtickangle(pTickAngle);
+xtickangle(axHandle, pTickAngle);
 
 % Plot parameter boundaries
 if nPBoundaries > 0
@@ -1124,7 +1125,8 @@ if nPBoundaries > 0
                                 'BoundaryType', pBoundaryType, ...
                                 'LineWidth', pBoundaryLineWidth, ...
                                 'LineStyle', pBoundaryLineStyle, ...
-                                'ColorMap', pBoundaryColor);
+                                'ColorMap', pBoundaryColor, ...
+                                'AxesHandle', axHandle);
 else
     pLines = gobjects;
 end
@@ -1135,7 +1137,8 @@ if nRBoundaries > 0
                                 'BoundaryType', rBoundaryType, ...
                                 'LineWidth', rBoundaryLineWidth, ...
                                 'LineStyle', rBoundaryLineStyle, ...
-                                'ColorMap', rBoundaryColor);
+                                'ColorMap', rBoundaryColor, ...
+                                'AxesHandle', axHandle);
 else
     rLines = gobjects;
 end
@@ -1158,7 +1161,8 @@ if plotPhaseAverages && ~isempty(phaseAverages) && ~isempty(averageWindows)
                                 'XLimits', averageWindows{x, columnsToPlot(y)}, ...
                                 'ColorMap', colorMapEachPhase{x}(y, :), ...
                                 'LineStyle', averagesLineStyle, ...
-                                'LineWidth', averagesLineWidth), ...
+                                'LineWidth', averagesLineWidth, ...
+                                'AxesHandle', axHandle), ...
                     transpose(1:nColumnsToPlot)), ...
             transpose(1:size(phaseAverages, 1)), 'UniformOutput', false);
             
@@ -1181,7 +1185,8 @@ if plotIndSelected && ~isempty(indSelected)
                             pValuesToPlot(:, columnsToPlot(x)), ...
                             readoutToPlot(:, columnsToPlot(x)), y, ...
                             'Marker', selectedMarker, 'ColorMap', 'r', ...
-                            'LineWidth', selectedLineWidth), ...
+                            'LineWidth', selectedLineWidth, ...
+                            'AxesHandle', axHandle), ...
                         indSelected(:, columnsToPlot(x))), ...
                 1:nColumnsToPlot, 'UniformOutput', false);            
 
@@ -1216,7 +1221,8 @@ if plotIndSelected && ~isempty(indSelected)
         selected = plot_selected(pValuesToPlot, readoutToPlot, indSelected, ...
                                 'Marker', selectedMarker, ...
                                 'ColorMap', selectedColorMap(1, :), ...
-                                'LineWidth', selectedLineWidth);
+                                'LineWidth', selectedLineWidth, ...
+                                'AxesHandle', axHandle);
     end
 end
 
@@ -1233,7 +1239,8 @@ if plotAverageWindows && ~isempty(averageWindows)
                                 'BoundaryType', 'horizontalBar', ...
                                 'ColorMap', avgWindowColorMap(x, :), ...
                                 'LineStyle', avgWindowLineStyle, ...
-                                'LineWidth', avgWindowLineWidth), ...
+                                'LineWidth', avgWindowLineWidth, ...
+                                'AxesHandle', axHandle), ...
                 transpose(1:maxNPhases), 'UniformOutput', false);
 end
 
@@ -1249,7 +1256,8 @@ if ~isempty(tTestPValues)
     plot_test_result(tTestPValues, 'PString', tTestPString, ...
                     'YLocTextRel', tTestYLocText, 'YLocStarRel', tTestYLocStar, ...
                     'XLocText', xLocText, 'XLocStar', xLocStar, ...
-                    'SigLevel', sigLevel, 'IsAppropriate', isNormal);
+                    'SigLevel', sigLevel, 'IsAppropriate', isNormal, ...
+                    'AxesHandle', axHandle);
 end
 
 % Plot rank test p values if any
@@ -1257,7 +1265,8 @@ if ~isempty(rankTestPValues)
     plot_test_result(rankTestPValues, 'PString', rankTestPString, ...
                     'YLocTextRel', rankTestYLocText, 'YLocStarRel', rankTestYLocStar, ...
                     'XLocText', xLocText, 'XLocStar', xLocStar, ...
-                    'SigLevel', sigLevel, 'IsAppropriate', ~isNormal);
+                    'SigLevel', sigLevel, 'IsAppropriate', ~isNormal, ...
+                    'AxesHandle', axHandle);
 end
 
 % Hold off
@@ -1267,16 +1276,16 @@ hold_off(wasHold, axHandle);
 %   Note: this must occur after holding off
 if pIsLog || readoutIsLog
     [xScale, yScale] = argfun(@islog2scale, pIsLog, readoutIsLog);
-    set(gca, 'XScale', xScale, 'YScale', yScale);
+    set(axHandle, 'XScale', xScale, 'YScale', yScale);
 end
 
 %% Post-plotting
 % Generate a legend for the curves only if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress') && nColumnsToPlot > 1
     if colorByPhase
-        lgd = legend(curves(1, :), 'location', legendLocation);
+        lgd = legend(axHandle, curves(1, :), 'location', legendLocation);
     else
-        lgd = legend(curves, 'location', legendLocation);
+        lgd = legend(axHandle, curves, 'location', legendLocation);
     end
 
     set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
@@ -1387,8 +1396,8 @@ else
     fig = gcf;
 end
 
-set(gca, 'XTick', pTicks);
-set(gca, 'XTickLabel', pTickLabels);
+set(axHandle, 'XTick', pTicks);
+set(axHandle, 'XTickLabel', pTickLabels);
 pTickAngle = 60;                % x tick angle in degrees
 
 phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
@@ -1446,7 +1455,7 @@ end
 % Decide on the average window y value
 if isempty(avgWindowYValue)
     % Get the current y axis limits
-    yLimitsNow = get(gca, 'YLim');
+    yLimitsNow = get(axHandle, 'YLim');
 
     % Compute a default window bar y value
     avgWindowYValue = yLimitsNow(1) + 0.1 * (yLimitsNow(2) - yLimitsNow(1));
@@ -1506,11 +1515,11 @@ else
 end
 
 if pIsLog && readoutIsLog
-    set(gca, 'XScale', 'log', 'YScale', 'log');
+    set(axHandle, 'XScale', 'log', 'YScale', 'log');
 elseif pIsLog && ~readoutIsLog
-    set(gca, 'XScale', 'log');
+    set(axHandle, 'XScale', 'log');
 elseif ~pIsLog && readoutIsLog
-    set(gca, 'YScale', 'log');
+    set(axHandle, 'YScale', 'log');
 end
 
 %% Hard-coded constants
@@ -1527,7 +1536,7 @@ xLocText = uniquePValuesOrig(1:end-1) + (uniquePValuesOrig(2) - uniquePValuesOri
 xLocStar = uniquePValuesOrig(1:end-1) + (uniquePValuesOrig(2) - uniquePValuesOrig(1)) * xLocStarRel;
 
 % Get current y axis limits
-yLimitsNow = get(gca, 'YLim');
+yLimitsNow = get(axHandle, 'YLim');
 
 % Decide on the y location for texts
 yLocText = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocTextRel;

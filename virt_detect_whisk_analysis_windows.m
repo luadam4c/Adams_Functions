@@ -373,6 +373,7 @@ case 'transitionTimes'
     % For experimental data: use pre-detected sniff start/end times per sweep
     sniffWinRows = {};
     breathOnsetLatency = breathOnsetLatencyMs / 1000; % Convert to seconds
+    iSniffStartWin = 0; % Counter for sniff start windows
 
     for iSwp = 1:nSweeps
         % Obtain data for this sweep
@@ -405,7 +406,6 @@ case 'transitionTimes'
         nSniffPeriods = numel(sniffStartTimesThisSweep);
 
         % Loop through all sniff periods for this sweep
-        iSniffStartWin = 0; % Counter for sniff start windows for this sweep
         for iSniffPeriod = 1:nSniffPeriods
             currentSniffStart = sniffStartTimesThisSweep(iSniffPeriod);
             currentSniffEnd = sniffEndTimesThisSweep(iSniffPeriod);

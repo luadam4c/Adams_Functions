@@ -43,7 +43,7 @@ axHandle = iP.Results.AxesHandle;
 
 %% Preparation
 % Decide on the axes
-ax = set_axes_properties;
+ax = set_axes_properties('AxesHandle', axHandle);
 
 %% Do the job
 % Find all Line objects

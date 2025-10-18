@@ -75,6 +75,9 @@ function handles = plot_struct (structArray, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigNumber' provided 
 %                               but false otherwise
+%                   - 'ShowFigure': whether to show figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'AlwaysNew': whether to always create a new figure even if
 %                                   figNumber is not passed in
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -121,6 +124,7 @@ function handles = plot_struct (structArray, varargin)
 % 2019-11-24 Moved phase average computing code to plot_bar.m
 % 2025-10-07 Added 'PValues' as an optional argument
 % 2025-10-08 Added 'ClearFigure' and 'AlwaysNew' as optional arguments
+% 2025-10-17 Added 'ShowFigure' as an optional argument with default true
 % 
 
 %% Hard-coded parameters
@@ -146,6 +150,7 @@ colorMapDefault = [];           % set later
 figTitlesDefault = {};          % set later
 figNumberDefault = [];          % use current figure by default
 clearFigureDefault = [];        % set later
+showFigureDefault = true;       % show figure by default
 alwaysNewDefault = true;        % always create new figure by default
 outFolderDefault = pwd;
 figNamesDefault = {};
@@ -198,6 +203,8 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) isempty(x) || ispositiveintegervector(x));
 addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ShowFigure', showFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -224,9 +231,10 @@ fieldLabels = iP.Results.FieldLabels;
 colorMap = iP.Results.ColorMap;
 figTitles = iP.Results.FigTitles;
 figNumber = iP.Results.FigNumber;
-outFolder = iP.Results.OutFolder;
 clearFigure = iP.Results.ClearFigure;
+showFigure = iP.Results.ShowFigure;
 alwaysNew = iP.Results.AlwaysNew;
+outFolder = iP.Results.OutFolder;
 figNames = iP.Results.FigNames;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
@@ -367,7 +375,8 @@ for iField = 1:nFields
     
     % Create a new figure
     figThis = set_figure_properties('FigNumber', figNumber, ...
-                        'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew);
+                        'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
+                        'ShowFigure', showFigure);
 
     switch plotType
     case 'tuning'
@@ -415,4 +424,3 @@ OLD CODE:
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-

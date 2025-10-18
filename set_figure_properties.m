@@ -19,6 +19,9 @@ function fig = set_figure_properties (varargin)
 %       varargin    - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle
 %                   default == []
+%                   - 'AxesHandle': axes handle to look for parent figure
+%                   must be a empty or a axes object handle
+%                   default == []
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
@@ -49,6 +52,9 @@ function fig = set_figure_properties (varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigNumber' provided 
 %                               but false otherwise
+%                   - 'ShowFigure': whether to show figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'AlwaysNew': whether to always create a new figure even if
 %                                   figNumber is not passed in
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -109,12 +115,14 @@ function fig = set_figure_properties (varargin)
 % 2019-09-08 Added 'AlwaysNew' as an optional argument
 % 2019-09-12 Added 'ExpandFromDefault' as an optional argument
 % 2019-11-17 Fixed 'AlwaysNew' when 'FigNumber' is provided
+% 2025-10-17 Added 'ShowFigure' as an optional argument with default true
 % TODO: Change axes outerPosition by default?
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 figHandleDefault = [];          % no existing figure by default
+axHandleDefault = [];           % no existing axes by default
 figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
 expandFromDefaultDefault = [];  % set later
@@ -123,6 +131,7 @@ widthDefault = [];              % set later
 heightDefault = [];             % set later
 adjustPositionDefault = [];     % set later
 clearFigureDefault = [];        % set later
+showFigureDefault = [];         % set later
 alwaysNewDefault = false;       % don't always create new figure by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -135,6 +144,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FigHandle', figHandleDefault);
+addParameter(iP, 'AxesHandle', axHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
@@ -155,12 +165,15 @@ addParameter(iP, 'Height', heightDefault, ...
 addParameter(iP, 'AdjustPosition', adjustPositionDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ClearFigure', clearFigureDefault);
+addParameter(iP, 'ShowFigure', showFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 figHandle = iP.Results.FigHandle;
+axHandle = iP.Results.AxesHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
 expandFromDefault = iP.Results.ExpandFromDefault;
@@ -169,6 +182,7 @@ width = iP.Results.Width;
 height = iP.Results.Height;
 adjustPosition = iP.Results.AdjustPosition;
 clearFigureUser = iP.Results.ClearFigure;
+showFigure = iP.Results.ShowFigure;
 alwaysNew = iP.Results.AlwaysNew;
 
 % Keep unmatched name-value pairs for the Figure object
@@ -200,26 +214,44 @@ if isempty(adjustPosition)
 end
 
 %% Do the job
-% Decide on the figure handle
+% Decide on the figure handle, creating it as invisible by default
+%   if already created, make current figure visible
 if ~isempty(figHandle)
-    % Use the given figure
-    fig = figure(figHandle);
+    fig = figHandle;
+    if showFigure
+        figure(fig);
+    end
 elseif ~isempty(figNumber)
-    % Close any figure opened with the same number
     if alwaysNew
         close(figure(figNumber));
     end
-
-    % Create or go to the figure with given figure number
+    % Create the figure but ensure it is NOT visible yet
     fig = figure(figNumber);
+    set(fig, 'Visible', 'off');
 elseif alwaysNew
-    fig = figure;
+    fig = figure('Visible', 'off');
 else
-    % Get the current figure or create one if non-existent
-    fig = gcf;
+    if ~isempty(axHandle)
+        fig = ancestor(axHandle, 'figure');
+    else
+        fig = gcf;
+
+        % If gcf creates a new figure, it will be visible by default.
+        % We should hide it immediately before proceeding.
+        set(fig, 'Visible', 'off');
+    end
 end
 
-% Decide whether to clear figure at the end
+% Decide whether to show figure
+if isempty(showFigure)
+    if ~isempty(fig) && strcmp(fig.Visible, 'off')
+        showFigure = false;
+    else
+        showFigure = true;
+    end        
+end
+
+% Decide whether to clear figure
 if isempty(clearFigureUser)
     if ~isempty(figNumber)
         clearFigure = true;
@@ -265,9 +297,16 @@ if ~isempty(figExpansion)
     expand_figure_position(fig, figExpansion, positionOld);
 end
 
-%% Adjust the figure position if needed
+% Adjust the figure position if needed
 if adjustPosition
     adjust_figure_position(fig);
+end
+
+% Set figure visibility at the end
+if showFigure
+    set(fig, 'Visible', 'on');
+else
+    set(fig, 'Visible', 'off');
 end
 
 %% Clear the figure if requested

@@ -98,6 +98,9 @@ function handles = plot_table (myTable, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigNumber' provided 
 %                               but false otherwise
+%                   - 'ShowFigure': whether to show figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'AlwaysNew': whether to always create a new figure even if
 %                                   figNumber is not passed in
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -144,6 +147,7 @@ function handles = plot_table (myTable, varargin)
 % 2025-10-07 Implemented 'parallel' plot mode by calling plot_table_parallel.m
 % 2025-10-07 Now uses create_labels_from_numbers.m
 % 2025-10-08 Added 'ClearFigure' and 'AlwaysNew' as optional arguments
+% 2025-10-17 Added 'ShowFigure' as an optional argument with default true
 % TODO: Transfer 'VarIsLog', 'SubplotDimensions', 'FigTypes' from plot_table_parallel.m to plot_table.m
 %           and update m3ha_neuron_choose_best_params.m and m3ha_rank_neurons.m to use plot_table.m
 % TODO: Return handles to plots
@@ -191,6 +195,7 @@ rowTickLocsDefault = [];
 rowTickLabelsDefault = {};
 figTitleDefault = '';
 clearFigureDefault = [];        % set later
+showFigureDefault = true;       % show figure by default
 alwaysNewDefault = [];          % set later
 outFolderDefault = pwd;
 figNameDefault = '';
@@ -259,6 +264,8 @@ addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ShowFigure', showFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -288,6 +295,7 @@ rowTickLocs = iP.Results.RowTickLocs;
 rowTickLabels = iP.Results.RowTickLabels;
 figTitle = iP.Results.FigTitle;
 clearFigure = iP.Results.ClearFigure;
+showFigure = iP.Results.ShowFigure;
 alwaysNew = iP.Results.AlwaysNew;
 outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
@@ -516,7 +524,8 @@ case 'overlapped'
     end
 
     % Decide on the figure handle
-    set_figure_properties('ClearFigure', clearFigure, 'AlwaysNew', alwaysNew);
+    set_figure_properties('ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
+                            'ShowFigure', showFigure);
 
     % Plot tuning curve(s)
     switch plotType
@@ -558,6 +567,7 @@ case 'parallel'
                     'AxTitles', varLabels, ...
                     'FigName', figName, ...
                     'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
+                    'ShowFigure', showFigure, ...
                     otherArguments);
 case 'separate'
     % Convert to a structure array
@@ -578,6 +588,7 @@ case 'separate'
                         'FigTitles', figTitle, ...
                         'FigNames', figName, ...
                         'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
+                        'ShowFigure', showFigure, ...
                          otherArguments);
 otherwise
     error('plotMode unrecognized!');
