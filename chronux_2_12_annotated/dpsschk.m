@@ -17,6 +17,13 @@ function [tapersOutput, eigenValues] = dpsschk (tapersInput, nSamples, fs)
 %       nSamples    - Number of time samples in the data
 %       fs          - Sampling frequency (required for normalization)
 %
+% Requires:
+%
+% Used by:
+%       coherencyc.m
+%       coherencycpt.m
+%       mtspectrumc.m
+%
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from dpsschk.m
 %   in Chronux version 2.12 v03 package Latest release (2018-Oct-25)

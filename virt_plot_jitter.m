@@ -461,7 +461,7 @@ if ~isempty(idxParametric)
 end
 
 % 2. Plot Nonparametric Stats: Notched Box Plot (Median, 95% CI of Median, IQR)
-if ~isempty(idxNonParametric)
+if ~isempty(idxNonParametric) && size(allDataMatrix, 1) > 1
     % Extract data for nonparametric groups
     % boxplot expects a matrix where each column is a group. 
     % We use 'Positions' to place them correctly on the x-axis.

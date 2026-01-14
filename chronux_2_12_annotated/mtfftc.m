@@ -16,6 +16,11 @@ function jFft = mtfftc (data, tapers, nFft, fs)
 % Requires:
 %       change_row_to_column.m
 %
+% Used by:
+%       coherencyc.m
+%       coherencycpt.m
+%       mtspectrumc.m
+%
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from mtfftc.m
 %   in Chronux version 2.12 v03 package Latest release (2018-Oct-25)

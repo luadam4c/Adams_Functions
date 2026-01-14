@@ -15,6 +15,12 @@ function [nRows, nCols] = check_consistency (data1, data2, isSpikeData)
 %       isSpikeData - (opt) 1 if one dataset is spike times (1d array)
 %                   default == 0
 %
+% Requires:
+%
+% Used by:
+%       coherencyc.m
+%       coherencycpt.m
+%
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from check_consistency.m
 %   in Chronux version 2.12 v03 package Latest release (2018-Oct-25)

@@ -56,6 +56,13 @@ function [tapers, pad, fs, fPass, err, trialAve, params] = getparams (params)
 %                       0 : don't average
 %                       Default: 0
 %
+% Requires:
+%
+% Used by:
+%       coherencyc.m
+%       coherencycpt.m
+%       mtspectrumc.m
+%
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from getparams.m
 %   in Chronux version 2.12 v03 package Latest release (2018-Oct-25)

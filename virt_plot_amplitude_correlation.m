@@ -69,6 +69,7 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 % 2025-10-06 Modified by Gemini to include update logic from virt_plot_whisk_analysis.m
 % 2025-10-06 Fixed by Gemini to handle more than one group.
 % 2025-10-17 Added 'ShowFigure' as an optional argument.
+% 2026-01-14 Fixed "object deleted" error by validating handles before update (Gemini)
 
 %% Hard-coded parameters
 textLocBestFitDefault = 'topleft';     % Location for the best-fit line equation text
@@ -182,7 +183,8 @@ end
 %% Plotting
 % Check if we are updating an existing plot or creating a new one
 if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig) && ...
-   isfield(handlesIn, 'hScatters') && numel(handlesIn.hScatters) == nCorrToAnalyze
+   isfield(handlesIn, 'hScatters') && numel(handlesIn.hScatters) == nCorrToAnalyze && ...
+   isfield(handlesIn, 'axScatter') && all(isgraphics(handlesIn.axScatter))
     % --- UPDATE EXISTING PLOT ---
     handles = handlesIn;
     fig = handles.fig;
@@ -208,7 +210,11 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
         nGroups = numel(uniqueGroups);
         currentScatterHandles = handles.hScatters{iCorr};
 
-        if nGroups == numel(currentScatterHandles)
+        % Validate if the specific scatter objects are still valid
+        areScatterHandlesValid = all(isgraphics(currentScatterHandles));
+
+        % If handles are valid and the number of groups hasn't changed, update data
+        if areScatterHandlesValid && nGroups == numel(currentScatterHandles)
             for iGroup = 1:nGroups
                 groupValue = uniqueGroups(iGroup);
                 groupMask = (groupingData == groupValue);
@@ -216,9 +222,16 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
                     'XData', ampCurrent(groupMask), 'YData', ampNext(groupMask));
             end
         else
-            % Fallback if number of groups changes
-            delete(currentScatterHandles);
+            % Fallback: Re-plot this specific subplot
+            % Delete old handles if they exist but are invalid for reuse
+            if areScatterHandlesValid
+                delete(currentScatterHandles);
+            end
+            
+            % Get axis handle (we already validated axScatter exists above)
             axScatter = handles.axScatter(iCorr);
+            
+            % Re-plot the grouped scatter
             hOutScatter = plot_grouped_scatter(ampCurrent, ampNext, groupingData, ...
                 'PlotEllipse', false, 'LinkXY', true, 'GridOn', true, ...
                 'Color', plotParams.colorScatter, 'MarkerType', plotParams.markerTypeScatter, ...

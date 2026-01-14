@@ -17,6 +17,13 @@ function outputData = change_row_to_column (inputData)
 %       inputData   - Data to transform
 %                   must be a matrix, vector, or structure
 %
+% Requires:
+%
+% Used by:
+%       coherencyc.m
+%       mtfftc.m
+%       mtspectrumc.m
+%
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from change_row_to_column.m
 %   in Chronux version 2.12 v03 package Latest release (2018-Oct-25)

@@ -189,12 +189,12 @@ else
         % Create 2 rows: Top for PRC, Bottom for Distribution
         % Pass [] for gridPositions to use default
         [fig, axs] = create_subplots(2, 1, [], ...
-            'ShowFigure', showFigure);
+            'AlwaysNew', true, 'ShowFigure', showFigure);
         axPRC = axs(1);
         axHist = axs(2);
     else
         [fig, axs] = create_subplots(1, 1, [], ...
-            'ShowFigure', showFigure);
+            'AlwaysNew', true, 'ShowFigure', showFigure);
         axPRC = axs(1);
         axHist = gobjects;
     end

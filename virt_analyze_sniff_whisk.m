@@ -125,7 +125,7 @@ nCorrToAnalyze = 4;                 % Number of whisk amplitude correlations to 
 % Spectral Analysis parameters
 nameChronuxFile = 'coherencyc.m';
 scriptPath = fileparts(mfilename('fullpath'));
-pathChronux = fullfile(scriptPath, 'coherencyc_from_chronux');
+pathChronux = fullfile(scriptPath, 'chronux_2_12_annotated');
 nSegsSpectra = 5;                   % Number of equal length non-overlapping segments to divide data (10 second sweeps)
 padModeSpectra = 0;                 % Padding factor for the FFT as defined in coherencyc.m
                                     % Can take values -1, 0, 1, 2...

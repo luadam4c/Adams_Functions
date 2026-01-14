@@ -75,12 +75,15 @@ function [coherenceMag, phi, crossSpec, spec1, spec2, freqs, confC, phiStd, cohe
 %
 % Requires:
 %       change_row_to_column.m
-%       getparams.m
 %       check_consistency.m
-%       getfgrid.m
-%       dpsschk.m
-%       mtfftc.m
 %       coherr.m
+%       dpsschk.m
+%       getfgrid.m
+%       getparams.m
+%       mtfftc.m
+%
+% Used by:
+%       virt_analyze_sniff_whisk.m
 %
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from coherencyc.m

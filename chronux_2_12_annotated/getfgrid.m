@@ -14,6 +14,13 @@ function [freqs, freqIndices] = getfgrid (fs, nFft, fPass)
 %       nFft        - Number of points in FFT
 %       fPass       - Frequency band [fmin fmax]
 %
+% Requires:
+%
+% Used by:
+%       coherencyc.m
+%       coherencycpt.m
+%       mtspectrumc.m
+%
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from getfgrid.m
 %   in Chronux version 2.12 v03 package Latest release (2018-Oct-25)

@@ -21,6 +21,12 @@ function [confC, phiStd, coherenceErr] = coherr (coherenceMag, j1, j2, errConfig
 %       numSpikes1   - (opt) number of spikes for data1 (finite size corrections)
 %       numSpikes2   - (opt) number of spikes for data2
 %
+% Requires:
+%
+% Used by:
+%       coherencyc.m
+%       coherencycpt.m
+%
 % File History:
 % 2026-01-13 Reorganized and reannotated by Gemini from coherr.m
 %   in Chronux version 2.12 v03 package Latest release (2018-Oct-25)
