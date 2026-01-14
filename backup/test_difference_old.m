@@ -67,7 +67,6 @@ function statsStruct = test_difference (data, varargin)
 %                       nSamples
 %                       degreesOfFreedom
 %                       testFunction
-%                       useParametric
 %                       symbol_Group1_Group2, etc.
 %                       isDifferent_Group1_Group2, etc.
 %                       pValue_Group1_Group2, etc.
@@ -109,12 +108,6 @@ function statsStruct = test_difference (data, varargin)
 %                   - 'IsPaired': whether data is paired
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'TestType': type of test to perform
-%                   must be an unambiguous, case-insensitive match to one of:
-%                       'auto'          - decide based on normality
-%                       'parametric'    - force parametric test
-%                       'nonparametric' - force nonparametric test
-%                   default == 'auto'
 %                   - 'DisplayAnova': whether to display ANOVA table
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -162,8 +155,6 @@ function statsStruct = test_difference (data, varargin)
 % 2020-03-10 Added symbol, alphaTwoStars, alphaThreeStars
 % 2020-05-14 Added 'SaveFlag' as an optional argument
 % 2020-05-14 Added 'FileBase' as an optional argument
-% 2026-01-09 Added 'TestType' as an optional argument
-% 2026-01-09 Added 'useParametric' to output struct
 % TODO: 2020-03-10 Added alternative tests
 
 %% Hard-coded parameters
@@ -174,7 +165,6 @@ ranovaTimeVar = 'Time';
 ranovaRowOfInterest = ['(Intercept):', ranovaTimeVar];
 outSuffix = 'stats';
 outExtension = 'txt';
-validTestTypes = {'auto', 'parametric', 'nonparametric'}; % valid test types
 
 %% Default values for optional arguments
 groupingDefault  = [];          % set later
@@ -185,7 +175,6 @@ alphaDifferenceDefault = 0.05;  % significance level for difference test
 alphaTwoStarsDefault = 0.01;    % significance level for two stars
 alphaThreeStarsDefault = 0.001; % significance level for three stars
 isPairedDefault = false;        % data is not paired by default
-testTypeDefault = 'auto';       % decide test type based on normality by default
 displayAnovaDefault = true;     % display ANOVA table by default
 saveFlagDefault = false;        % don't save results by default
 fileBaseDefault = '';           % set later
@@ -225,8 +214,6 @@ addParameter(iP, 'AlphaThreeStars', alphaThreeStarsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'IsPaired', isPairedDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'TestType', testTypeDefault, ...
-    @(x) any(validatestring(x, validTestTypes)));
 addParameter(iP, 'DisplayAnova', displayAnovaDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveFlag', saveFlagDefault, ...
@@ -244,7 +231,6 @@ alphaDifference = iP.Results.AlphaDifference;
 alphaTwoStars = iP.Results.AlphaTwoStars;
 alphaThreeStars = iP.Results.AlphaThreeStars;
 isPaired = iP.Results.IsPaired;
-testType = validatestring(iP.Results.TestType, validTestTypes);
 displayAnova = iP.Results.DisplayAnova;
 saveFlag = iP.Results.SaveFlag;
 fileBase = iP.Results.FileBase;
@@ -383,7 +369,6 @@ statsStruct.percChange = NaN;
 statsStruct.nSamples = NaN;
 statsStruct.degreesOfFreedom = NaN;
 statsStruct.testFunction = 'none';
-statsStruct.useParametric = false;
 if nGroups > 2
     for iPair = 1:nPairs
         statsStruct.(isDifferentStrs{iPair}) = NaN;
@@ -486,21 +471,8 @@ elseif nGroups == 2
 end
 
 %% Perform the correct difference test among groups
-% Determine whether to use parametric tests
-switch testType
-    case 'auto'
-        useParametric = all(isNormal);
-    case 'parametric'
-        useParametric = true;
-    case 'nonparametric'
-        useParametric = false;
-end
-
-% Store in output
-statsStruct.useParametric = useParametric;
-
 if nGroups == 1
-    if useParametric
+    if all(isNormal)
         % Perform a 1-sample t-test 
         %   (tests difference of mean with nullMean)
         [isDifferent, pValue, ~, testStats] = ...
@@ -518,28 +490,28 @@ if nGroups == 1
         testFunction = 'signrank';
     end
 elseif nGroups == 2
-    if useParametric && isPaired
+    if all(isNormal) && isPaired
         % Perform a 2-sample paired t-test (tests difference between means)
         [isDifferent, pValue, ~, testStats] = ...
             ttest(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'ttest';
-    elseif useParametric && ~isPaired
+    elseif all(isNormal) && ~isPaired
         % Perform a 2-sample unpaired t-test (tests difference between means)
         [isDifferent, pValue, ~, testStats] = ...
             ttest2(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'ttest2';
-    elseif ~useParametric && isPaired
+    elseif ~all(isNormal) && isPaired
         % Perform a Wilcoxon signed-rank test (tests difference between medians)
         [pValue, isDifferent] = ...
             signrank(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
 
         % Store test function
         testFunction = 'signrank';
-    elseif ~useParametric && ~isPaired
+    elseif ~all(isNormal) && ~isPaired
         % Perform a Wilcoxon rank-sum test (tests difference between medians)
         [pValue, isDifferent] = ...
             ranksum(dataCell{1}, dataCell{2}, 'Alpha', alphaDifference);
@@ -549,7 +521,7 @@ elseif nGroups == 2
     end
 else
     % Use the appropriate test to compare across groups
-    if useParametric && isPaired
+    if all(isNormal) && isPaired
         % Create a data table
         dataTable = array2table(dataMatrix, 'VariableNames', groupNames);
 
@@ -573,7 +545,7 @@ else
         
         % Store test function
         testFunction = 'ranova';
-    elseif useParametric && ~isPaired
+    elseif all(isNormal) && ~isPaired
         % Perform a one-way ANOVA 
         %   (tests whether means of normal distributions are the same,
         %       assuming common variance)
@@ -584,7 +556,7 @@ else
 
         % Store test function
         testFunction = 'anova1';
-    elseif ~useParametric && isPaired
+    elseif ~all(isNormal) && isPaired
         % If there are less than two rows left, return empty
         if size(dataMatrix, 1) < 2
             % Cannot perform Friedman's test
@@ -602,7 +574,7 @@ else
 
         % Store test function
         testFunction = 'friedman';
-    elseif ~useParametric && ~isPaired
+    elseif ~all(isNormal) && ~isPaired
         % Perform a Kruskal-Wallis test 
         %   (tests whether medians are the same,
         %       assuming common continuous distributions)
@@ -849,6 +821,50 @@ end
 
 %{
 OLD CODE:
+
+% Count the number of samples
+nSamples = size(dataMatrix, 1);
+% Create sample numbers
+sampleNumber = transpose(1:nSamples);
+% Add a variable for sample number
+dataTable = addvars(dataTable, sampleNumber);
+% Generate a model specification string
+varList = combine_strings('SubStrings', groupNames, 'Delimiter', ',');
+modelSpec = [varList, '~sampleNumber'];
+
+% List all pairs of group names
+groupNamesPaired = ...
+    force_column_cell(transpose(nchoosek(groupNames, 2)), ...
+                        'ToLinearize', false);
+% Combine strings with diffDelimiter
+normGroupNames = ...
+    cellfun(@(x) [x{1}, diffDelimiter, x{2}], ...
+            groupNamesPaired, 'UniformOutput', false);
+% Compute pairwise differences
+normData = compute_pairwise_differences(dataCell);
+
+% Compute the repeated measures analysis of variance table
+[ranovatbl, betweenSubjectsSpec, ...
+    withinSubjectsSpec, hypothesisValue] = ranova(rm);
+
+% Store vectors
+statsStruct.isNormal = false;
+statsStruct.pNormAvg = NaN;
+statsStruct.pNormLill = NaN;
+statsStruct.pNormAd = NaN;
+statsStruct.pNormJb = NaN;
+statsStruct.isNormal = isNormal;
+statsStruct.pNormAvg = pNormAvg;
+statsStruct.pNormLill = pNormLill;
+statsStruct.pNormAd = pNormAd;
+statsStruct.pNormJb = pNormJb;
+
+% If there are too many NaNs, return
+if sum(isnan(dataVec)) >= numel(dataVec) / 2
+end
+
+dataMatrixOrig = force_matrix(data);
+groupingMatrixOrig = force_matrix(grouping);
 
 %}
 

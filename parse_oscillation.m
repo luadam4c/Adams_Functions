@@ -87,6 +87,7 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %                       'peak-to-equilibrium' - Extrenum minus the average of entire vector
 %                       'peak-to-avgvalley'   - Extrenum minus the average of surrounding features
 %                       'peak-to-prevalley'   - Extrenum minus the preceding feature
+%                       'peak-to-postvalley'  - Extrenum minus the succeding feature
 %                   default == 'peak-to-equilibrium'
 %                   - 'MinPeakDistanceMs': Minimum distance between peaks in ms.
 %                   must be a non-negative scalar
@@ -100,15 +101,20 @@ function [peakTable, valleyTable, otherResults] = parse_oscillation (vec, vararg
 %                   - 'MinValleyDistance': Minimum distance between valleys.
 %                   must be empty or a non-negative scalar
 %                   default == 0
-%                   - 'PromThresholdPerc': Prominence threshold percentage
-%                               for peak/valley detection. Adds to MinPeakProminence
-%                               and MinValleyProminence
+%                   - 'PromThresholdPerc': Percentage of full data range for 
+%                           the prominence threshold for peak/valley detection. 
+%                           Final threshold is maximum of this and 
+%                           either MinPeakProminence or MinValleyProminence
 %                   must be empty or a non-negative scalar
 %                   default == [] (not provided)
 %                   - 'MinPeakProminence': Minimum prominence for peak detection.
+%                           Final threshold is maximum of this and 
+%                           PromThresholdPerc * range(vec)
 %                   must be empty or a non-negative scalar
 %                   default == 0
 %                   - 'MinValleyProminence': Minimum prominence for valley detection.
+%                           Final threshold is maximum of this and 
+%                           PromThresholdPerc * range(vec)
 %                   must be empty or a non-negative scalar
 %                   default == 0
 %                   - 'MaxDurationForAmplitudeMs': Maximum difference between surrounding features for amplitude calculation

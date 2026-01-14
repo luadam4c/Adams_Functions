@@ -4,9 +4,7 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 % Explanation:
 %       This function takes a table of whisk analysis data and generates a
 %       grouped jitter plot of either logarithmic decrements or Fisher
-%       Z-scores.
-%       - Parametric: Plots Mean and 95% Confidence Interval.
-%       - Nonparametric: Plots Median, 95% CI of Median (Notches), and IQR (Box).
+%       Z-scores, with mean, 95% CI, and statistical test results overlaid.
 %       It can create a new figure or update an existing one if a handles
 %       structure is provided.
 %
@@ -55,12 +53,6 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 %                   - 'ShowFigure': whether to show figure
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'TestType': type of test to perform
-%                   must be an unambiguous, case-insensitive match to one of:
-%                       'auto'          - decide based on normality of all columns
-%                       'parametric'    - force parametric test
-%                       'nonparametric' - force nonparametric test
-%                   default == 'auto'
 %
 % Requires:
 %       cd/compute_combined_trace.m
@@ -71,7 +63,6 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/test_difference.m
-%       cd/test_normality.m
 %       cd/vecfun.m
 %
 % Used by:
@@ -87,16 +78,12 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 % 2025-10-15 Renamed to virt_plot_jitter.m by Gemini.
 % 2025-10-15 Added 'DataMode' to handle Fisher Z-scores by Gemini.
 % 2025-10-17 Added 'ShowFigure' as an optional argument.
-% 2026-01-09 Added 'TestType' optional argument.
-% 2026-01-09 Modified by Gemini to plot notched boxplots for nonparametric data.
-% 2026-01-09 Modified by Gemini to implement weighted global auto-detection for TestType.
 
 %% Hard-coded parameters
 yLocStarRel = 0.95;         % Relative y-location for significance stars
 yLocPValueRel = 0.90;       % Relative y-location for p-value text
 yLocTransformedLabelRel = 0.85; % Relative y-location for ratio/corr text
 validDataModes = {'LogDecrement', 'FisherZScore'};
-validTestTypes = {'auto', 'parametric', 'nonparametric'};
 
 %% Default values for optional arguments
 groupingColumnDefault = [];     % set later
@@ -110,7 +97,6 @@ outDirDefault = pwd;            % Default output directory
 figTypesDefault = {'png'};      % Default figure save format
 toSaveOutputDefault = true;     % Default to save the output figure
 showFigureDefault = true;       % Default to show the figure
-testTypeDefault = 'auto';       % Default to auto-detect test type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -134,8 +120,6 @@ addParameter(iP, 'OutDir', outDirDefault, @ischar);
 addParameter(iP, 'FigTypes', figTypesDefault);
 addParameter(iP, 'ToSaveOutput', toSaveOutputDefault, @islogical);
 addParameter(iP, 'ShowFigure', showFigureDefault, @islogical);
-addParameter(iP, 'TestType', testTypeDefault, ...
-    @(x) any(validatestring(x, validTestTypes)));
 
 % Parse the inputs
 parse(iP, dataTable, plotParams, varargin{:});
@@ -150,7 +134,6 @@ pathOutDir = iP.Results.OutDir;
 figTypes = iP.Results.FigTypes;
 toSaveOutput = iP.Results.ToSaveOutput;
 showFigure = iP.Results.ShowFigure;
-testType = validatestring(iP.Results.TestType, validTestTypes);
 
 %% Preparation
 % Initialize output structures
@@ -244,53 +227,17 @@ nOrdersToAnalyze = min(nOrdersTotal, maxOrdersToAnalyze);
 allDataMatrix = allDataMatrix(:, 1:nOrdersToAnalyze);
 
 %% Compute Statistics
-% Calculate mean, 95% CI, median and IQR for each decrement order
-[meanData, ~, lower95, upper95, medians, ...
-        quartile25s, quartile75s, lower95med, upper95med] = ...
-    compute_stats_for_cellnumeric(allDataMatrix');
+% Calculate mean and 95% confidence intervals for each decrement order
+[meanData, ~, lower95, upper95] = compute_stats_for_cellnumeric(allDataMatrix');
 
-% Determine the global test type if 'auto' is selected
-if strcmpi(testType, 'auto')
-    % Check normality for each column (decrement order)
-    [isNormalCols, ~] = test_normality(allDataMatrix);
-    
-    % Define weights: more weight given to earlier columns (harmonic weights: 1, 1/2, 1/3...)
-    nCols = numel(isNormalCols);
-    weights = 1 ./ (1:nCols);
-    
-    % Calculate weighted fraction of normal columns
-    % Ensure row vectors for dot product
-    weightedFraction = sum(double(isNormalCols(:))' .* weights(:)') / sum(weights);
-    
-    % Set test type based on weighted majority
-    if weightedFraction > 0.5
-        testType = 'parametric';
-    else
-        testType = 'nonparametric';
-    end
-end
-
-% Perform significance tests (e.g., t-test or ranksum) for each decrement order
-stats = vecfun(@(x) test_difference(x, 'TestType', testType), allDataMatrix);
+% Perform significance tests (e.g., t-test) for each decrement order against zero
+stats = vecfun(@test_difference, allDataMatrix);
 pValues = extract_fields(stats, 'pValue'); % Extract p-values
 testFunctions = extract_fields(stats, 'testFunction'); % Extract name of statistical test used
 symbols = extract_fields(stats, 'symbol'); % Extract significance symbols (*, **, etc.)
-useParametric = extract_fields(stats, 'useParametric'); % Extract whether parametric test was used
-
-% Determine which stats to plot based on the test type used
-% For parametric: Mean
-% For nonparametric: Median
-plotData = NaN(size(meanData));
-for iOrder = 1:numel(useParametric)
-    if useParametric(iOrder)
-        plotData(iOrder) = meanData(iOrder);
-    else
-        plotData(iOrder) = medians(iOrder);
-    end
-end
 
 % Apply the inverse transformation (exp for log, tanh for Z-score)
-avgTransformedValues = transformFunc(plotData);
+avgTransformedValues = transformFunc(meanData);
 
 %% Save Results
 % Store computed statistics and formatted data in the results structure
@@ -300,11 +247,6 @@ case 'LogDecrement'
     results.meanLogDecrements = meanData;
     results.lower95LogDecrements = lower95;
     results.upper95LogDecrements = upper95;
-    results.medianLogDecrements = medians;
-    results.firstQuartileLogDecrements = quartile25s;
-    results.thirdQuartileLogDecrements = quartile75s;
-    results.lower95MedianLogDecrements = lower95med;
-    results.upper95MedianLogDecrements = upper95med;
     results.pValuesLogDecrements = pValues;
     results.avgWhiskAmpRatios = avgTransformedValues;
 case 'FisherZScore'
@@ -312,11 +254,6 @@ case 'FisherZScore'
     results.meanCorrZScores = meanData;
     results.lower95CorrZScores = lower95;
     results.upper95CorrZScores = upper95;
-    results.medianCorrZScores = medians;
-    results.firstQuartileCorrZScores = quartile25s;
-    results.thirdQuartileCorrZScores = quartile75s;
-    results.lower95MedianCorrZScores = lower95med;
-    results.upper95MedianCorrZScores = upper95med;
     results.pValuesCorrZScores = pValues;
     results.avgWhiskAmpCorrs = avgTransformedValues;
 end
@@ -342,9 +279,6 @@ allGroupsVec = allGroupsVec(:);
 jitterWidth = plotParams.jitterWidth;
 markerSizeJitter = plotParams.markerSizeJitter;
 
-% Determine x-coordinates for plots
-xValues = (1:nOrdersToAnalyze)';
-
 % Check if we are updating an existing plot or creating a new one
 if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     % --- UPDATE EXISTING PLOT ---
@@ -355,6 +289,9 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
     nAnalysisWindows = size(allDataMatrix, 1);
     ordersMatrix = repmat(1:nOrdersToAnalyze, nAnalysisWindows, 1);
     ordersVec = ordersMatrix(:);
+    xValues = (1:nOrdersToAnalyze)';
+    errLower = meanData - lower95;
+    errUpper = upper95 - meanData;
 
     % Update x limits
     xlim(axJitter, [min(ordersVec) - 0.5, max(ordersVec) + 0.5]);
@@ -390,16 +327,33 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
             'LegendLocation', 'suppress', 'XTickLabels', get(axJitter, 'XTickLabel'));
         handles.hJitter = hOutJitter.distributions;
     end
-    
-    % --- Remove old stats objects to redraw them ---
-    if isfield(handles, 'hErrorBars'), delete(handles.hErrorBars); end
-    if isfield(handles, 'hMeans'), delete(handles.hMeans); end
-    if isfield(handles, 'hBoxPlots'), delete(handles.hBoxPlots); end
-    
-    % --- Remove old annotations that need to be replotted ---
+
+    % Update means and error bars
+    handles.hErrorBars.XData = xValues';
+    handles.hErrorBars.YData = meanData';
+    handles.hErrorBars.YNegativeDelta = errLower';
+    handles.hErrorBars.YPositiveDelta = errUpper';
+    handles.hMeans.XData = xValues';
+    handles.hMeans.YData = meanData';
+
+    % Remove old annotations that need to be replotted
     delete(handles.pTextJitter);
     delete(handles.sigMarkerJitter);
     delete(handles.transformedLabels);
+
+    % Update p value texts and significance markers
+    hOut = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...        
+                         'XLocText', xValues, 'YLocTextRel', yLocPValueRel, ...
+                         'YLocStarRel', yLocStarRel, 'AxesHandle', axJitter);
+    handles.pTextJitter = hOut.pText;
+    handles.sigMarkerJitter = hOut.sigMarker;
+
+    % Update transformed value labels
+    yLimits = ylim(axJitter);
+    yPosText = yLimits(1) + yLocTransformedLabelRel * diff(yLimits);
+    transformedLabels = arrayfun(@(x) sprintf('%s: %.2f', transformLabel, x), avgTransformedValues, 'UniformOutput', false);
+    handles.transformedLabels = text(axJitter, xValues, repmat(yPosText, size(xValues)), transformedLabels, ...
+                         'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
 
     % Get figure handle for saving
     fig = handles.fig; 
@@ -421,90 +375,45 @@ else
 
     hold on; % Hold the current axes to overlay statistical information
 
+    % Plot the mean and 95% confidence interval error bars
+    xValues = (1:nOrdersToAnalyze)'; % X-coordinates for means/error bars
+    errLower = meanData - lower95; % Lower error bar length
+    errUpper = upper95 - meanData; % Upper error bar length
+    hErrorBars = errorbar(xValues, meanData, errLower, errUpper, '_', ...
+             'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
+    hMeans = plot(xValues, meanData, 'o', 'MarkerEdgeColor', 'k', ...
+         'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
+
     % Add a horizontal line at y=0 to represent the null hypothesis (no change)
     hNull = yline(0, '--k', 'LineWidth', 1);
 
-    % Store handles
+    % Annotate plot with statistical significance symbols and p-values
+    hOutTest = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...
+                     'XLocText', xValues, 'YLocTextRel', yLocPValueRel, 'YLocStarRel', yLocStarRel, 'AxesHandle', axJitter);
+
+    % Add text labels showing the transformed values (ratios or correlations)
+    yLimits = ylim; % Get current y-axis limits to position the text
+    yPosText = yLimits(1) + yLocTransformedLabelRel * diff(yLimits); % Calculate y-position for the text
+    transformedLabels = arrayfun(@(x) sprintf('%s: %.2f', transformLabel, x), avgTransformedValues, 'UniformOutput', false); % Create labels
+    hTransformedLabels = text(xValues, repmat(yPosText, size(xValues)), transformedLabels, ...
+         'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom'); % Add text to plot
+
+    % Finalize plot
+    title(figTitle); % Set the figure title
+    grid on; % Turn on the grid
+    hold off; % Release the axes hold
+
+    % Store handles for output
     handles.fig = fig;
     handles.axJitter = axJitter;
     handles.hJitter = hOutJitter.distributions;
-    handles.hNull = hNull;
-    
-    % Initialize empty handles for optional stats
-    handles.hErrorBars = [];
-    handles.hMeans = [];
-    handles.hBoxPlots = [];
-end
-
-%% Draw Summary Statistics (Shared by New and Update)
-axes(axJitter); hold on;
-
-% Identify which groups are parametric vs nonparametric
-idxParametric = find(useParametric);
-idxNonParametric = find(~useParametric);
-
-% 1. Plot Parametric Stats: Mean +/- 95% Confidence Interval
-if ~isempty(idxParametric)
-    % Extract parametric data
-    xPara = xValues(idxParametric);
-    yPara = meanData(idxParametric);
-    lErr = meanData(idxParametric) - lower95(idxParametric);
-    uErr = upper95(idxParametric) - meanData(idxParametric);
-    
-    hErrorBars = errorbar(xPara, yPara, lErr, uErr, '_', ...
-             'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
-    hMeans = plot(xPara, yPara, 'o', 'MarkerEdgeColor', 'k', ...
-         'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
-         
     handles.hErrorBars = hErrorBars;
     handles.hMeans = hMeans;
+    handles.hNull = hNull;
+    handles.pTextJitter = hOutTest.pText;
+    handles.sigMarkerJitter = hOutTest.sigMarker;
+    handles.transformedLabels = hTransformedLabels;
 end
-
-% 2. Plot Nonparametric Stats: Notched Box Plot (Median, 95% CI of Median, IQR)
-if ~isempty(idxNonParametric)
-    % Extract data for nonparametric groups
-    % boxplot expects a matrix where each column is a group. 
-    % We use 'Positions' to place them correctly on the x-axis.
-    dataNonPara = allDataMatrix(:, idxNonParametric);
-    xNonPara = xValues(idxNonParametric);
-    
-    % Draw Notched Box Plots
-    % 'Symbol','' suppresses outliers (since jitter shows them)
-    % 'Widths', 0.5 matches typical bar/errorbar width
-    hBoxPlots = boxplot(axJitter, dataNonPara, 'Positions', xNonPara, ...
-        'Notch', 'on', 'Symbol', '', 'Colors', 'k', 'Widths', 0.5);
-    
-    % Customize Box Plot appearance (make lines thicker)
-    set(hBoxPlots, 'LineWidth', 2);
-    
-    % Note: boxplot sometimes resets XTickLabels, so we might need to restore them if this was a new plot
-    % but standard practice suggests it should be fine if Positions are set.
-    
-    handles.hBoxPlots = hBoxPlots;
-end
-
-%% Update Annotations
-% Annotate plot with statistical significance symbols and p-values
-hOutTest = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...
-                 'XLocText', xValues, 'YLocTextRel', yLocPValueRel, 'YLocStarRel', yLocStarRel, 'AxesHandle', axJitter);
-
-% Add text labels showing the transformed values (ratios or correlations)
-yLimits = ylim(axJitter); % Get current y-axis limits to position the text
-yPosText = yLimits(1) + yLocTransformedLabelRel * diff(yLimits); % Calculate y-position for the text
-transformedLabels = arrayfun(@(x) sprintf('%s: %.2f', transformLabel, x), avgTransformedValues, 'UniformOutput', false); % Create labels
-hTransformedLabels = text(axJitter, xValues, repmat(yPosText, size(xValues)), transformedLabels, ...
-     'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom'); % Add text to plot
-
-handles.pTextJitter = hOutTest.pText;
-handles.sigMarkerJitter = hOutTest.sigMarker;
-handles.transformedLabels = hTransformedLabels;
-
-% Finalize plot
-if isempty(handlesIn)
-    title(figTitle); % Set the figure title
-    grid on; % Turn on the grid
-end
-hold off; % Release the axes hold
 
 % Save the figure to file if requested
 if toSaveOutput
@@ -514,23 +423,13 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [means, stderrs, lower95s, upper95s, medians, ...
-            quartile25s, quartile75s, lower95med, upper95med] = ...
-    compute_stats_for_cellnumeric(vecs)
+function [means, stderrs, lower95s, upper95s] = compute_stats_for_cellnumeric(vecs)
 % Helper function to compute basic stats on a cell array of numeric vectors
 
-% Compute parametric stats
 means = compute_combined_trace(vecs, 'mean');
 stderrs = compute_combined_trace(vecs, 'stderr');
 lower95s = compute_combined_trace(vecs, 'lower95');
 upper95s = compute_combined_trace(vecs, 'upper95');
-
-% Compute nonparametric stats
-medians = compute_combined_trace(vecs, 'median');
-quartile25s = compute_combined_trace(vecs, 'quartile25');
-quartile75s = compute_combined_trace(vecs, 'quartile75');
-lower95med = compute_combined_trace(vecs, 'lower95med');
-upper95med = compute_combined_trace(vecs, 'upper95med');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

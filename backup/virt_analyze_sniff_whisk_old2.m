@@ -3,7 +3,7 @@
 % This script must be run in a directory that contains the data directory
 % specified below.
 %
-% Dataset: data_sniff_whisk
+% Dataset: sniff_whisk_data
 % Description from Jeff: 
 %   - unilateral whisking and sniffing data, head restrained
 %   - whisking data are from tracking a single vibrissa in full-field video
@@ -34,7 +34,6 @@
 %       cd/virt_plot_phase_response.m
 %       cd/write_table.m
 %       cd/virt_detect_whisk_analysis_windows.m
-%       Chronux toolbox (path must be accessible)
 %
 % Used by:
 
@@ -71,8 +70,6 @@
 % 2025-10-09 Modified by Gemini to pass trialName to parse_whisk_vecs.
 % 2025-11-23 Changed amplitudeDefinition from 'peak-to-avgvalley' to 'peak-to-prevalley'
 % 2025-11-26 Changed amplitudeDefinition back to 'peak-to-avgvalley'
-% 2026-01-09 Merged spectral analysis logic from analyze_sniff_whisk_spectra.m by Gemini
-% 2026-01-13 Updated spectral analysis annotations
 
 %% Hard-coded parameters
 % Input Directory and file naming conventions
@@ -121,36 +118,6 @@ nWhisksSniffStartToAnalyze = 5;     % Number of whisks at the start of a sniff p
 minWhisksBasalRespToAnalyze = 3;    % Minimum number of whisks at the start of a basal respiration cycle to be analyzed
 maxWhisksBasalRespToAnalyze = 7;    % Maximum number of whisks at the start of a basal respiration cycle to be analyzed
 nCorrToAnalyze = 4;                 % Number of whisk amplitude correlations to analyze
-
-% Spectral Analysis parameters
-nameChronuxFile = 'coherencyc.m';
-scriptPath = fileparts(mfilename('fullpath'));
-pathChronux = fullfile(scriptPath, 'coherencyc_from_chronux');
-nSegsSpectra = 5;                   % Number of equal length non-overlapping segments to divide data (10 second sweeps)
-padModeSpectra = 0;                 % Padding factor for the FFT as defined in coherencyc.m
-                                    % Can take values -1, 0, 1, 2...
-                                    % -1 corresponds to no padding.
-                                    % 0 corresponds to padding to the next highest power of 2 etc.
-                                    % e.g. For N = 500:
-                                    %     if PAD = -1, we do not pad;
-                                    %     if PAD = 0, we pad the FFT to 512 points;
-                                    %     if PAD = 1, we pad to 1024 points etc.
-                                    % Default: 0
-freqResolutionSpectra = 0.5;        % Desired frequency resolution (Hz), resolution of x-axis, half bandwidth
-fPassSpectra = [0, 15];             % Frequency passband (Hz), x-axis range
-errorParamsSpectra = [2, 0.05];     % Error calculation parameters as defined in coherencyc.m
-                                    % [1 p] - Theoretical error bars
-                                    % [2 p] - Jackknife error bars
-                                    % [0 p] or 0 - no error bars
-                                    % Default: 0
-useTrialAvgSpectra = 1;             % Whether to average across trials
-minWhiskAmpSpectra = 10;            % Minimum average whisk amplitude (2 * mean of envelope) 
-                                    %   for a segment to be included in analysis
-sniffFreqThresholdSpectra = 5;      % Minimum mean instantaneous frequency in Hz
-                                    %   for a segment to be considered sniffing
-basalFreqThresholdSpectra = 3;      % Maximum mean instantaneous frequency in Hz
-                                    %   for a segment to be considered basal respiration
-figNameSpectra = 'sniff_whisk_spectra'; % Output filename base for spectra figure
 
 % Hard-coded strings in file names to exclude from averaging
 excludeStringsFromAverage = {'ammpuff', 'airpuff', 'baseline', 'eth'};
@@ -254,22 +221,6 @@ pPlot.lineStyleThrOrig = lineStyleThrOrig;
 pPlot.lineWidthThrOrig = lineWidthThrOrig;
 pPlot.textLocThrOrig = textLocThrOrig;
 
-% Create a structure for spectral analysis parameters
-pSpectra.fCutoffResp = fCutoffResp;
-pSpectra.fCutoffWhisk = fCutoffWhisk;
-pSpectra.filterOrderResp = filterOrderResp;
-pSpectra.filterOrderWhisk = filterOrderWhisk;
-pSpectra.nSegs = nSegsSpectra;
-pSpectra.padMode = padModeSpectra;
-pSpectra.freqResolution = freqResolutionSpectra;
-pSpectra.fPass = fPassSpectra;
-pSpectra.errorParams = errorParamsSpectra;
-pSpectra.useTrialAvg = useTrialAvgSpectra;
-pSpectra.minWhiskAmp = minWhiskAmpSpectra;
-pSpectra.minSniffFreq = sniffFreqThresholdSpectra;
-pSpectra.maxBasalFreq = basalFreqThresholdSpectra;
-pSpectra.figNameBase = figNameSpectra;
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
@@ -288,16 +239,6 @@ if ~exist(pathDataDir, 'dir')
     return; % Stop the script
 end
 fprintf('Data directory found.\n\n');
-
-% If not exist, add path for the coherencyc() function from the Chronux package
-if ~exist(nameChronuxFile, 'file')
-    if exist(pathChronux, 'dir')
-        addpath(pathChronux);
-        fprintf('coherencyc() and dependent files found and added to path.\n');
-    else
-        warning('coherencyc() and dependent files not found at: %s. Spectral analysis may fail.', pathChronux);
-    end
-end
 
 % Create an output directory if it does not exist
 pathOutDir = fullfile(pathParentDir, nameOutDir);
@@ -353,7 +294,7 @@ dataStructs = cellfun(@(x) load(x), pathDataFiles);
 %   structures have therm and piezo fields
 sniffWhiskDataCell = extract_fields(dataStructs, 'sniffwhiskdata');
 
-% Extract the time vectors in seconds
+% Extract the time vectors
 tVecs = extract_fields(sniffWhiskDataCell, 't');
 
 % Extract the whisk angle vectors from the camera detection
@@ -402,16 +343,6 @@ respVecs = cellfun(@(a, b, c) whiskAngleLimits(1) + (a - b) * ...
                     rangeWhiskAngleLimits / c, thermVecs, ...
                     num2cell(lowerThermLimitEachFile), num2cell(rangeThermLimitsEachFile), ...
                     'UniformOutput', false);
-
-%% Identify files to use for averaging
-[isUsedForAverage, fileNumsToAverage] = ...
-    identify_files_for_averaging(trialNames, excludeStringsFromAverage);
-
-%% Analyze and plot spectral coherence
-fprintf('Performing spectral analysis (coherence) on selected files...\n');
-perform_spectral_analysis(tVecs, whiskVecs, thermVecs, fileNumsToAverage, ...
-                          pSpectra, pathOutDir, figTypes2);
-fprintf('Finished spectral analysis.\n\n');
 
 %% Detect the first pulse start and end times
 pulseParams = cellfun(@(x, y) parse_pulse(x, 'TimeVecs', y, ...
@@ -498,6 +429,10 @@ nBasalRespCyclesPerFile = cellfun(@height, basalRespCycleTablesAll);
 fprintf('Finished calculating statistics for each file.\n\n');
 
 %% Analyze and plot aggregate data
+% Identify files to use for averaging
+[isUsedForAverage, fileNumsToAverage] = ...
+    identify_files_for_averaging(trialNames, excludeStringsFromAverage);
+
 % Combine sniff start windows from selected files
 sniffStartWinTableToAverage = combine_tables(sniffStartWinTablesAll, fileNumsToAverage);
 
@@ -1485,201 +1420,6 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function perform_spectral_analysis(tVecs, whiskVecs, thermVecs, fileNumsToAverage, ...
-                                   pSpectra, pathOutDir, figTypes)
-% Concatenates raw data, filters, segments, computes multi-taper averaged coherence, and plots multi-taper averaged power spectrums
-
-% Extract from parameters structure
-fCutoffResp = pSpectra.fCutoffResp;
-fCutoffWhisk = pSpectra.fCutoffWhisk;
-filterOrderResp = pSpectra.filterOrderResp;
-filterOrderWhisk = pSpectra.filterOrderWhisk;
-nSegs = pSpectra.nSegs;
-padMode = pSpectra.padMode;
-freqResolution = pSpectra.freqResolution;
-fPass = pSpectra.fPass;
-errorParams = pSpectra.errorParams;
-useTrialAvg = pSpectra.useTrialAvg;
-minWhiskAmp = pSpectra.minWhiskAmp;
-minSniffFreq = pSpectra.minSniffFreq;
-maxBasalFreq = pSpectra.maxBasalFreq;
-figNameBase = pSpectra.figNameBase;
-
-% Initialize concatenated matrices
-timeMatrix = []; 
-whiskMatrix = []; 
-respMatrix = [];
-
-% Loop through selected files and concatenate data
-for iFile = fileNumsToAverage'
-    % Extract vectors for this file
-    tVec = tVecs{iFile};
-    whiskVec = whiskVecs{iFile};
-    thermVec = thermVecs{iFile};
-    
-    % Count the number of samples for this file
-    nSamps = size(tVec, 1);
-    
-    % Check for the "2x length" edge cases
-    if ~isempty(timeMatrix) && nSamps == 2 * size(timeMatrix, 1)
-        % Append first half
-        timeMatrix = [timeMatrix, tVec(1:(nSamps/2), :)];
-        whiskMatrix = [whiskMatrix, whiskVec(1:(nSamps/2), :)];
-        respMatrix = [respMatrix, thermVec(1:(nSamps/2), :)];
-
-        % Append second half
-        timeMatrix = [timeMatrix, tVec((nSamps/2+1):nSamps, :)];
-        whiskMatrix = [whiskMatrix, whiskVec((nSamps/2+1):nSamps, :)];
-        respMatrix = [respMatrix, thermVec((nSamps/2+1):nSamps, :)];
-    elseif ~isempty(timeMatrix) && nSamps ~= size(timeMatrix, 1)
-        % Check if length not expected
-        error('length of trial unexpected for file %d!', iFile);
-    else
-        timeMatrix = [timeMatrix, tVec];
-        whiskMatrix = [whiskMatrix, whiskVec];
-        respMatrix = [respMatrix, thermVec];
-    end
-end
-
-% Calculate sampling frequency in Hz
-fs = 1 ./ mean(mean(diff(timeMatrix)));
-
-% Calculate instantaneous amplitude and phase
-% Band pass filter sniffing signal for phase calculation
-[bResp, aResp] = butter(filterOrderResp, fCutoffResp / (fs / 2));
-respFiltered = filtfilt(bResp, aResp, respMatrix);
-
-% Band pass filter whisking signal
-[bWhisk, aWhisk] = butter(filterOrderWhisk, fCutoffWhisk / (fs / 2));
-whiskFiltered = filtfilt(bWhisk, aWhisk, whiskMatrix);
-
-% Calculate the phase of the analytical signal corresponding to 
-%   the filtered sniffing signal (the respiratory phase)
-respPhi = angle(hilbert(respFiltered));
-
-% Calculate the amplitude of the analytical signal corresponding to 
-%   the filtered whisking signal (the whisking envelope)
-whiskEnvelope = abs(hilbert(whiskFiltered));
-
-% Divide trials into equal segments
-nTrialsTotal = size(timeMatrix, 2);
-samplesPerSweep = size(timeMatrix, 1);
-samplesPerSeg = floor(samplesPerSweep / nSegs);
-truncTrialLength = nSegs * samplesPerSeg;
-
-% Reshape data so that each column is a segment (nCols = nTrials * nSegs)
-whiskSeg = reshape(whiskMatrix(1:truncTrialLength, :), [samplesPerSeg, nTrialsTotal * nSegs]);
-respSeg = reshape(respMatrix(1:truncTrialLength, :), [samplesPerSeg, nTrialsTotal * nSegs]);
-respPhiSeg = reshape(respPhi(1:truncTrialLength, :), [samplesPerSeg, nTrialsTotal * nSegs]);
-whiskEnvSeg = reshape(whiskEnvelope(1:truncTrialLength, :), [samplesPerSeg, nTrialsTotal * nSegs]);
-
-% Subtract mean from segments (DC removal)
-respSegZeroMean = respSeg - mean(respSeg);
-whiskSegZeroMean = whiskSeg - mean(whiskSeg);
-
-% Calculate the average respiratory frequency (mean instantaneous frequency) for each segment in Hz
-avgRespFreqSeg = (mean(diff(unwrap(respPhiSeg))) * fs) / (2 * pi);
-
-% Calculate the average whisking amplitude (2 * mean of envelope) for each segment
-avgWhiskAmpSeg = 2 * mean(whiskEnvSeg);
-
-% Calculate time-half-bandwidth product
-segDur = samplesPerSeg / fs;                  % segment duration (s)
-timeHalfBandwidth = segDur * freqResolution;  % time-half-bandwidth product (NW)
-
-% Calculate the number of tapers desired
-%   Note: default is round(2 * timeHalfBandwidth)
-nTapers = floor((2 * timeHalfBandwidth) - 1);
-
-% Setup Chronux params structure for coherencyc.m 
-%   for multi-taper averaged coherency, cross-spectrum and individual spectra
-params.tapers = [timeHalfBandwidth, nTapers];
-params.pad    = padMode; 
-params.Fs     = fs;
-params.fpass  = fPass;
-params.err    = errorParams;
-params.trialave = useTrialAvg;
-
-% --- Analysis 1: All segments with whisking ---
-segIndsAll = find(avgWhiskAmpSeg > minWhiskAmp);
-if isempty(segIndsAll)
-    warning('No segments found with whisking amplitude > %d', minWhiskAmp);
-else
-    [~, ~, ~, powerRespRaw, powerWhiskRaw, freqVec] = ...
-        coherencyc(respSegZeroMean(:, segIndsAll), whiskSegZeroMean(:, segIndsAll), params);
-    
-    % Calculate the mean frequency interval
-    deltaFreq = mean(diff(freqVec));
-
-    % Normalize the power spectra so that the integral is 1
-    powerRespAll = powerRespRaw / (sum(powerRespRaw) * deltaFreq);
-    powerWhiskAll = powerWhiskRaw / (sum(powerWhiskRaw) * deltaFreq);
-end
-
-% --- Analysis 2: Sniffing segments (High freq resp + whisking) ---
-segIndsSniff = find(avgRespFreqSeg > minSniffFreq & avgWhiskAmpSeg > minWhiskAmp);
-if isempty(segIndsSniff)
-    warning('No sniffing segments found.');
-    powerRespSniff = zeros(size(powerRespAll));
-    powerWhiskSniff = zeros(size(powerWhiskAll));
-else
-    [~, ~, ~, powerRespRawSniff, powerWhiskRawSniff, ~] = ...
-        coherencyc(respSegZeroMean(:, segIndsSniff), whiskSegZeroMean(:, segIndsSniff), params);
-    
-    % Normalize the power spectra so that the integral is 1
-    powerRespSniff = powerRespRawSniff / (sum(powerRespRawSniff) * deltaFreq);
-    powerWhiskSniff = powerWhiskRawSniff / (sum(powerWhiskRawSniff) * deltaFreq);
-end
-
-% --- Analysis 3: Basal segments (Low freq resp + whisking) ---
-segIndsBasal = find(avgRespFreqSeg < maxBasalFreq & avgWhiskAmpSeg > minWhiskAmp);
-if isempty(segIndsBasal)
-    warning('No basal segments found.');
-    powerRespBasal = zeros(size(powerRespAll));
-    powerWhiskBasal = zeros(size(powerWhiskAll));
-else
-    [~, ~, ~, powerRespRawBasal, powerWhiskRawBasal, ~] = ...
-        coherencyc(respSegZeroMean(:, segIndsBasal), whiskSegZeroMean(:, segIndsBasal), params);
-    
-    % Normalize the power spectra so that the integral is 1
-    powerRespBasal = powerRespRawBasal / (sum(powerRespRawBasal) * deltaFreq);
-    powerWhiskBasal = powerWhiskRawBasal / (sum(powerWhiskRawBasal) * deltaFreq);
-end
-
-%% Output results
-figHandle = figure('Name', 'Sniff Whisk Spectra');
-
-% Plot All
-subplot(3, 1, 1);
-if exist('powerWhiskAll', 'var')
-    plot(freqVec, powerWhiskAll, 'b', freqVec, powerRespAll, 'r');
-end
-title('All Whisking Segments');
-
-% Plot Sniffing
-subplot(3, 1, 2);
-if exist('powerWhiskSniff', 'var')
-    plot(freqVec, powerWhiskSniff, 'b', freqVec, powerRespSniff, 'r');
-end
-ylabel('Relative Power (fraction of total signal power)');
-title('Sniffing Segments');
-
-% Plot Basal
-subplot(3, 1, 3);
-if exist('powerWhiskBasal', 'var')
-    plot(freqVec, powerWhiskBasal, 'b', freqVec, powerRespBasal, 'r');
-end
-xlabel('Frequency (Hz)');
-title('Basal Segments');
-
-% Save figures
-save_all_figtypes(figHandle, fullfile(pathOutDir, figNameBase), figTypes);
-fprintf('Spectral analysis figures saved to %s.\n', pathOutDir);
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function [means, stderrs, lower95s, upper95s] = compute_stats_for_cellnumeric (vecs)
 %% Computes the statistics for a cell array of numeric vectors
 
@@ -1726,6 +1466,43 @@ end
 
 %{
 OLD CODE:
+
+% Expand the cell arrays to a single string
+metaDataToPrint = metaDataTable;
+[metaDataToPrint.roiswitch, metaDataToPrint.records, ...
+    metaDataToPrint.anesrecords, metaDataToPrint.sniffStartTimes, ...
+    metaDataToPrint.sniffEndTimes, metaDataToPrint.sniffFreqFundamental, ...
+    metaDataToPrint.whiskFreqFundamental, ...
+    metaDataTable.meanWhiskLogDecrements, metaDataTable.stderrWhiskLogDecrements, ...
+    metaDataTable.lower95WhiskLogDecrements, metaDataTable.upper95WhiskLogDecrements] = ...
+    argfun(@(x) cellfun(@(a) print_cellstr(a, 'Delimiter', ' ', ...
+                            'ToPrint', false, 'OmitQuotes', true, ...
+                            'OmitBraces', true, 'OmitNewline', true), ...
+                            x, 'UniformOutput', false), ...
+        metaDataTable.roiswitch, metaDataTable.records, ...
+        metaDataTable.anesrecords, metaDataTable.sniffStartTimes, ...
+        metaDataTable.sniffEndTimes, metaDataTable.sniffFreqFundamental, ...
+        metaDataTable.whiskFreqFundamental, ...
+        metaDataTable.meanWhiskLogDecrements, metaDataTable.stderrWhiskLogDecrements, ...
+        metaDataTable.lower95WhiskLogDecrements, metaDataTable.upper95WhiskLogDecrements);
+
+% Display the resulting table in the command window
+fprintf('Generated Metadata Table:\n');
+disp(metaDataToPrint);
+
+fCutoffRelToFund = [0.1, 10];  % ratio of Butterworth bandpass filter cutoff for whisk trace
+                                % relative to the fundamental frequency
+
+% Remove any empty tables from the cell array
+tablesToCombine(cellfun('isempty', tablesToCombine)) = [];
+
+% Vertically concatenate all tables in the list into a single table
+if ~isempty(tablesToCombine)
+    combinedTable = vertcat(tablesToCombine{:});
+else
+    % Return an empty table if no data was found
+    combinedTable = table();
+end
 
 %}
 

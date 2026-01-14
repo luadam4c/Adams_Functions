@@ -21,9 +21,6 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %       varargin    - 'SigLevel': significance level for tests
 %                   must be a positive scalar
 %                   default == 0.05
-%                   - 'CenterOnMean': whether to center the data on the mean
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
 %                   - Any other parameter-value pair for the TODO() function
 %
 % Requires:
@@ -36,20 +33,15 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %       cd/plot_grouped_jitter.m
 %       cd/plot_tuning_curve.m
 %       cd/test_difference.m
-%       cd/virt_plot_jitter.m
 
 % File History:
 % 2019-09-01 Created by Adam Lu
-% 2026-01-09 Added 'CenterOnMean' optional argument and now defaults to 
-%               centering data on the mean (shifting the mean to 0) 
-%               before testing for normality
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 sigLevelDefault = 0.05;
-centerOnMeanDefault = true;             % whether to center the data on the mean
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -69,13 +61,10 @@ addRequired(iP, 'data');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SigLevel', sigLevelDefault);
-addParameter(iP, 'CenterOnMean', centerOnMeanDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
 sigLevel = iP.Results.SigLevel;
-centerOnMean = iP.Results.CenterOnMean;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = struct2arglist(iP.Unmatched);
@@ -83,12 +72,6 @@ centerOnMean = iP.Results.CenterOnMean;
 %% Preparation
 % Force as a cell array
 data = force_column_cell(data);
-
-% Center the data on the mean if requested 
-%   Note: this only makes a difference if the kstest is used
-if centerOnMean
-    data = cellfun(@(x) x - mean(x, 'omitnan'), data, 'UniformOutput', false);
-end
 
 %% Do the job
 % Apply the Lilliefors test for normality to each group

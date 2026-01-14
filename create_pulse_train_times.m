@@ -4,7 +4,8 @@ function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, 
 %
 % Explanation:
 %       This function creates a series of pulse start and end times. The period
-%       between pulses varies randomly around a specified average period.
+%       between pulses varies randomly around a specified average period with 
+%       range perVar, using a uniform distribution.
 %
 % Example(s):
 %       % Basic usage
@@ -33,7 +34,7 @@ function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, 
 %                       specified as a numeric scalar
 %       tMax            - maximum time
 %                       specified as a numeric scalar
-%       perVar          - pulse train period variability
+%       perVar          - pulse train period variability (range)
 %                       specified as a numeric scalar
 %       varargin        - 'TimeFirst': initial start time of the first pulse
 %                       must be a numeric scalar
@@ -61,6 +62,7 @@ function [timesStart, timesEnd] = create_pulse_train_times (pulseWidth, period, 
 % 2025-10-01 Added 'TimePreviousStart' as an optional argument.
 % 2025-10-01 Simplified by creating a subfunction for period generation.
 % 2025-10-10 Added 'GenerateOneBeyond' as an optional argument.
+% 2026-01-07 Updated annotations
 % 
 
 %% Hard-coded parameters
@@ -152,6 +154,7 @@ function tNow = generate_next_start(tNow, pulseWidth, period, perVar)
 %% Generates the next randomized period
 
 % Generate the next period, ensuring it's at least twice the pulse width
+%   period = uniform distribution between period_mean +/- 1/2 * perVar
 periodNext = max(pulseWidth * 2, period + (1 - 2 * rand(1)) * (perVar / 2));
 
 % Update next time start

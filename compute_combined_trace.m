@@ -32,11 +32,16 @@ function [combTrace, paramsUsed] = ...
 %                       must be an unambiguous, case-insensitive match to one of: 
 %                           'unique'    - take the unique value
 %                           'average' or 'mean' - take the average
+%                           'median'    - take the median
+%                           'quartile25' - take the 25th percentile
+%                           'quartile75' - take the 75th percentile
 %                           'std'       - standard deviation
 %                           'stderr'    - standard error
-%                           'err95'     - error margin for the 95% confidence interval
-%                           'lower95'   - lower bound of the 95% conf interval
-%                           'upper95'   - upper bound of the 95% conf interval
+%                           'err95'     - error margin for the 95% confidence interval of the mean
+%                           'lower95'   - lower bound of the 95% conf interval of the mean
+%                           'upper95'   - upper bound of the 95% conf interval of the mean
+%                           'lower95med' - lower bound of the 95% conf interval of the median
+%                           'upper95med' - upper bound of the 95% conf interval of the median
 %                           'maximum'   - take the maximum
 %                           'minimum'   - take the minimum
 %                           'sum'       - take the sum
@@ -123,6 +128,8 @@ function [combTrace, paramsUsed] = ...
 % 2019-09-25 Fixed bug for the 'unique' combine method
 % 2020-09-02 Added 'sum', 'prod' as valid combine methods
 % 2025-09-16 Added 'err95'
+% 2026-01-09 Added 'median', 'quartile25', 'quartile75'
+% 2026-01-09 Added 'lower95med', 'upper95med'
 % TODO: Move more functionality to compute_stats.m
 
 % TODO: Make 'Seeds' an optional argument
@@ -133,7 +140,9 @@ function [combTrace, paramsUsed] = ...
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
 validCombineMethods = {'unique', 'average', 'mean', ...
+                        'median', 'quartile25', 'quartile75', ...
                         'std', 'stderr', 'err95', 'lower95', 'upper95', ...
+                        'lower95med', 'upper95med', ...
                         'maximum', 'minimum', 'sum', 'prod', ...
                         'all', 'any', 'first', 'last', ...
                         'bootmean', 'bootmax', 'bootmin'};
@@ -351,7 +360,9 @@ end
 
 % Concatenate into a single matrix
 switch combineMethod
-    case {'average', 'mean', 'std', 'stderr', 'err95', 'lower95', 'upper95', ...
+    case {'average', 'mean', 'median', 'quartile25', 'quartile75', ...
+            'std', 'stderr', 'err95', 'lower95', 'upper95', ...
+            'lower95med', 'upper95med', ...
             'maximum', 'minimum', 'sum', 'prod', 'all', 'any', ...
             'first', 'last'}
         % Concatenate directly
@@ -398,10 +409,11 @@ switch combineMethod
         % Place into a numeric vector and place NaNs for any row
         %   with more than one unique number
         combTrace = cell2num(uniqueNumbers, 'CombineMethod', 'nan');
-    case {'average', 'mean'}
-        % Take the mean of each row and return a column
-        combTrace = compute_stats(traces, 'mean', 2, 'IgnoreNan', ignoreNan);
-    case {'std', 'stderr', 'err95', 'lower95', 'upper95'}
+    case {'average', 'mean', 'median', 'quartile25', 'quartile75', ...
+            'std', 'stderr', 'err95', 'lower95', 'upper95', ...
+            'lower95med', 'upper95med'}
+        % Take the stat of each row and return a column
+        %   (dim = 2 to combine across columns)
         combTrace = compute_stats(traces, combineMethod, 2, ...
                                     'IgnoreNan', ignoreNan);
     case {'maximum', 'minimum'}

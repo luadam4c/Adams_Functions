@@ -2,8 +2,13 @@ function stats = compute_stats (vecs, statName, varargin)
 %% Computes a statistic of vector(s) possibly restricted by endpoint(s)
 % Usage: stats = compute_stats (vecs, statName, dim (opt), varargin)
 % Explanation:
-%       TODO
-%       Note: If any element is empty, returns NaN
+%       Computes the specified statistic for the provided vectors or cell array 
+%       of vectors. Supported statistics include measures of central tendency 
+%       (mean, median), dispersion (std, stderr, quartiles, range), and 
+%       intervals (confidence intervals). Can optionally ignore NaNs, remove 
+%       outliers, or operate on specific sub-indices/windows.
+%
+%       Note: If any element is empty, returns NaN.
 %
 % Example(s):
 %       data = randn(10, 3);
@@ -14,6 +19,8 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'err95')
 %       compute_stats(data, 'lower95')
 %       compute_stats(data, 'upper95')
+%       compute_stats(data, 'lower95med')
+%       compute_stats(data, 'upper95med')
 %       compute_stats(data, 'cov')
 %       compute_stats(data, 'zscore')
 %       compute_stats(data, 'mean', 2)
@@ -29,11 +36,16 @@ function stats = compute_stats (vecs, statName, varargin)
 %       statName    - name of the statistic
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'average' or 'mean' - mean
+%                       'median'    - median
+%                       'quartile25' - 25th percentile (first quartile)
+%                       'quartile75' - 75th percentile (third quartile)
 %                       'std'       - standard deviation
 %                       'stderr'    - standard error
 %                       'err' or 'err95' - error margin for the 95% confidence interval
-%                       'lower95'   - lower bound of the 95% confidence interval
-%                       'upper95'   - upper bound of the 95% confidence interval
+%                       'lower95'   - lower bound of the 95% confidence interval of the mean
+%                       'upper95'   - upper bound of the 95% confidence interval of the mean
+%                       'lower95med' - lower bound of the 95% confidence interval of the median
+%                       'upper95med' - upper bound of the 95% confidence interval of the median
 %                       'cov'       - coefficient of variation
 %                       'zscore'    - z-score
 %                       'max'       - maximum
@@ -109,12 +121,17 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-11-14 Fixed usage of std and nanstd
 % 2019-11-26 Updated confidence intervals to use t-distribution
 % 2019-11-27 Added 'err'
+% 2026-01-09 Added 'median', 'quartile25', 'quartile75'
+% 2026-01-09 Added 'lower95med' and 'upper95med' (CI of median)
 % TODO: Combine with compute_weighted_average.m
 % 
 
 %% Hard-coded parameters
-validStatNames = {'average', 'mean', 'std', 'stderr', 'err', 'err95', ...
+validStatNames = {'average', 'mean', 'median', ...
+                    'quartile25', 'quartile75', ...
+                    'std', 'stderr', 'err', 'err95', ...
                     'lower95', 'upper95', ...
+                    'lower95med', 'upper95med', ...
                     'cov', 'zscore', 'max', 'min', 'range', 'range2mean'};
 
 %% Default values for optional arguments
@@ -203,7 +220,28 @@ switch statName
             func = @(x) nanmean(x, dim);
         else
             func = @(x) mean(x, dim);
-        end            
+        end
+    case 'median'
+        if ignoreNan
+            func = @(x) nanmedian(x, dim);
+        else
+            func = @(x) median(x, dim);
+        end
+    case {'quartile25', 'quartile75'}
+        % Determine the percentile value
+        if strcmpi(statName, 'quartile25')
+            p = 25;
+        else
+            p = 75;
+        end
+        
+        if ignoreNan
+            % prctile ignores NaNs by default
+            func = @(x) prctile(x, p, dim);
+        else
+            % use strict helper that propagates NaNs
+            func = @(x) compute_prctile_strict(x, p, dim);
+        end
     case 'std'
         if ignoreNan
             func = @(x) nanstd(x, 0, dim);
@@ -247,6 +285,30 @@ switch statName
             else
                 func = @(x) mean(x, dim) + tFunc(x) .* stderr(x, dim);
             end
+        end
+    case {'lower95med', 'upper95med'}
+        % Compute the number of samples along the dimension
+        if ignoreNan
+            nFunc = @(x) sum(ones(size(x)), dim) - sum(isnan(x), dim);
+            medFunc = @(x) nanmedian(x, dim);
+            % prctile/iqr ignore NaNs by default
+            iqrFunc = @(x) prctile(x, 75, dim) - prctile(x, 25, dim); 
+        else
+            nFunc = @(x) sum(ones(size(x)), dim);
+            medFunc = @(x) median(x, dim);
+            % Use strict percentiles to ensure NaN propagation
+            iqrFunc = @(x) compute_prctile_strict(x, 75, dim) - ...
+                            compute_prctile_strict(x, 25, dim);
+        end
+
+        % Use the Gaussian-based asymptotic approximation (1.57 * IQR / sqrt(N))
+        % This corresponds to the notches in a box plot
+        k = 1.57;
+
+        if strcmpi(statName, 'lower95med')
+            func = @(x) medFunc(x) - k .* (iqrFunc(x) ./ sqrt(nFunc(x)));
+        else
+            func = @(x) medFunc(x) + k .* (iqrFunc(x) ./ sqrt(nFunc(x)));
         end
     case 'cov'
         if ignoreNan
@@ -296,6 +358,14 @@ else
         stats = func(subVecs);
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function y = compute_prctile_strict(x, p, dim)
+% Helper to compute percentiles while propagating NaNs (strict behavior)
+y = prctile(x, p, dim);
+nans = any(isnan(x), dim);
+y(nans) = NaN;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
