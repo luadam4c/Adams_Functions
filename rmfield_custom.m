@@ -33,7 +33,6 @@ function structArray = rmfield_custom (structArray, fields, varargin)
 %       cd/compute_bins.m
 %       cd/update_param_values.m
 %       cd/write_frames.m
-%       \Shared\Code\vIRt-Moore\virt_moore_params.m
 
 % File History:
 % 2019-11-13 Created by Adam Lu

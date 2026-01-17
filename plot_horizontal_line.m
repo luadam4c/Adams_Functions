@@ -95,7 +95,7 @@ parse(iP, yValue, varargin{:});
 xLimits = iP.Results.XLimits;
 colorMap = iP.Results.ColorMap;
 
-% Keep unmatched arguments for the line() function
+% Keep unmatched arguments for the plot_vertical_line() function
 otherArguments = iP.Unmatched;
 
 %% Do the job

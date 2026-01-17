@@ -73,6 +73,9 @@ function save_all_figtypes (fig, filename, varargin)
 % 2018-09-27 Made sure figure is visible when saved as a .fig file
 % 
 
+%% Default values for optional arguments
+figTypesDefault = 'png';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
@@ -92,7 +95,7 @@ addRequired(iP, 'filename', ...                 % file name
     @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'figtypes', 'png', ...          % figure type(s) for saving
+addOptional(iP, 'figtypes', figTypesDefault, ...    % figure type(s) for saving
     @(x) min(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser

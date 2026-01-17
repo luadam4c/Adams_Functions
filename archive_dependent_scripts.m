@@ -2,7 +2,11 @@ function varargout = archive_dependent_scripts (mScriptName, varargin)
 %% Archive all dependent scripts of a function
 % Usage: fileListTable = archive_dependent_scripts (mScriptName, varargin)
 % Explanation:
-%       TODO
+%       This function analyzes a specified MATLAB script or function to identify
+%       all its dependencies. It then copies these files into a temporary folder
+%       and creates an archive (zip, tar, or gz) of that folder. This is useful
+%       for packaging code for sharing or archiving.
+%
 % Example(s):
 %       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'zip')
 %       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'tar')
@@ -34,6 +38,9 @@ function varargout = archive_dependent_scripts (mScriptName, varargin)
 %                       'tar'   - tar ball
 %                       'gz'    - GNU zip
 %                   default == 'zip'
+%                   - 'KeepUnzipped': whether to keep the unzipped folder
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for 
 %                           all_dependent_files.m
 %
@@ -62,7 +69,7 @@ function varargout = archive_dependent_scripts (mScriptName, varargin)
 % 2019-08-11 Created by Adam Lu
 % 2019-08-16 Added 'OutFilePath' and 'OutFileName' as optional arguments
 % 2019-08-20 Now returns appropriate error when .m file cannot be found
-% 
+% 2026-01-16 Added 'KeepUnzipped' optional argument and completed Explanation
 
 %% Hard-coded parameters
 validFileExts = {'', 'zip', 'tar', 'gz'};
@@ -76,6 +83,7 @@ outFolderDefault = pwd;
 outFilePathDefault = '';
 outFileNameDefault = '';
 fileExtDefault = '';            % set later
+keepUnzippedDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -105,6 +113,8 @@ addParameter(iP, 'OutFileName', outFileNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileExt', fileExtDefault, ...
     @(x) any(validatestring(x, validFileExts)));
+addParameter(iP, 'KeepUnzipped', keepUnzippedDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, mScriptName, varargin{:});
@@ -112,6 +122,7 @@ outFolder = iP.Results.OutFolder;
 outFilePath = iP.Results.OutFilePath;
 outFileName = iP.Results.OutFileName;
 fileExt = validatestring(iP.Results.FileExt, validFileExts);
+keepUnzipped = iP.Results.KeepUnzipped;
 
 % Keep unmatched arguments for the all_dependent_files() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -209,8 +220,12 @@ end
 
 % Remove the temporary folder and all its contents
 %   Note: the 's' flag makes it recursive
-fprintf('Removing temporary directory %s ... \n', outFolderTemp);
-rmdir(outFolderTemp, 's');
+if ~keepUnzipped
+    fprintf('Removing temporary directory %s ... \n', outFolderTemp);
+    rmdir(outFolderTemp, 's');
+else
+    fprintf('Keeping temporary directory %s ... \n', outFolderTemp);
+end
 
 %% Output results
 varargout{1} = fileListTable;

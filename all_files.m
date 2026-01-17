@@ -8,7 +8,7 @@ function varargout = all_files (varargin)
 %       [files, fullPaths] = all_files;
 %       [files, fullPaths] = all_files('SortBy', 'date');
 %       [files, fullPaths] = all_files('Recursive', true);
-%       files = all_files('Dir', {'parse_lts', 'plot_relative_events'}, 'Recursive', true)
+%       [files, fullPaths] = all_files('Dir', {'chronux_2_12_annotated', 'backup'}, 'Prefix', 'get', 'Recursive', true);
 %
 % Outputs:
 %       files       - file structure(s) for the files
