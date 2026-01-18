@@ -59,7 +59,6 @@ function [results, handles] = virt_plot_phase_response (dataTable, pPlot, vararg
 %       cd/plot_grouped_scatter.m
 %       cd/plot_regression_line.m
 %       cd/save_all_figtypes.m
-%       cd/set_figure_properties.m
 %       cd/test_difference.m
 %       cd/test_normality.m
 %

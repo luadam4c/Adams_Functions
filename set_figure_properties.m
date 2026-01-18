@@ -99,8 +99,6 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_tuning_curve.m
 %       cd/update_figure_for_corel.m
 %       cd/virt_analyze_sniff_whisk.m
-%       cd/virt_plot_jitter.m
-%       cd/virt_plot_phase_response.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting.m
 %       \Shared\Code\vIRt-Moore\virt_moore.m
 

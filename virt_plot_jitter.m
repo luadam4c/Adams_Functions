@@ -69,7 +69,7 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 %       cd/plot_grouped_jitter.m
 %       cd/plot_test_result.m
 %       cd/save_all_figtypes.m
-%       cd/set_figure_properties.m
+%       cd/create_subplots.m
 %       cd/test_difference.m
 %       cd/test_normality.m
 %       cd/vecfun.m
@@ -90,6 +90,8 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 % 2026-01-09 Added 'TestType' optional argument.
 % 2026-01-09 Modified by Gemini to plot notched boxplots for nonparametric data.
 % 2026-01-09 Modified by Gemini to implement weighted global auto-detection for TestType.
+% 2026-01-17 Now uses create_subplots.m instead of set_figure_properties.m
+% 2026-01-17 Fixed showFigure issues by removing axes()
 
 %% Hard-coded parameters
 yLocStarRel = 0.95;         % Relative y-location for significance stars
@@ -409,8 +411,7 @@ else
     xTickLabels = arrayfun(@(x) sprintf(xTickLabelFormat, x+1, x), 1:nOrdersToAnalyze, 'UniformOutput', false);
 
     % Set up figure and axes
-    fig = set_figure_properties('AlwaysNew', true, 'ShowFigure', showFigure);
-    axJitter = gca;
+    [fig, axJitter] = create_subplots(1, 1, 'AlwaysNew', true, 'ShowFigure', showFigure);
 
     % Generate the base jitter plot without its own statistics
     hOutJitter = plot_grouped_jitter(allDataVec, allGroupsVec, allOrdersVec, ...
@@ -437,8 +438,6 @@ else
 end
 
 %% Draw Summary Statistics (Shared by New and Update)
-axes(axJitter); hold on;
-
 % Identify which groups are parametric vs nonparametric
 idxParametric = find(useParametric);
 idxNonParametric = find(~useParametric);
@@ -451,9 +450,9 @@ if ~isempty(idxParametric)
     lErr = meanData(idxParametric) - lower95(idxParametric);
     uErr = upper95(idxParametric) - meanData(idxParametric);
     
-    hErrorBars = errorbar(xPara, yPara, lErr, uErr, '_', ...
+    hErrorBars = errorbar(axJitter, xPara, yPara, lErr, uErr, '_', ...
              'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
-    hMeans = plot(xPara, yPara, 'o', 'MarkerEdgeColor', 'k', ...
+    hMeans = plot(axJitter, xPara, yPara, 'o', 'MarkerEdgeColor', 'k', ...
          'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
          
     handles.hErrorBars = hErrorBars;
@@ -485,8 +484,10 @@ end
 
 %% Update Annotations
 % Annotate plot with statistical significance symbols and p-values
-hOutTest = plot_test_result(pValues, 'TestFunction', testFunctions, 'Symbol', symbols, ...
-                 'XLocText', xValues, 'YLocTextRel', yLocPValueRel, 'YLocStarRel', yLocStarRel, 'AxesHandle', axJitter);
+hOutTest = plot_test_result(pValues, 'TestFunction', testFunctions, ...
+                'Symbol', symbols, 'XLocText', xValues, ...
+                'YLocTextRel', yLocPValueRel, 'YLocStarRel', yLocStarRel, ...
+                'AxesHandle', axJitter);
 
 % Add text labels showing the transformed values (ratios or correlations)
 yLimits = ylim(axJitter); % Get current y-axis limits to position the text
@@ -504,7 +505,6 @@ if isempty(handlesIn)
     title(figTitle); % Set the figure title
     grid on; % Turn on the grid
 end
-hold off; % Release the axes hold
 
 % Save the figure to file if requested
 if toSaveOutput
