@@ -68,7 +68,7 @@ function h = plot_vertical_shade (varargin)
 %       cd/virt_analyze_sniff_whisk.m
 %       \Shared\Code\vIRt-Moore\virt_moore.m
 %       \Shared\Code\vIRt-Moore\virt_plot_whisk_analysis.m
-%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_spikeTrainStats_20260109.m
+%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_spikeTrainStats.m
 
 % File History:
 % 2019-08-27 Created by Adam Lu

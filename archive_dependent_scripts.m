@@ -63,7 +63,18 @@ function varargout = archive_dependent_scripts (mScriptName, varargin)
 %       cd/m3ha_plot_figure08.m
 %       cd/m3ha_rank_neurons.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting103.m
-%       \Shared\Code\vIRt\virt_moore.m
+%       \Shared\Code\vIRt-Moore\jm_automate_rerun_virt_sim_from_params_intrinsic_vs_driven_freq.m
+%       \Shared\Code\vIRt-Moore\jm_automate_virt_sim_vary_ext_current.m
+%       \Shared\Code\vIRt-Moore\jm_automate_virt_sim_vary_freq_perVar.m
+%       \Shared\Code\vIRt-Moore\jm_automate_virt_sim_vary_freq_reps.m
+%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_ExtCurrent_analysis.m
+%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_amplitude_analysis.m
+%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_amplitude_analysis_ExtCurrentRuns.m
+%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_amplitude_analysis_reps.m
+%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_spikeTrainStats.m
+%       \Shared\Code\vIRt-Moore\virt_moore.m
+%       \Shared\Code\vIRt-Moore\virt_archive_all_dependent_scripts.m
+%       \Shared\Code\vIRt-Moore\virt_run_monte_carlo_simulations.m
 
 % File History:
 % 2019-08-11 Created by Adam Lu
