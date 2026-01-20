@@ -25,6 +25,7 @@ function check_dir (directories, varargin)
 %       cd/abf2mat.m
 %       cd/archive_dependent_scripts.m
 %       cd/atf2sheet.m
+%       cd/backup_folders.m
 %       cd/check_subdir.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/create_input_file.m

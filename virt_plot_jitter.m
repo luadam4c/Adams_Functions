@@ -92,6 +92,7 @@ function [results, handles] = virt_plot_jitter (dataTable, plotParams, varargin)
 % 2026-01-09 Modified by Gemini to implement weighted global auto-detection for TestType.
 % 2026-01-17 Now uses create_subplots.m instead of set_figure_properties.m
 % 2026-01-17 Fixed showFigure issues by removing axes()
+% 2026-01-19 Set colorJitter to black and colorSummary to red
 
 %% Hard-coded parameters
 yLocStarRel = 0.95;         % Relative y-location for significance stars
@@ -99,6 +100,8 @@ yLocPValueRel = 0.90;       % Relative y-location for p-value text
 yLocTransformedLabelRel = 0.85; % Relative y-location for ratio/corr text
 validDataModes = {'LogDecrement', 'FisherZScore'};
 validTestTypes = {'auto', 'parametric', 'nonparametric'};
+colorJitter = 'k';
+colorSummary = 'r';
 
 %% Default values for optional arguments
 groupingColumnDefault = [];     % set later
@@ -389,6 +392,7 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
             'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
             'PlotMeanValues', false, 'PlotErrorBars', false, 'RunTTest', false, ...
             'RunRankTest', false, 'MarkerSize', markerSizeJitter, ...
+            'ColorMap', colorJitter, ...
             'LegendLocation', 'suppress', 'XTickLabels', get(axJitter, 'XTickLabel'));
         handles.hJitter = hOutJitter.distributions;
     end
@@ -418,7 +422,8 @@ else
         'AxesHandle', axJitter, 'UsePlotSpread', false, 'JitterWidth', jitterWidth, ...
         'XTickLabels', xTickLabels, 'YLabel', yLabel, ...
         'LegendLocation', 'suppress', 'PlotMeanValues', false, 'PlotErrorBars', false, ...
-        'RunTTest', false, 'RunRankTest', false, 'MarkerSize', markerSizeJitter);
+        'RunTTest', false, 'RunRankTest', false, 'MarkerSize', markerSizeJitter, ...
+        'ColorMap', colorJitter);
 
     hold on; % Hold the current axes to overlay statistical information
 
@@ -451,9 +456,9 @@ if ~isempty(idxParametric)
     uErr = upper95(idxParametric) - meanData(idxParametric);
     
     hErrorBars = errorbar(axJitter, xPara, yPara, lErr, uErr, '_', ...
-             'Color', 'k', 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
-    hMeans = plot(axJitter, xPara, yPara, 'o', 'MarkerEdgeColor', 'k', ...
-         'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
+             'Color', colorSummary, 'LineWidth', 2.5, 'CapSize', 20, 'Marker', 'none');
+    hMeans = plot(axJitter, xPara, yPara, 'o', 'MarkerEdgeColor', colorSummary, ...
+            'MarkerFaceColor', 'w', 'MarkerSize', 10, 'LineWidth', 1.5);
          
     handles.hErrorBars = hErrorBars;
     handles.hMeans = hMeans;
@@ -471,7 +476,7 @@ if ~isempty(idxNonParametric) && size(allDataMatrix, 1) > 1
     % 'Symbol','' suppresses outliers (since jitter shows them)
     % 'Widths', 0.5 matches typical bar/errorbar width
     hBoxPlots = boxplot(axJitter, dataNonPara, 'Positions', xNonPara, ...
-        'Notch', 'on', 'Symbol', '', 'Colors', 'k', 'Widths', 0.5);
+        'Notch', 'on', 'Symbol', '', 'Colors', colorSummary, 'Widths', 0.5);
     
     % Customize Box Plot appearance (make lines thicker)
     set(hBoxPlots, 'LineWidth', 2);

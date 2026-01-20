@@ -83,6 +83,7 @@ function varargout = all_files (varargin)
 %       cd/all_subdirs.m
 %       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
+%       cd/backup_folders.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_swd_sheets.m
 %       cd/compile_mod_files.m

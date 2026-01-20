@@ -70,6 +70,7 @@ function [results, handles] = virt_plot_amplitude_correlation (dataTable, plotPa
 % 2025-10-06 Fixed by Gemini to handle more than one group.
 % 2025-10-17 Added 'ShowFigure' as an optional argument.
 % 2026-01-14 Fixed "object deleted" error by validating handles before update (Gemini)
+% 2026-01-19 Changed correlation subplots to single column
 
 %% Hard-coded parameters
 textLocBestFitDefault = 'topleft';     % Location for the best-fit line equation text
@@ -279,8 +280,13 @@ if ~isempty(handlesIn) && isfield(handlesIn, 'fig') && isgraphics(handlesIn.fig)
 
 else
     % --- CREATE NEW PLOT ---
-    [fig, ax] = create_subplots(nCorrToAnalyze, 'AlwaysNew', true, ...
-                            'ShowFigure', showFigure, 'FigExpansion', [1, 1]);
+    if nCorrToAnalyze == 4
+        [fig, ax] = create_subplots(4, 1, 'AlwaysNew', true, ...
+                                'ShowFigure', showFigure, 'FigExpansion', [1, 2]);
+    else
+        [fig, ax] = create_subplots(nCorrToAnalyze, 'AlwaysNew', true, ...
+                                'ShowFigure', showFigure, 'FigExpansion', [1, 1]);
+    end
     
     % Initialize storage for plot handles
     % hScatters changed to a cell array to support multiple groups
