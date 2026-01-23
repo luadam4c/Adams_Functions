@@ -1601,6 +1601,7 @@ params.err    = errorParams;
 params.trialave = useTrialAvg;
 
 % --- Analysis 1: All segments with whisking ---
+% Note: Power spectra is cmoputed on unfiltered data
 segIndsAll = find(avgWhiskAmpSeg > minWhiskAmp);
 if isempty(segIndsAll)
     warning('No segments found with whisking amplitude > %d', minWhiskAmp);

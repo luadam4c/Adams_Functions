@@ -3,9 +3,14 @@ function [textObjectOrString, isSignificant, corrCoeff, pValue, hRegression] = p
 % Usage: [textObjectOrString, isSignificant, corrCoeff, pValue, hRegression] = plot_correlation_coefficient (varargin)
 % Explanation:
 %       Computes and plots the Pearson correlation coefficient and its p-value
-%       for a given set of X-Y data. Data can be provided directly or
-%       extracted from an existing plot. Optionally, it can also plot the
-%       linear regression line.
+%       for a given set of X-Y data using the corr2 function (from the Image Processing Toolbox). 
+%       The p-value is computed using a t-test with n-2 degrees of freedom, 
+%       where the t-statistic is defined as t = r * sqrt((n-2)/(1-r^2)) 
+%       (Cohen, Mike X. Analyzing Neural Time Series Data, Eq 34.5).
+%       Note that this is the exact same behavior as built in corrcoef()
+%
+%       Data can be provided directly or extracted from an existing plot. 
+%       Optionally, it can also plot the linear regression line.
 %
 % Example(s):
 %       xData = (1:10) + 3 * randn(1, 10);
@@ -89,6 +94,7 @@ function [textObjectOrString, isSignificant, corrCoeff, pValue, hRegression] = p
 % 2025-09-18 Added 'ShowPValue' as an optional argument
 % 2025-09-18 Added 'TextMargin' and 'Color' as optional arguments
 % 2025-09-18 Now uses plot_text.m for displaying text.
+% TODO: If Image Processing Toolbox not installed, use corrcoef() instead and display warning
 
 %% Hard-coded parameters
 validTextLocations = {'topleft', 'topright', 'bottomleft', 'bottomright'};

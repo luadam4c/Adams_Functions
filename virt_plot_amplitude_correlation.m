@@ -342,6 +342,8 @@ else
 end
 
 % Compute correlation coefficients for results output
+%   Note: results are identical to the text returned by plot_regression_line()
+%           or plot_correlation_coefficient()
 corrCoeffs = nan(nCorrToAnalyze, 1);
 pValues = nan(nCorrToAnalyze, 1);
 for iCorr = 1:nCorrToAnalyze
