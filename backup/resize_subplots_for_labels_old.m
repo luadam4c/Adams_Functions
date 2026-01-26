@@ -38,9 +38,6 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 %                   - 'TMargin': normalized margin at the top for title
 %                   must be a numeric scalar
 %                   default == 0.08
-%                   - 'SkipSingleSubplots': whether to skip resizing if there is only one subplot
-%                   must be numeric/logical scalar
-%                   default == true
 %
 % Requires:
 %       cd/argfun.m
@@ -57,7 +54,6 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 % 2025-09-13 Created by Gemini using prompt by Adam Lu
 %               to extract code from plot_traces.m
 % 2025-09-13 Fixed code to create invisible axes at the proper position
-% 2026-01-23 Added 'SkipSingleSubplots' parameter
 
 %% Hard-coded parameters
 
@@ -69,7 +65,6 @@ figTitleDefault = '';
 xMarginDefault = 0.08;
 yMarginDefault = 0.05;
 tMarginDefault = 0.08;
-skipSingleSubplotsDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -87,7 +82,6 @@ addParameter(iP, 'FigTitle', figTitleDefault, @(x) ischar(x) || isstring(x));
 addParameter(iP, 'XMargin', xMarginDefault, @isnumeric);
 addParameter(iP, 'YMargin', yMarginDefault, @isnumeric);
 addParameter(iP, 'TMargin', tMarginDefault, @isnumeric);
-addParameter(iP, 'SkipSingleSubplots', skipSingleSubplotsDefault, @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -98,7 +92,6 @@ figTitle = iP.Results.FigTitle;
 xMargin = iP.Results.XMargin;
 yMargin = iP.Results.YMargin;
 tMargin = iP.Results.TMargin;
-skipSingleSubplots = iP.Results.SkipSingleSubplots;
 
 % Keep unmatched arguments for the TODO() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -111,14 +104,8 @@ if isempty(axHandles)
     axHandles = findobj(fig, 'type', 'axes', '-not', 'Tag', 'legend', '-not', 'Tag', 'super_axis');
 end
 
-% If there are no subplots, do nothing and return
-if isempty(axHandles)
-    supAx = gobjects(1);
-    return;
-end
-
-% If there is only one subplot and we are skipping single subplots, return
-if numel(axHandles) == 1 && skipSingleSubplots
+% If there is only one subplot (or none), do nothing and return
+if numel(axHandles) <= 1
     supAx = gobjects(1);
     return;
 end
@@ -144,12 +131,6 @@ if xLabelNeeded || yLabelNeeded || titleNeeded
 
     % Get the original outer position of all subplots
     originalPositions = get(axHandles, 'OuterPosition'); % Get all original outer positions
-
-    % If there is only one axes, get() returns a vector, not a cell array.
-    % Convert to cell array for consistent indexing.
-    if ~iscell(originalPositions)
-        originalPositions = {originalPositions};
-    end
 
     % Calculate the new outer positions for each subplot
     for i = 1:numel(axHandles)
@@ -193,6 +174,27 @@ end
 
 %{
 OLD CODE:
+
+[allLefts, allBottoms, allWidths, allHeights] = ...
+    argfun(@(x) extract_elements(originalPositions, 'specific', 'Index', x), ...
+            1, 2, 3, 4);
+
+% Get the Rights and Tops
+allRights = allLefts + allWidths;
+allTops = allBottoms + allHeights;
+
+% Get the four corners
+minLeft = min(allLefts);
+minBottom = min(allBottoms);
+maxRight = max(allRights);
+maxTop = max(allTops);
+
+% Get the original width and height
+widthOrig = maxRight - minLeft;
+heightOrig = maxTop - minBottom;
+
+% Get the approximate outer position of an axes covering all subplots
+originalTotalPosition = [minLeft, minBottom, widthOrig, heightOrig];
 
 %}
 

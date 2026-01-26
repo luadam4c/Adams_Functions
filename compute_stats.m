@@ -102,6 +102,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/plot_chevron_bar_inset.m
 %       cd/select_similar_values.m
 %       cd/test_difference.m
+%       \Shared\Code\vIRt-Moore\jm_postprocess_virt_sim_ExtCurrent_analysis.m
 %
 % Related functions:
 %       cd/compute_weighted_average.m
