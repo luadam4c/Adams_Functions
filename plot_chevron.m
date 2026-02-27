@@ -115,11 +115,13 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       ~/Adams_Functions/set_figure_properties.m
 %
 % Used by:
+%       ~/scAAV/analyze_qpath_output.m
 %       ~/Adams_Functions/m3ha_oscillations_analyze.m
 %       ~/Adams_Functions/metabolismR01_plot_chevrons.m
 %       ~/Adams_Functions/plot_measures.m
 %       ~/Adams_Functions/plot_relative_events.m
 %       ~/Adams_Functions/plot_small_chevrons.m
+%       scAAV\analyze_qupath_ddio.m
 
 % File History:
 % 2019-10-01 Created by Adam Lu
@@ -273,7 +275,9 @@ end
 
 % Force data values as a numeric matrix
 %   where each group is a column and each row is a sample
-[dataValues, groupLabelsAuto, sampleLabelsAuto] = force_data_as_matrix(data);
+%   Note: Don't do this if data is a row vector
+[dataValues, groupLabelsAuto, sampleLabelsAuto] = ...
+    force_data_as_matrix(data, 'ForceVectorAsColumns', false);
 
 % Count the number of groups
 nGroups = size(dataValues, 2);

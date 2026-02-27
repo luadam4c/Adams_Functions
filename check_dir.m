@@ -52,9 +52,10 @@ function check_dir (directories, varargin)
 %       cd/virt_analyze_sniff_whisk.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting42.m
 %       /home/Matlab/function_template.m
-%       \Shared\Code\vIRt-Moore\virt_moore.m
-%       \Shared\Code\vIRt-Moore\virt_run_monte_carlo_simulations.m
-%       \Shared\Code\scAAV\analyze_reachr_motion.m
+%       vIRt-Moore\virt_moore.m
+%       vIRt-Moore\virt_run_monte_carlo_simulations.m
+%       scAAV\analyze_reachr_motion.m
+%       scAAV\analyze_qupath_ddio.m
 
 % File History:
 % 2018-06-21 Modified from check_subdir.m

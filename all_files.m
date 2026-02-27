@@ -118,6 +118,7 @@ function varargout = all_files (varargin)
 %       ~/plethR01/plethR01_analyze.m
 %       ~/FluoroSNNAP/FluroSNNAP.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting63.m
+%       scAAV\analyze_qupath_ddio.m
 %       
 
 % File History:

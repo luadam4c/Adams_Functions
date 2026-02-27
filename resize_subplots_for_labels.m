@@ -52,6 +52,7 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 %       cd/plot_table_parallel.m
 %       cd/plot_traces.m
 %       cd/virt_plot_amplitude_correlation.m
+%       scAAV\analyze_qupath_ddio.m
 
 % File History:
 % 2025-09-13 Created by Gemini using prompt by Adam Lu

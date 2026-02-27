@@ -94,7 +94,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   default == {}
 %                   - 'PTickAngle': angle for parameter tick labels
 %                   must be a numeric scalar
-%                   default == 0
+%                   default == depends on label length
 %                   - 'PLabel': label for the parameter, 
 %                               suppress by setting value to {'suppress'}
 %                   must be a string scalar or a character vector
