@@ -76,7 +76,22 @@ function handles = plot_grouped_jitter (data, varargin)
 %                       'cell', 'string', numeric', 'logical', 
 %                           'datetime', 'duration'
 %                   default == the column number for a 2D array
-%       varargin    - 'UsePlotSpread': whether to use plotSpread.m
+%       varargin    - 'DataType': type of data to calculate standard error for
+%                   must be an unambiguous, case-insensitive match to one of:
+%                       'normal'        - standard error of the mean
+%                       'proportion'    - standard error of a proportion
+%                   default == 'normal'
+%                   - 'Weights': optional weight vector for calculating 
+%                       weighted standard errors
+%                   must be empty or a numeric array of the same size as data
+%                   default == []
+%                   - 'Means': optional means to plot instead of calculating
+%                   must be a numeric array 
+%                   default == []
+%                   - 'Errors': optional errors to plot instead of calculating
+%                   must be a numeric array 
+%                   default == []
+%                   - 'UsePlotSpread': whether to use plotSpread.m
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == [] (true if plotSpread.m is found)
 %                   - 'JitterWidth': width of the jitter
@@ -122,9 +137,36 @@ function handles = plot_grouped_jitter (data, varargin)
 %                   - 'XTickAngle': angle for parameter tick labels
 %                   must be a numeric scalar
 %                   default == 0
+%                   - 'XLabel': label for the x axis, 
+%                   must be a string scalar or a character vector 
+%                   default == none
 %                   - 'YLabel': label for the y axis, 
 %                   must be a string scalar or a character vector 
 %                   default == none
+%                   - 'Title': title for the plot, 
+%                   must be a string scalar or a character vector 
+%                   default == none
+%                   - 'Marker': marker for the individual data points
+%                   must be a string scalar or a character vector
+%                   default == '.'
+%                   - 'LineWidth': line width for the individual data points when marker is 'o' or 'x'
+%                   must be a positive numeric scalar
+%                   default == 1
+%                   - 'MeanMarker': marker for the mean value points
+%                   must be a string scalar or a character vector
+%                   default == 'o'
+%                   - 'MeanMarkerSize': size of the mean marker
+%                   must be a positive numeric scalar
+%                   default == 10
+%                   - 'MeanLineWidth': line width of error bars and mean points
+%                   must be a positive numeric scalar
+%                   default == 1.5
+%                   - 'ErrorBarCapSize': size of the error bar caps
+%                   must be a non-negative numeric scalar
+%                   default == 0
+%                   - 'SigLevel': significance level for hypothesis tests
+%                   must be a numeric scalar strictly between 0 and 1
+%                   default == 0.05
 %                   - 'ColorMap': a color map for each group
 %                   must be a numeric array with 3 columns
 %                   default == set in decide_on_colormap.m
@@ -150,6 +192,7 @@ function handles = plot_grouped_jitter (data, varargin)
 %       cd/hold_off.m
 %       cd/hold_on.m
 %       cd/locate_functionsdir.m
+%       cd/nanstderr.m
 %       cd/plot_test_result.m
 %       cd/set_axes_properties.m
 %       cd/struct2arglist.m
@@ -173,23 +216,29 @@ function handles = plot_grouped_jitter (data, varargin)
 % 2025-09-17 Added 'AxesHandle' as an optional argument
 % 2026-01-23 Added 'StatisticsByGroup' optional argument by Gemini
 % 2026-01-23 Added 'YLimits' optional argument and improved docs by Gemini
-% TODO: Implement cell array input
+% 2026-03-04 Fixed behavior when 'XTickLocs' is set to 'suppress'
+% 2026-03-04 Made marker, meanMarker, meanMarkerSize, meanLineWidth, errorBarCapSize, and sigLevel optional arguments
+% 2026-03-04 Added 'LineWidth' as an optional argument
 
-%% Hard-coded parameters
+%% Define hard-coded parameters for the function
+validDataTypes = {'normal', 'proportion'};
 maxNGroupsForInnerLegend = 8;
 maxNGroupsForOuterLegends = 25;
 forceVectorInput = true;       % Consider making this into an optional argument
 defaultJitterWidthNotPlotSpread = 0.3;
-markerDefault = '.';           % TODO: Make this an optional argument
-meanMarker = 'o';              % TODO: Make this an optional argument
-meanMarkerSize = 10;           % TODO: Make this an optional argument
-meanLineWidth = 1.5;           % TODO: Make this an optional argument
-errorBarCapSize = 0;           % TODO: Make this an optional argument
-sigLevel = 0.05;               % Significance level for tests
+xTickLimitPadding = 0.5;
+groupMeanSpreadWidth = 0.4;
+pooledStatColor = 'k';
+statTextYPosStepSize = 0.1;
+statStarYLocOffset = 0.05;
 
-%% Default values for optional arguments
+%% Set default values for optional arguments
 groupingDefault = [];           % set later
 distributionDefault = [];       % set later
+dataTypeDefault = 'normal';
+weightsDefault = [];
+meansDefault = [];
+errorsDefault = [];
 usePlotSpreadDefault = [];      % set later
 jitterWidthDefault = [];        % set later
 plotMeanValuesDefault = true;
@@ -203,7 +252,16 @@ xTickLocsDefault = [];           % set later
 xTickLabelsDefault = {};        % set later
 groupingLabelsDefault = '';     % set later
 xTickAngleDefault = [];         % set later
+xLabelDefault = '';             % no x label by default
 yLabelDefault = '';             % no y label by default
+titleDefault = '';              % no title by default
+markerDefault = '.';
+lineWidthDefault = 1;
+meanMarkerDefault = 'o';
+meanMarkerSizeDefault = 10;
+meanLineWidthDefault = 1.5;
+errorBarCapSizeDefault = 0;
+sigLevelDefault = 0.05;
 colorMapDefault = [];           % set later
 legendLocationDefault = 'auto'; % set later
 axHandleDefault = [];           % axHandle by default
@@ -234,6 +292,14 @@ addOptional(iP, 'condition', distributionDefault, ...
                                 'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'DataType', dataTypeDefault, ...
+    @(x) any(validatestring(x, validDataTypes)));
+addParameter(iP, 'Weights', weightsDefault, ...
+    @(x) assert(isempty(x) || isnumeric(x), 'Weights must be empty or a numeric array!'));
+addParameter(iP, 'Means', meansDefault, ...
+    @(x) isempty(x) || isnumeric(x));
+addParameter(iP, 'Errors', errorsDefault, ...
+    @(x) isempty(x) || isnumeric(x));
 addParameter(iP, 'UsePlotSpread', usePlotSpreadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'JitterWidth', jitterWidthDefault, ...
@@ -249,7 +315,7 @@ addParameter(iP, 'RunTTest', runTTestDefault, ...
 addParameter(iP, 'RunRankTest', runRankTestDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+    @(x) isempty(x) || ischar(x) && (strcmpi(x, 'suppress') || strcmpi(x, 'suppressed')) || ...
         isnumeric(x) && isvector(x));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
@@ -263,17 +329,39 @@ addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'XTickAngle', xTickAngleDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'XLabel', xLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Title', titleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Marker', markerDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'LineWidth', lineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'MeanMarker', meanMarkerDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'MeanMarkerSize', meanMarkerSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'MeanLineWidth', meanLineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'ErrorBarCapSize', errorBarCapSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+addParameter(iP, 'SigLevel', sigLevelDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', '>', 0, '<', 1}));
 addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'AxesHandle', axHandleDefault);
 
-% Read from the Input Parser
+% Read parsed results from the Input Parser
 parse(iP, data, varargin{:});
 grouping = iP.Results.grouping;
 condition = iP.Results.condition;
+dataType = validatestring(iP.Results.DataType, validDataTypes);
+weights = iP.Results.Weights;
+means = iP.Results.Means;
+errors = iP.Results.Errors;
 usePlotSpread = iP.Results.UsePlotSpread;
 jitterWidth = iP.Results.JitterWidth;
 plotMeanValues = iP.Results.PlotMeanValues;
@@ -287,7 +375,16 @@ yLimits = iP.Results.YLimits;
 xTickLabels = iP.Results.XTickLabels;
 groupingLabels = iP.Results.GroupingLabels;
 xTickAngle = iP.Results.XTickAngle;
+xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
+plotTitle = iP.Results.Title;
+marker = iP.Results.Marker;
+lineWidth = iP.Results.LineWidth;
+meanMarker = iP.Results.MeanMarker;
+meanMarkerSize = iP.Results.MeanMarkerSize;
+meanLineWidth = iP.Results.MeanLineWidth;
+errorBarCapSize = iP.Results.ErrorBarCapSize;
+sigLevel = iP.Results.SigLevel;
 colorMap = iP.Results.ColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
@@ -296,8 +393,13 @@ axHandle = iP.Results.AxesHandle;
 % Keep unmatched arguments for the plotSpread() function
 otherArguments = struct2arglist(iP.Unmatched);
 
+% Ensure weights match the dimensions of data if provided
+if ~isempty(weights)
+    assert(isequal(size(weights), size(data)), 'Weights must be the same dimension as data!');
+end
+
 %% Preparation
-% Decide on whether to use plotSpread.m
+% Decide whether to use the plotSpread tool based on its availability
 if isempty(usePlotSpread)
     if exist('plotSpread.m', 'file') == 2
         usePlotSpread = true;
@@ -306,7 +408,7 @@ if isempty(usePlotSpread)
     end
 end
 
-%% If not compiled, add directories to search path for required functions
+% If not compiled, add directories to the search path for required functions
 if usePlotSpread && exist('plotSpread.m', 'file') ~= 2 && ~isdeployed
     try
         % Locate the functions directory
@@ -333,57 +435,67 @@ if isempty(jitterWidth)
     end
 end
 
-
-% Decide on the grouping vector and possibly labels if the data is a 
-%   matrix or cell array
-% If no grouping vector, each column is a group
+% Decide on the grouping vector and labels if data is a matrix or cell array
+% Note: If no grouping vector, each column is a group
 [grouping, uniqueGroupValues, groupingLabels, data] = ...
     create_default_grouping('Stats', data, 'Grouping', grouping, ...
                             'GroupingLabels', groupingLabels, ...
                             'GroupingLabelPrefix', 'Group');
 
-% Decide on the condition vector and possibly labels if the data is a
-%   matrix or cell array
-% If no condition vector, each column is a condition
+% Decide on the condition vector and labels if data is a matrix or cell array
+% Note: If no condition vector, each column is a condition
 [condition, uniqueConditionValues, xTickLabels, data] = ...
     create_default_grouping('Stats', data, 'Grouping', condition, ...
                             'GroupingLabels', xTickLabels, ...
                             'GroupingLabelPrefix', 'Condition');
 
-% Concatenate everything into a single column vector
+% Concatenate everything into a single column vector if required
 if forceVectorInput
-    % Force non-vectors as cell arrays of numeric vectors
-    [data, grouping, condition] = ...
-        argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
-                data, grouping, condition);
-    
-    % If data and grouping and condition are cell arrays of numeric vectors, pool them
-    if iscellnumeric(data) && iscellnumeric(grouping) && iscellnumeric(condition)
+    if ~isempty(weights)
+        % Force non-vectors as cell arrays of numeric vectors
+        [data, grouping, condition, weights] = ...
+            argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
+                    data, grouping, condition, weights);
+        
+        % If data and grouping and condition and weights are cell arrays of numeric vectors, pool them
+        if iscellnumeric(data) && iscellnumeric(grouping) && iscellnumeric(condition) && iscellnumeric(weights)
+            [data, grouping, condition, weights] = ...
+                argfun(@(x) vertcat(x{:}), data, grouping, condition, weights);
+        end
+    else
+        % Force non-vectors as cell arrays of numeric vectors
         [data, grouping, condition] = ...
-            argfun(@(x) vertcat(x{:}), data, grouping, condition);
+            argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
+                    data, grouping, condition);
+        
+        % If data and grouping and condition are cell arrays of numeric vectors, pool them
+        if iscellnumeric(data) && iscellnumeric(grouping) && iscellnumeric(condition)
+            [data, grouping, condition] = ...
+                argfun(@(x) vertcat(x{:}), data, grouping, condition);
+        end
     end
 end
 
 % Count the number of unique conditions
 nConditions = numel(uniqueConditionValues);
 
-% Count the number of groups
+% Count the number of unique groups
 nGroups = numel(uniqueGroupValues);
 
-% Count the number of data points
+% Count the total number of data points
 nPoints = numel(data);
 
-% Decide on the x tick locations
-if isempty(xTickLocs) || ischar(xTickLocs) && strcmpi(xTickLocs, 'suppress')
-    % Define x tick locations based on the unique condition indices
-    xTickLocs = uniqueConditionValues;
-end
-
 % Decide whether to update the x tick locations
-if ischar(xTickLocs) && strcmpi(xTickLocs, 'suppress')
+if ischar(xTickLocs) && (strcmpi(xTickLocs, 'suppress') || strcmpi(xTickLocs, 'suppressed'))
     toUpdateXTicks = false;
 else
     toUpdateXTicks = true;
+end
+
+% Decide on the x tick locations
+if isempty(xTickLocs) || ~toUpdateXTicks
+    % Define x tick locations based on the unique condition indices
+    xTickLocs = uniqueConditionValues;
 end
 
 % Decide on the color map, using the lines map by default
@@ -392,7 +504,7 @@ if isempty(colorMap)
 end
 colorMap = decide_on_colormap(colorMap, nGroups, 'ForceCellOutput', true);
 
-% Set legend location based on number of subplots
+% Set legend location based on number of groups
 % TODO: Use set_default_legend_location.m
 if strcmpi(legendLocation, 'auto')
     if nGroups > 1 && nGroups <= maxNGroupsForInnerLegend
@@ -409,22 +521,23 @@ end
 axHandle = set_axes_properties('AxesHandle', axHandle);
 
 %% Do the job
-% Return if there is no data
+% Return immediately if there is no data to plot
 if isempty(data)
     handles = struct;
     return
 end
 
-% Hold on
+% Retain the current plot on the axes
 wasHold = hold_on(axHandle);
 
-% Plot the data points
+% Plot the data points using plotSpread or manually based on preference
 if usePlotSpread
-    % Don't show plotSpread's means if we are plotting our own
+    % Prevent plotSpread from plotting its own means if we are plotting custom ones
     if plotMeanValues || plotErrorBars
         otherArguments = [otherArguments, {'showMM', 0}];
     end
 
+    % Call plotSpread to plot the swarm plot
     output = plotSpread(axHandle, data, 'distributionIdx', condition, ...
                             'categoryIdx', grouping, ...
                             'categoryLabels', groupingLabels, ...
@@ -432,7 +545,7 @@ if usePlotSpread
                             'spreadWidth', jitterWidth, ...
                             otherArguments{:});
 
-    % Reformat handles outputs
+    % Reformat and store handles from plotSpread output
     distributions = output{1};
     stats = output{2};
     ax = output{3};
@@ -446,8 +559,7 @@ else
     % Pre-allocate a graphics object array for plot handles
     distributions = gobjects(nGroups, 1);
     
-    % Use the built-in plot() function to plot each group with 
-    %   marker set by markerDefault and the desired color map
+    % Plot each group manually with the specified marker and color map
     for iGroup = 1:nGroups
         % Get the value for the current group
         currentGroupValue = uniqueGroupValues(iGroup);
@@ -465,15 +577,16 @@ else
 
         % Plot this group's data, ensuring no lines connect markers
         distributions(iGroup) = ...
-            plot(axHandle, xCoords, yCoords, markerDefault, ...
+            plot(axHandle, xCoords, yCoords, 'Marker', marker, ...
                     'Color', groupColor, 'DisplayName', groupLabel, ...
-                    'LineStyle', 'none', otherArguments{:});
+                    'LineStyle', 'none', 'LineWidth', lineWidth, ...
+                    otherArguments{:});
     end
 
-    % Export handles
+    % Export handles to the output structure
     handles.ax = axHandle;
     handles.distributions = distributions;
-    handles.stats = []; % No stats are calculated in this manual version
+    handles.stats = [];
 end
 
 %% Finalize main plot
@@ -482,8 +595,8 @@ if toUpdateXTicks
     xticks(axHandle, xTickLocs);
 end
 
-% Update x tick labels
-if ~isempty(xTickLabels)
+% Update x tick labels if desired
+if toUpdateXTicks && ~isempty(xTickLabels)
     xticklabels(axHandle, xTickLabels);
 end
 
@@ -494,7 +607,7 @@ end
 
 % Decide on x axis limits based on x tick locations
 if isempty(xLimits)
-    xLimits = [min(xTickLocs) - 0.5, max(xTickLocs) + 0.5];
+    xLimits = [min(xTickLocs) - xTickLimitPadding, max(xTickLocs) + xTickLimitPadding];
 end
 
 % Modify x limits
@@ -507,9 +620,19 @@ if ~(ischar(yLimits) && strcmpi(yLimits, 'suppress')) && ~isempty(yLimits)
     ylim(axHandle, yLimits);
 end
 
+% Set x label
+if ~isempty(xLabel)
+    xlabel(axHandle, xLabel);
+end
+
 % Set y label
 if ~isempty(yLabel)
     ylabel(axHandle, yLabel);
+end
+
+% Set title
+if ~isempty(plotTitle)
+    title(axHandle, plotTitle);
 end
 
 % Generate a legend if there is more than one trace
@@ -520,41 +643,79 @@ end
 %% Plot statistics
 % Plot means and error bars for each condition
 if plotMeanValues || plotErrorBars
+    % Loop through each condition to plot statistics
     for iCond = 1:nConditions
+        % Find data and weights for the current condition
         currentCondValue = uniqueConditionValues(iCond);
         isCurrentCond = (condition == currentCondValue);
         dataThisCond = data(isCurrentCond);
         
+        % Extract weights for this condition if provided
+        if ~isempty(weights)
+            weightsThisCond = weights(isCurrentCond);
+        else
+            weightsThisCond = [];
+        end
+        
+        % Check if statistics should be plotted by group
         if statisticsByGroup
-            % Separate by group
+            % Separate by group for the current condition
             groupingThisCond = grouping(isCurrentCond);
             groupsInThisCond = unique(groupingThisCond);
             nGroupsInThisCond = numel(groupsInThisCond);
             
+            % Plot statistics if there are groups present
             if nGroupsInThisCond > 0
+                % Split data by individual groups
                 dataByGroup = arrayfun(@(x) dataThisCond(groupingThisCond == x), ...
                                         groupsInThisCond, 'UniformOutput', false);
-                spreadWidth = 0.4;
+                
+                % Split weights by individual groups if provided
+                if ~isempty(weightsThisCond)
+                    weightsByGroup = arrayfun(@(x) weightsThisCond(groupingThisCond == x), ...
+                                            groupsInThisCond, 'UniformOutput', false);
+                else
+                    weightsByGroup = cell(size(groupsInThisCond));
+                end
+
+                % Calculate the x-axis positions for the group means
                 if nGroupsInThisCond == 1
                     xMeanPositions = currentCondValue;
                 else
-                    offsets = linspace(-spreadWidth/2, spreadWidth/2, nGroupsInThisCond);
+                    offsets = linspace(-groupMeanSpreadWidth/2, groupMeanSpreadWidth/2, nGroupsInThisCond);
                     xMeanPositions = currentCondValue + offsets;
                 end
 
+                % Loop through and plot statistics for each group
                 for iGroup = 1:nGroupsInThisCond
+                    % Extract the data and weights for the current group
                     groupData = dataByGroup{iGroup};
-                    groupMean = mean(groupData, 'omitnan');
-                    groupSem = std(groupData, 'omitnan') / sqrt(numel(groupData));
-                    groupColor = colorMap{uniqueGroupValues == groupsInThisCond(iGroup)};
+                    groupWeights = weightsByGroup{iGroup};
+                    
+                    % Find the true index of the current group
+                    actualGroupIdx = find(uniqueGroupValues == groupsInThisCond(iGroup));
 
+                    % Calculate or extract standard error and mean
+                    if ~isempty(means) && ~isempty(errors)
+                        groupStat = means(actualGroupIdx, iCond);
+                        groupSem = errors(actualGroupIdx, iCond);
+                    else
+                        [groupSem, groupStat] = nanstderr(groupData, 'DataType', dataType, 'Weights', groupWeights);
+                    end
+                    
+                    % Retrieve the color for the current group
+                    groupColor = colorMap{actualGroupIdx};
+
+                    % Plot error bars
                     if plotErrorBars
-                        errorbar(xMeanPositions(iGroup), groupMean, groupSem, ...
+                        errorbar(xMeanPositions(iGroup), groupStat, groupSem, ...
                                  'Color', groupColor, 'LineWidth', meanLineWidth, ...
                                  'CapSize', errorBarCapSize, 'HandleVisibility', 'off');
                     end
+                    
+                    % Plot mean values
                     if plotMeanValues
-                        plot(xMeanPositions(iGroup), groupMean, meanMarker, ...
+                        plot(xMeanPositions(iGroup), groupStat, meanMarker, ...
                              'MarkerEdgeColor', groupColor, ...
                              'MarkerSize', meanMarkerSize, 'LineWidth', meanLineWidth, ...
                              'HandleVisibility', 'off');
@@ -562,20 +723,27 @@ if plotMeanValues || plotErrorBars
                 end
             end
         else
-            % Pooled across groups
+            % Process and plot statistics pooled across groups
             if ~isempty(dataThisCond)
-                pooledMean = mean(dataThisCond, 'omitnan');
-                pooledSem = std(dataThisCond, 'omitnan') / sqrt(numel(dataThisCond));
-                pooledColor = 'k'; % Use black for pooled stats
+                % Calculate or extract standard error and mean
+                if ~isempty(means) && ~isempty(errors)
+                    pooledStat = means(iCond);
+                    pooledSem = errors(iCond);
+                else
+                    [pooledSem, pooledStat] = nanstderr(dataThisCond, 'DataType', dataType, 'Weights', weightsThisCond);
+                end
 
+                % Plot error bars
                 if plotErrorBars
-                    errorbar(currentCondValue, pooledMean, pooledSem, ...
-                             'Color', pooledColor, 'LineWidth', meanLineWidth, ...
+                    errorbar(currentCondValue, pooledStat, pooledSem, ...
+                             'Color', pooledStatColor, 'LineWidth', meanLineWidth, ...
                              'CapSize', errorBarCapSize, 'HandleVisibility', 'off');
                 end
+                
+                % Plot mean values
                 if plotMeanValues
-                    plot(currentCondValue, pooledMean, meanMarker, ...
-                         'MarkerEdgeColor', pooledColor, ...
+                    plot(currentCondValue, pooledStat, meanMarker, ...
+                         'MarkerEdgeColor', pooledStatColor, ...
                          'MarkerSize', meanMarkerSize, 'LineWidth', meanLineWidth, ...
                          'HandleVisibility', 'off');
                 end
@@ -593,25 +761,28 @@ if (runTTest || runRankTest) && nConditions >= 2
     % Get current y-axis limits to position text
     yLims = ylim(handles.ax);
     yRange = diff(yLims);
-    yPos = yLims(2); % Start at the top
+    yPos = yLims(2); 
 
-    % Define x-position for the text (midway between the two conditions)
+    % Define x-position for the text
     xPosText = mean([cond1Value, cond2Value]);
     
+    % Execute tests separated by group
     if statisticsByGroup
-        % Loop through each group (color) and test separately
+        % Loop through each group and test separately
         for iGroup = 1:nGroups
+            % Extract the value for the current group
             currentGroupValue = uniqueGroupValues(iGroup);
             
             % Get data for this group in condition 1 & 2
             group1Data = data((grouping == currentGroupValue) & (condition == cond1Value));
             group2Data = data((grouping == currentGroupValue) & (condition == cond2Value));
 
+            % Skip testing if data is missing for this group
             if isempty(group1Data) || isempty(group2Data)
-                continue; % Skip if data is missing for this group in either condition
+                continue; 
             end
 
-            % Check if data is normal (required for t-test)
+            % Check if data is normal to select the appropriate test
             isNormal1 = test_normality(group1Data);
             isNormal2 = test_normality(group2Data);
             isAppropriateForTTest = isNormal1 && isNormal2;
@@ -619,30 +790,34 @@ if (runTTest || runRankTest) && nConditions >= 2
             % Get the color for this group
             groupColor = colorMap{iGroup};
 
+            % Run and plot t-test if requested
             if runTTest
                 [~, p_t] = ttest2(group1Data, group2Data);
-                yPos = yPos - 0.1 * yRange; % Move text down
+                yPos = yPos - statTextYPosStepSize * yRange; 
                 yRel = (yPos - yLims(1)) / yRange;
                 
-                % Plot t-test result
                 hT = plot_test_result(p_t, 'PString', 'p_t', ...
                             'XLocText', xPosText, 'XLocStar', xPosText, ...
-                            'YLocTextRel', yRel, 'YLocStarRel', yRel + 0.05, ...
+                            'YLocTextRel', yRel, 'YLocStarRel', yRel + statStarYLocOffset, ...
                             'SigLevel', sigLevel, 'IsAppropriate', isAppropriateForTTest);
-                set(hT.pText, 'Color', groupColor); % Override color for texts
+
+                % Override color for texts
+                set(hT.pText, 'Color', groupColor); 
             end
 
+            % Run and plot rank-sum test if requested
             if runRankTest
                 p_r = ranksum(group1Data, group2Data);
-                yPos = yPos - 0.1 * yRange; % Move text down
+                yPos = yPos - statTextYPosStepSize * yRange; 
                 yRel = (yPos - yLims(1)) / yRange;
 
-                % Plot rank-sum test result
                 hR = plot_test_result(p_r, 'PString', 'p_r', ...
                             'XLocText', xPosText, 'XLocStar', xPosText, ...
-                            'YLocTextRel', yRel, 'YLocStarRel', yRel + 0.05, ...
+                            'YLocTextRel', yRel, 'YLocStarRel', yRel + statStarYLocOffset, ...
                             'SigLevel', sigLevel, 'IsAppropriate', ~isAppropriateForTTest);
-                set(hR.pText, 'Color', groupColor); % Override color for texts
+
+                % Override color for texts
+                set(hR.pText, 'Color', groupColor); 
             end
         end
     else
@@ -650,36 +825,38 @@ if (runTTest || runRankTest) && nConditions >= 2
         cond1Data = data(condition == cond1Value);
         cond2Data = data(condition == cond2Value);
         
+        % Execute tests if both conditions have data
         if ~isempty(cond1Data) && ~isempty(cond2Data)
-            % Check if data is normal (required for t-test)
+            % Check if pooled data is normal
             isNormal1 = test_normality(cond1Data);
             isNormal2 = test_normality(cond2Data);
             isAppropriateForTTest = isNormal1 && isNormal2;
             
-            statsColor = 'k'; % Use black for pooled stats
+            % Set color for pooled statistics text
+            statsColor = pooledStatColor; 
 
+            % Run and plot t-test if requested
             if runTTest
                 [~, p_t] = ttest2(cond1Data, cond2Data);
-                yPos = yPos - 0.1 * yRange; % Move text down
+                yPos = yPos - statTextYPosStepSize * yRange; 
                 yRel = (yPos - yLims(1)) / yRange;
                 
-                % Plot t-test result
                 hT = plot_test_result(p_t, 'PString', 'p_t', ...
                             'XLocText', xPosText, 'XLocStar', xPosText, ...
-                            'YLocTextRel', yRel, 'YLocStarRel', yRel + 0.05, ...
+                            'YLocTextRel', yRel, 'YLocStarRel', yRel + statStarYLocOffset, ...
                             'SigLevel', sigLevel, 'IsAppropriate', isAppropriateForTTest);
                 set(hT.pText, 'Color', statsColor); 
             end
 
+            % Run and plot rank-sum test if requested
             if runRankTest
                 p_r = ranksum(cond1Data, cond2Data);
-                yPos = yPos - 0.1 * yRange; % Move text down
+                yPos = yPos - statTextYPosStepSize * yRange; 
                 yRel = (yPos - yLims(1)) / yRange;
 
-                % Plot rank-sum test result
                 hR = plot_test_result(p_r, 'PString', 'p_r', ...
                             'XLocText', xPosText, 'XLocStar', xPosText, ...
-                            'YLocTextRel', yRel, 'YLocStarRel', yRel + 0.05, ...
+                            'YLocTextRel', yRel, 'YLocStarRel', yRel + statStarYLocOffset, ...
                             'SigLevel', sigLevel, 'IsAppropriate', ~isAppropriateForTTest);
                 set(hR.pText, 'Color', statsColor); 
             end
