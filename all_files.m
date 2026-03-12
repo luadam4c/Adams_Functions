@@ -2,7 +2,15 @@ function varargout = all_files (varargin)
 %% Returns all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
 % Usage: [files, fullPaths] = all_files (varargin)
 % Explanation:
-%       TODO
+%       This function searches for files or subdirectories within a specified
+%       directory (or a list of directories). It allows for advanced filtering
+%       using prefixes, keywords, suffixes, specific file extensions, or custom
+%       regular expressions. The search can be performed recursively across
+%       all nested subdirectories. Additionally, the function provides options 
+%       to sort the resulting file list by various attributes (name, date, 
+%       size, or sweep number) and can restrict the maximum number of returned 
+%       matches. By default, it returns a structure array similar to the 
+%       built-in dir() function, but this can be forced into a cell array.
 %
 % Example(s):
 %       [files, fullPaths] = all_files;
@@ -138,7 +146,8 @@ function varargout = all_files (varargin)
 % 2019-01-30 Now sorts by 'datenum' if the user wants to sort by 'date'
 % 2019-01-30 Now allows a '.' to be in the prefix, keyword, suffix or extension
 % 2020-08-27 Added 'SweepStr' as an optional argument
-% TODO: Fix bug when a dot is in the folder name
+% 2026-03-10 When forceCellOutput is true, first output is now a cell array
+% 2026-03-10 Fix bug when a dot is in the folder name
 
 %% Hard-coded parameters
 validSortBys = {'name', 'date', 'bytes', 'datenum', 'sweep'};
@@ -219,7 +228,12 @@ maxNum = iP.Results.MaxNum;
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
 if ~all(dirExists)
-    varargout{1} = [];
+    % Return empty variables depending on the forceCellOutput flag
+    if forceCellOutput
+        varargout{1} = {};
+    else
+        varargout{1} = [];
+    end
     varargout{2} = {};
     return
 end
@@ -245,13 +259,8 @@ if isempty(regExp)
         % Match the prefix, keyword, suffix and extension
         regExp = sprintf('^%s.*%s.*%s%s$', prefix, keyword, suffix, extension);
     else
-        if subDirInstead
-            % Match the prefix, keyword, suffix
-            regExp = sprintf('^%s.*%s.*%s$', prefix, keyword, suffix);
-        else
-            % Match the prefix, keyword, suffix
-            regExp = sprintf('^%s.*%s.*%s[.].*$', prefix, keyword, suffix);
-        end
+        % Match the prefix, keyword, suffix regardless of whether it's a file or subdirectory
+        regExp = sprintf('^%s.*%s.*%s$', prefix, keyword, suffix);
     end
 else
     % Display warning if an extension is provided
@@ -351,8 +360,17 @@ if ~isempty(maxNum)
     files = files(1:idxEnd);
 end
 
-% Get first output
-varargout{1} = files;
+% Set the first output based on the forceCellOutput flag
+if forceCellOutput
+    % Use an empty cell array if no files found, otherwise convert struct to cell
+    if isempty(files)
+        varargout{1} = {};
+    else
+        varargout{1} = num2cell(files);
+    end
+else
+    varargout{1} = files;
+end
 
 % Extract the full paths
 if nargout >= 2
