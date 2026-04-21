@@ -2,13 +2,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %% Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
 % Usage: handles = plot_tuning_curve (pValues, readout, varargin)
 % Explanation:
-%       This function plots one-dimensional tuning curves, visualizing how a specific 
-%       readout (e.g., neural response, behavior, or metric) varies across different 
-%       parameter values. It supports shaded or dashed confidence intervals, plotting 
-%       multiple conditions (columns or phases), displaying statistical significance 
-%       (paired t-tests or Wilcoxon signed-rank tests), and marking specific regions 
-%       (boundaries) or data points. It returns all plotted graphic handles to allow 
-%       post-hoc modifications.
+%       TODO
 % 
 % Examples:
 %       pValues = transpose(1:10);
@@ -24,10 +18,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 %       pValues = transpose(20:-2:2);
 %       
-%       plot_tuning_curve(pValues, readout1);
-%       plot_tuning_curve(pValues, readoutAll);
+%       plot_tuning_curve(pValues, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
 %       plot_tuning_curve(pValues, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
-%       plot_tuning_curve(pValues, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ConfIntStyle', 'line');
 %
 %       plot_tuning_curve((1:3)', [rand(1, 10); 2*rand(1, 10); 5*rand(1, 10)]);
 %       plot_tuning_curve((1:3)', [rand(1, 10); 2*rand(1, 10); 5*rand(1, 10)], 'RunTTest', true, 'RunRankTest', true);
@@ -46,12 +38,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       selected    - (optional) handles to selected value markers
 %                       averages    - (optional) handles to phase average lines
 %                       avgWindows  - (optional) handles to average window bars
-%                       tTestTexts  - (optional) handles to t-test p-value texts
-%                       tTestStars  - (optional) handles to t-test significance markers
-%                       rankTestTexts - (optional) handles to rank test p-value texts
-%                       rankTestStars - (optional) handles to rank test significance markers
-%                   specified as a scalar structure
-%
+%                   specified as a scalar structure%
 % Arguments:
 %       pValues     - vector(s) of parameter values
 %                   must be a numeric 2-D array
@@ -64,18 +51,14 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'UpperCI': upper bounds of confidence intervals
 %                   must be a numeric 2-D array
 %                   default == []
-%                   - 'ConfIntStyle': style of the confidence interval
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       'shaded'
-%                       'line'
-%                   default == 'shaded'
 %                   - 'RemoveOutliers': whether to remove outliers
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'RunTTest': whether to run paired t-test
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'RunRankTest': whether to run paired Wilcoxon signed-rank test
+%                   - 'RunRankTest': whether to run paired 
+%                                       Wilcoxon signed-rank test
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ColumnsToPlot': columns of the readout matrix to plot
@@ -87,10 +70,12 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'LineWidth': line width
 %                   must be a positive scalar
 %                   default == 2
-%                   - 'PIsLog': whether parameter values are to be plotted log-scaled
+%                   - 'PIsLog': whether parameter values are to be plotted 
+%                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ReadoutIsLog': whether readout values are to be plotted log-scaled
+%                   - 'ReadoutIsLog': whether readout values are to be plotted 
+%                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PLimits': limits of parameter axis
@@ -119,10 +104,12 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   default == 'Readout'
 %                   - 'ColumnLabels': labels for the readout columns, 
 %                               suppress by setting value to {'suppress'}
-%                   must be a scalartext or a cell array of strings or character vectors
+%                   must be a scalartext 
+%                       or a cell array of strings or character vectors
 %                   default == {'Column #1', 'Column #2', ...}
 %                   - 'PhaseLabels': phase labels if phase vectors are provided
-%                   must be a scalartext or a cell array of strings or character vectors
+%                   must be a scalartext 
+%                       or a cell array of strings or character vectors
 %                   default == {'Phase #1', 'Phase #2', ...}
 %                   - 'ColorByPhase': whether to color by phase
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -251,93 +238,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == {'png', 'epsc'}
-%                   - 'SigLevel': significance level for tests
-%                   must be a numeric scalar
-%                   default == 0.05
-%                   - 'ConfIntFadePercentage': fade percentage for confidence interval colors
-%                   must be a numeric scalar
-%                   default == 50
-%                   - 'ConfIntLineStyle': line style for confidence interval edges
-%                   must be a valid line style or 'auto'
-%                   default == 'auto' (set to 'none' for 'shaded', '--' for 'line')
-%                   - 'ConfIntLineWidth': line width for dashed confidence interval edges
-%                   must be a positive scalar
-%                   default == 1
-%                   - 'ConfIntFaceAlpha': transparency for confidence interval face
-%                   must be a numeric scalar
-%                   default == 0.25
-%                   - 'ConfIntEdgeAlpha': transparency for confidence interval edges
-%                   must be a numeric scalar
-%                   default == 0.25
-%                   - 'SelectedLineWidth': line width for selected values markers
-%                   must be a positive scalar
-%                   default == 3
-%                   - 'SelectedMarker': marker symbol for selected values
-%                   must be a character array
-%                   default == 'o'
-%                   - 'OutlierMethod': method for outlier removal
-%                   must be a string or character vector
-%                   default == 'fiveStds'
-%                   - 'PBoundaryColor': color for parameter boundaries
-%                   must be a valid color
-%                   default == '' (set in plot_window_boundaries.m)
-%                   - 'PBoundaryLineStyle': line style for parameter boundaries
-%                   must be a valid line style
-%                   default == '--'
-%                   - 'PBoundaryLineWidth': line width for parameter boundaries
-%                   must be a positive scalar
-%                   default == 0.5
-%                   - 'RBoundaryColor': color for readout boundaries
-%                   must be a valid color
-%                   default == '' (set in plot_window_boundaries.m)
-%                   - 'RBoundaryLineStyle': line style for readout boundaries
-%                   must be a valid line style
-%                   default == '--'
-%                   - 'RBoundaryLineWidth': line width for readout boundaries
-%                   must be a positive scalar
-%                   default == 0.5
-%                   - 'AveragesLineStyle': line style for phase average lines
-%                   must be a valid line style
-%                   default == ':'
-%                   - 'AveragesLineWidth': line width for phase average lines
-%                   must be a positive scalar
-%                   default == 2
-%                   - 'AvgWindowRelYValue': relative Y value for average window bars
-%                   must be a numeric scalar
-%                   default == 0.1
-%                   - 'AvgWindowColorMap': color map for average window bars
-%                   must be a numeric matrix with 3 columns
-%                   default == []
-%                   - 'AvgWindowLineStyle': line style for average window bars
-%                   must be a valid line style
-%                   default == '-'
-%                   - 'AvgWindowLineWidth': line width for average window bars
-%                   must be a positive scalar
-%                   default == 3
-%                   - 'TestXLocRel': relative X location for test text
-%                   must be a numeric scalar
-%                   default == 0.5
-%                   - 'StarXLocRel': relative X location for test stars
-%                   must be a numeric scalar
-%                   default == 0.5
-%                   - 'TTestPString': string for t-test p value
-%                   must be a string or character vector
-%                   default == 'p_t'
-%                   - 'TTestYLocText': relative Y location for t-test text
-%                   must be a numeric scalar
-%                   default == 0.2
-%                   - 'TTestYLocStar': relative Y location for t-test star
-%                   must be a numeric scalar
-%                   default == 0.9
-%                   - 'RankTestPString': string for rank test p value
-%                   must be a string or character vector
-%                   default == 'p_r'
-%                   - 'RankTestYLocText': relative Y location for rank test text
-%                   must be a numeric scalar
-%                   default == 0.1
-%                   - 'RankTestYLocStar': relative Y location for rank test star
-%                   must be a numeric scalar
-%                   default == 0.8
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
@@ -357,7 +257,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       ~/Adams_Functions/isfigtype.m
 %       ~/Adams_Functions/islegendlocation.m
 %       ~/Adams_Functions/islog2scale.m
-%       ~/Adams_Functions/isnum.m
 %       ~/Adams_Functions/match_column_count.m
 %       ~/Adams_Functions/parse_phase_info.m
 %       ~/Adams_Functions/plot_horizontal_line.m
@@ -437,7 +336,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2025-08-29 Updated to use plot_test_result.m by Gemini
 % 2025-10-07 Fixed bug in axHandle usage
 % 2025-10-09 Updated default p limits to use average spacing
-% 2026-03-19 Added 'ConfIntStyle' as an optional argument
 % TODO: Make 'FillMarkers' an optional argument with default == true
 % TODO: Allow inputs to be cell arrays (use force_matrix.m)
 % TODO: Use test_difference.m?
@@ -447,12 +345,40 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
 validPBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
 validRBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
-validConfIntStyles = {'shaded', 'line'};
+
+% TODO: Make optional arguments
+sigLevel = 0.05;                    % significance level for tests
+confIntFadePercentage = 50;         % fade percentage for confidence interval colors
+confIntLineStyle = 'none';
+confIntFaceAlpha = 0.25;
+confIntEdgeAlpha = 0.25;
+selectedLineWidth = 3;              % line width for selected values markers
+selectedMarker = 'o';
+outlierMethod = 'fiveStds';
+pBoundaryColor = '';                % set in plot_window_boundaries.m
+pBoundaryLineStyle = '--';
+pBoundaryLineWidth = 0.5;
+rBoundaryColor = '';                % set in plot_window_boundaries.m
+rBoundaryLineStyle = '--';
+rBoundaryLineWidth = 0.5;
+averagesLineStyle = ':';
+averagesLineWidth = 2;
+avgWindowRelYValue = 0.1;
+avgWindowColorMap = [];
+avgWindowLineStyle = '-';
+avgWindowLineWidth = 3;
+testXLocRel = 0.5;
+starXLocRel = 0.5;
+tTestPString = 'p_t';
+tTestYLocText = 0.2;
+tTestYLocStar = 0.9;
+rankTestPString = 'p_r';
+rankTestYLocText = 0.1;
+rankTestYLocStar = 0.8;
 
 %% Default values for optional arguments
 lowerCIDefault = [];
 upperCIDefault = [];
-confIntStyleDefault = 'shaded';
 removeOutliersDefault = false;      % don't remove outliers by default
 runTTestDefault = false;            % don't run paired t-test by default
 runRankTestDefault = false;         % don't run paired signed-rank test by default
@@ -503,36 +429,6 @@ axHandleDefault = [];               % gca by default
 figNameDefault = '';                % don't save figure by default
 figTypesDefault = {'png', 'epsc'};
 
-% Formerly hard-coded parameters
-sigLevelDefault = 0.05;                    
-confIntFadePercentageDefault = 50;         
-confIntLineStyleDefault = 'auto';
-confIntLineWidthDefault = 1;
-confIntFaceAlphaDefault = 0.25;
-confIntEdgeAlphaDefault = 0.25;
-selectedLineWidthDefault = 3;              
-selectedMarkerDefault = 'o';
-outlierMethodDefault = 'fiveStds';
-pBoundaryColorDefault = '';                
-pBoundaryLineStyleDefault = '--';
-pBoundaryLineWidthDefault = 0.5;
-rBoundaryColorDefault = '';                
-rBoundaryLineStyleDefault = '--';
-rBoundaryLineWidthDefault = 0.5;
-averagesLineStyleDefault = ':';
-averagesLineWidthDefault = 2;
-avgWindowRelYValueDefault = 0.1;
-avgWindowColorMapDefault = [];
-avgWindowLineStyleDefault = '-';
-avgWindowLineWidthDefault = 3;
-testXLocRelDefault = 0.5;
-starXLocRelDefault = 0.5;
-tTestPStringDefault = 'p_t';
-tTestYLocTextDefault = 0.2;
-tTestYLocStarDefault = 0.9;
-rankTestPStringDefault = 'p_r';
-rankTestYLocTextDefault = 0.1;
-rankTestYLocStarDefault = 0.8;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -562,8 +458,6 @@ addParameter(iP, 'LowerCI', lowerCIDefault, ...
 addParameter(iP, 'UpperCI', upperCIDefault, ...
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
-addParameter(iP, 'ConfIntStyle', confIntStyleDefault, ...
-    @(x) any(validatestring(x, validConfIntStyles)));
 addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RunTTest', runTTestDefault, ...
@@ -669,68 +563,10 @@ addParameter(iP, 'FigName', figNameDefault, ...
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
-% Formerly hard-coded parameters as optional inputs
-addParameter(iP, 'SigLevel', sigLevelDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'ConfIntFadePercentage', confIntFadePercentageDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'ConfIntLineStyle', confIntLineStyleDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'ConfIntLineWidth', confIntLineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-addParameter(iP, 'ConfIntFaceAlpha', confIntFaceAlphaDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'ConfIntEdgeAlpha', confIntEdgeAlphaDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'SelectedLineWidth', selectedLineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-addParameter(iP, 'SelectedMarker', selectedMarkerDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'OutlierMethod', outlierMethodDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'PBoundaryColor', pBoundaryColorDefault);
-addParameter(iP, 'PBoundaryLineStyle', pBoundaryLineStyleDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'PBoundaryLineWidth', pBoundaryLineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-addParameter(iP, 'RBoundaryColor', rBoundaryColorDefault);
-addParameter(iP, 'RBoundaryLineStyle', rBoundaryLineStyleDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'RBoundaryLineWidth', rBoundaryLineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-addParameter(iP, 'AveragesLineStyle', averagesLineStyleDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'AveragesLineWidth', averagesLineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-addParameter(iP, 'AvgWindowRelYValue', avgWindowRelYValueDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'AvgWindowColorMap', avgWindowColorMapDefault);
-addParameter(iP, 'AvgWindowLineStyle', avgWindowLineStyleDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'AvgWindowLineWidth', avgWindowLineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-addParameter(iP, 'TestXLocRel', testXLocRelDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'StarXLocRel', starXLocRelDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'TTestPString', tTestPStringDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'TTestYLocText', tTestYLocTextDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'TTestYLocStar', tTestYLocStarDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'RankTestPString', rankTestPStringDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'RankTestYLocText', rankTestYLocTextDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'RankTestYLocStar', rankTestYLocStarDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-
 % Read from the Input Parser
 parse(iP, pValues, readout, varargin{:});
 lowerCI = iP.Results.LowerCI;
 upperCI = iP.Results.UpperCI;
-confIntStyle = validatestring(iP.Results.ConfIntStyle, validConfIntStyles);
 removeOutliers = iP.Results.RemoveOutliers;
 runTTest = iP.Results.RunTTest;
 runRankTest = iP.Results.RunRankTest;
@@ -783,47 +619,8 @@ axHandle = iP.Results.AxesHandle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-sigLevel = iP.Results.SigLevel;
-confIntFadePercentage = iP.Results.ConfIntFadePercentage;
-confIntLineWidth = iP.Results.ConfIntLineWidth;
-confIntFaceAlpha = iP.Results.ConfIntFaceAlpha;
-confIntEdgeAlpha = iP.Results.ConfIntEdgeAlpha;
-selectedLineWidth = iP.Results.SelectedLineWidth;
-selectedMarker = iP.Results.SelectedMarker;
-outlierMethod = iP.Results.OutlierMethod;
-pBoundaryColor = iP.Results.PBoundaryColor;
-pBoundaryLineStyle = iP.Results.PBoundaryLineStyle;
-pBoundaryLineWidth = iP.Results.PBoundaryLineWidth;
-rBoundaryColor = iP.Results.RBoundaryColor;
-rBoundaryLineStyle = iP.Results.RBoundaryLineStyle;
-rBoundaryLineWidth = iP.Results.RBoundaryLineWidth;
-averagesLineStyle = iP.Results.AveragesLineStyle;
-averagesLineWidth = iP.Results.AveragesLineWidth;
-avgWindowRelYValue = iP.Results.AvgWindowRelYValue;
-avgWindowColorMap = iP.Results.AvgWindowColorMap;
-avgWindowLineStyle = iP.Results.AvgWindowLineStyle;
-avgWindowLineWidth = iP.Results.AvgWindowLineWidth;
-testXLocRel = iP.Results.TestXLocRel;
-starXLocRel = iP.Results.StarXLocRel;
-tTestPString = iP.Results.TTestPString;
-tTestYLocText = iP.Results.TTestYLocText;
-tTestYLocStar = iP.Results.TTestYLocStar;
-rankTestPString = iP.Results.RankTestPString;
-rankTestYLocText = iP.Results.RankTestYLocText;
-rankTestYLocStar = iP.Results.RankTestYLocStar;
-
 % Keep unmatched arguments for the plot() function
 otherArguments = struct2arglist(iP.Unmatched);
-
-% Decide on confidence interval line style if set to auto
-confIntLineStyle = iP.Results.ConfIntLineStyle;
-if strcmpi(confIntLineStyle, 'auto')
-    if strcmpi(confIntStyle, 'shaded')
-        confIntLineStyle = 'none';
-    elseif strcmpi(confIntStyle, 'line')
-        confIntLineStyle = '--';
-    end
-end
 
 %% Prepare for tuning curve
 % Initialize a handles structure
@@ -1105,8 +902,8 @@ end
 % Decide on the confidence interval color map to use
 if isempty(confIntColorMap)
     % Color of the confidence interval
-    WHITE = [1, 1, 1];
-    confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage / 100;
+    confIntColorMap = decide_on_colormap(colorMap, 'OriginalNColors', true, ...
+                            'FadePercentage', confIntFadePercentage);
 end
 
 % Decide on the selected values color map to use
@@ -1143,12 +940,7 @@ axHandle = set_axes_properties('AxesHandle', axHandle);
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);
 if ~isempty(lowerCI) || ~isempty(upperCI)
-    if strcmpi(confIntStyle, 'shaded')
-        confInts = gobjects(nColumnsToPlot, nLinesPerPhase);
-    else
-        % For line, allocate for two separate lines per trace
-        confInts = gobjects(nColumnsToPlot, max(nLinesPerPhase, 2));
-    end
+    confInts = gobjects(nColumnsToPlot, nLinesPerPhase);
 end
 
 % Hold on
@@ -1165,60 +957,7 @@ for iPlot = 1:nColumnsToPlot
     end
     readoutThis = readoutToPlot(:, col);
 
-    % Plot the confidence interval first if provided, so the trace plots on top
-    if ~isempty(lowerCI) || ~isempty(upperCI)
-        if ~isempty(lowerCI)
-            lowerCIThis = lowerCI(:, col);
-        else
-            lowerCIThis = readoutThis;
-        end
-        if ~isempty(upperCI)
-            upperCIThis = upperCI(:, col);
-        else
-            upperCIThis = readoutThis;
-        end
-
-        % Plot the confidence interval
-        if colorByPhase || pIsLog || readoutIsLog
-            fprintf('Not Supported Yet!\n');
-        else
-            % Get the current Y limits
-            % yLimits = get(axHandle, 'YLim');
-
-            % TODO: Compute the minimum y limits
-            % minY = apply_iteratively(@min, {yLimits, readoutLimits});
-
-            % TODO: use plot_vertical_shade.m
-
-            if strcmpi(confIntStyle, 'shaded')
-                % The x and y values for the confidence intervals
-                confIntXValues = [pValuesThis; flipud(pValuesThis)];
-                confIntYValues = [upperCIThis; flipud(lowerCIThis)];
-
-                % Fill the area between lowerCIThis and upperCIThis 
-                confInts(iPlot, 1) = fill(axHandle, confIntXValues, confIntYValues, ...
-                                            confIntColorMap(iPlot, :), ...
-                                            'LineStyle', confIntLineStyle, ...
-                                            'FaceAlpha', confIntFaceAlpha, ...
-                                            'EdgeAlpha', confIntEdgeAlpha);
-            elseif strcmpi(confIntStyle, 'line')
-                % Plot upper and lower boundaries as lines
-                ci1 = plot(axHandle, pValuesThis, upperCIThis, ...
-                           'Color', confIntColorMap(iPlot, :), ...
-                           'LineStyle', confIntLineStyle, 'LineWidth', confIntLineWidth);
-                ci2 = plot(axHandle, pValuesThis, lowerCIThis, ...
-                           'Color', confIntColorMap(iPlot, :), ...
-                           'LineStyle', confIntLineStyle, 'LineWidth', confIntLineWidth);
-                confInts(iPlot, 1) = ci1;
-                confInts(iPlot, 2) = ci2;
-            end
-
-            % Display tick marks and grid lines over graphics objects.
-            set(axHandle, 'Layer', 'top');
-        end
-    end
-
-    % Plot the main tuning curve for this column over the CI if one exists
+    % Plot the tuning curve for this column
     if colorByPhase       
         % Get the current phase vector
         phaseVectorThis = phaseVectors{iPlot};
@@ -1244,6 +983,56 @@ for iPlot = 1:nColumnsToPlot
     else
         curves(iPlot, 1) = plot_one_line(axHandle, pValuesThis, readoutThis, ...
                                     lineSpec, lineWidth, otherArguments);
+    end
+
+    % If provided, plot a confidence interval for this column
+    %   as a light-gray-shaded area
+    if ~isempty(lowerCI) || ~isempty(upperCI)
+        if ~isempty(lowerCI)
+            lowerCIThis = lowerCI(:, col);
+        else
+            lowerCIThis = readoutThis;
+        end
+        if ~isempty(upperCI)
+            upperCIThis = upperCI(:, col);
+        else
+            upperCIThis = readoutThis;
+        end
+
+        % Plot the confidence interval
+        if colorByPhase || pIsLog || readoutIsLog
+            fprintf('Not Supported Yet!\n');
+        else
+            % Get the current Y limits
+            % yLimits = get(axHandle, 'YLim');
+
+            % Compute the minimum y limits
+            %TODO
+            % minY = apply_iteratively(@min, {yLimits, readoutLimits});
+
+            % TODO: use plot_vertical_shade.m
+            % Remove tuning curve
+            delete(curves(iPlot, 1));
+
+            % The x and y values for the confidence intervals
+            confIntXValues = [pValuesThis; flipud(pValuesThis)];
+            confIntYValues = [upperCIThis; flipud(lowerCIThis)];
+
+            % Fill the area between lowerCIThis and upperCIThis 
+            %   with confIntColorMap
+            confInts(iPlot, 1) = fill(axHandle, confIntXValues, confIntYValues, ...
+                                        confIntColorMap(iPlot, :), ...
+                                        'LineStyle', confIntLineStyle, ...
+                                        'FaceAlpha', confIntFaceAlpha, ...
+                                        'EdgeAlpha', confIntEdgeAlpha);
+
+            % Plot tuning curve again
+            curves(iPlot, 1) = plot_one_line(axHandle, pValuesThis, readoutThis, ...
+                                        lineSpec, lineWidth, otherArguments);
+
+            % Display tick marks and grid lines over graphics objects.
+            set(axHandle, 'Layer', 'top');
+        end
     end
 
     % Set color
@@ -1339,7 +1128,7 @@ if nPBoundaries > 0
                                 'ColorMap', pBoundaryColor, ...
                                 'AxesHandle', axHandle);
 else
-    pLines = gobjects(0);
+    pLines = gobjects;
 end
 
 % Plot readout boundaries
@@ -1351,7 +1140,7 @@ if nRBoundaries > 0
                                 'ColorMap', rBoundaryColor, ...
                                 'AxesHandle', axHandle);
 else
-    rLines = gobjects(0);
+    rLines = gobjects;
 end
 
 % Plot phaseAverages if any
@@ -1464,24 +1253,20 @@ end
 
 % Plot t-test p values if any
 if ~isempty(tTestPValues)
-    handlesTTest = plot_test_result(tTestPValues, 'PString', tTestPString, ...
+    plot_test_result(tTestPValues, 'PString', tTestPString, ...
                     'YLocTextRel', tTestYLocText, 'YLocStarRel', tTestYLocStar, ...
                     'XLocText', xLocText, 'XLocStar', xLocStar, ...
                     'SigLevel', sigLevel, 'IsAppropriate', isNormal, ...
                     'AxesHandle', axHandle);
-    tTestTexts = handlesTTest.pText;
-    tTestStars = handlesTTest.sigMarker;
 end
 
 % Plot rank test p values if any
 if ~isempty(rankTestPValues)
-    handlesRankTest = plot_test_result(rankTestPValues, 'PString', rankTestPString, ...
+    plot_test_result(rankTestPValues, 'PString', rankTestPString, ...
                     'YLocTextRel', rankTestYLocText, 'YLocStarRel', rankTestYLocStar, ...
                     'XLocText', xLocText, 'XLocStar', xLocStar, ...
                     'SigLevel', sigLevel, 'IsAppropriate', ~isNormal, ...
                     'AxesHandle', axHandle);
-    rankTestTexts = handlesRankTest.pText;
-    rankTestStars = handlesRankTest.sigMarker;
 end
 
 % Hold off
@@ -1543,14 +1328,6 @@ end
 if plotAverageWindows && ~isempty(averageWindows)
     handles.avgWindows = avgWindows;
 end
-if ~isempty(tTestPValues)
-    handles.tTestTexts = tTestTexts;
-    handles.tTestStars = tTestStars;
-end
-if ~isempty(rankTestPValues)
-    handles.rankTestTexts = rankTestTexts;
-    handles.rankTestStars = rankTestStars;
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1575,6 +1352,251 @@ end
 %{
 OLD CODE:
 
+% Usage: plot_tuning_curve(pValues, readout, columnsToPlot, pIsLog, pLabel, ...
+            readoutLabel, columnLabels, pLimits, readoutLimits, figName, varargin)
+
+if ~isequal(columnLabels, {'suppress'})
+
+if isequal(pLimits, -1)
+
+if ~isequal(pLabel, 'suppress')
+if ~isequal(readoutLabel, 'suppress')
+if ~isequal(pLabel, 'suppress') && ~isequal(readoutLabel, 'suppress')
+
+singleColorDefault = [0, 0, 1];
+lineSpecDefault = '-';
+
+set(fig, 'Visible', 'Off');
+fig = figure(floor(rand()*10^4)+1);
+
+if pIsLog
+    % Note: can't have hold on before semilogx
+    p = semilogx(pValues, readout(:, col), lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+else
+    p = plot(pValues, readout(:, col), lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+end
+
+if ~isempty(figName)
+    % Create a figure
+    if ~isempty(figNumber)
+        % Create an invisible figure
+        fig = figure(figNumber);
+        set(fig, 'Visible', 'Off');
+    else
+        % Create a new figure
+        fig = figure;
+    end
+
+    % Clear the figure
+    clf(fig);
+else
+    % Get the current figure
+    fig = gcf;
+end
+
+set(axHandle, 'XTick', pTicks);
+set(axHandle, 'XTickLabel', pTickLabels);
+pTickAngle = 60;                % x tick angle in degrees
+
+phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
+                            'UniformOutput', false);
+uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...
+                        'UniformOutput', false);
+
+confInts = gobjects(nColumnsToPlot, 2);
+
+% Make the area under upperCIThis light gray
+confInts(iPlot, 1) = area(pValues, upperCIThis, minY, ...
+                    'LineStyle', 'none', 'FaceColor', [0.9, 0.9, 0.9]);
+
+% Make the area under lowerCIThis white
+confInts(iPlot, 2) = area(pValues, lowerCIThis, minY, ...
+                    'LineStyle', 'none', 'FaceColor', [1, 1, 1]);
+
+%                   - 'SingleColor': color when nColumnsToPlot == 1
+%                   must be a 3-element vector
+%                   default == rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
+singleColorDefault = rgb('SkyBlue');
+addParameter(iP, 'SingleColor', singleColorDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
+singlecolor = iP.Results.SingleColor;
+if nColumnsToPlot > 1
+    set(curves(iPlot, 1), 'Color', colorMap(iPlot, :));
+elseif nColumnsToPlot == 1
+    set(curves(iPlot, 1), 'Color', singlecolor);
+end
+
+confIntColorMapDefault = rgb('LightGray');  
+                                    % light gray confidence intervals by default
+
+if colorByPhase
+    selectedCell = ...
+        arrayfun(@(x) ...
+            cellfun(@(y) plot_selected(pValues, ...
+                        readoutToPlot(:, columnsToPlot(x)), y, ...
+                        selectedMarker, selectedColorMap(y, :), ...
+                        selectedLineWidth), ...
+                    indSelected(:, columnsToPlot(x))), ...
+            1:nColumnsToPlot, 'UniformOutput', false);
+else
+    selectedCell = ...
+        arrayfun(@(x) ...
+            cellfun(@(y) plot_selected(pValues, ...
+                        readoutToPlot(:, columnsToPlot(x)), y, ...
+                        selectedMarker, selectedColorMap(x, :), ...
+                        selectedLineWidth), ...
+                    indSelected(:, columnsToPlot(x))), ...
+            1:nColumnsToPlot, 'UniformOutput', false);            
+end
+
+
+% Decide on the average window y value
+if isempty(avgWindowYValue)
+    % Get the current y axis limits
+    yLimitsNow = get(axHandle, 'YLim');
+
+    % Compute a default window bar y value
+    avgWindowYValue = yLimitsNow(1) + 0.1 * (yLimitsNow(2) - yLimitsNow(1));
+end
+avgWindows = ...
+    arrayfun(@(x) plot_horizontal_line(avgWindowYValue, ...
+                            'XLimits', averageWindows{x, 1}, ...
+                            'ColorMap', avgWindowColorMap(x, :), ...
+                            'LineStyle', avgWindowLineStyle, ...
+                            'LineWidth', avgWindowLineWidth), ...
+            transpose(1:maxNPhases), 'UniformOutput', false);
+
+
+pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
+                            'LineStyle', pBoundaryLineStyle, 'Color', 'g');
+rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
+                            'LineStyle', rBoundaryLineStyle, 'Color', 'r');
+
+% Hold on if more than one column
+if nColumnsToPlot > 1
+    hold on
+end
+        hold on;
+            hold on;
+    hold on
+    hold on
+% Hold off if more than one column
+if nColumnsToPlot > 1
+    hold off
+end
+
+for iPhase = 1:nPhasesThis
+    set(curves(iPlot, iPhase), 'Color', colorMap(iPhase, :));
+end
+
+set(curves(iPlot, iPhase), 'DisplayName', ...
+    replace(phaseLabels{iPhase}, '_', '\_'));
+
+set(curves(iPlot, 1), 'DisplayName', ...
+    replace(columnLabels{col}, '_', '\_'));
+
+nBoundaries = nPBoundaries + nRBoundaries;
+
+% Note: can't have hold on before loglog, semilogx or semilogy
+if pIsLog && readoutIsLog
+    p = loglog(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+elseif pIsLog && ~readoutIsLog
+    p = semilogx(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+elseif ~pIsLog && readoutIsLog
+    p = semilogy(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+else
+    p = plot(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+end
+
+if pIsLog && readoutIsLog
+    set(axHandle, 'XScale', 'log', 'YScale', 'log');
+elseif pIsLog && ~readoutIsLog
+    set(axHandle, 'XScale', 'log');
+elseif ~pIsLog && readoutIsLog
+    set(axHandle, 'YScale', 'log');
+end
+
+%% Hard-coded constants
+WHITE = [1, 1, 1];
+confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
+
+function plot_test_result (testPValues, pString, yLocTextRel, yLocStarRel, ...
+                            xLocTextRel, xLocStarRel, uniquePValuesOrig, ...
+                            sigLevel, isAppropriate)
+%% Plots p values and star if significant
+
+% Decide on the x locations
+xLocText = uniquePValuesOrig(1:end-1) + (uniquePValuesOrig(2) - uniquePValuesOrig(1)) * xLocTextRel;
+xLocStar = uniquePValuesOrig(1:end-1) + (uniquePValuesOrig(2) - uniquePValuesOrig(1)) * xLocStarRel;
+
+% Get current y axis limits
+yLimitsNow = get(axHandle, 'YLim');
+
+% Decide on the y location for texts
+yLocText = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocTextRel;
+
+% Decide on the y location for stars
+yLocStar = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocStarRel;
+
+% Plot texts
+for iValue =  1:numel(testPValues)
+    % Get the current values
+    testPValueThis = testPValues(iValue);
+    xLocTextThis = xLocText(iValue);
+    xLocStarThis = xLocStar(iValue);
+    isAppropriateThis = isAppropriate(iValue);
+
+    % Create a p value string to 2 significant digits
+    pValueString = [pString, ' = ', num2str(testPValueThis, 2)];
+
+    % Plot gray if inappropriate, red if significant
+    if ~isAppropriateThis
+        pColor = [0.5, 0.5, 0.5];       % rgb('Gray')
+    elseif testPValueThis < sigLevel
+        pColor = 'r';
+    else
+        pColor = 'k';
+    end
+
+    % Plot text
+    % TODO: Make function plot_text.m
+    text(xLocTextThis, yLocText, pValueString, 'Color', pColor, ...
+            'HorizontalAlignment', 'center');
+
+    % Plot star if significant, 'NS' if not
+    if testPValueThis < sigLevel
+        plot(xLocStarThis, yLocStar, '*', 'Color', [0, 0, 0], ...
+            'MarkerSize', 4);
+    else
+        text(xLocStarThis, yLocStar, 'NS', 'Color', [0, 0, 0], ...
+            'HorizontalAlignment', 'center');
+    end
+end
+
+% Restrict x axis if pLimits provided; 
+%   otherwise expand the x axis by a little bit
+if ~isempty(pLimits)
+    if ~strcmpi(pLimits, 'suppress')
+        % Use x limits
+        xlim(pLimits);
+    end
+else
+    if nEntries > 1 && nEntries < 4
+        xlim(compute_axis_limits(uniquePValuesOrig, 'x', 'Coverage', 90));
+    elseif nEntries >= 4
+        % Compute the average spacing between parameter values
+        avgPSpacing = mean(diff(uniquePValuesOrig));
+
+        % Set the new limits by extending by the average spacing
+        xlim([uniquePValuesOrig(1) - avgPSpacing/2, uniquePValuesOrig(end) + avgPSpacing/2]);
+    end
+end
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

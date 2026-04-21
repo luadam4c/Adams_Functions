@@ -59,6 +59,7 @@ function [supAx, axHandles] = resize_subplots_for_labels (varargin)
 %               to extract code from plot_traces.m
 % 2025-09-13 Fixed code to create invisible axes at the proper position
 % 2026-01-23 Added 'SkipSingleSubplots' parameter
+% 2026-03-12 Explicitly set Parent property for supAx to match axHandles
 
 %% Hard-coded parameters
 
@@ -168,8 +169,11 @@ if xLabelNeeded || yLabelNeeded || titleNeeded
         set(axHandles(i), 'OuterPosition', newPos);
     end
 
+    % Get the parent figure from the first axes handle to ensure supAx is created there
+    parentFig = ancestor(axHandles(1), 'figure');
+
     % Create a new, invisible axes that covers the original total plotting area
-    supAx = axes('Position', newPlotArea, 'Visible', 'off', ...
+    supAx = axes('Parent', parentFig, 'Position', newPlotArea, 'Visible', 'off', ...
                  'Units', 'normalized', 'Tag', 'super_axis');
     set(supAx, 'XTick', [], 'YTick', []); % Remove x and y ticks
 

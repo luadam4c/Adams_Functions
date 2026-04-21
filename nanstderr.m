@@ -30,6 +30,7 @@ function varargout = nanstderr(X, varargin)
 %                   must be an unambiguous, case-insensitive match to one of:
 %                       'normal'        - standard error of the mean
 %                       'proportion'    - standard error of a proportion
+%                       'ratio'         - standard error of a ratio (via Delta method)
 %                   default == 'normal'
 %                   - 'Weights': optional weight vector for calculating 
 %                       weighted standard errors
@@ -41,11 +42,8 @@ function varargout = nanstderr(X, varargin)
 %
 % Used by:
 %       cd/compute_stats.m
-%       cd/plot_grouped_jitter.m
 %       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei4.m
-%       scAAV/analyze_qupath_figure2.m
-%       scAAV/analyze_qupath_figure3.m
 
 % File History:
 % 2017-12-14 Created
@@ -55,9 +53,10 @@ function varargout = nanstderr(X, varargin)
 % 2026-03-03 Added 'DataType' and 'Weights' optional arguments
 % 2026-03-03 Added statVal as a second output argument
 % 2026-03-04 Now uses mean(), std(), and sum() with the 'omitnan' option
+% 2026-03-12 Implemented 'ratio' data type using the Delta method
 
 %% Hard-coded parameters
-validDataTypes = {'normal', 'proportion'};
+validDataTypes = {'normal', 'proportion', 'ratio'};
 
 %% Default values for optional arguments
 dimDefault = [];
@@ -130,6 +129,26 @@ if isempty(weights)
             if nargout > 1
                 statVal = p;
             end
+        case 'ratio'
+            % For ratios, apply Delta method: approximate standard error from log-scale
+            logX = X;
+            logX(logX <= 0) = NaN; % Ratios must be strictly positive
+            logX = log(logX);
+            
+            % Recalculate valid observations for strictly positive elements
+            nValidLog = sum(~isnan(logX), dim);
+            
+            % Compute the geometric mean
+            gm = exp(mean(logX, dim, 'omitnan'));
+            
+            % Calculate standard error using the Delta method approximation
+            stdErrLog = std(logX, 0, dim, 'omitnan') ./ sqrt(nValidLog);
+            stdErr = gm .* stdErrLog;
+            
+            % Store the geometric mean if requested
+            if nargout > 1
+                statVal = gm;
+            end
     end
 else
     % Validate weights are same size as X or allow implicit expansion
@@ -174,6 +193,40 @@ else
             % Store the weighted proportion if requested
             if nargout > 1
                 statVal = p;
+            end
+        case 'ratio'
+            % For ratios, calculate weighted geometric stats via log-scale
+            logX = X;
+            logX(logX <= 0) = NaN; % Ratios must be strictly positive
+            logX = log(logX);
+            
+            % Re-mask NaNs for weights based on valid logX elements
+            nanMaskLog = isnan(logX) | isnan(weights);
+            weightsLog = weights;
+            weightsLog(nanMaskLog) = NaN;
+            
+            % Re-calculate weight sums for valid elements
+            wSumLog = sum(weightsLog, dim, 'omitnan');
+            wSum2Log = sum(weightsLog.^2, dim, 'omitnan');
+            
+            % Calculate the weighted mean in log-scale
+            muLog = sum(weightsLog .* logX, dim, 'omitnan') ./ wSumLog;
+            
+            % Calculate the weighted sample variance in log-scale
+            varWLog = sum(weightsLog .* (logX - muLog).^2, dim, 'omitnan') ./ (wSumLog - (wSum2Log ./ wSumLog));
+            
+            % Calculate Kish's effective sample size
+            nEffLog = (wSumLog.^2) ./ wSum2Log;
+            
+            % Compute the geometric mean
+            gm = exp(muLog);
+            
+            % Calculate standard error using the Delta method approximation
+            stdErr = gm .* sqrt(varWLog ./ nEffLog);
+            
+            % Store the geometric mean if requested
+            if nargout > 1
+                statVal = gm;
             end
     end
 end

@@ -8,6 +8,7 @@ function [idxCm, indValid, sigValid] = compute_center_of_mass(signal, varargin)
 %       [idxCm, indValid, sigValid] = compute_center_of_mass([0, 1, 2, 1, 0], 'RoundMode', 'integer')
 %       [idxCm, indValid, sigValid] = compute_center_of_mass([0, NaN, 2, NaN, 2], 'RoundMode', 'integer')
 %       [idxCm, indValid, sigValid] = compute_center_of_mass([0, NaN, 2, NaN, 2], 'RoundMode', 'valid')
+%       [idxCm, indValid, sigValid] = compute_center_of_mass([1, 1, 1], [], 'Weights', [0.5, 1, 0.5])
 %
 % Outputs:
 %       idxCm       - The calculated center of mass index
@@ -30,6 +31,9 @@ function [idxCm, indValid, sigValid] = compute_center_of_mass(signal, varargin)
 %                       'index'     - round to the nearest index within the indices vector
 %                       'valid'     - round to the nearest index that is valid
 %                   default == 'none'
+%                   - 'Weights': optional vector of weights to dot multiply with signal
+%                   must be a numeric vector of the same length as signal
+%                   default == []
 %
 % Requires:
 %       None
@@ -39,6 +43,8 @@ function [idxCm, indValid, sigValid] = compute_center_of_mass(signal, varargin)
 
 % File History:
 % 2026-02-27 Modified from qupath_get_cm.m
+% 2026-03-12 Updated to use absolute value of signal values for weighting
+% 2026-03-17 Added 'Weights' as an optional argument
 
 %% Hard-coded parameters
 validRoundModes = {'none', 'integer', 'index', 'valid'};
@@ -46,6 +52,7 @@ validRoundModes = {'none', 'integer', 'index', 'valid'};
 %% Default values for optional arguments
 indicesDefault  = [];                   % default is set during preparation
 roundModeDefault = 'none';              % default round mode
+weightsDefault = [];                    % default is no weights
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -71,14 +78,27 @@ addOptional(iP, 'indices', indicesDefault, ...
 addParameter(iP, 'RoundMode', roundModeDefault, ...
     @(x) any(validatestring(x, validRoundModes)));
 
+addParameter(iP, 'Weights', weightsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+
 % Read from the Input Parser
 parse(iP, signal, varargin{:});
 indices = iP.Results.indices;
 roundMode = validatestring(iP.Results.RoundMode, validRoundModes);
+weights = iP.Results.Weights;
 
 %% Preparation
 % Make sure signal is a column vector
 signal = signal(:);
+
+% Apply weights to the signal if provided
+if ~isempty(weights)
+    weights = weights(:);
+    if length(weights) ~= length(signal)
+        error('Weights vector must have the same length as the signal vector.');
+    end
+    signal = signal .* weights;
+end
 
 % Set default indices if empty or force as column vector
 if isempty(indices)
@@ -94,7 +114,8 @@ sigValid = signal(isValid);
 
 %% Do the job
 % Compute the raw weighted average position (center of mass)
-rawCm = sum(indValid .* sigValid) / sum(sigValid);
+% using the absolute value of the signal as weights
+rawCm = sum(indValid .* abs(sigValid)) / sum(abs(sigValid));
 
 % Apply the requested rounding mode
 switch roundMode

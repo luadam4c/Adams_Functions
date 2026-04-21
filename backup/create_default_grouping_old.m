@@ -1,16 +1,9 @@
 function varargout = create_default_grouping (varargin)
 %% Creates numeric grouping vectors and grouping labels from data, counts or original non-numeric grouping vectors
-% Usage: [grouping, uniqueGroupValues, groupingLabels, data] = ...
+% Usage: [grouping, uniqueGroupValues, groupingLabels, stats] = ...
 %                   create_default_grouping (varargin)
 % Explanation:
-%       This function processes raw data, counts, or categorical grouping
-%       information and generates a standardized, numeric grouping vector
-%       along with corresponding unique values and text labels. This allows
-%       downstream plotting functions to easily separate and categorize data
-%       consistently. It can handle varying input formats, including cell
-%       arrays, numeric matrices, and categorical strings, and provides
-%       options to linearize outputs or force them into specific matrix/vector
-%       shapes.
+%       TODO
 %
 % Example(s):
 %       [v, u, l, s] = create_default_grouping('Stats', magic(3))
@@ -18,9 +11,9 @@ function varargout = create_default_grouping (varargin)
 %       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10}, 'ToLinearize', true)
 %       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10}, 'ForceMatrixOutput', true)
 %       [v, u, l, s] = create_default_grouping('Stats', {1:5, 2:3, 6:10}, 'ForceVectorOutput', true)
-%       TODO: Fix [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
+%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
 %       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4}, 'ToLinearize', true)
-%       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4}, 'ForceMatrixOutput', true)
+%       TODO: Fix this condition: [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4}, 'ForceMatrixOutput', true)
 %       [v, u, l, s] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4}, 'ForceVectorOutput', true)
 %       [v, u, l, s] = create_default_grouping('Stats', {{1:5}, {1:3, 1:4}})
 %       [v, u, l, s] = create_default_grouping('Counts', magic(3))
@@ -30,7 +23,7 @@ function varargout = create_default_grouping (varargin)
 %       grouping            - final numeric group assignment for each data entry
 %       uniqueGroupValues   - unique grouping values
 %       groupingLabels      - final group labels
-%       data               - reorganized data array 
+%       stats               - reorganized stats array 
 %                               that is the same dimensions as grouping
 %
 % Arguments:
@@ -77,14 +70,6 @@ function varargout = create_default_grouping (varargin)
 %                                           single vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'IgnoreEmpty': whether to ignore empty cell items 
-%                                       when building unique string labels
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
-%                   - 'UseVectorCounts': whether to use the total number
-%                                       of vectors instead of unique elements
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
 %                   
 % Requires:
 %       cd/convert_to_rank.m
@@ -123,7 +108,11 @@ function varargout = create_default_grouping (varargin)
 %            Added 'ForceMatrixOutput' with default false
 % 2025-08-28 Added 'ForceVectorOutput' with default false
 % 2025-08-28 Made groupingLabelPrefix an optional argument
-% 2026-03-18 Made IgnoreEmpty and UseVectorCounts optional arguments by Gemini
+
+%% Hard-coded parameters
+% TODO: Make these optional arguments
+ignoreEmpty = true;
+useVectorCounts = false;
 
 %% Default values for optional arguments
 groupingDefault = [];           % set later
@@ -138,8 +127,6 @@ treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
 toLinearizeDefault = false;     % whether to linearize a nonvector array
 forceMatrixOutputDefault = false; % whether to force as matrix output
 forceVectorOutputDefault = false; % whether to force as vector output
-ignoreEmptyDefault = true;      % ignore empty items by default
-useVectorCountsDefault = false; % use actual values over total vector count
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -177,17 +164,13 @@ addParameter(iP, 'ForceMatrixOutput', forceMatrixOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceVectorOutput', forceVectorOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'IgnoreEmpty', ignoreEmptyDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'UseVectorCounts', useVectorCountsDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 grouping = iP.Results.Grouping;
 groupingLabels = iP.Results.GroupingLabels;
 groupingLabelPrefix = iP.Results.GroupingLabelPrefix;
-data = iP.Results.Stats;
+stats = iP.Results.Stats;
 counts = iP.Results.Counts;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
@@ -195,12 +178,10 @@ treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 toLinearize = iP.Results.ToLinearize;
 forceMatrixOutput = iP.Results.ForceMatrixOutput;
 forceVectorOutput = iP.Results.ForceVectorOutput;
-ignoreEmpty = iP.Results.IgnoreEmpty;
-useVectorCounts = iP.Results.UseVectorCounts;
 
 %% Preparation
 % If data and grouping is a cell array of cell arrays, reformat
-if iscell(data) && iscell(data{1})
+if iscell(stats) && iscell(stats{1})
     if isempty(grouping)
         [groupingReorg, ~, ~, statsReorg] = ...
             cellfun(@(x) create_default_grouping('Stats', x, ...
@@ -209,7 +190,7 @@ if iscell(data) && iscell(data{1})
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray, ...
                                 'ToLinearize', true), ...
-                    data, 'UniformOutput', false);
+                    stats, 'UniformOutput', false);
 
         [varargout{1:nargout}] = ...
             create_default_grouping('Grouping', groupingReorg, ...
@@ -226,27 +207,19 @@ if iscell(data) && iscell(data{1})
 end
 
 % Force cell array of numeric vectors as a matrix if requested
-if forceMatrixOutput
-    % Apply force_matrix to data if it contains numeric cells
-    if ~isempty(data) && (iscellnumericvector(data) || (iscell(data) && all(cellfun(@isnumeric, data(:)))))
-        data = force_matrix(data, 'TreatCellAsArray', treatCellAsArray, ...
+if forceMatrixOutput && (iscellnumericvector(stats) || iscellnumericvector(grouping))
+    [stats, grouping] = ...
+        argfun(@(x) force_matrix(x, 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
-                                'TreatCellStrAsArray', treatCellStrAsArray);
-    end
-    
-    % Apply force_matrix to grouping if it contains numeric cells
-    if ~isempty(grouping) && (iscellnumericvector(grouping) || (iscell(grouping) && all(cellfun(@isnumeric, grouping(:)))))
-        grouping = force_matrix(grouping, 'TreatCellAsArray', treatCellAsArray, ...
-                                'TreatCellNumAsArray', treatCellNumAsArray, ...
-                                'TreatCellStrAsArray', treatCellStrAsArray);
-    end
+                                'TreatCellStrAsArray', treatCellStrAsArray), ...
+                                stats, grouping);
 end
 
 %% Do the job
 if isempty(grouping)
-    if ~isempty(data)
+    if ~isempty(stats)
         % Create a grouping vector from the vector numbers
-        grouping = create_grouping_by_vectors(data, ...
+        grouping = create_grouping_by_vectors(stats, ...
                                 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray);
@@ -278,24 +251,24 @@ end
 % Linearize non-vector arrays as column vectors if requested
 %   Note: Must do this after default grouping vector creation
 if toLinearize
-    [data, grouping] = ...
+    [stats, grouping] = ...
         argfun(@(x) force_column_vector(x, 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray, ...
                                 'ToLinearize', true), ...
-                                data, grouping);
+                                stats, grouping);
 end
 
 % Concatenate everything into a single column vector if requested
 if forceVectorOutput
     % Force non-vectors as cell arrays of numeric vectors
-    [data, grouping] = ...
+    [stats, grouping] = ...
         argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
-                data, grouping);
+                stats, grouping);
     
-    % If data and grouping are cell arrays of numeric vectors, pool them
-    if iscellnumeric(data) && iscellnumeric(grouping)
-        [data, grouping] = argfun(@(x) vertcat(x{:}), data, grouping);
+    % If stats and grouping are cell arrays of numeric vectors, pool them
+    if iscellnumeric(stats) && iscellnumeric(grouping)
+        [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
     end
 end
 
@@ -332,13 +305,26 @@ if nargout >= 3
     varargout{3} = groupingLabels;
 end
 if nargout >= 4
-    varargout{4} = data;
+    varargout{4} = stats;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Force rows as a columns
+stats = force_column_vector(stats, 'IgnoreNonVectors', true, ...
+                        'TreatCellAsArray', treatCellAsArray, ...
+                        'TreatCellNumAsArray', treatCellNumAsArray, ...
+                        'TreatCellStrAsArray', treatCellStrAsArray);
+% Force rows as a columns
+counts = force_column_vector(counts, 'IgnoreNonVectors', true, ...
+                        'TreatCellAsArray', treatCellAsArray, ...
+                        'TreatCellNumAsArray', treatCellNumAsArray, ...
+                        'TreatCellStrAsArray', treatCellStrAsArray);
+
+if iscellnumeric(grouping) || isnumeric(grouping) && ~isvector(grouping)
 
 %}
 

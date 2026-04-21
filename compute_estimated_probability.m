@@ -24,8 +24,8 @@ function [estProb, lowerCI, upperCI] = compute_estimated_probability(posCounts, 
 %       fitglme() from the Statistics and Machine Learning Toolbox
 %
 % Used by:
-%       cd/m3ha_plot_figure08.m
-%       cd/m3ha_simulate_population.m
+%       scAAV/analyze_qupath_figure2.m
+%       scAAV/analyze_qupath_ddio.m
 
 % File History:
 % 2020-05-29 Created by Jeff Moore as stats_cell_counts_melogit.m

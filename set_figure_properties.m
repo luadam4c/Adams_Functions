@@ -2,7 +2,12 @@ function fig = set_figure_properties (varargin)
 %% Decides on the figure handle and sets figure properties
 % Usage: fig = set_figure_properties (varargin)
 % Explanation:
-%       TODO
+%       This function provides a unified way to retrieve or generate a figure
+%       handle and consistently apply properties like size, position, and 
+%       visibility. It prevents visual flickering by applying dimensional updates 
+%       while the figure is temporarily hidden, only displaying it once 
+%       all adjustments (such as expanding size, adjusting position for 
+%       screen boundaries, etc.) are finalized.
 %
 % Example(s):
 %       fig = set_figure_properties;
@@ -114,6 +119,7 @@ function fig = set_figure_properties (varargin)
 % 2019-09-12 Added 'ExpandFromDefault' as an optional argument
 % 2019-11-17 Fixed 'AlwaysNew' when 'FigNumber' is provided
 % 2025-10-17 Added 'ShowFigure' as an optional argument with default true
+% 2026-03-19 Fixed figure visibility issue
 % TODO: Change axes outerPosition by default?
 
 %% Hard-coded parameters
@@ -212,42 +218,71 @@ if isempty(adjustPosition)
 end
 
 %% Do the job
-% Decide on the figure handle, creating it as invisible by default
-%   if already created, make current figure visible
+% Find an existing figure, if any, to check visibility or to close
+if ~isempty(figHandle)
+    existingFig = figHandle;
+elseif ~isempty(axHandle)
+    existingFig = ancestor(axHandle, 'figure');
+elseif ~isempty(figNumber)
+    existingFig = findobj('Type', 'figure', 'Number', figNumber);
+else
+    existingFig = get(0, 'CurrentFigure');
+end
+
+% Decide whether to show the figure based on the original visibility
+if isempty(showFigure)
+    if alwaysNew
+        % New figures are visible by default
+        showFigure = true;
+    elseif ~isempty(existingFig) && strcmp(get(existingFig, 'Visible'), 'off')
+        % If existing figure is not visible, keep it that way
+        showFigure = false;
+    else
+        % If existing figure is visible, keep it that way
+        showFigure = true;
+    end        
+end
+
+% Decide on the figure handle and create it invisible if it is new
 if ~isempty(figHandle)
     fig = figHandle;
-    if showFigure
-        figure(fig);
-    end
 elseif ~isempty(figNumber)
     if alwaysNew
-        close(figure(figNumber));
+        if ~isempty(existingFig)
+            close(existingFig);
+        end
+        % Temporarily change default visibility to prevent the window from flashing
+        oldDefaultVis = get(0, 'DefaultFigureVisible');
+        set(0, 'DefaultFigureVisible', 'off');
+        fig = figure(figNumber);
+        set(0, 'DefaultFigureVisible', oldDefaultVis);
+    else
+        if isempty(existingFig)
+            % Temporarily change default visibility to prevent the window from flashing
+            oldDefaultVis = get(0, 'DefaultFigureVisible');
+            set(0, 'DefaultFigureVisible', 'off');
+            fig = figure(figNumber);
+            set(0, 'DefaultFigureVisible', oldDefaultVis);
+        else
+            fig = existingFig;
+        end
     end
-    % Create the figure but ensure it is NOT visible yet
-    fig = figure(figNumber);
-    set(fig, 'Visible', 'off');
 elseif alwaysNew
     fig = figure('Visible', 'off');
 else
     if ~isempty(axHandle)
         fig = ancestor(axHandle, 'figure');
     else
-        fig = gcf;
-
-        % If gcf creates a new figure, it will be visible by default.
-        % We should hide it immediately before proceeding.
-        set(fig, 'Visible', 'off');
+        if isempty(existingFig)
+            fig = figure('Visible', 'off');
+        else
+            fig = existingFig;
+        end
     end
 end
 
-% Decide whether to show figure
-if isempty(showFigure)
-    if ~isempty(fig) && strcmp(fig.Visible, 'off')
-        showFigure = false;
-    else
-        showFigure = true;
-    end        
-end
+% Temporarily hide the figure to prevent flickering during property updates
+set(fig, 'Visible', 'off');
 
 % Decide whether to clear figure
 if isempty(clearFigureUser)
@@ -390,9 +425,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 OLD CODE:
-
-if ~isempty(positionUser)
-    positionOld = positionUser;
 
 %}
 

@@ -28,23 +28,15 @@ function [handles, statsOut] = plot_grouped_jitter (data, varargin)
 %       condition = repmat([ones(50,1); 2*ones(50,1)], 2, 1); % Maps to X-axis
 %       plot_grouped_jitter(data, grouping, condition, ...
 %           'GroupingLabels', {'Control', 'Treatment'}, ...
-%           'XTickLabels', {'Baseline', 'Post-Stim'}, ...
-%           'StatsMode', 'withinGroupAndCond');
+%           'XTickLabels', {'Baseline', 'Post-Stim'});
 %
 %       % Example 3: Customizing limits and statistics
 %       [handles, statsOut] = plot_grouped_jitter(data, grouping, condition, ...
 %           'YLimits', [-5, 10], ...
 %           'RunTTest', true, ...
-%           'RunRankTest', false, ...
 %           'StatsMode', 'pooled', ...
 %           'PlotMeanValues', true);
 %
-%       % Example 4
-%       data = [-1; -3; 10; 49; 71; 67]; grouping = {'p1'; 'p2'; 'p3'; 'p4'; 'p5'; 'p6'}; condition = {'second'; 'second'; 'second'; 'first'; 'first'; 'first'};
-%       plot_grouped_jitter(data, grouping, condition, 'StatsMode', 'pooled');
-%       plot_grouped_jitter(data, grouping, condition, 'StatsMode', 'pooled', 'UsePlotSpread', false)
-%
-%       % Example 5
 %       randVec1 = randi(10, 10, 1);
 %       randVec2 = randi(10, 10, 1) + 10;
 %       data = [randVec1, randVec2];
@@ -53,13 +45,11 @@ function [handles, statsOut] = plot_grouped_jitter (data, varargin)
 %       plot_grouped_jitter(data, 'UsePlotSpread', false)
 %       plot_grouped_jitter(data, 'UsePlotSpread', false, 'JitterWidth', 0.5)
 %
-%       % Example 6
 %       data = [randn(50,1);randn(50,1)+3.5]*[1 1];
 %       grouping = [[ones(50,1);zeros(50,1)],[randi([0,1],[100,1])]];
 %       plot_grouped_jitter(data, grouping, 'RunTTest', true)
 %       plot_grouped_jitter(data, grouping, 'UsePlotSpread', false, 'RunRankTest', true)
 %
-%       % Example 7
 %       data = [randn(50,1);randn(50,1)+5;randn(50,1)+10;randn(50,1)+15];
 %       grouping = [ones(50,1);zeros(50,1);ones(50,1);zeros(50,1)];
 %       condition = [2*ones(50,1);2*ones(50,1);zeros(50,1);zeros(50,1)];
@@ -70,12 +60,6 @@ function [handles, statsOut] = plot_grouped_jitter (data, varargin)
 %
 % Outputs:
 %       handles     - handles to plotted objects
-%                       .ax - handle to the axes
-%                       .distributions - handles to the distributions
-%                       .stats - handles to the stats from plotSpread
-%                       .eqText - handle to the mixed effect equation text
-%                       .pText - handles to the p-value text objects
-%                       .sigMarker - handles to the significance markers
 %                   specified as a structure
 %       statsOut    - computed statistical values (means, errors, lower95s, upper95s, p-values)
 %                     for mixed effect models, also includes the model object
@@ -114,11 +98,10 @@ function [handles, statsOut] = plot_grouped_jitter (data, varargin)
 %                   default == 'normal'
 %                   - 'StatsMode': how to compute statistics for error bars and p-values
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'withinGroup'        - tests run for each group separately across conditions
-%                       'withinGroupAndCond' - tests run for each group separately across conditions, AND across groups within each condition
-%                       'pooled'             - groups are pooled together for one general test
-%                       'mixedEffect'        - mixed effect model accounting for correlated 
-%                                              observations within each group
+%                       'withinGroup'   - tests run for each group separately
+%                       'pooled'        - groups are pooled together for one general test
+%                       'mixedEffect'   - mixed effect model accounting for correlated 
+%                                         observations within each group
 %                   default == 'withinGroup'
 %                   - 'ErrorBarType': type of statistic to calculate for error bars
 %                   must be an unambiguous, case-insensitive match to one of:
@@ -152,9 +135,6 @@ function [handles, statsOut] = plot_grouped_jitter (data, varargin)
 %                   - 'JitterWidth': width of the jitter
 %                   must be a non-negative scalar
 %                   default == [] (plotSpread default) or 0.3 (manual plot)
-%                   - 'OffsetGroups': whether to offset groups along the x-axis
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true if StatsMode is 'withinGroup' or 'withinGroupAndCond', false otherwise
 %                   - 'PlotMeanValues': whether to plot the mean values
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -284,24 +264,18 @@ function [handles, statsOut] = plot_grouped_jitter (data, varargin)
 % 2026-03-20 Fixed unrecognized field name bug, dynamically sets p-value colors, and prevents text overlap by Gemini
 % 2026-03-20 Now allows asymmetric error bars by Gemini
 % 2026-03-20 Updated p-values to use normalized units so they update with y-axis limits, and removed pooledStatColor to rely on default test colors
-% 2026-03-22 Aligned group points and means, separated by jitter width, and added comparison lines by Gemini
-% 2026-03-22 Removed set_graphics_color and delegated color/position logic to plot_test_result.m
-% 2026-03-22 Now outputs plot_test_result.m and plot_text.m graphic handles directly
-% 2026-03-24 Added 'OffsetGroups' optional argument by Gemini
 
-%% Add withinGroupAndCond to valid stats modes
 %% Define hard-coded parameters for the function
 validDataTypes = {'normal', 'proportion', 'ratio'};
 validErrorBarTypes = {'err95', 'stderr'};
 validGroupingOrders = {'original', 'bycondition'};
-validStatsModes = {'withinGroup', 'pooled', 'mixedEffect', 'withinGroupAndCond'};
-defaultJitterWidthNotPlotSpread = 0.3;
-
-%% TODO: Make the following optional arguments
+validStatsModes = {'withinGroup', 'pooled', 'mixedEffect'};
 maxNGroupsForInnerLegend = 8;
 maxNGroupsForOuterLegends = 25;
-forceVectorInput = true;
+forceVectorInput = true;       % Consider making this into an optional argument
+defaultJitterWidthNotPlotSpread = 0.3;
 xTickLimitPadding = 0.5;
+groupMeanSpreadWidth = 0.4;
 pooledStatColor = 'k';
 statTextYPosStepSize = 0.1;
 statStarYLocOffset = 0.05;
@@ -319,7 +293,6 @@ upper95sDefault = [];
 lower95sDefault = [];
 usePlotSpreadDefault = [];      % set later
 jitterWidthDefault = [];        % set later
-offsetGroupsDefault = [];       % set later based on statsMode
 plotMeanValuesDefault = true;
 plotErrorBarsDefault = true;
 statsModeDefault = 'withinGroup';
@@ -391,8 +364,6 @@ addParameter(iP, 'UsePlotSpread', usePlotSpreadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'JitterWidth', jitterWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
-addParameter(iP, 'OffsetGroups', offsetGroupsDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMeanValues', plotMeanValuesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotErrorBars', plotErrorBarsDefault, ...
@@ -457,7 +428,6 @@ upper95s = iP.Results.Upper95s;
 lower95s = iP.Results.Lower95s;
 usePlotSpread = iP.Results.UsePlotSpread;
 jitterWidth = iP.Results.JitterWidth;
-offsetGroups = iP.Results.OffsetGroups;
 plotMeanValues = iP.Results.PlotMeanValues;
 plotErrorBars = iP.Results.PlotErrorBars;
 statsMode = validatestring(iP.Results.StatsMode, validStatsModes);
@@ -579,54 +549,6 @@ nGroups = numel(uniqueGroupValues);
 % Count the total number of data points
 nPoints = numel(data);
 
-% Determine maximum groups per condition to see if shifting is necessary
-maxGroupsPerCond = 1;
-for iCond = 1:nConditions
-    condVal = uniqueConditionValues(iCond);
-    numGrp = numel(unique(grouping(condition == condVal)));
-    if numGrp > maxGroupsPerCond
-        maxGroupsPerCond = numGrp;
-    end
-end
-
-% Decide whether to offset groups based on statsMode if not explicitly provided
-if isempty(offsetGroups)
-    if startsWith(statsMode, 'withinGroup', 'IgnoreCase', true)
-        offsetGroups = true;
-    else
-        offsetGroups = false;
-    end
-end
-
-% Determine group offsets for x-axis to align clusters and prevent overlap based on jitter width
-groupOffsets = zeros(nGroups, 1);
-if maxGroupsPerCond > 1 && offsetGroups
-    % Fallback to default jitter width for spacing if jitterWidth is empty (e.g. plotSpread defaults)
-    if isempty(jitterWidth)
-        actualJitterWidth = defaultJitterWidthNotPlotSpread;
-    else
-        actualJitterWidth = jitterWidth;
-    end
-    groupSpacing = actualJitterWidth * 1.1;
-    
-    % Calculate total desired spread
-    totalSpread = groupSpacing * (nGroups - 1);
-    
-    % Capping the total spread to 0.8 to strictly prevent overlapping into adjacent condition spaces
-    if totalSpread > 0.8
-        totalSpread = 0.8;
-    end
-    
-    groupOffsets = linspace(-totalSpread/2, totalSpread/2, nGroups)';
-end
-
-% Create a shifted condition array to separate groups horizontally
-conditionShifted = zeros(size(condition));
-for iGroup = 1:nGroups
-    isCurrentGroup = (grouping == uniqueGroupValues(iGroup));
-    conditionShifted(isCurrentGroup) = condition(isCurrentGroup) + groupOffsets(iGroup);
-end
-
 % Decide whether to update the x tick locations
 if ischar(xTickLocs) && (strcmpi(xTickLocs, 'suppress') || strcmpi(xTickLocs, 'suppressed'))
     toUpdateXTicks = false;
@@ -705,12 +627,11 @@ wasHold = hold_on(axHandle);
 if usePlotSpread
     % Prevent plotSpread from plotting its own means if we are plotting custom ones
     if plotMeanValues || plotErrorBars
-        % Force otherArguments to be a row cell array to prevent dimension mismatch during concatenation
-        otherArguments = [otherArguments(:)', {'showMM', 0}];
+        otherArguments = [otherArguments, {'showMM', 0}];
     end
 
-    % Call plotSpread to plot the swarm plot using the shifted condition array
-    output = plotSpread(axHandle, data, 'distributionIdx', conditionShifted, ...
+    % Call plotSpread to plot the swarm plot
+    output = plotSpread(axHandle, data, 'distributionIdx', condition, ...
                             'categoryIdx', grouping, ...
                             'categoryLabels', groupingLabels, ...
                             'categoryColors', colorMap, ...
@@ -724,14 +645,9 @@ if usePlotSpread
     handles.distributions = distributions;
     handles.stats = stats;
     handles.ax = ax;
-    
-    % Initialize output graphic handles tracking lists
-    handles.eqText = gobjects(0);
-    handles.pText = gobjects(0);
-    handles.sigMarker = gobjects(0);
 else
-    % Give each shifted condition index some jitter for plotting
-    conditionWithJitter = conditionShifted + (jitterWidth * (rand(nPoints, 1) - 0.5));
+    % Give each condition index some jitter for plotting
+    conditionWithJitter = condition + (jitterWidth * (rand(nPoints, 1) - 0.5));
 
     % Pre-allocate a graphics object array for plot handles
     distributions = gobjects(nGroups, 1);
@@ -764,11 +680,6 @@ else
     handles.ax = axHandle;
     handles.distributions = distributions;
     handles.stats = [];
-    
-    % Initialize output graphic handles tracking lists
-    handles.eqText = gobjects(0);
-    handles.pText = gobjects(0);
-    handles.sigMarker = gobjects(0);
 end
 
 %% Finalize main plot
@@ -823,9 +734,8 @@ if ~strcmpi(legendLocation, 'suppress')
 end
 
 %% Initialize statistics output structure
-%% Check for withinGroup variations to allocate accordingly
 statsOut = struct();
-if startsWith(statsMode, 'withinGroup', 'IgnoreCase', true)
+if strcmpi(statsMode, 'withinGroup')
     statsOut.means = NaN(nGroups, nConditions);
     statsOut.errors = NaN(nGroups, nConditions);
     statsOut.lower95s = NaN(nGroups, nConditions);
@@ -869,7 +779,6 @@ if strcmpi(statsMode, 'mixedEffect')
 end
 
 %% Plot statistics
-%% Adapt checking logic to encompass the combined within group/cond mode
 % Plot means and error bars for each condition and store them regardless of plotting if an output arg is expected
 if plotMeanValues || plotErrorBars || nargout > 1
     % Loop through each condition to plot statistics
@@ -887,7 +796,7 @@ if plotMeanValues || plotErrorBars || nargout > 1
         end
         
         % Check if statistics should be plotted by group
-        if startsWith(statsMode, 'withinGroup', 'IgnoreCase', true)
+        if strcmpi(statsMode, 'withinGroup')
             % Separate by group for the current condition
             groupingThisCond = grouping(isCurrentCond);
             groupsInThisCond = unique(groupingThisCond);
@@ -907,11 +816,12 @@ if plotMeanValues || plotErrorBars || nargout > 1
                     weightsByGroup = cell(size(groupsInThisCond));
                 end
 
-                % Calculate the x-axis positions for the group means based on computed group offsets
-                xMeanPositions = zeros(nGroupsInThisCond, 1);
-                for iGroup = 1:nGroupsInThisCond
-                    actualGroupIdx = find(uniqueGroupValues == groupsInThisCond(iGroup));
-                    xMeanPositions(iGroup) = currentCondValue + groupOffsets(actualGroupIdx);
+                % Calculate the x-axis positions for the group means
+                if nGroupsInThisCond == 1
+                    xMeanPositions = currentCondValue;
+                else
+                    offsets = linspace(-groupMeanSpreadWidth/2, groupMeanSpreadWidth/2, nGroupsInThisCond);
+                    xMeanPositions = currentCondValue + offsets;
                 end
 
                 % Loop through and plot statistics for each group
@@ -1047,7 +957,6 @@ if plotMeanValues || plotErrorBars || nargout > 1
 end
 
 %% Evaluate tests and plot equations
-%% Calculates proper offset boundaries for condition comparisons and group comparisons seamlessly
 % Determine if we have a mixed effect equation to plot
 hasMixedEffectEq = strcmpi(statsMode, 'mixedEffect') && mixedEffectSuccess && ~isempty(mixedEffectEquation);
 eqOffset = 0;
@@ -1055,14 +964,11 @@ if hasMixedEffectEq
     eqOffset = 1;
 end
 
-% Set up common check for within-group modes
-isWithinGroupMode = startsWith(statsMode, 'withinGroup', 'IgnoreCase', true);
-
 % Run statistical tests across conditions or against null hypotheses
 if (runTTest || runRankTest) || hasMixedEffectEq
     % Check if each group only has a single condition
     isSingleConditionPerGroup = false;
-    if isWithinGroupMode
+    if strcmpi(statsMode, 'withinGroup')
         nConditionsPerGroup = arrayfun(@(x) numel(unique(condition(grouping == x))), uniqueGroupValues);
         if all(nConditionsPerGroup == 1)
             isSingleConditionPerGroup = true;
@@ -1075,28 +981,10 @@ if (runTTest || runRankTest) || hasMixedEffectEq
     
     % Calculate the total number of lines to reserve at the top of the plot
     numTestsToRun = runTTest + runRankTest;
-    
-    % Reserve lines for between-condition tests
-    linesForCondTests = 0;
-    if nConditions >= 2 && ~isSingleConditionPerGroup 
-        if isWithinGroupMode
-            linesForCondTests = numTestsToRun * nGroups;
-        else
-            linesForCondTests = numTestsToRun;
-        end
-    elseif nConditions == 1 || isSingleConditionPerGroup
-        % For 1-sample tests
-        linesForCondTests = numTestsToRun;
+    if nConditions >= 2 && ~isSingleConditionPerGroup && strcmpi(statsMode, 'withinGroup')
+        numTestsToRun = numTestsToRun * nGroups;
     end
-    
-    % Reserve lines for between-group tests (when comparing adjacent groups within conditions)
-    linesForGroupTests = 0;
-    if strcmpi(statsMode, 'withinGroupAndCond') && nGroups >= 2
-        linesForGroupTests = numTestsToRun * (nGroups - 1);
-    end
-    
-    % Tally the grand total of lines to shift plot limits
-    numLinesAtTop = linesForCondTests + linesForGroupTests + eqOffset;
+    numLinesAtTop = numTestsToRun + eqOffset;
 
     % Scale the y-axis if space is needed
     if numLinesAtTop > 0
@@ -1120,9 +1008,8 @@ if (runTTest || runRankTest) || hasMixedEffectEq
     end
 
     % Plot the fitted equation on the plot after y limits are finalized to prevent overlap
-    % and store the returned text handle
     if hasMixedEffectEq
-        handles.eqText = plot_text(mixedEffectEquation, 'TextLocation', 'topleft', 'AxesHandle', handles.ax);
+        plot_text(mixedEffectEquation, 'TextLocation', 'topleft', 'AxesHandle', handles.ax);
     end
 
     % Only proceed to evaluating stats if tests were requested
@@ -1150,21 +1037,13 @@ if (runTTest || runRankTest) || hasMixedEffectEq
             testParams.colorMap = colorMap;
             testParams.mixedEffectPValues = mixedEffectPValues;
             testParams.axHandle = handles.ax;
-            testParams.groupOffsets = groupOffsets;
-            testParams.isWithinGroupMode = isWithinGroupMode;
             
             % Iterate through each pair of conditions and plot statistics
-            [~, pTsOut, pRsOut, hTestsOut] = arrayfun(@(idx) evaluate_and_plot_2sample_tests(cond1Values(idx), cond2Values(idx), idx, testParams), (1:length(cond1Values))', 'UniformOutput', false);
+            [~, pTsOut, pRsOut] = arrayfun(@(idx) evaluate_and_plot_2sample_tests(cond1Values(idx), cond2Values(idx), idx, testParams), (1:length(cond1Values))', 'UniformOutput', false);
 
             % Store the concatenated p-values into the stats output structure
             statsOut.pValueT = cat(2, pTsOut{:});
             statsOut.pValueR = cat(2, pRsOut{:});
-
-            % Accumulate graphic handles from 2-sample tests
-            for iTest = 1:numel(hTestsOut)
-                handles.pText = [handles.pText; hTestsOut{iTest}.pText(:)];
-                handles.sigMarker = [handles.sigMarker; hTestsOut{iTest}.sigMarker(:)];
-            end
 
         elseif nConditions == 1 || isSingleConditionPerGroup
             % Single condition testing against a null hypothesis
@@ -1174,7 +1053,7 @@ if (runTTest || runRankTest) || hasMixedEffectEq
             yRelR = 1 - statTextYPosStepSize * (1 + runTTest + eqOffset);
             
             % Pre-allocate outputs for 1-sample tests
-            if isWithinGroupMode
+            if strcmpi(statsMode, 'withinGroup')
                 statsOut.pValueT = NaN(nGroups, 1);
                 statsOut.pValueR = NaN(nGroups, 1);
             else
@@ -1183,7 +1062,7 @@ if (runTTest || runRankTest) || hasMixedEffectEq
             end
             
             % Execute tests separated by group
-            if isWithinGroupMode
+            if strcmpi(statsMode, 'withinGroup')
                 % Loop through each group and test separately
                 for iGroup = 1:nGroups
                     % Extract the value for the current group
@@ -1218,7 +1097,17 @@ if (runTTest || runRankTest) || hasMixedEffectEq
                     groupColor = colorMap{iGroup};
 
                     % Calculate the x-axis position for the group stat to align exactly with the jitter spread
-                    xPosText = condValue + groupOffsets(iGroup);
+                    if nConditions == 1
+                        if nGroups == 1
+                            xPosText = condValue;
+                        else
+                            offsets = linspace(-groupMeanSpreadWidth/2, groupMeanSpreadWidth/2, nGroups);
+                            xPosText = condValue + offsets(iGroup);
+                        end
+                    else
+                        % For isSingleConditionPerGroup, each group has its own distinct condition
+                        xPosText = condValue;
+                    end
 
                     % Run and plot parametric test if requested
                     if runTTest && ~isnan(pT)
@@ -1226,12 +1115,13 @@ if (runTTest || runRankTest) || hasMixedEffectEq
                                     'XLocText', xPosText, 'XLocStar', xPosText, ...
                                     'YLocTextRel', yRelT, 'YLocStarRel', yRelT + statStarYLocOffset, ...
                                     'SigLevel', sigLevel, 'IsAppropriate', isAppropriateForTTest, ...
-                                    'ColorSignificant', groupColor, ...
                                     'AxesHandle', handles.ax);
 
-                        % Accumulate returned handles into the main handles structure
-                        handles.pText = [handles.pText; hT.pText(:)];
-                        handles.sigMarker = [handles.sigMarker; hT.sigMarker(:)];
+                        % Maintain relative vertical position when axes limits change
+                        set([hT.pText; hT.sigMarker], 'Units', 'normalized');
+
+                        % Set the colors dynamically to prevent field name errors
+                        set_graphics_color(hT, groupColor);
                     end
 
                     % Run and plot non-parametric test if requested
@@ -1240,12 +1130,13 @@ if (runTTest || runRankTest) || hasMixedEffectEq
                                     'XLocText', xPosText, 'XLocStar', xPosText, ...
                                     'YLocTextRel', yRelR, 'YLocStarRel', yRelR + statStarYLocOffset, ...
                                     'SigLevel', sigLevel, 'IsAppropriate', ~isAppropriateForTTest, ...
-                                    'ColorSignificant', groupColor, ...
                                     'AxesHandle', handles.ax);
 
-                        % Accumulate returned handles into the main handles structure
-                        handles.pText = [handles.pText; hR.pText(:)];
-                        handles.sigMarker = [handles.sigMarker; hR.sigMarker(:)];
+                        % Maintain relative vertical position when axes limits change
+                        set([hR.pText; hR.sigMarker], 'Units', 'normalized');
+
+                        % Set the colors dynamically to prevent field name errors
+                        set_graphics_color(hR, groupColor);
                     end
                 end
             else
@@ -1279,10 +1170,9 @@ if (runTTest || runRankTest) || hasMixedEffectEq
                                     'YLocTextRel', yRelT, 'YLocStarRel', yRelT + statStarYLocOffset, ...
                                     'SigLevel', sigLevel, 'IsAppropriate', isAppropriateForTTest, ...
                                     'AxesHandle', handles.ax);
-
-                        % Accumulate returned handles into the main handles structure
-                        handles.pText = [handles.pText; hT.pText(:)];
-                        handles.sigMarker = [handles.sigMarker; hT.sigMarker(:)];
+                        
+                        % Maintain relative vertical position when axes limits change
+                        set([hT.pText; hT.sigMarker], 'Units', 'normalized');
                     end
 
                     % Run and plot non-parametric test if requested
@@ -1292,46 +1182,11 @@ if (runTTest || runRankTest) || hasMixedEffectEq
                                     'YLocTextRel', yRelR, 'YLocStarRel', yRelR + statStarYLocOffset, ...
                                     'SigLevel', sigLevel, 'IsAppropriate', ~isAppropriateForTTest, ...
                                     'AxesHandle', handles.ax);
-
-                        % Accumulate returned handles into the main handles structure
-                        handles.pText = [handles.pText; hR.pText(:)];
-                        handles.sigMarker = [handles.sigMarker; hR.sigMarker(:)];
+                        
+                        % Maintain relative vertical position when axes limits change
+                        set([hR.pText; hR.sigMarker], 'Units', 'normalized');
                     end
                 end
-            end
-        end
-
-        % Evaluate tests across adjacent groups within the same condition when requested
-        if strcmpi(statsMode, 'withinGroupAndCond') && nGroups >= 2
-            % Pass parameters down
-            testParams.data = data;
-            testParams.condition = condition;
-            testParams.grouping = grouping;
-            testParams.uniqueGroupValues = uniqueGroupValues;
-            testParams.nGroups = nGroups;
-            testParams.runTTest = runTTest;
-            testParams.runRankTest = runRankTest;
-            testParams.dataType = dataType;
-            testParams.sigLevel = sigLevel;
-            testParams.yLims = yLims;
-            testParams.eqOffset = eqOffset;
-            testParams.statTextYPosStepSize = statTextYPosStepSize;
-            testParams.statStarYLocOffset = statStarYLocOffset;
-            testParams.axHandle = handles.ax;
-            testParams.groupOffsets = groupOffsets;
-            testParams.linesForCondTests = linesForCondTests;
-            
-            % Iterate through conditions and test adjacent groups
-            [~, pTsBgOut, pRsBgOut, hTestsBgOut] = arrayfun(@(idx) evaluate_and_plot_2sample_groups_within_cond(uniqueConditionValues(idx), idx, testParams), (1:length(uniqueConditionValues))', 'UniformOutput', false);
-
-            % Export between-group comparisons natively out to stats structure
-            statsOut.pValueT_betweenGroups = cat(2, pTsBgOut{:});
-            statsOut.pValueR_betweenGroups = cat(2, pRsBgOut{:});
-
-            % Accumulate graphic handles from between-group tests
-            for iTest = 1:numel(hTestsBgOut)
-                handles.pText = [handles.pText; hTestsBgOut{iTest}.pText(:)];
-                handles.sigMarker = [handles.sigMarker; hTestsBgOut{iTest}.sigMarker(:)];
             end
         end
     end
@@ -1342,15 +1197,12 @@ hold_off(wasHold, axHandle);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [status, pTs, pRs, hTestOut] = evaluate_and_plot_2sample_tests(cond1Value, cond2Value, pairIdx, p)
+function [status, pTs, pRs] = evaluate_and_plot_2sample_tests(cond1Value, cond2Value, pairIdx, p)
 %% Evaluates and plots 2-sample tests for a given pair of conditions
 
 % Initialize dummy status variable and pre-allocate outputs
 status = true;
-hTestOut.pText = gobjects(0, 1);
-hTestOut.sigMarker = gobjects(0, 1);
-
-if p.isWithinGroupMode
+if strcmpi(p.statsMode, 'withinGroup')
     pTs = NaN(p.nGroups, 1);
     pRs = NaN(p.nGroups, 1);
 else
@@ -1362,8 +1214,11 @@ end
 yRange = diff(p.yLims);
 yPos = p.yLims(2) - p.eqOffset * p.statTextYPosStepSize * yRange; 
 
+% Define x-position for the text
+xPosText = mean([cond1Value, cond2Value]);
+
 % Execute tests separated by group
-if p.isWithinGroupMode
+if strcmpi(p.statsMode, 'withinGroup')
     % Loop through each group and test separately
     for iGroup = 1:p.nGroups
         % Extract the value for the current group
@@ -1388,11 +1243,6 @@ if p.isWithinGroupMode
         % Get the color for this group
         groupColor = p.colorMap{iGroup};
 
-        % Calculate x locations for the two conditions being compared to connect lines
-        xLoc1 = cond1Value + p.groupOffsets(iGroup);
-        xLoc2 = cond2Value + p.groupOffsets(iGroup);
-        xPosText = mean([xLoc1, xLoc2]);
-
         % Run and plot parametric test if requested
         if p.runTTest && ~isnan(pT)
             % Calculate relative Y position for the parametric test text
@@ -1404,16 +1254,13 @@ if p.isWithinGroupMode
                         'XLocText', xPosText, 'XLocStar', xPosText, ...
                         'YLocTextRel', yRel, 'YLocStarRel', yRel + p.statStarYLocOffset, ...
                         'SigLevel', p.sigLevel, 'IsAppropriate', isAppropriateForTTest, ...
-                        'ColorSignificant', groupColor, ...
                         'AxesHandle', p.axHandle);
 
-            % Accumulate returned handles into the local handles structure
-            hTestOut.pText = [hTestOut.pText; hT.pText(:)];
-            hTestOut.sigMarker = [hTestOut.sigMarker; hT.sigMarker(:)];
+            % Maintain relative vertical position when axes limits change
+            set([hT.pText; hT.sigMarker], 'Units', 'normalized');
 
-            % Draw a horizontal line below the p-value text to show which conditions are compared
-            yLineData = yPos - 0.015 * yRange;
-            plot(p.axHandle, [xLoc1, xLoc2], [yLineData, yLineData], 'Color', groupColor, 'LineWidth', 1, 'HandleVisibility', 'off');
+            % Set the colors dynamically to prevent field name errors
+            set_graphics_color(hT, groupColor);
         end
 
         % Run and plot non-parametric test if requested
@@ -1427,16 +1274,13 @@ if p.isWithinGroupMode
                         'XLocText', xPosText, 'XLocStar', xPosText, ...
                         'YLocTextRel', yRel, 'YLocStarRel', yRel + p.statStarYLocOffset, ...
                         'SigLevel', p.sigLevel, 'IsAppropriate', ~isAppropriateForTTest, ...
-                        'ColorSignificant', groupColor, ...
                         'AxesHandle', p.axHandle);
 
-            % Accumulate returned handles into the local handles structure
-            hTestOut.pText = [hTestOut.pText; hR.pText(:)];
-            hTestOut.sigMarker = [hTestOut.sigMarker; hR.sigMarker(:)];
+            % Maintain relative vertical position when axes limits change
+            set([hR.pText; hR.sigMarker], 'Units', 'normalized');
 
-            % Draw a horizontal line below the p-value text to show which conditions are compared
-            yLineData = yPos - 0.015 * yRange;
-            plot(p.axHandle, [xLoc1, xLoc2], [yLineData, yLineData], 'Color', groupColor, 'LineWidth', 1, 'HandleVisibility', 'off');
+            % Set the colors dynamically to prevent field name errors
+            set_graphics_color(hR, groupColor);
         end
     end
 else
@@ -1446,11 +1290,6 @@ else
     cond1Data = p.data(cond1Mask);
     cond2Data = p.data(cond2Mask);
     
-    % Calculate x locations for the two conditions being compared for drawing the connecting lines
-    xLoc1 = cond1Value;
-    xLoc2 = cond2Value;
-    xPosText = mean([xLoc1, xLoc2]);
-
     % Execute tests if both conditions have data
     if ~isempty(cond1Data) && ~isempty(cond2Data)
         % Evaluate metrics using subfunction 
@@ -1478,14 +1317,9 @@ else
                         'YLocTextRel', yRel, 'YLocStarRel', yRel + p.statStarYLocOffset, ...
                         'SigLevel', p.sigLevel, 'IsAppropriate', isAppropriateForTTest, ...
                         'AxesHandle', p.axHandle);
-
-            % Accumulate returned handles into the local handles structure
-            hTestOut.pText = [hTestOut.pText; hT.pText(:)];
-            hTestOut.sigMarker = [hTestOut.sigMarker; hT.sigMarker(:)];
-
-            % Draw a horizontal line below the p-value text to show which conditions are compared
-            yLineData = yPos - 0.015 * yRange;
-            plot(p.axHandle, [xLoc1, xLoc2], [yLineData, yLineData], 'Color', 'k', 'LineWidth', 1, 'HandleVisibility', 'off');
+            
+            % Maintain relative vertical position when axes limits change
+            set([hT.pText; hT.sigMarker], 'Units', 'normalized');
         end
 
         % Run and plot non-parametric test if requested
@@ -1500,104 +1334,10 @@ else
                         'YLocTextRel', yRel, 'YLocStarRel', yRel + p.statStarYLocOffset, ...
                         'SigLevel', p.sigLevel, 'IsAppropriate', ~isAppropriateForTTest, ...
                         'AxesHandle', p.axHandle);
-
-            % Accumulate returned handles into the local handles structure
-            hTestOut.pText = [hTestOut.pText; hR.pText(:)];
-            hTestOut.sigMarker = [hTestOut.sigMarker; hR.sigMarker(:)];
-
-            % Draw a horizontal line below the p-value text to show which conditions are compared
-            yLineData = yPos - 0.015 * yRange;
-            plot(p.axHandle, [xLoc1, xLoc2], [yLineData, yLineData], 'Color', 'k', 'LineWidth', 1, 'HandleVisibility', 'off');
+            
+            % Maintain relative vertical position when axes limits change
+            set([hR.pText; hR.sigMarker], 'Units', 'normalized');
         end
-    end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [status, pTs, pRs, hTestOut] = evaluate_and_plot_2sample_groups_within_cond(condValue, condIdx, p)
-%% Evaluates and plots 2-sample tests between adjacent groups within a given condition
-
-% Initialize dummy status variable and pre-allocate outputs
-status = true;
-hTestOut.pText = gobjects(0, 1);
-hTestOut.sigMarker = gobjects(0, 1);
-
-pTs = NaN(p.nGroups - 1, 1);
-pRs = NaN(p.nGroups - 1, 1);
-
-% Set the initial baseline for y positions depending on the previously established limits and offsets 
-yRange = diff(p.yLims);
-yPos = p.yLims(2) - (p.eqOffset + p.linesForCondTests) * p.statTextYPosStepSize * yRange; 
-
-% Loop through adjacent groups and test separately
-for iGroup = 1:p.nGroups-1
-    % Extract the values for the two groups
-    g1Val = p.uniqueGroupValues(iGroup);
-    g2Val = p.uniqueGroupValues(iGroup+1);
-    
-    % Get data for the two groups in the current condition
-    group1Data = p.data((p.grouping == g1Val) & (p.condition == condValue));
-    group2Data = p.data((p.grouping == g2Val) & (p.condition == condValue));
-
-    % Skip testing if data is missing for either group
-    if isempty(group1Data) || isempty(group2Data)
-        continue; 
-    end
-
-    % Evaluate metrics using subfunction 
-    [pT, pR, isAppropriateForTTest] = compute_2sample_stats(group1Data, group2Data, p.dataType);
-    
-    % Store group p-values
-    pTs(iGroup) = pT;
-    pRs(iGroup) = pR;
-
-    % Calculate x locations for the two groups being compared to connect lines
-    xLoc1 = condValue + p.groupOffsets(iGroup);
-    xLoc2 = condValue + p.groupOffsets(iGroup+1);
-    xPosText = mean([xLoc1, xLoc2]);
-
-    % Run and plot parametric test if requested
-    if p.runTTest && ~isnan(pT)
-        % Calculate relative Y position for the parametric test text
-        yPos = yPos - p.statTextYPosStepSize * yRange; 
-        yRel = (yPos - p.yLims(1)) / yRange;
-        
-        % Plot the parametric test result
-        hT = plot_test_result(pT, 'PString', 'p_t', ...
-                    'XLocText', xPosText, 'XLocStar', xPosText, ...
-                    'YLocTextRel', yRel, 'YLocStarRel', yRel + p.statStarYLocOffset, ...
-                    'SigLevel', p.sigLevel, 'IsAppropriate', isAppropriateForTTest, ...
-                    'AxesHandle', p.axHandle);
-
-        % Accumulate returned handles into the local handles structure
-        hTestOut.pText = [hTestOut.pText; hT.pText(:)];
-        hTestOut.sigMarker = [hTestOut.sigMarker; hT.sigMarker(:)];
-
-        % Draw a horizontal line below the p-value text to show which groups are compared
-        yLineData = yPos - 0.015 * yRange;
-        plot(p.axHandle, [xLoc1, xLoc2], [yLineData, yLineData], 'Color', 'k', 'LineWidth', 1, 'HandleVisibility', 'off');
-    end
-
-    % Run and plot non-parametric test if requested
-    if p.runRankTest && ~isnan(pR)
-        % Calculate relative Y position for the non-parametric test text
-        yPos = yPos - p.statTextYPosStepSize * yRange; 
-        yRel = (yPos - p.yLims(1)) / yRange;
-
-        % Plot the non-parametric test result
-        hR = plot_test_result(pR, 'PString', 'p_r', ...
-                    'XLocText', xPosText, 'XLocStar', xPosText, ...
-                    'YLocTextRel', yRel, 'YLocStarRel', yRel + p.statStarYLocOffset, ...
-                    'SigLevel', p.sigLevel, 'IsAppropriate', ~isAppropriateForTTest, ...
-                    'AxesHandle', p.axHandle);
-
-        % Accumulate returned handles into the local handles structure
-        hTestOut.pText = [hTestOut.pText; hR.pText(:)];
-        hTestOut.sigMarker = [hTestOut.sigMarker; hR.sigMarker(:)];
-
-        % Draw a horizontal line below the p-value text to show which groups are compared
-        yLineData = yPos - 0.015 * yRange;
-        plot(p.axHandle, [xLoc1, xLoc2], [yLineData, yLineData], 'Color', 'k', 'LineWidth', 1, 'HandleVisibility', 'off');
     end
 end
 
@@ -1929,6 +1669,33 @@ switch lower(dataType)
                 pR = NaN; % Fallback if exact testing fails computation matrix criteria
             end
         end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function set_graphics_color(hObj, objColor)
+%% Sets the color property dynamically for a graphics object or a structure of objects
+
+% Check if the input object is a structure
+if isstruct(hObj)
+    % Retrieve all field names from the structure
+    objFields = fieldnames(hObj);
+    
+    % Loop through each field to find valid graphics objects
+    for iField = 1:numel(objFields)
+        % Extract contents of the current field
+        currentField = hObj.(objFields{iField});
+        
+        % Check if the field contains graphic components
+        if all(isgraphics(currentField)) && ~isempty(currentField)
+            % Override the color property using the provided color
+            set(currentField, 'Color', objColor);
+        end
+    end
+% Check if the input object directly holds graphic elements
+elseif all(isgraphics(hObj)) && ~isempty(hObj)
+    % Override the color property using the provided color
+    set(hObj, 'Color', objColor);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

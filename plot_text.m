@@ -1,6 +1,6 @@
-function [htext] = plot_text (textStr, varargin)
+function htext = plot_text (textStr, varargin)
 %% Plots a text string on an axes
-% Usage: [htext] = plot_text (textStr, varargin)
+% Usage: htext = plot_text (textStr, varargin)
 % Explanation:
 %       This function plots a text string on a specified or current axes.
 %       If a cell array of strings is provided, it concatenates them with a
@@ -69,6 +69,7 @@ function [htext] = plot_text (textStr, varargin)
 %
 % Used by:
 %       cd/plot_correlation_coefficient.m
+%       cd/plot_grouped_jitter.m
 %       cd/plot_regression_line.m
 
 % File History:

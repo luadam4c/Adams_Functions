@@ -67,9 +67,10 @@ function handles = plot_traces (tVecs, data, varargin)
 %                   default == false
 %                   - 'PlotMode': plotting mode for multiple traces
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'parallel'      - in parallel in subPlots
-%                       'overlapped'    - overlapped in a single plot
-%                       'staggered'     - staggered in a single plot
+%                       'parallel'   - in parallel in subPlots
+%                       'overlapped' - overlapped in a single plot
+%                       'averaged'   - averaged trace with confidence interval
+%                       'staggered'  - staggered in a single plot
 %                   default == 'overlapped'
 %                   - 'SubplotOrder': ordering of subplots
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -286,6 +287,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/apply_iteratively.m
 %       cd/argfun.m
 %       cd/compute_axis_limits.m
+%       cd/compute_stats.m
 %       cd/count_vectors.m
 %       cd/create_subplots.m
 %       cd/create_error_for_nargin.m
@@ -390,6 +392,8 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2025-09-13 Moved code to resize_subplots_for_labels.m
 % 2025-09-15 Added 'TightInset' and 'CenterPosition' as optional arguments
 % 2025-10-17 Fixed axes associations
+% 2026-03-11 Now uses compute_stats for 95% confidence intervals
+% 2026-03-20 Now ignores NaN when computing averaged trace
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -1223,7 +1227,6 @@ case {'overlapped', 'staggered', 'averaged'}
         % Add offsets to horizontal bar y values
         horzBarYValues = yOffsets + horzBarYValues;
     else
-        yOffsets = [];
         yTickLocs = [];
         yTickLabels = {};
     end
@@ -1242,21 +1245,15 @@ case {'overlapped', 'staggered', 'averaged'}
         dataToCompare = force_matrix(dataToCompare, 'AlignMethod', 'leftAdjustPad');
 
         % Compute averages
-        tVecAvg = mean(tVecs, 2);
-        meanData = mean(data, 2);
-        meanDataToCompare = mean(dataToCompare, 2);
-
-        % Compute standard deviations
-        stdData = std(data, 0, 2); 
-        stdDataToCompare = std(dataToCompare, 0, 2);
-        nData = size(data, 2);
-        nDataToCompare = size(dataToCompare, 2);
+        tVecAvg = mean(tVecs, 2, 'omitnan');
+        meanData = mean(data, 2, 'omitnan');
+        meanDataToCompare = mean(dataToCompare, 2, 'omitnan');
 
         % Compute 95% confidence intervals
-        lowCI = meanData + 1.96 * stdData/sqrt(nData);
-        highCI = meanData - 1.96 * stdData/sqrt(nData);
-        lowCIToCompare = meanDataToCompare + 1.96 * stdDataToCompare/sqrt(nDataToCompare);
-        highCIToCompare = meanDataToCompare - 1.96 * stdDataToCompare/sqrt(nDataToCompare);
+        lowCI = compute_stats(data, 'lower95', 2, 'IgnoreNan', true);
+        highCI = compute_stats(data, 'upper95', 2, 'IgnoreNan', true);
+        lowCIToCompare = compute_stats(dataToCompare, 'lower95', 2, 'IgnoreNan', true);
+        highCIToCompare = compute_stats(dataToCompare, 'upper95', 2, 'IgnoreNan', true);
 
         % Decide on the color for this plot
         colorThis = decide_on_this_color(colorMode, colorMap, 1, nColumns);

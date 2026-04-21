@@ -6,8 +6,8 @@ function handles = plot_test_result (testPValues, varargin)
 %       This function overlays statistical test results onto an existing plot.
 %       It takes a vector of p-values and parameters for positioning.
 %       For each p-value, it displays a text string (e.g., 'p_t = 0.04').
-%       The text is colored black for non-significant results, red for
-%       significant results, and gray if the test was deemed inappropriate.
+%       The text is colored based on the provided or default color arguments 
+%       (significant, non-significant, inappropriate).
 %       It also plots a symbol ('*' by default) for significance or 'NS'
 %       for non-significance.
 %
@@ -81,9 +81,21 @@ function handles = plot_test_result (testPValues, varargin)
 %                   - 'IsAppropriate': Whether the test was appropriate for the data
 %                   must be a logical vector of the same size as testPValues
 %                   default == true for all values
+%                   - 'ColorSignificant': Color for significant p-values
+%                   must be a valid color string or RGB vector
+%                   default == 'r'
+%                   - 'ColorNonSignificant': Color for non-significant p-values
+%                   must be a valid color string or RGB vector
+%                   default == 'k'
+%                   - 'ColorInappropriate': Color for inappropriate test p-values
+%                   must be a valid color string or RGB vector
+%                   default == [0.5, 0.5, 0.5]
 %                   - 'AxesHandle': axes handle to plot on
 %                   must be a empty or an axes object handle
 %                   default == set in set_axes_properties.m
+%                   - 'MaintainRelativePosition': Whether to maintain the relative position of text and markers when axes limits change
+%                   must be a logical scalar
+%                   default == true
 %                   
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -102,7 +114,9 @@ function handles = plot_test_result (testPValues, varargin)
 % 2025-09-11 Allowed 'PString' and 'TestFunction' to be vectors by Gemini
 % 2025-09-11 Added 'Symbol' optional argument by Gemini
 % 2025-09-17 Added 'AxesHandle' as an optional argument
-%
+% 2026-03-22 Added optional color arguments
+% 2026-03-22 Added 'MaintainRelativePosition' as an optional argument with default true
+
 
 %% Default values for optional arguments
 pStringDefault = 'p';
@@ -117,7 +131,11 @@ xLocStarRelDefault = 0.5;
 xValuesAllDefault = [];         % set later
 sigLevelDefault = 0.05;
 isAppropriateDefault = [];      % set later
+colorSignificantDefault = 'r';
+colorNonSignificantDefault = 'k';
+colorInappropriateDefault = [0.5, 0.5, 0.5];
 axHandleDefault = [];           % gca by default
+maintainRelativePositionDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -156,7 +174,11 @@ addParameter(iP, 'XValuesAll', xValuesAllDefault, @isnumeric);
 addParameter(iP, 'SigLevel', sigLevelDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
 addParameter(iP, 'IsAppropriate', isAppropriateDefault, @islogical);
+addParameter(iP, 'ColorSignificant', colorSignificantDefault);
+addParameter(iP, 'ColorNonSignificant', colorNonSignificantDefault);
+addParameter(iP, 'ColorInappropriate', colorInappropriateDefault);
 addParameter(iP, 'AxesHandle', axHandleDefault);
+addParameter(iP, 'MaintainRelativePosition', maintainRelativePositionDefault, @islogical);
 
 % Read from the Input Parser
 parse(iP, testPValues, varargin{:});
@@ -172,7 +194,11 @@ xLocStarRel = iP.Results.XLocStarRel;
 xValuesAll = iP.Results.XValuesAll;
 sigLevel = iP.Results.SigLevel;
 isAppropriate = iP.Results.IsAppropriate;
+colorSignificant = iP.Results.ColorSignificant;
+colorNonSignificant = iP.Results.ColorNonSignificant;
+colorInappropriate = iP.Results.ColorInappropriate;
 axHandle = iP.Results.AxesHandle;
+maintainRelativePosition = iP.Results.MaintainRelativePosition;
 
 %% Preparation
 % Decide on the axes to plot on
@@ -294,11 +320,11 @@ for iValue = 1:nValues
 
     % Determine the color for the text based on appropriateness and significance
     if ~isAppropriateThis
-        pColor = [0.5, 0.5, 0.5];       % Gray for inappropriate tests
+        pColor = colorInappropriate;
     elseif testPValueThis < sigLevel
-        pColor = 'r';                   % Red for significant results
+        pColor = colorSignificant;
     else
-        pColor = 'k';                   % Black for non-significant results
+        pColor = colorNonSignificant;
     end
 
     % Plot the p-value text
@@ -322,6 +348,12 @@ for iValue = 1:nValues
     end
 end
 
+% Maintain relative positions when axes limits change
+if maintainRelativePosition
+    set(pTextHandles, 'Units', 'normalized');
+    set(sigMarkerHandles, 'Units', 'normalized');
+end
+
 % Hold off
 hold_off(wasHold, axHandle);
 
@@ -337,4 +369,3 @@ OLD CODE:
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
