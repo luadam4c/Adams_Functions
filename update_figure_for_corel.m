@@ -154,6 +154,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2020-04-22 Added 'RemoveCircles' as an optional argument
 % 2020-08-03 Added 'RemovePlots' as an optional argument
 % 2020-08-19 Added 'ScatterLineWidth' as an optional argument
+% 2026-09-30 Fixed bug where resizing decoupled manual tick labels from auto tick locations by freezing tick modes
 
 
 %% Hard-coded parameters
@@ -327,6 +328,21 @@ if removeLabels
 end
 
 %% Set figure properties
+% Prevent tick decoupling during figure resize by freezing tick locations 
+% if their labels have already been manually set
+axToFreeze = findall(figHandle, 'type', 'axes');
+for iAx = 1:numel(axToFreeze)
+    if strcmp(get(axToFreeze(iAx), 'XTickLabelMode'), 'manual')
+        set(axToFreeze(iAx), 'XTickMode', 'manual');
+    end
+    if strcmp(get(axToFreeze(iAx), 'YTickLabelMode'), 'manual')
+        set(axToFreeze(iAx), 'YTickMode', 'manual');
+    end
+    if strcmp(get(axToFreeze(iAx), 'ZTickLabelMode'), 'manual')
+        set(axToFreeze(iAx), 'ZTickMode', 'manual');
+    end
+end
+
 % Might change sizes
 %   Note: Changing the renderer to 'painters' ensure graphics 
 %           are saved as vectors
@@ -662,16 +678,6 @@ end
 
 %{
 OLD CODE:
-
-for iAx = 1:nAx
-    ax(iAx).XAxis.LineWidth = 1;
-    ax(iAx).YAxis.LineWidth = 1;
-end
-
-% Set other axes properties
-if ~isempty(otherArguments)
-    set(ax, otherArguments{:});    
-end
 
 %}
 

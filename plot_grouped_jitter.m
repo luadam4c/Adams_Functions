@@ -288,6 +288,7 @@ function [handles, statsOut] = plot_grouped_jitter (data, varargin)
 % 2026-03-22 Removed set_graphics_color and delegated color/position logic to plot_test_result.m
 % 2026-03-22 Now outputs plot_test_result.m and plot_text.m graphic handles directly
 % 2026-03-24 Added 'OffsetGroups' optional argument by Gemini
+% 2026-09-30 Centered manual jitter and forced padding for single conditions to prevent off-center plots
 
 %% Add withinGroupAndCond to valid stats modes
 %% Define hard-coded parameters for the function
@@ -730,8 +731,14 @@ if usePlotSpread
     handles.pText = gobjects(0);
     handles.sigMarker = gobjects(0);
 else
-    % Give each shifted condition index some jitter for plotting
-    conditionWithJitter = conditionShifted + (jitterWidth * (rand(nPoints, 1) - 0.5));
+    % Give each shifted condition index some centered jitter for plotting
+    jitterOffset = rand(nPoints, 1) - 0.5;
+    if nPoints > 1
+        jitterOffset = jitterOffset - mean(jitterOffset);
+    else
+        jitterOffset = 0;
+    end
+    conditionWithJitter = conditionShifted + (jitterWidth * jitterOffset);
 
     % Pre-allocate a graphics object array for plot handles
     distributions = gobjects(nGroups, 1);
@@ -792,9 +799,11 @@ if isempty(xLimits)
     xLimits = [min(xTickLocs) - xTickLimitPadding, max(xTickLocs) + xTickLimitPadding];
 end
 
-% Modify x limits
+% Modify x limits, overriding suppression for single conditions to maintain centering
 if ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
     xlim(axHandle, xLimits);
+elseif ischar(xLimits) && strcmpi(xLimits, 'suppress') && numel(xTickLocs) == 1
+    xlim(axHandle, [xTickLocs(1) - xTickLimitPadding, xTickLocs(1) + xTickLimitPadding]);
 end
 
 % Modify y limits
