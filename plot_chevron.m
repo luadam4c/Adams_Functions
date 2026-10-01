@@ -2,7 +2,14 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %% Plots a Chevron (paired comparison) plot from data
 % Usage: [handles, handlesMean] = plot_chevron (data, varargin)
 % Explanation:
-%       TODO
+%       This function creates a paired comparison (chevron) plot to visualize 
+%       repeated measures or paired data across different conditions (e.g., 
+%       Left vs. Right cortex densities). It plots individual data points, 
+%       connects paired observations, and optionally overlays mean values, 
+%       error bars, and the mean difference with confidence intervals. 
+%       Additionally, it can automatically perform and display statistical 
+%       comparisons between the groups using paired t-tests and/or Wilcoxon 
+%       signed-rank tests.
 %
 % Example(s):
 %       randVec1 = randi(10, 10, 1);
@@ -370,7 +377,8 @@ if plotMeanDifference && nGroups == 2
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
                     'LineStyle', meanLineStyle, ...
-                    'Marker', 'none', 'AxesHandle', axHandle);
+                    'Marker', 'none', 'AxesHandle', axHandle, ...
+                    'Tag', 'mean');
 else
     handlesMean = struct;
 end
@@ -388,7 +396,8 @@ if plotErrorBars
 
     % Plot error bars
     plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
-                    'LineWidth', meanLineWidth, 'AxesHandle', axHandle);
+                    'LineWidth', meanLineWidth, 'AxesHandle', axHandle, ...
+                    'Tag', 'mean');
 
     % Hold off
     hold_off(wasHold, axHandle);
@@ -408,14 +417,16 @@ if plotMeanValues
             'Marker', 'o', 'LineWidth', meanLineWidth, ...
             'MarkerFaceColor', meanMarkerFaceColor, ...
             'MarkerFaceAlpha', meanMarkerFaceAlpha, ...
-            'MarkerEdgeColor', 'none');
+            'MarkerEdgeColor', 'none', ...
+            'Tag', 'mean');
 
     % Plot the means with circles with transparency
     %   Note: Use scatter to set MarkerFaceAlpha
     plot(axHandle, pValues, means, 'Color', meanColorMap, ...
             'Marker', 'o', 'MarkerSize', meanMarkerSize, ...
             'LineWidth', meanLineWidth, ...
-            'MarkerFaceColor', 'none');
+            'MarkerFaceColor', 'none', ...
+            'Tag', 'mean');
 
     % Hold off
     hold_off(wasHold, axHandle);

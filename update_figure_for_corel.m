@@ -2,7 +2,13 @@ function figHandle = update_figure_for_corel (varargin)
 %% Update figure to be journal-friendly (ready for CorelDraw)
 % Usage: figHandle = update_figure_for_corel (figHandle (opt), varargin)
 % Explanation:
-%       TODO
+%       This function modifies a given figure to make it journal-friendly 
+%       and ready for export to vector graphics editors like CorelDraw. 
+%       It standardizes font properties, sets the renderer to 'painters' 
+%       for proper vectorization, and allows the user to align subplots. 
+%       Additionally, it provides extensive optional arguments to strip away 
+%       or customize visual elements such as ticks, rulers, labels, titles, 
+%       legends, and specific plot elements.
 %
 % Example(s):
 %       fig = update_figure_for_corel(fig);
@@ -421,13 +427,13 @@ end
 
 % Remove legends if requested
 if removeLegends
-    lgds = findobj(gcf, 'Type', 'Legend');
+    lgds = findobj(figHandle, 'Type', 'Legend');
     delete(lgds);
 end
 
 % Remove texts if requested
 if removeTexts
-    texts = findobj(gcf, 'Type', 'Text');
+    texts = findobj(figHandle, 'Type', 'Text');
     delete(texts);
 end
 

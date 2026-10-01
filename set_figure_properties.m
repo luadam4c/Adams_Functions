@@ -53,6 +53,10 @@ function fig = set_figure_properties (varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigExpansion', 'Width', 
 %                               or 'Height' provided, but false otherwise
+%                   - 'MinimizeWhiteSpace': whether to minimize white space 
+%                                           around axes
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ClearFigure': whether to clear figure
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigNumber' provided 
@@ -120,7 +124,7 @@ function fig = set_figure_properties (varargin)
 % 2019-11-17 Fixed 'AlwaysNew' when 'FigNumber' is provided
 % 2025-10-17 Added 'ShowFigure' as an optional argument with default true
 % 2026-03-19 Fixed figure visibility issue
-% TODO: Change axes outerPosition by default?
+% 2026-06-01 Added 'MinimizeWhiteSpace' by Gemini
 
 %% Hard-coded parameters
 
@@ -134,6 +138,7 @@ positionDefault = [];           % set later
 widthDefault = [];              % set later
 heightDefault = [];             % set later
 adjustPositionDefault = [];     % set later
+minimizeWhiteSpaceDefault = false; % don't minimize white space by default
 clearFigureDefault = [];        % set later
 showFigureDefault = [];         % set later
 alwaysNewDefault = false;       % don't always create new figure by default
@@ -168,6 +173,8 @@ addParameter(iP, 'Height', heightDefault, ...
                 'Height must be a empty or a positive scalar!'));
 addParameter(iP, 'AdjustPosition', adjustPositionDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MinimizeWhiteSpace', minimizeWhiteSpaceDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ClearFigure', clearFigureDefault);
 addParameter(iP, 'ShowFigure', showFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -185,6 +192,7 @@ positionUser = iP.Results.Position;
 width = iP.Results.Width;
 height = iP.Results.Height;
 adjustPosition = iP.Results.AdjustPosition;
+minimizeWhiteSpace = iP.Results.MinimizeWhiteSpace;
 clearFigureUser = iP.Results.ClearFigure;
 showFigure = iP.Results.ShowFigure;
 alwaysNew = iP.Results.AlwaysNew;
@@ -335,6 +343,11 @@ if adjustPosition
     adjust_figure_position(fig);
 end
 
+% Minimize white space around axes if requested
+if minimizeWhiteSpace
+    minimize_white_space(fig);
+end
+
 % Set figure visibility at the end
 if showFigure
     set(fig, 'Visible', 'on');
@@ -423,8 +436,59 @@ else
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function minimize_white_space (fig)
+%% Minimizes white space in the figure by adjusting axes positions to fit tight insets
+
+% Force MATLAB to finish drawing before evaluating tight insets
+drawnow;
+
+% Find all axes in the figure
+axList = findall(fig, 'Type', 'axes');
+
+% Iterate through each axes to adjust its position
+for iAx = 1:numel(axList)
+    % Extract the current axes
+    ax = axList(iAx);
+    
+    % Skip legends and colorbars as they are not standard plotting axes
+    if strcmpi(ax.Tag, 'legend') || strcmpi(ax.Tag, 'colorbar')
+        continue;
+    end
+    
+    % Extract the outer position of the axes
+    outerPos = ax.OuterPosition;
+    
+    % Extract the tight inset margins
+    tightInset = ax.TightInset;
+    
+    % Calculate the new left position to remove the left margin
+    leftPos = outerPos(1) + tightInset(1);
+    
+    % Calculate the new bottom position to remove the bottom margin
+    bottomPos = outerPos(2) + tightInset(2);
+    
+    % Calculate the new width to remove left and right margins
+    axWidth = outerPos(3) - tightInset(1) - tightInset(3);
+    
+    % Calculate the new height to remove top and bottom margins
+    axHeight = outerPos(4) - tightInset(2) - tightInset(4);
+    
+    % Set the new axes position to fill the available space if dimensions are valid
+    if axWidth > 0 && axHeight > 0
+        ax.Position = [leftPos, bottomPos, axWidth, axHeight];
+    else
+        warning('set_figure_properties:invalidDimensions', ...
+                'Calculated axes width or height is <= 0. Skipping minimization for this axes.');
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 OLD CODE:
+
+% Set the new axes position to fill the available space
+ax.Position = [leftPos, bottomPos, axWidth, axHeight];
 
 %}
 
